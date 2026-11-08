@@ -1,0 +1,125 @@
+# Stage 1: Cell
+
+> Stage design doc. Short beats complete. Game-wide rules (pillars, lore, win and lose, what carries between stages)
+> live in the spine, `docs/GDD.md`; this file covers only what is special to the cell stage.
+> Split out of `docs/GDD.md` on 2026-11-08 (content unchanged except where marked). Last reviewed: 2026-11-08
+> Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69.
+> **Status:** built, Toy tier (the stage's tier lives in the spine's stage table).
+
+## Identity
+- **Pitch:** Eat, fight and evolve your way up from a single cell, in a dark little pond under the microscope.
+- **The twist:** A top-down evolution game with real stakes, seen as if under a lit microscope: what you eat and which
+  creatures you beat decides the parts your creature is built from.
+- **Reference games for this stage:** Spore's cell stage for the eat-and-grow loop (mechanics only, nothing else).
+- **Modes:** avatar mode only. There is no god mode in the cell stage: it is the hidden first act, and the player does
+  not yet know they are the Gardener (`docs/LORE.md`).
+- **Where it sits in the game:** first of five. It receives nothing (it always starts fresh) and hands the first
+  lineage to the aquatic stage (`docs/HANDOFF_CONTRACT.md`).
+
+## How the pillars apply here
+1. **Tense but fair:** other creatures can hurt and pop you, and getting popped sets you back for real (food, a part,
+   progress toward the next form). Every danger is readable before it hits. Rules out game overs, ending the run,
+   timers, and losing a form you already evolved into.
+2. **You shape your creature (directly):** your diet (herbivore, carnivore, omnivore), the upgrades you buy (algae
+   earns plant points for defense and mobility; meat earns meat points for attack and speed), and the parts you pick up
+   from beaten creatures (spikes, shell, filter mouth) make the creature yours. Rules out evolutions picked for the
+   player. This is the only stage where traits are chosen directly; from the aquatic stage on, evolution is a simulation.
+3. **Small world, growing bigger:** the smallest world in the game, one pond on one slide.
+
+## Core loop
+```
+pick a diet -> swim around -> eat what your diet allows (algae or meat) or fight a creature -> grow, earn plant or meat points, or collect its part -> spend points on upgrades, add the part -> decide what to go after next -> back to swim around (evolve: pick your diet again)
+```
+Time per loop: about 15 to 30 seconds *(Claude's pick)*. The fun must be present in this loop before anything else gets built.
+
+| Scale | What the player does | Why they keep going |
+|---|---|---|
+| Every ~30 seconds | Eats food or beats a cell | Grows a little, or gets a new part |
+| Every ~10 minutes | Evolves into a new form with the parts chosen | Sees the creature visibly change |
+| Whole stage | Reaches the last form | The pond floods from outside the slide: on to the aquatic stage *(ending: parking lot)* |
+
+## Stage win and lose
+- **Stage end:** reach the last form (`TUNING.maxForm`). Today the stage stops there; the flood ending is in the
+  ROADMAP Parking lot.
+- **Lose:** none. Bumps cost food; getting popped costs more (food, a part, progress toward the next form) and you come
+  back nearby. You never lose a form you already reached.
+- **Played on its own:** the cell stage always starts fresh, so it needs no default lineage.
+
+## Scope tiers (this stage)
+| Tier | Contents | Done means |
+|---|---|---|
+| **Toy** | Swim a pond, eat food, beat other cells to collect 2 or 3 parts (for example spikes = attack, shell = defense, filter mouth = plant diet); adding a part visibly changes your cell; evolve twice | Someone wants to keep playing for 2 minutes |
+| **Vertical slice** | 1 polished level or loop, art, audio, UI, save | Looks and feels like the final game |
+| **MVP / Release** | Minimum content that makes a shippable stage (the lineage export is already built) | Passes `/release-check` |
+| **Stretch** | Everything else | Only after release scope is locked |
+
+The current tier is recorded in the spine (`docs/GDD.md`, "Stages" table and the `Current tier:` line).
+
+## Content list (MVP)
+| Item | Count | Status |
+|---|---|---|
+| Levels / areas | 1 pond | toy |
+| Enemies / obstacles | 3 small cells (prickle, snail, sipper) + 1 predator (gulper, more per form) | toy |
+| Player abilities | | |
+| Music tracks | | |
+| SFX sets | | |
+
+## Systems overview
+List each system in one line and link to `ARCHITECTURE.md` for how it is built.
+Mark which ones the **vertical slice** needs. Everything marked "no" waits, otherwise the AI invents assumptions you never tested.
+| System | One line | In the vertical slice? |
+|---|---|---|
+| Health and damage | | yes |
+| Weapons / abilities | | one only |
+| Enemies and bosses | | 1 or 2 types, 1 boss |
+| XP, skill trees, economy, world map, save | | no |
+| Lineage export (handoff) | Records diet picks and behavior; at the stage's end writes the lineage per `docs/HANDOFF_CONTRACT.md` (save slot `lineage`). Built 2026-11-08; no on-screen readout yet | built |
+
+## Controls
+| Action | Keyboard/Mouse | Gamepad |
+|---|---|---|
+| Move | Arrow keys or WASD *(Claude's pick)* | D-pad (left stick: parking lot) |
+| Upgrade panel | E toggles; arrows + Enter or click buy (the pond keeps moving) | not yet (parking lot) |
+| Diet picker (start, each evolution) | Left/right or A/D + Enter, or click (pauses the pond) | d-pad + south |
+
+## Tunables that define feel
+These live in data, not code. File: `src/game/cell/tuning.ts` (swim speed and drag, food to evolve, part strengths,
+bump food loss, pond counts, diet multipliers, meat value, upgrade costs and per-level effects, upgrade look tiers,
+the mood colors and light)
+
+## Art and audio (this stage)
+Game-wide direction is in the spine. Cell-stage specifics:
+- Look: *(changed 2026-11-07 from "cute cartoon", BAMF69: "less childish"; mockup D in
+  `captures/progress/08-style-mockups.png`)* a nature documentary under a microscope. Creatures are organisms, not
+  mascots: membranes with rim light, visible nucleus and organelles, cilia, small beady eye spots (no big cartoon eyes,
+  no blush). Light comes from the top-left; the pond is dark, with a dark falloff toward the screen edges.
+- Palette / resolution / camera: muted, desaturated organics (ochre player, wine, slate blue, olive enemies) on deep
+  teal water; food stays the brightest thing on screen (faintly glowing algae, raw red meat) so it is never lost in
+  the dark. 32x32 sprites, 640x360, top-down camera following the player.
+- Music: ambient, watery, a little tense.
+- SFX: soft, wet and organic (blips, squelches, pops), short and low in the mix.
+- `T0|▼|` hint *(parking lot)*: rarely, a perfect hexagonal fleck drifts in the background. Gulpers avoid it. Nothing
+  explains it.
+
+## First-time user experience (FTUE, from E05 in `docs/EVIDENCE.md`)
+Teach the mechanics by playing, not by a wall of text. Lock out advanced options until the lesson is passed.
+| Lesson | Mechanic taught | How we know they got it |
+|---|---|---|
+| 1 | | |
+
+## Assumptions to test (feeds the vertical slice)
+| Assumption | How we will know (observable) |
+|---|---|
+| Surviving the pond is tense and fun for two minutes | BAMF69 keeps playing after the two evolutions |
+| An evolution feels like a reward | BAMF69 wants to see the next form |
+| Picking parts feels like a real choice | BAMF69 tries different part combinations |
+| Getting popped stings but feels fair | BAMF69 plays on after being popped and can say what popped them |
+
+## Risks and unknowns
+| Risk | Why it matters | How we test it cheaply |
+|---|---|---|
+| | | |
+
+## Out of scope for this stage
+- God mode (it starts in the aquatic stage)
+- Online play

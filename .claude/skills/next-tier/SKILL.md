@@ -8,7 +8,8 @@ description: Move the game to its next scope tier (Toy -> Vertical slice -> MVP 
 Follow `docs/sop/SOP-08-scope-control.md` "Tiers". The `Current tier:` line in `docs/GDD.md` is what every scope
 check in this project reads, so it must move when the game does. No dates anywhere: tiers and milestones are scope.
 
-1. **Read** `docs/GDD.md` (Scope tiers, Current tier, Assumptions to test, Content list), `docs/ROADMAP.md`,
+1. **Read** `docs/GDD.md` (the spine: Stages table, active stage, Current tier) and the **active stage's doc** in
+   `docs/stages/` (its Scope tiers, Assumptions to test, Content list: tiers are kept per stage), `docs/ROADMAP.md`,
    `docs/PLAYTEST_LOG.md`, and for the slice `docs/VERTICAL_SLICE.md`.
 2. **Check the current tier's evidence.** For each item give **MET**, **NOT MET** or **UNKNOWN** with the file or
    command that shows it. Never MET from assumption.
@@ -21,7 +22,8 @@ check in this project reads, so it must move when the game does. No dates anywhe
    `/playtest-report` once the user has played. The user may move on anyway: then record "Moved on without: <items>,
    reason: <their words>" in the ROADMAP Done line. It is their game; the gate advises, it does not lock.
 4. **On a yes, update the docs:**
-   - `docs/GDD.md`: set `Current tier: **<next tier>**`, and `> Last reviewed:` to today.
+   - `docs/GDD.md`: set `Current tier: **<next tier>**` and the active stage's Tier cell in the Stages table, and
+     `> Last reviewed:` to today. Set `Last reviewed:` in the stage doc too.
    - `docs/ROADMAP.md`: mark the milestone row done, add a Done line ("<date>: <tier> done, now <next tier>"), and move
      Parking lot items that now fit the new tier into Next (ask about any that are unclear; ideas outside the pillars
      stay parked).

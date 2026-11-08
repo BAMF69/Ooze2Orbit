@@ -1,120 +1,106 @@
-# Ooze2Orbit: Game Design Document
+# Ooze2Orbit: Game Design Document (the spine)
 
 > Living document. Short beats complete. Update with `/gdd-sync` when reality diverges from this page.
-> Last reviewed: 2026-11-07
+> Last reviewed: 2026-11-08
 > Written from the kit's start-up interview with BAMF69. Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69.
+> **This file is the spine:** what holds for the whole game. Each stage plays like its own small game with its own
+> loop, controls, art scale and tiers, so each has its own design doc in `docs/stages/` (split 2026-11-08, BAMF69).
+> Read this file, then the **active stage's** doc. Story and world: `docs/LORE.md`. What passes from one stage to the
+> next: `docs/HANDOFF_CONTRACT.md`.
 
 ## Identity
 - **Title:** Ooze2Orbit (picked by BAMF69 2026-11-07, first as "Ooze to Orbit"). Repo: github.com/BAMF69/Ooze2Orbit, playable at bamf69.github.io/Ooze2Orbit
-- **One-line pitch:** A moody, lit, top-down pixel-art game where you play a little creature that eats and battles its way up from a single cell to the stars.
-- **Genre:** Evolution adventure
-- **Perspective:** 2D top-down
-- **Reference games (2 to 3) and what you borrow from each:** Spore for the stage-by-stage evolution (cell, water, land, civilization, space) and building your own creature; Stardew Valley for the readable top-down pixel art. Same kind of mechanics only: no Spore names, creatures, art, music or look; everything here is this game's own.
-- **The twist:** A top-down evolution game with real stakes, seen as if under a lit microscope: what you eat and which creatures you beat decides the parts your creature is built from.
+- **One-line pitch:** A moody, lit, top-down pixel-art game where you raise life from a single cell to the stars, as the creature and as the unseen Gardener shaping its world, to build the alliance that can defeat `T0|▼|`.
+- **Genre:** Evolution adventure; five stages, each a small game of its own
+- **Perspective:** 2D top-down (each stage doc can refine its camera)
+- **Reference games (2 to 3) and what you borrow from each:** Spore for the stage-by-stage evolution (cell, water, land, civilization, space); Stardew Valley for the readable top-down pixel art; Endless Sky for the space stage (top-down 2D ships, a star map, trade, missions, outfitting a fleet). Same kind of mechanics only: no Spore or Endless Sky names, creatures, ships, story, art, music or look; everything here is this game's own.
+- **The twist:** You are not only the creature. You are the Gardener looking down the lens (the top-down view), shaping the environment so life evolves on its own, because the enemy, a rogue AI, can counter anything designed but not what evolved. Less creature editor, more shaping the world that shapes the creature.
 
 ## Pillars (3 max)
-Pillars decide arguments. If a feature does not serve one, it goes to the Parking lot.
+Pillars decide arguments, in every stage. If a feature does not serve one, it goes to the Parking lot. Stage docs say
+how each pillar applies there.
 1. **Tense but fair** *(rewritten 2026-11-07 after the first playtest: "too cozy")*: other creatures can hurt and pop you, and getting popped sets you back for real (food, a part, progress toward the next form). Every danger is readable before it hits. Rules out game overs, ending the run, timers, and losing a form you already evolved into.
-2. **You build your creature**: your diet (herbivore, carnivore, omnivore), the upgrades you buy (algae earns plant points for defense and mobility; meat earns meat points for attack and speed), and the parts you pick up from beaten creatures (spikes, shell, filter mouth) make the creature yours. Rules out evolutions picked for the player.
+   **After the cell stage** *(approved by BAMF69 2026-11-08; see `docs/LORE.md`)*: creatures and branches of a species can be hurt, pushed back and die out, and a spacefaring species can die out (a new one is generated to replace it). The Gardener (the player) cannot lose: there is no game over. A branch can be lost; the garden cannot.
+2. **You shape your creature, directly and indirectly** *(rewritten 2026-11-08, approved by BAMF69; see `docs/LORE.md`)*: directly through the avatar (what it eats, fights and does), indirectly through the world you make as the Gardener (what is there to eat, what hunts it, what the climate demands). From the aquatic stage on, evolution is a simulation the player steers, not an editor, and the player must always see how their influence shaped the creature's traits. Rules out picking traits from a menu after the cell stage. (Cell stage specifics: `docs/stages/01-cell.md`.)
 3. **Small world, growing bigger** *(Claude's pick)*: each stage plays in a bigger world than the last. Rules out a huge map at the start.
 
-## Core loop
-```
-pick a diet -> swim around -> eat what your diet allows (algae or meat) or fight a creature -> grow, earn plant or meat points, or collect its part -> spend points on upgrades, add the part -> decide what to go after next -> back to swim around (evolve: pick your diet again)
-```
-Time per loop: about 15 to 30 seconds *(Claude's pick)*. The fun must be present in this loop before anything else gets built.
+## Stages
+Each stage is fun on its own, can be played on its own (it starts from a default lineage when there is no save from
+the stage before), and hands its lineage to the next through `docs/HANDOFF_CONTRACT.md`.
 
-Loop at three time scales (if you cannot fill all three, the game's structure is not clear yet):
+| # | Stage | Doc | Modes | Tier | Status |
+|---|---|---|---|---|---|
+| 1 | Cell | `docs/stages/01-cell.md` | Avatar | **Toy** | Built, being tuned (**active**) |
+| 2 | Aquatic | `docs/stages/02-aquatic.md` | Avatar + god | none | Not started (outline) |
+| 3 | Land/Air | `docs/stages/03-land.md` | Avatar + god | none | Not started (outline) |
+| 4 | Civilization | `docs/stages/04-civilization.md` | Avatar + god | none | Not started (outline) |
+| 5 | Space | `docs/stages/05-space.md` | Fleet (Endless Sky style) | none | Not started (outline) |
+
+**Active stage:** Cell (`docs/stages/01-cell.md`).
+
+Current tier: **Toy** (the active stage, Cell; see its doc for what Toy means there)
+
+Claude scopes work by this line (SOP-08 "Tiers"). It always shows the **active stage's** tier. Tiers (Toy, Vertical
+slice, MVP / Release, Stretch) are kept **per stage**: each stage doc has its own "Scope tiers" table and "Done means".
+When `/next-tier` moves a stage, update both this line and the stage's row in the table above. Starting work on a
+new stage means making it the active stage here (and at Toy, it gets a full doc from `docs/stages/_TEMPLATE.md`).
+
+## The two modes (from the aquatic stage on)
+| Mode | In the lore | What the player does |
+|---|---|---|
+| **God mode** | The Gardener looking down the lens | Shapes the environment (food, temperature, currents, terrain, climate, predators, events). The simulation evolves the creatures |
+| **Avatar mode** | The Gardener living inside one creature | Plays one individual directly. What the avatar does, the lineage leans toward |
+
+Switching is a smooth zoom, like a microscope's focus knob *(Claude's pick: keeps every stage 2D)*. The space stage
+replaces both with fleet play. Details per stage in each stage doc; the why in `docs/LORE.md`.
+
+## Whole-game loop
 | Scale | What the player does | Why they keep going |
 |---|---|---|
-| Every ~30 seconds | Eats food or beats a cell | Grows a little, or gets a new part |
-| Every ~10 minutes | Evolves into a new form with the parts chosen | Sees the creature visibly change |
-| Whole session | Advances to the next stage (cell, water, land, civilization, space) | A bigger world and new ways to play; winning means reaching space |
-
-## Player fantasy and target audience
-- Fantasy: watching your own odd little creature grow up, shaped by your choices.
-- Audience: BAMF69. The player should feel the pressure of a dangerous pond and the pride of surviving it, never cheated.
-- Comparable games (2 to 3) and what we do differently: Spore (we stay top-down 2D, with real setbacks but no game over), Stardew Valley (you are the creature, not a farmer).
+| Inside a stage | That stage's loop (see its doc) | Its own goals and rewards |
+| Between stages | Finishes a stage; its lineage carries into the next, bigger world | Sees how earlier choices shaped what comes next |
+| Whole game | Raises three spacefaring species and builds their fleet | Defeating T0&#124;▼&#124; |
 
 ## Win and lose
-- Win: reach the space stage.
-- Lose: no game over. Bumps cost food; getting popped costs more (food, a part, progress toward the next form) and you come back nearby. You never lose a form you already reached.
+- Win: defeat `T0|▼|` (the rogue AI, see `docs/LORE.md`) in the space stage with a fleet built from three spacefaring species. Reaching space is not the win. *(Changed 2026-11-08, BAMF69.)*
+- Lose: there is no game over for the Gardener, in any stage (pillar 1). What can be lost changes by stage: in the cell stage, food, a part or progress (never a form); later, branches and even whole species. Each stage doc says what its setbacks are.
 
-## Scope tiers
-| Tier | Contents | Done means |
-|---|---|---|
-| **Toy** | Cell stage only: swim a pond, eat food, beat other cells to collect 2 or 3 parts (for example spikes = attack, shell = defense, filter mouth = plant diet); adding a part visibly changes your cell; evolve twice | Someone wants to keep playing for 2 minutes |
-| **Vertical slice** | 1 polished level or loop, art, audio, UI, save | Looks and feels like the final game |
-| **MVP / Release** | Minimum content that makes a shippable product | Passes `/release-check` |
-| **Stretch** | Everything else | Only after release scope is locked |
+## What carries between stages
+The contract for every stage's inputs and outputs is `docs/HANDOFF_CONTRACT.md`. The rule that matters most for design:
+**the player must be able to see how their influence shaped each trait** (pillar 2), all the way to the ship tech in
+the space stage (cautious creatures build strong shields, aggressive ones strong weapons, adaptable ones fast engines).
+**Each stage can shift a temperament at most 50 % from where the stage before left it** (approved by BAMF69
+2026-11-08): a 100 % aggressive cell is still at least 50 % aggressive after the aquatic stage, and can reach 0 % after
+land/air. Early choices matter; no single stage locks the species in.
 
-Current tier: **Toy**
+## Player fantasy and target audience
+- Fantasy: watching your own odd little creature grow up, shaped by your choices, then realizing you were the hand shaping its world all along.
+- Audience: BAMF69. The player should feel the pressure of a dangerous world and the pride of surviving it, never cheated.
+- Comparable games (2 to 3) and what we do differently: Spore (we stay top-down 2D, evolution is steered through the environment rather than built in an editor, real setbacks but no game over), Stardew Valley (you are the creature, not a farmer), Endless Sky (your fleet comes from species you raised, and the enemy adapts to your tech).
 
-Claude scopes work by this line (SOP-08 "Tiers"). Move it with `/next-tier` when the tier's "Done means" is met.
-
-## Content list (MVP)
-| Item | Count | Status |
-|---|---|---|
-| Levels / areas | | |
-| Enemies / obstacles | Cell stage (toy): 3 small cells (prickle, snail, sipper) + 1 predator (gulper, more per form) | toy |
-| Player abilities | | |
-| Music tracks | | |
-| SFX sets | | |
-
-## Systems overview
-List each system in one line and link to `ARCHITECTURE.md` for how it is built.
-Mark which ones the **vertical slice** needs. Everything marked "no" waits, otherwise the AI invents assumptions you never tested.
-| System | One line | In the vertical slice? |
-|---|---|---|
-| Health and damage | | yes |
-| Weapons / abilities | | one only |
-| Enemies and bosses | | 1 or 2 types, 1 boss |
-| XP, skill trees, economy, world map, save | | no |
-
-## Controls
-| Action | Keyboard/Mouse | Gamepad |
-|---|---|---|
-| Move | Arrow keys or WASD *(Claude's pick)* | D-pad (left stick: parking lot) |
-| Upgrade panel | E toggles; arrows + Enter or click buy (the pond keeps moving) | not yet (parking lot) |
-| Diet picker (start, each evolution) | Left/right or A/D + Enter, or click (pauses the pond) | d-pad + south |
-
-## Tunables that define feel
-List the numbers that make the game feel right (gravity, jump height, coyote time, hit stop, camera lag).
-These live in data, not code. File: `src/game/cell/tuning.ts` (swim speed and drag, food to evolve, part strengths, bump food loss, pond counts, diet multipliers, meat value, upgrade costs and per-level effects, upgrade look tiers, the mood colors and light)
-
-## Art and audio direction
-- Style, tone, and the kinds of enemies/NPCs the player sees: *(changed 2026-11-07 from "cute cartoon", BAMF69: "less childish"; mockup D in `captures/progress/08-style-mockups.png`)* lit and moody, like a nature documentary under a microscope. Creatures are organisms, not mascots: membranes with rim light, visible nucleus and organelles, cilia, small beady eye spots (no big cartoon eyes, no blush). Light comes from the top-left; the pond is dark, with a dark falloff toward the screen edges.
-- Art source (who or what makes the finished art; the toy uses art drawn in code): code-drawn + free packs (Kenney and others, each license checked; `/asset-intake`)
-- Palette / resolution / camera: muted, desaturated organics (ochre player, wine, slate blue, olive enemies) on deep teal water; food stays the brightest thing on screen (faintly glowing algae, raw red meat) so it is never lost in the dark. 32x32 sprites, 640x360, top-down camera following the player.
-- Music mood and references (see `RESOURCES.md`): ambient, watery, a little tense
-- SFX style: soft, wet and organic (blips, squelches, pops), short and low in the mix
-- Sound source (who or what makes the finished sound): made in code (Wavesmith, `tools/audio/wavesmith/`) + free packs (`/asset-intake`)
-- Fill the style fragments in `BRIEFS.md` from this section.
-
-## First-time user experience (FTUE, from E05 in `docs/EVIDENCE.md`)
-Teach the mechanics by playing, not by a wall of text. Example from a shipped browser game: level 1 introduces the basic tool, level 2 forces the harder tool (a stain the basic tool cannot clear), level 3 adds the timer. Lock out advanced options until the lesson is passed.
-| Lesson | Mechanic taught | How we know they got it |
-|---|---|---|
-| 1 | | |
+## Art and audio direction (game-wide)
+Each stage doc adds its own palette, scale and camera. Across all stages:
+- Lit and moody, like a nature documentary, at every scale: the microscope at the start, the lens pulling back each stage.
+- Organic vs. geometric: everything alive is irregular and organic; `T0|▼|` and its traces are perfect geometry (hexagons, lattices, flawless symmetry). Players should learn to read straight lines as danger.
+- Light from the top-left. Food and other things the player needs stay the brightest things on screen.
+- Art source: code-drawn (`tools/art/pixel_sprite.py`) + free packs (Kenney and others, each license checked; `/asset-intake`).
+- Sound source: made in code (Wavesmith, `tools/audio/wavesmith/`) + free packs (`/asset-intake`).
+- Fill the style fragments in `BRIEFS.md` from this section and the active stage's doc.
 
 ## Platform and engine target
-- Engine: see `ENGINE.md`. Storefront: web, played in the browser on Windows *(Claude's pick)*.
+- Engine: see `ENGINE.md` (Phaser 4, 2D). Storefront: web, played in the browser on Windows *(Claude's pick)*.
+- **One engine for every stage, as long as it holds** *(Claude's pick, agreed 2026-11-08)*: all five stages, including the Endless Sky style space stage, fit 2D Phaser. A stage that needs another engine must make the case in an ADR (`docs/adr/`) and still read and write the lineage file from `docs/HANDOFF_CONTRACT.md`, so saves cross engines.
+- Code layout: one folder per stage under `src/game/` (`cell/`, later `aquatic/`, `land/`, `civ/`, `space/`), shared code in `src/core/`.
 - Input: keyboard, gamepad optional *(Claude's pick)*
 
-## Assumptions to test (feeds the vertical slice)
-Write these BEFORE building so you know what the slice is for.
-| Assumption | How we will know (observable) |
-|---|---|
-| Surviving the pond is tense and fun for two minutes | BAMF69 keeps playing after the two evolutions |
-| An evolution feels like a reward | BAMF69 wants to see the next form |
-| Picking parts feels like a real choice | BAMF69 tries different part combinations |
-| Getting popped stings but feels fair | BAMF69 plays on after being popped and can say what popped them |
-
-## Risks and unknowns
+## Risks and unknowns (game-wide)
 | Risk | Why it matters | How we test it cheaply |
 |---|---|---|
-| | | |
+| Scope: five stages are five small games | The project never finishes | Each stage must be fun as a Toy before the next starts; a stage can stay a Toy |
+| A hands-off simulation feels random | Breaks "tense but fair" and pillar 2 | Aquatic Toy: can BAMF69 say why a trait changed, from what the screen showed? |
+| Choices do not visibly carry over | The stages feel like unrelated games | Play the aquatic Toy from two very different cell lineages: do they start visibly different? |
+| A stage wants a different engine | Two toolchains, saves that do not cross | The lineage file is engine-neutral JSON from day one |
 
 ## Out of scope (explicit)
-- Every stage after the cell stage (water, land, civilization, space) until the cell stage is fun
-- Online play
+- Building any stage after the cell stage until the cell stage is fun (its doc may be outlined; nothing gets coded)
+- Online play, including the connected mode where other players' species fill your universe (`docs/LORE.md`; parking lot until solo works)

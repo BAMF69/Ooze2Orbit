@@ -1,6 +1,6 @@
 # Vertical Slice Brief
 
-> The smallest playable build that tests the assumptions in `GDD.md`. Not the whole game.
+> The smallest playable build that tests the assumptions in the active stage's doc (`docs/stages/`, named in `GDD.md`). Not the whole game.
 > Why this works: a design doc is the source of truth, and a small slice gets real feedback before you scale (F2, F4 in `docs/EVIDENCE.md`).
 > Worked example from a creator series: `docs/resources/pipelines.md`; raw notes: `docs/evidence/field-reports.md`.
 
@@ -20,7 +20,7 @@ The GDD plus this brief gives it the context to build the one thing you want to 
 
 ## Prompt to paste (adapt the brackets)
 ```
-Before you write any code, read docs/GDD.md, docs/CONCEPTS.md and docs/VERTICAL_SLICE.md. If anything is unclear or you
+Before you write any code, read docs/GDD.md, the active stage's doc in docs/stages/, docs/CONCEPTS.md and docs/VERTICAL_SLICE.md. If anything is unclear or you
 would have to assume something, ask me questions first. Wait for my answers.
 
 Then build the vertical slice described there, and ONLY that. Use placeholder art: pixel-art sprites drawn with tools/art/pixel_sprite.py (check must pass), never dots or bare shapes.
