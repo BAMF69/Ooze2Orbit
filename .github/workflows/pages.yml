@@ -1,0 +1,70 @@
+# ---------------------------------------------------------------------------
+# pages.yml
+# Purpose : Puts the playable web build on GitHub Pages: every push to main runs the unit tests, builds the game
+#           (python tools/dev.py build -> dist/) and publishes dist/ at https://bamf69.github.io/Ooze2Orbit/.
+# Usage   : One-time, by hand: repo Settings -> Pages -> Source: "GitHub Actions". After that, push to main.
+#           Also runnable from the Actions tab (workflow_dispatch).
+# Notes   : vite.config.ts uses base "./", so the build works from the /Ooze2Orbit/ subfolder. LFS is checked out
+#           (sprites and sounds live in LFS). Tests gate the deploy; the shader check needs a headless browser and
+#           runs in ci.yml instead. Only one deploy at a time; a newer push cancels nothing mid-deploy.
+#           Action versions checked against their latest releases on 2026-11-07.
+# Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
+# ---------------------------------------------------------------------------
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Unit tests (a broken game is never published)
+        run: python tools/dev.py test
+
+      - name: Build
+        run: python tools/dev.py build
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

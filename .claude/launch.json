@@ -6,6 +6,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["tools/dev.py", "run"],
       "port": 5173
+    },
+    {
+      "name": "pages-sim",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "build/pagesim"],
+      "port": 8765
     }
   ]
 }
