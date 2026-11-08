@@ -52,7 +52,7 @@ lineage has its own `schemaVersion` so it can also be exported as a plain file i
 | `schemaVersion` | Version of this contract. Bump it and add a migration when the shape changes | Any stage that changes the shape |
 | `lastStage` | The last stage that finished: `cell`, `aquatic`, `land`, `civ`, `space` | Every stage, at its end |
 | `gardener.harshness` | 0 = gentle, 1 = harsh: how violent the Gardener's interventions were. Decides how species treat the Gardener (`docs/LORE.md`) | God-mode stages (aquatic on) |
-| `species[]` | Every species in the game: one after the cell stage, three after the aquatic stage seeds the outer gardens | Cell creates the first; aquatic adds two; space may add replacements |
+| `species[]` | Every species in the game: only `home` until the player chooses to interact with an outer garden (the space stage, for now; BAMF69 2026-11-08), then up to three | Cell creates the first; space adds the outer gardens and any replacements |
 | `species[].world` | `home`, or the outer garden it lives on | The stage that creates it |
 | `species[].origin` | `played` (came from real play), `default` (a stage started on its own), `generated` (a replacement or connected-mode species) | The stage that creates it |
 | `species[].status` | `alive` or `extinct`. Extinct species stay in the file (history), and a `generated` one replaces them in the space stage | Any stage |
@@ -86,10 +86,10 @@ lineage has its own `schemaVersion` so it can also be exported as a plain file i
 | Stage | Reads | Writes | Default lineage when played on its own |
 |---|---|---|---|
 | **Cell** | Nothing: always starts fresh | Creates species `home`; its `cell` block; diet; first influence entries | Not needed |
-| **Aquatic** | `home`: temperament, diet, `stages.cell` (final form, parts, upgrades: the starting body plan) | Its block; branches; `gardener.harshness`; adds the two outer-garden species, seeded from `home`'s cell lineage | A balanced omnivore cell, all temperaments low |
-| **Land/Air** | All species: temperament, diet, branches, aquatic body plan | Its block; branch extinctions; habitat (land, air, sea) per branch | Three generated aquatic species |
-| **Civilization** | All species: temperament, diet, habitat, `gardener.harshness` | Its block; culture; how the species sees the Gardener; whether it adopted T0&#124;▼&#124; tech | Three generated land species |
-| **Space** | All species: temperament (ship specialty), diet (second layer), culture, T0&#124;▼&#124; tech flag | Fleet and campaign state; extinct species and their `generated` replacements | Three generated spacefaring species |
+| **Aquatic** | `home`: temperament, diet, `stages.cell` (final form, parts, upgrades: the starting body plan) | Its block; branches; `gardener.harshness` | A balanced omnivore cell, all temperaments low |
+| **Land/Air** | All species: temperament, diet, branches, aquatic body plan | Its block; branch extinctions; habitat (land, air, sea) per branch | One generated aquatic species (`home`) |
+| **Civilization** | All species: temperament, diet, habitat, `gardener.harshness` | Its block; culture; how the species sees the Gardener; whether it adopted T0&#124;▼&#124; tech | One generated land species (`home`) |
+| **Space** | All species: temperament (ship specialty), diet (second layer), culture, T0&#124;▼&#124; tech flag | Fleet and campaign state; the two outer-garden species when the player first reaches out to them, seeded from `home`'s lineage; extinct species and their `generated` replacements | One generated spacefaring species (`home`) |
 
 ## The cell stage's block (built 2026-11-08)
 Written by `cellBlock()` in `src/game/cell/record.ts` when the stage ends (the last form reached and its diet picked).
@@ -115,7 +115,7 @@ Written by `cellBlock()` in `src/game/cell/record.ts` when the stage ends (the l
 | `gulperEscapes` | A gulper hunting you gives up: it tires of the chase or loses sight of you |
 | `gulpersLured` | A gulper hunting you turns to other prey |
 
-The player getting popped is not built yet (ROADMAP "Getting popped"); add a `timesPopped` count when it is.
+The player cannot be popped in the cell stage (BAMF69 2026-11-08: bumps and bites cost food only), so there is no `timesPopped`.
 
 ### How the cell stage feeds temperament (all in `TUNING.temperament`)
 Points per cause; 10 points = 100 %. First draft *(Claude's pick)*: a creature that maxes attack, keeps its spikes and
@@ -138,10 +138,10 @@ grinding one action cannot max a temperament alone.
 | Filter mouth | (diet layer, not temperament) | none |
 
 Each cause writes one `influence` entry with a readable cause ("Your ancestor escaped the gulpers 6 times"), so the
-first temperament readout (aquatic stage) can explain itself.
+first temperament readout can explain itself. **Decided 2026-11-08 (BAMF69):** the cell stage never shows
+temperament; it is revealed at the transition into the aquatic stage.
 
 ## Open questions
 | Question | Why it matters |
 |---|---|
-| Should the cell stage show temperament at all, or reveal it only at the flood? | Showing it early may make players play to the numbers; revealing it later makes the aquatic opening a payoff |
 | Do outer-garden species inherit the cell temperament, or only the body plan? | Decides whether all three species start alike |

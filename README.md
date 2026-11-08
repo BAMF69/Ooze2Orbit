@@ -48,7 +48,8 @@ civilization, space) is the plan. It is a prototype, so expect rough edges, and 
 Settings (pause menu or main menu) cover volume, text size, reduced motion, screen shake and key rebinding. Sound starts after your first click or key press (a browser rule).
 
 ## Status and feedback
-Current tier: **Toy** (the cell stage only). Feedback is the most useful thing you can give: what felt good, what
+The cell stage is playable and past its first prototype (Toy done 2026-11-08); the aquatic stage, swum from behind
+your creature, is next. Feedback is the most useful thing you can give: what felt good, what
 felt unfair, what you wanted to do but could not. Open an issue on this repo, or tell BAMF69.
 
 ## How it was made

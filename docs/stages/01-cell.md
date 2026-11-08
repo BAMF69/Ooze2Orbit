@@ -4,7 +4,8 @@
 > live in the spine, `docs/GDD.md`; this file covers only what is special to the cell stage.
 > Split out of `docs/GDD.md` on 2026-11-08 (content unchanged except where marked). Last reviewed: 2026-11-08
 > Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69.
-> **Status:** built, Toy tier (the stage's tier lives in the spine's stage table).
+> **Status:** built. Toy done 2026-11-08 (BAMF69: "the cell stage is fun"); next tier Vertical slice, paused while
+> the aquatic Toy is built (the stage's tier lives in the spine's stage table).
 
 ## Identity
 - **Pitch:** Eat, fight and evolve your way up from a single cell, in a dark little pond under the microscope.
@@ -17,8 +18,9 @@
   lineage to the aquatic stage (`docs/HANDOFF_CONTRACT.md`).
 
 ## How the pillars apply here
-1. **Tense but fair:** other creatures can hurt and pop you, and getting popped sets you back for real (food, a part,
-   progress toward the next form). Every danger is readable before it hits. Rules out game overs, ending the run,
+1. **Tense but fair:** other creatures hurt you: every bump or bite knocks food out of you, and you have to win it back
+   fast. You are never popped (BAMF69 2026-11-08: "I like how it plays currently"). This is the lowest-stakes stage;
+   later stages raise them. Every danger is readable before it hits. Rules out game overs, ending the run,
    timers, and losing a form you already evolved into.
 2. **You shape your creature (directly):** your diet (herbivore, carnivore, omnivore), the upgrades you buy (algae
    earns plant points for defense and mobility; meat earns meat points for attack and speed), and the parts you pick up
@@ -53,8 +55,8 @@ Time per loop: about 15 to 30 seconds *(Claude's pick)*. The fun must be present
 ## Stage win and lose
 - **Stage end:** reach the last form (`TUNING.maxForm`). Today the stage stops there; the flood ending is in the
   ROADMAP Parking lot.
-- **Lose:** none. Bumps cost food; getting popped costs more (food, a part, progress toward the next form) and you come
-  back nearby. You never lose a form you already reached.
+- **Lose:** none. Bumps and bites cost food. You are never popped, never lose a part to damage, and never lose a form
+  you already reached (2026-11-08).
 - **Played on its own:** the cell stage always starts fresh, so it needs no default lineage.
 
 ## Scope tiers (this stage)
@@ -85,7 +87,7 @@ Mark which ones the **vertical slice** needs. Everything marked "no" waits, othe
 | Weapons / abilities | | one only |
 | Enemies and bosses | | 1 or 2 types, 1 boss |
 | XP, skill trees, economy, world map, save | | no |
-| Lineage export (handoff) | Records diet picks and behavior; at the stage's end writes the lineage per `docs/HANDOFF_CONTRACT.md` (save slot `lineage`). Built 2026-11-08; no on-screen readout yet | built |
+| Lineage export (handoff) | Records diet picks and behavior; at the stage's end writes the lineage per `docs/HANDOFF_CONTRACT.md` (save slot `lineage`). Built 2026-11-08; never shown in this stage (temperament is revealed at the transition into the aquatic stage, BAMF69 2026-11-08) | built |
 
 ## Controls
 | Action | Keyboard/Mouse | Gamepad |
@@ -95,7 +97,7 @@ Mark which ones the **vertical slice** needs. Everything marked "no" waits, othe
 | Diet picker (start, each evolution) | Left/right or A/D + Enter, or click (pauses the pond) | d-pad + south |
 
 ## Tunables that define feel
-These live in data, not code. File: `src/game/cell/tuning.ts` (swim speed and drag, food to evolve, part strengths,
+These live in data, not code. File: `src/game/cell/tuning.ts` (swim speed, heaviness and thrust build-up (momentum), food to evolve, part strengths,
 bump food loss, pond counts, diet multipliers, meat value, upgrade costs and per-level effects, upgrade look tiers,
 the mood colors and light)
 
@@ -125,7 +127,7 @@ Teach the mechanics by playing, not by a wall of text. Lock out advanced options
 | Surviving the pond is tense and fun for two minutes | BAMF69 keeps playing after the two evolutions |
 | An evolution feels like a reward | BAMF69 wants to see the next form |
 | Picking parts feels like a real choice | BAMF69 tries different part combinations |
-| Getting popped stings but feels fair | BAMF69 plays on after being popped and can say what popped them |
+| A bite stings but feels fair | BAMF69 plays on after losing food and can say what bit them |
 
 ## Risks and unknowns
 | Risk | Why it matters | How we test it cheaply |

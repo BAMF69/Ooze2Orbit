@@ -24,6 +24,15 @@ Tasks created (ROADMAP):
 ```
 
 ## Entries
+### 2026-11-08  Build 0.1.0 (main a150fbf)  Tester: self (BAMF69)  Duration: several sessions
+Question being tested: is the cell-stage Toy done (someone wants to keep playing for 2 minutes)?
+Quotes (exact words):
+- "the cell stage is fun. it can be deemed out of toy stage"
+- "we can remove the pillar references to getting popped, I like how it plays currently"
+Decisions / tuning changes:
+- Cell stage Toy done; next tier Vertical slice, paused while the aquatic Toy is built (`/next-tier`).
+- No "getting popped": bumps and bites cost food only. Pillar 1 now says stakes and difficulty rise with every stage.
+
 ### 2026-11-08  Build 0.1.0 (uncommitted, momentum + cell bumps)  Tester: self (BAMF69)  Duration: a few minutes
 Question being tested: momentum, cells bumping each other, loot from every death.
 Quotes (exact words):

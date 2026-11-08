@@ -53,9 +53,10 @@ The species come from **different planets in different regions of space**. *(Cla
 three at once; confirm.)*
 
 - **The home world** gets the full game: avatar mode and god mode, every stage. It is where the cell stage happens.
-- **Two outer gardens** are seeded from the home pond at the end of the cell stage (the Gardener takes a sample and
-  sends it off). They run mostly on their own in the simulation. The player visits them through the lens in god mode
-  with a smaller influence budget: a few big nudges per stage, no avatar.
+- **Two outer gardens** are seeded only when the player **chooses to interact with them** (BAMF69 2026-11-08). For
+  now that happens in the **space stage**: until then the game follows the home world alone. When the player first
+  reaches out to an outer garden, the Gardener seeds it from the home lineage and its evolution catches up in the
+  simulation *(Claude's pick for the catch-up; confirm when the space stage is designed)*.
 - Each world's environment pushes its species toward a role. Example set *(Claude's pick)*:
 
 | World | Environment | Likely role in the fleet |
@@ -72,7 +73,7 @@ Each stage zooms the lens out (pillar 3, "small world, growing bigger").
 | Stage | Lens | God mode | Avatar mode | T0&#124;▼&#124; hint |
 |---|---|---|---|---|
 | **Cell** (built) | A microscope slide | None yet: the cell stage is the hidden first act | What exists now | Rarely, a perfect hexagonal fleck drifts in the background of the pond. Gulpers avoid it. Nothing explains it |
-| **Aquatic** | Pond, then lake, then sea | First real tools: algae blooms, temperature, currents, oxygen, predator spawns. The two outer gardens are seeded | Swim and hunt as one creature, bigger body | A meteor fragment with lattice markings sinks into the sea. Near it, **evolution slows**: traits stop varying. The first "stillness zone" |
+| **Aquatic** | Pond, then lake, then sea | First real tools: algae blooms, temperature, currents, oxygen, predator spawns | Swim and hunt as one creature, bigger body, seen from behind (pseudo-3D) | A meteor fragment with lattice markings sinks into the sea. Near it, **evolution slows**: traits stop varying. The first "stillness zone" |
 | **Land/Air** | Coastline, then continent | Drying lakes push lineages onto land; rivers, climate, ice ages, volcanoes. Branches of a species can die out | One member of a pack | The lens flickers: sometimes an intervention fails. A dead moon in the night sky is perfectly smooth |
 | **Civilization** | Continent, then planet | Interventions are now seen: a flood is punishment, a harvest a blessing. Fewer, costlier, riskier tools | A leader or prophet | Myths of two gods: **the Watcher** (the Gardener) and **the Maker**. A T0&#124;▼&#124; probe crashes. **Choice:** adopting its tech speeds the species up but makes them easier for T0&#124;▼&#124; to read later |
 | **Space** | Star systems | Merges with the fleet game (below) | Captain of a ship | T0&#124;▼&#124; in full. Contact with the other two species |
@@ -101,7 +102,8 @@ fits the current engine (Phaser 4, 2D).
 
   Each stage can move a temperament at most 50 % from where the stage before left it (approved 2026-11-08; the
   maths is in `docs/HANDOFF_CONTRACT.md`).
-  *(Claude's pick, to confirm:)* a **temperament readout** stays on screen from the aquatic stage on, and every
+  **Temperament is hidden in the cell stage and revealed at the transition into the aquatic stage** (BAMF69
+  2026-11-08). *(Claude's pick, to confirm:)* from then on a **temperament readout** stays on screen, and every
   evolution moment says what moved it ("the ice age made your lineage more cautious: +shields"). A species can mix
   temperaments; the strongest one sets its ship specialty. Diet adds a second layer: plant eaters lean toward
   industry and repair, meat eaters toward salvage and raiding.
@@ -142,7 +144,7 @@ the cell stage.
 ## Open questions
 | Question | Why it matters |
 |---|---|
-| How much control does the player get over the two outer gardens? | Too little and they feel random; too much and the player juggles three full games |
+| How much control does the player get over the two outer gardens (seeded in the space stage for now)? | Too little and they feel random; too much and the player juggles three full games |
 | How exactly does the temperament readout show cause and effect? | A hands-off simulation must show its pressures ("the water got colder, so fat storage is spreading") or it feels random, which breaks "fair" |
 | Is T0&#124;▼&#124;'s origin (built by the Gardeners) the reveal, or known from the start? | Decides the shape of the space-stage story |
 | Ending variants | What happens with a weak alliance, a strong one, or a species that turned on the Gardener |
