@@ -17,7 +17,7 @@
 //   hunting you too long? -> tired (a chase that never ends makes any mistake fatal, SOP-14)
 //   current target gone or out of sight? -> wander
 //   time to think and not resting: score each seen creature = distance x weight (you: playerWeight, prey:
-//   preyWeight < 1, so equal distance favors prey); keep the current target unless the best is clearly better
+//   preyWeight; tuning.ts says which one wins at equal distance); keep the current target unless the best is clearly better
 // Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
 // ---------------------------------------------------------------------------
 
@@ -44,7 +44,7 @@ export interface GulperParams {
   loseSight: number; // px: it gives up a target that gets this far away
   thinkS: number; // seconds between decisions
   playerWeight: number; // distance multiplier when scoring the player (lower = more attractive)
-  preyWeight: number; // the same for small cells: below playerWeight, so it gets distracted
+  preyWeight: number; // the same for small cells: it gets distracted by prey clearly closer than you
   stickiness: number; // a new target must score this many times better to switch
   huntPlayerMaxS: number; // it tires after chasing you this long
   tiredS: number;

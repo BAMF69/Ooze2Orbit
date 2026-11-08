@@ -41,7 +41,7 @@ import { PLAYER_ID, ate, newBrain, think, type GulperBrain, type Seen } from "./
 import { bump, cellLineage, cellTemperament, gulperEvent, newCellRecord, recordDiet, type CellRecord } from "./cell/record";
 import {
   accel, addPart, bumpDamage, cellsWanted, changeDiet, drag, partAllowed, bumpFoodLoss, buyUpgrade, canEat, dropKinds, eat, eatFood, freshBase, knockbackTaken,
-  loseFood, maxSpeed, newCreature, pullRadius, spriteRow, upgradeTier, type Creature,
+  cellHitDamage, deathMeat, loseFood, nextSpool, spoolTime, thrustAt, maxSpeed, newCreature, pullRadius, spriteRow, upgradeTier, type Creature,
 } from "./cell/rules";
 import { keepInside, knockApart, swim, toward, wanderDir, type Body } from "./cell/steer";
 import { UpgradePanel } from "./cell/upgradePanel";
@@ -63,6 +63,7 @@ interface Food extends Body { spr: Phaser.GameObjects.Sprite; kind: FoodKind; ba
 interface Orb extends Body { spr: Phaser.GameObjects.Sprite; part: PartKind }
 interface PondCell extends Body {
   id: number; spr: Phaser.GameObjects.Sprite; kind: CellKind; hp: number; dirX: number; dirY: number; turnIn: number; hitCd: number;
+  poppedByPlayer?: boolean; // the lineage counts only the player's pops
   brain?: GulperBrain; // predators only (cell/predator.ts)
   label?: Phaser.GameObjects.Text; // ?debug: the predator's state
 }
@@ -72,6 +73,7 @@ export class MainScene extends Phaser.Scene {
   private record: CellRecord = newCellRecord();
   private lineageSaved = false;
   private player!: Body & { spr: Phaser.GameObjects.Sprite };
+  private spool = 0; // thrust build-up 0..1 while you hold a direction (rules.nextSpool)
   private upLayers!: Record<UpgradeStat, Phaser.GameObjects.Sprite>;
   private upsLayout!: AtlasLayout;
   private foods: Food[] = [];
@@ -180,6 +182,8 @@ export class MainScene extends Phaser.Scene {
     this.pickUpParts();
     this.moveCells(dt);
     this.bumps();
+    this.cellBumps();
+    this.deaths();
     this.tickFoodLife(dt);
     this.refill(dt);
     this.cantEatCd = Math.max(0, this.cantEatCd - dt);
@@ -308,7 +312,9 @@ export class MainScene extends Phaser.Scene {
     }
     const p = this.player;
     const top = maxSpeed(this.creature);
-    swim(p, ix, iy, dt, { accel: accel(this.creature), maxSpeed: top, drag: drag(this.creature) });
+    this.spool = nextSpool(this.spool, ix !== 0 || iy !== 0, dt, spoolTime(this.creature));
+    const thrust = thrustAt(this.spool); // momentum: a heavy cell builds up to full thrust (playtest 2026-11-08)
+    swim(p, ix * thrust, iy * thrust, dt, { accel: accel(this.creature), maxSpeed: top, drag: drag(this.creature) });
     keepInside(p, this.playerRadius(), TUNING.world.width, TUNING.world.height);
     p.spr.setPosition(p.x, p.y);
     if (Math.abs(p.vx) > 8) p.spr.setFlipX(p.vx < 0);
@@ -526,7 +532,7 @@ export class MainScene extends Phaser.Scene {
     return next.targetId === PLAYER_ID ? this.player : this.cells.find((c) => c.id === next.targetId) ?? null;
   }
 
-  /** A hunting gulper that reaches its prey swallows it: the prey is gone (no part), a meat scrap floats free. */
+  /** A hunting gulper that reaches its prey swallows it; like every death, the prey drops its part and meat. */
   private gulps(): void {
     for (const g of this.cells) {
       if (!g.brain || g.brain.state !== "hunt" || g.brain.targetId === PLAYER_ID) continue;
@@ -535,14 +541,61 @@ export class MainScene extends Phaser.Scene {
       const reach = TUNING.cell.kinds[g.kind].radius + TUNING.cell.kinds[prey.kind].radius;
       if (Math.hypot(prey.x - g.x, prey.y - g.y) >= reach) continue;
       prey.hp = 0;
-      prey.label?.destroy();
       this.cells = this.cells.filter((c) => c !== prey);
-      this.tweens.add({ targets: prey.spr, x: g.x, y: g.y, scale: 0, duration: 200, onComplete: () => prey.spr.destroy() });
-      this.scatterFood(prey.x, prey.y, Array<FoodKind>(TUNING.gulper.scrapsOnGulp).fill("meat"), true, TUNING.meatLifeS, 0.8);
+      this.killCell(prey, "gulped", g);
       g.brain = ate(g.brain, TUNING.gulper);
       this.sfx.play("eat_meat");
-      Log.info(LOG, `GULP ${prey.kind} (gulper ${g.id})`);
     }
+  }
+
+  /** Pond cells that touch bump each other: pushed apart, each takes half of what the other's bump costs you. */
+  private cellBumps(): void {
+    const t = TUNING.cell;
+    for (let i = 0; i < this.cells.length; i++) {
+      const a = this.cells[i];
+      for (let j = i + 1; j < this.cells.length; j++) {
+        const b = this.cells[j];
+        if (a.hitCd > 0 || b.hitCd > 0 || a.hp <= 0 || b.hp <= 0) continue;
+        if (Math.hypot(a.x - b.x, a.y - b.y) >= t.kinds[a.kind].radius + t.kinds[b.kind].radius) continue;
+        a.hitCd = b.hitCd = TUNING.bumpCooldownS;
+        a.hp -= cellHitDamage(b.kind);
+        b.hp -= cellHitDamage(a.kind);
+        knockApart(a, b, t.cellKnockback);
+        for (const c of [a, b]) {
+          c.spr.setTint(0xff9090);
+          this.time.delayedCall(120, () => c.spr.active && c.spr.clearTint());
+        }
+        Log.debug(LOG, `cell bump ${a.kind}#${a.id} hp=${a.hp} / ${b.kind}#${b.id} hp=${b.hp}`);
+      }
+    }
+  }
+
+  /** Every pond cell at 0 hp dies, whoever hit it. Only the player's pops count for the lineage. */
+  private deaths(): void {
+    const dead = this.cells.filter((c) => c.hp <= 0);
+    if (!dead.length) return;
+    this.cells = this.cells.filter((c) => c.hp > 0);
+    const byPlayer = dead.filter((c) => c.poppedByPlayer).length;
+    if (byPlayer) this.record = bump(this.record, "cellsPopped", byPlayer);
+    for (const c of dead) {
+      this.killCell(c, c.poppedByPlayer ? "popped" : "bumped");
+      this.sfx.play("pop");
+    }
+  }
+
+  /**
+   * The one way a pond cell dies (playtest 2026-11-08 "if a creature dies for any reason it drops its parts and
+   * meat"): drop its part and its meat where it died, then animate it away (swallowed toward `into`, else popped).
+   * The caller has already taken it out of this.cells.
+   */
+  private killCell(c: PondCell, cause: "popped" | "bumped" | "gulped", into?: Body): void {
+    Log.info(LOG, `${cause === "gulped" ? "GULP" : "POP"} ${c.kind} (${cause})`);
+    const part = DROPS[c.kind];
+    if (part) this.dropOrb(c.x, c.y, part);
+    this.scatterFood(c.x, c.y, Array<FoodKind>(deathMeat(c.kind, cause === "popped")).fill("meat"), true, TUNING.meatLifeS, 0.8);
+    c.label?.destroy();
+    const gone = into ? { x: into.x, y: into.y, scale: 0, duration: 200 } : { scale: 0, alpha: 0, duration: 250 };
+    this.tweens.add({ targets: c.spr, ...gone, onComplete: () => c.spr.destroy() });
   }
 
   /** Player touches a cell: it takes damage, you lose food into the water, both bounce apart. */
@@ -555,6 +608,7 @@ export class MainScene extends Phaser.Scene {
       const into = toward(this.player, c); // am I swimming into it, or is it biting me?
       const ramming = this.player.vx * into.x + this.player.vy * into.y >= TUNING.rammingSpeed;
       c.hp -= bumpDamage(this.creature, ramming);
+      if (c.hp <= 0) c.poppedByPlayer = true;
       if (ramming) this.record = bump(this.record, "cellsRammed");
       else if (c.kind === "gulper") this.record = bump(this.record, "timesBitten");
       const loss = bumpFoodLoss(this.creature, c.kind);
@@ -570,19 +624,7 @@ export class MainScene extends Phaser.Scene {
       this.time.delayedCall(120, () => c.spr.active && c.spr.clearTint());
       Log.debug(LOG, `bump ${c.kind} hp=${c.hp} lost=${loss}`);
     }
-    const popped = this.cells.filter((c) => c.hp <= 0);
-    if (!popped.length) return;
-    this.cells = this.cells.filter((c) => c.hp > 0);
-    this.record = bump(this.record, "cellsPopped", popped.length); // only bumps with the player pop cells
-    for (const c of popped) {
-      Log.info(LOG, `POP ${c.kind}`);
-      this.sfx.play("pop");
-      const part = DROPS[c.kind];
-      if (part) this.dropOrb(c.x, c.y, part);
-      this.scatterFood(c.x, c.y, Array<FoodKind>(TUNING.cell.kinds[c.kind].meat).fill("meat"), true, TUNING.meatLifeS, 0.8);
-      c.label?.destroy();
-      this.tweens.add({ targets: c.spr, scale: 0, alpha: 0, duration: 250, onComplete: () => c.spr.destroy() });
-    }
+    // the dead are swept up by deaths(), after the cells have bumped each other too
   }
 
   // ---- the pond refills ------------------------------------------------------------

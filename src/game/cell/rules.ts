@@ -156,14 +156,48 @@ export function maxSpeed(c: Creature): number {
   return TUNING.player.maxSpeed * (1 + TUNING.speedPerLevel * c.ups.speed);
 }
 
-/** Acceleration after the mobility upgrade. */
-export function accel(c: Creature): number {
-  return TUNING.player.accel * (1 + TUNING.mobilityAccelPerLevel * c.ups.mobility);
+/**
+ * Momentum: how sluggish the cell handles, 1 = snappiest. Bigger forms are heavier; each mobility level takes it
+ * a step back toward 1, and full mobility reaches 1 at any form.
+ */
+export function heaviness(c: Creature): number {
+  const table = TUNING.player.heaviness;
+  const atForm = table[Math.min(c.form, table.length) - 1];
+  const left = 1 - Math.min(c.ups.mobility, maxLevel()) / maxLevel();
+  return 1 + (atForm - 1) * left;
 }
 
-/** Water drag after upgrades: speed streamlines (less), mobility grips the water (more). */
+/** Seconds for thrust to build to full from a standstill: longer at bigger forms, 0 at full mobility. */
+export function spoolTime(c: Creature): number {
+  const table = TUNING.player.spoolS;
+  const atForm = table[Math.min(c.form, table.length) - 1];
+  return atForm * (1 - Math.min(c.ups.mobility, maxLevel()) / maxLevel());
+}
+
+/** Thrust build-up, 0..1: grows while you push, resets when you let go. */
+export function nextSpool(spool: number, pushing: boolean, dt: number, spoolS: number): number {
+  if (!pushing) return 0;
+  if (spoolS <= 0) return 1;
+  return Math.min(1, spool + dt / spoolS);
+}
+
+/** Share of full thrust at a given build-up: starts at spoolMinThrust so the first press still does something. */
+export function thrustAt(spool: number): number {
+  const min = TUNING.player.spoolMinThrust;
+  return min + (1 - min) * spool;
+}
+
+/** Acceleration (also how fast you turn): divided by heaviness. */
+export function accel(c: Creature): number {
+  return TUNING.player.accel / heaviness(c);
+}
+
+/**
+ * Water drag (how fast you stop): divided by heaviness, so a heavy cell coasts but keeps the same top speed
+ * (terminal speed is accel / drag). Speed streamlines the body, which lowers drag further.
+ */
 export function drag(c: Creature): number {
-  return TUNING.player.drag * Math.max(0.1, 1 - TUNING.speedDragPerLevel * c.ups.speed) * (1 + TUNING.mobilityDragPerLevel * c.ups.mobility);
+  return (TUNING.player.drag * Math.max(0.1, 1 - TUNING.speedDragPerLevel * c.ups.speed)) / heaviness(c);
 }
 
 /** Knockback this creature takes from a bump, after the mobility upgrade. */
@@ -180,6 +214,20 @@ export function bumpDamage(c: Creature, ramming = true): number {
 }
 
 /** Food knocked out of the player by one bump from a pond cell of this kind (whole pieces, never more than they have). */
+/**
+ * Damage (hp) one pond cell deals another when they bump (playtest 2026-11-08 "enemies can do half damage to
+ * each other"): half of what its bump knocks out of an unarmoured player.
+ */
+export function cellHitDamage(by: CellKind): number {
+  return TUNING.bumpFoodLoss * TUNING.cell.kinds[by].bumpMult * TUNING.cell.cellOnCellMult;
+}
+
+/** Meat chunks a dead pond cell drops: all of it when you killed it, a share when the pond did. */
+export function deathMeat(kind: CellKind, byPlayer: boolean): number {
+  const meat = TUNING.cell.kinds[kind].meat;
+  return byPlayer ? meat : Math.max(1, Math.floor(meat * TUNING.cell.otherKillMeatMult));
+}
+
 export function bumpFoodLoss(c: Creature, by: CellKind): number {
   let loss = TUNING.bumpFoodLoss * TUNING.cell.kinds[by].bumpMult;
   if (has(c, "shell")) loss *= TUNING.shellLossMult;

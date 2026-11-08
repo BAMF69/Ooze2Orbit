@@ -24,6 +24,41 @@ Tasks created (ROADMAP):
 ```
 
 ## Entries
+### 2026-11-08  Build 0.1.0 (uncommitted, momentum + cell bumps)  Tester: self (BAMF69)  Duration: a few minutes
+Question being tested: momentum, cells bumping each other, loot from every death.
+Quotes (exact words):
+- "its too easy now, lets reduce meat drops from cell on cell to half and make the momentum even more sluggish to
+  start and make the gulpers more likely to chase the player"
+Pain points (ranked):
+1. Too easy: cell-on-cell deaths fill the pond with free meat; the cell gets moving too fast; gulpers chase prey too often.
+Decisions / tuning changes:
+- `TUNING.cell.otherKillMeatMult` 0.5: a cell killed by the pond (bumped or swallowed) drops half its meat, at least 1
+  (prickle 1, gulper 2). Your own kills still drop it all; parts still drop.
+- Thrust build-up: holding a direction ramps thrust from `spoolMinThrust` 0.25 to full over `player.spoolS`
+  [0.7, 0.9, 1.1] s per form; letting go resets it; mobility shortens it, level 5 = instant. Stopping and top speed
+  unchanged (lowering accel instead would also have lowered top speed).
+- Gulpers: `playerWeight` 1 -> 0.7, `preyWeight` 0.75 -> 1. You win at equal distance; prey must be under 70 % of
+  your distance to distract it (the lure still works, it just needs a closer snail).
+
+### 2026-11-08  Build 0.1.0 (main aabf581 + uncommitted)  Tester: self (BAMF69)  Duration: n/a (design notes)
+Question being tested: does the cell feel weighty, and does the pond feel alive?
+Quotes (exact words):
+- "I'd like to add momentum to the player's creature. slow down acceleration, deceleration, and turning. as the
+  creature scales it gains even more momentum. agility fully upgraded will get you the snappy controls that the
+  creature currently has"
+- "enemies can bump eachother and if a creature dies for any reason it drops its parts and meat"
+- "enemies can do half damage to eachother"
+Decisions / tuning changes:
+- Momentum: `TUNING.player.heaviness` [2.0, 2.5, 3.0] per form divides accel and drag (top speed unchanged); each
+  mobility level takes it a fifth of the way back to 1, so mobility 5 = the old form-1 handling at any form. Replaces
+  the old mobility boost (accel x2.75, drag x2 at level 5).
+- Cells bump each other: hit = bumpFoodLoss x bumpMult x `cellOnCellMult` 0.5 off the other's hp, pushed apart at
+  `cellKnockback` 120. One death path (`killCell`): part + full meat, also for swallowed cells (was 1 meat scrap).
+- Autoplay smoke (carnivore, 60 s, GPU): 5 cells died to bumps and 1 was swallowed in the first stretch; form 2 at 60 s.
+To try by hand:
+- Does form 3 feel heavy but still in control? Do small cells die off too fast, or flood the pond with free parts?
+  Tunables: `heaviness`, `cellOnCellMult`, `cellKnockback`.
+
 ### 2026-11-07  Build 0.1.0 (uncommitted, Ooze to Orbit look + sound)  Tester: self (BAMF69)  Duration: a few minutes
 Question being tested: do the new look, visible upgrades and sounds work?
 What happened (observations, not opinions):

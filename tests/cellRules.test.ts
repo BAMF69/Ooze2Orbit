@@ -6,7 +6,7 @@
 // ---------------------------------------------------------------------------
 import { describe, expect, it } from "vitest";
 import {
-  accel, addPart, cellsWanted, changeDiet, bumpDamage, drag, bumpFoodLoss, buyUpgrade, canEat, dropKinds, eat, eatFood, evolveNeed, foodValue,
+  accel, addPart, cellHitDamage, deathMeat, nextSpool, spoolTime, thrustAt, cellsWanted, heaviness, changeDiet, bumpDamage, drag, bumpFoodLoss, buyUpgrade, canEat, dropKinds, eat, eatFood, evolveNeed, foodValue,
   knockbackTaken, loseFood, upgradeTier, maxSpeed, newCreature, pullRadius, setDiet, spriteRow, upgradeCost, type Creature,
 } from "../src/game/cell/rules";
 import { TUNING, type Diet } from "../src/game/cell/tuning";
@@ -199,8 +199,38 @@ describe("upgrades are dramatic (playtest 2026-11-07)", () => {
     expect(accel(c) / drag(c)).toBeGreaterThan(maxSpeed(c)); // terminal velocity is above the cap
   });
 
-  it("mobility 5 more than doubles acceleration", () => {
-    expect(accel(maxed("mobility"))).toBeGreaterThan(2 * accel(at(1)));
+  it("mobility 5 doubles acceleration at form 1", () => {
+    expect(accel(maxed("mobility"))).toBeCloseTo(2 * accel(at(1)));
+  });
+});
+
+describe("momentum (playtest 2026-11-08)", () => {
+  const form = (f: number, mobility = 0): Creature => ({ ...at(f), ups: { ...at(f).ups, mobility } });
+  const max = TUNING.upgradeCost.length;
+
+  it("bigger forms are heavier: slower to start, stop and turn", () => {
+    const h = [1, 2, 3].map((f) => heaviness(form(f)));
+    expect(h[0]).toBeGreaterThan(1);
+    expect(h[1]).toBeGreaterThan(h[0]);
+    expect(h[2]).toBeGreaterThan(h[1]);
+    expect(accel(form(3))).toBeLessThan(accel(form(1)));
+    expect(drag(form(3))).toBeLessThan(drag(form(1)));
+  });
+
+  it("each mobility level lightens the cell", () => {
+    for (let l = 1; l <= max; l++) expect(heaviness(form(2, l))).toBeLessThan(heaviness(form(2, l - 1)));
+  });
+
+  it("full mobility gives the snappy base handling at every form", () => {
+    for (const f of [1, 2, 3]) {
+      expect(heaviness(form(f, max))).toBe(1);
+      expect(accel(form(f, max))).toBe(TUNING.player.accel);
+      expect(drag(form(f, max))).toBe(TUNING.player.drag);
+    }
+  });
+
+  it("momentum keeps top speed: terminal speed stays above the cap at every form", () => {
+    for (const f of [1, 2, 3]) expect(accel(form(f)) / drag(form(f))).toBeGreaterThan(maxSpeed(form(f)));
   });
 });
 
@@ -227,5 +257,49 @@ describe("ramming (smoke 2026-11-07)", () => {
     expect(bumpDamage(at(3), false)).toBe(0);
     expect(bumpDamage(at(1, 0, ["spikes"]), false)).toBe(TUNING.spikeDamageBonus);
     expect(bumpDamage(at(1), true)).toBeGreaterThan(0);
+  });
+});
+
+describe("pond cells bump each other (playtest 2026-11-08)", () => {
+  it("a cell hits another for half of what its bump costs an unarmoured player", () => {
+    const bare = newCreature("herbivore");
+    const fed: Creature = { ...bare, food: 999 }; // so the food-loss cap does not hide the full bite
+    for (const k of ["prickle", "snail", "sipper", "gulper"] as const) {
+      expect(cellHitDamage(k)).toBeCloseTo((TUNING.bumpFoodLoss * TUNING.cell.kinds[k].bumpMult) / 2);
+      expect(Math.round(cellHitDamage(k) * 2)).toBe(bumpFoodLoss(fed, k));
+    }
+  });
+
+  it("a gulper outweighs the small cells, and the small cells cannot pop it in one bump", () => {
+    expect(cellHitDamage("gulper")).toBeGreaterThan(cellHitDamage("prickle"));
+    expect(cellHitDamage("prickle")).toBeLessThan(TUNING.cell.kinds.gulper.hp);
+  });
+});
+
+describe("too easy (playtest 2026-11-08)", () => {
+  const form = (f: number, mobility = 0): Creature => ({ ...at(f), ups: { ...at(f).ups, mobility } });
+  const max = TUNING.upgradeCost.length;
+
+  it("thrust builds up over spoolTime while you push, and resets when you let go", () => {
+    const s = spoolTime(form(1));
+    let spool = 0;
+    for (let t = 0; t < s - 0.05; t += 0.01) spool = nextSpool(spool, true, 0.01, s);
+    expect(spool).toBeLessThan(1);
+    expect(thrustAt(0)).toBe(TUNING.player.spoolMinThrust);
+    for (let i = 0; i < 10; i++) spool = nextSpool(spool, true, 0.01, s);
+    expect(spool).toBe(1);
+    expect(thrustAt(spool)).toBe(1);
+    expect(nextSpool(spool, false, 0.01, s)).toBe(0);
+  });
+
+  it("bigger forms build up slower; full mobility is instant at every form", () => {
+    expect(spoolTime(form(3))).toBeGreaterThan(spoolTime(form(1)));
+    for (const f of [1, 2, 3]) expect(nextSpool(0, true, 0.001, spoolTime(form(f, max)))).toBe(1);
+  });
+
+  it("cells killed by the pond drop half their meat (at least 1); your kills drop it all", () => {
+    expect(deathMeat("prickle", true)).toBe(TUNING.cell.kinds.prickle.meat);
+    expect(deathMeat("prickle", false)).toBe(1);
+    expect(deathMeat("gulper", false)).toBe(2);
   });
 });
