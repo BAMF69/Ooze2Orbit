@@ -16,6 +16,17 @@
 ```
 
 ## Entries
+### CI says "[FAIL] tests failed" although every test passed
+- First seen: 2026-11-07
+- Environment: GitHub Actions (ubuntu-latest), Vitest 5.0.5, `python tools/dev.py test`
+- Symptom: the log shows "Tests 170 passed (170)", then "[FAIL] tests failed (no 'Tests ... passed' summary in the
+  output)"; the Pages deploy is skipped. Passes on Windows.
+- Root cause: on GitHub Actions Vitest colors its output even through a pipe, and the color codes sit between
+  "Tests" and the count, so dev.py's summary pattern did not match. GitHub's log viewer hides the codes.
+- Fix: dev.py `tool()` strips terminal color codes from captured output before any parsing.
+- How to verify: `FORCE_COLOR=1 python tools/dev.py test` passes (it reproduced the failure before the fix).
+- Related: tools/dev.py `ANSI_RE`, .github/workflows/pages.yml
+
 ### Push rejected: "Git LFS upload failed (missing) ...png"
 - First seen: 2026-11-07
 - Environment: Windows 10, git-lfs 3.8.1, first push to github.com/BAMF69/Ooze2Orbit

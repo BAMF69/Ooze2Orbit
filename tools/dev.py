@@ -298,13 +298,20 @@ def ready():
     return 0
 
 
+ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")   # terminal color and cursor codes
+
+
 def tool(name, *args, capture=True, timeout=None):
-    """Run a project-local tool through node. Returns (rc, out); rc 2-style codes for a missing tool."""
+    """Run a project-local tool through node. Returns (rc, out); rc 2-style codes for a missing tool.
+    Captured output has terminal color codes removed: tools color their output on CI (GitHub Actions sets CI and
+    GITHUB_ACTIONS, which color libraries honour even through a pipe), and the codes broke the summary patterns
+    below ("Tests  170 passed" read as a failure, 2026-11-07, docs/TROUBLESHOOTING.md)."""
     entry = ROOT / TOOLS[name]
     if not entry.exists():
         print(f"[error] {TOOLS[name]} missing: run `python tools/dev.py setup`", file=sys.stderr)
         return 127, ""
-    return run([shutil.which("node") or "node", entry, *args], capture=capture, timeout=timeout)
+    rc, out = run([shutil.which("node") or "node", entry, *args], capture=capture, timeout=timeout)
+    return rc, ANSI_RE.sub("", out) if out else out
 
 
 # ---- Commands -----------------------------------------------------------------
