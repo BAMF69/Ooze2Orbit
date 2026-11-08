@@ -1,0 +1,448 @@
+#!/usr/bin/env python3
+# ---------------------------------------------------------------------------
+# pose.py
+# Purpose : pose-driven animation: a procedural skeleton (walk, run, idle, attack, jump, hurt, cast, shoot, death;
+#           side view and front / back view) drawn as OpenPose-style frames over exactly where the sprite sits on the
+#           model canvas, and the Wan 2.2 Fun-Control graph that animates the sprite to follow it. The motion comes from
+#           the skeleton, so a clip does what it is told: no drift into another view, the same stride every time, a
+#           loop that closes (death is the one-shot: it ends lying down).
+# Usage   : character entry "skeleton": ["walk", "run"] (lane_character renders those actions with control_graph);
+#           python pose.py ACTION DIRECTION OUT_DIR [ANTICIPATION]  writes the skeleton frames for a look
+#           (ANTICIPATION 0 .. 1: the opt-in wind-up of attack, cast and shoot; the entry key "anticipation").
+# Notes   : Needs the "pose" model tier (Get-Models / models.lock.json): wan2.2_fun_control_{high,low}_noise_14B_Q4_K_M
+#           .gguf (Apache-2.0), with the same VAE and text encoder as the animate tier. Proportions are chibi (a big
+#           head, hips at two thirds of the height), like the characters the sprite lane draws.
+# Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
+# ---------------------------------------------------------------------------
+import math
+import os
+import sys
+
+import numpy as np
+from PIL import Image, ImageDraw
+
+ACTIONS = ("walk", "run", "idle", "attack", "jump", "hurt", "cast", "shoot", "death")
+ONE_SHOT = ("death",)   # ends in another pose than it starts: frames() runs t 0 -> 1 instead of wrapping to frame 0
+VERSION = 2   # in the clip cache key: a new skeleton re-renders the clips made from the old one
+MODELS = ("wan2.2_fun_control_high_noise_14B_Q4_K_M.gguf", "wan2.2_fun_control_low_noise_14B_Q4_K_M.gguf")
+# OpenPose 18: 0 nose, 1 neck, 2 r_shoulder, 3 r_elbow, 4 r_wrist, 5 l_shoulder, 6 l_elbow, 7 l_wrist, 8 r_hip,
+# 9 r_knee, 10 r_ankle, 11 l_hip, 12 l_knee, 13 l_ankle, 14 r_eye, 15 l_eye, 16 r_ear, 17 l_ear
+LIMBS = [(1, 2), (1, 5), (2, 3), (3, 4), (5, 6), (6, 7), (1, 8), (8, 9), (9, 10), (1, 11), (11, 12), (12, 13), (1, 0),
+         (0, 14), (14, 16), (0, 15), (15, 17)]
+COLOURS = [(255, 0, 0), (255, 85, 0), (255, 170, 0), (255, 255, 0), (170, 255, 0), (85, 255, 0), (0, 255, 0),
+           (0, 255, 85), (0, 255, 170), (0, 255, 255), (0, 170, 255), (0, 85, 255), (0, 0, 255), (85, 0, 255),
+           (170, 0, 255), (255, 0, 255), (255, 0, 85), (255, 0, 170)]
+# chibi heights (share of the figure, from the feet up). Face, neck and shoulder are the fallbacks for a sprite whose
+# face does not show (fit() measures them per sprite): measured 2026-10-30 on five front sprites, faces sit at
+# 0.60-0.66 of the height and chins at 0.52-0.58. The first skeleton had the nose at 0.80, on the hood, and Wan drew a
+# second face there (goggles over the real one); arms reached 0.25 below the shoulder, where a chibi hand is at 0.13
+H = {"ankle": 0.03, "knee": 0.17, "hip": 0.34, "shoulder": 0.48, "neck": 0.52, "face": 0.62}
+ARM, FORE, THIGH, SHIN = 0.07, 0.06, 0.17, 0.15
+
+
+def _leg(hip, angle, bend, side_view):
+    """(knee, ankle) from the hip, a swing angle (radians, + forward) and a knee bend (radians)."""
+    if side_view:
+        k = (hip[0] + THIGH * math.sin(angle), hip[1] - THIGH * math.cos(angle))
+        a = (k[0] + SHIN * math.sin(angle - bend), k[1] - SHIN * math.cos(angle - bend))
+    else:   # seen from the front: a step is a lift, the knee rises toward the camera
+        lift = max(0.0, math.sin(angle)) * 0.06
+        k = (hip[0], hip[1] - THIGH + lift)
+        a = (hip[0], hip[1] - THIGH - SHIN + lift * 1.6)
+    return k, a
+
+
+def _arm(sh, angle, bend, side_view, out=0.0):
+    if side_view:
+        e = (sh[0] + ARM * math.sin(angle), sh[1] - ARM * math.cos(angle))
+        w = (e[0] + FORE * math.sin(angle + bend), e[1] - FORE * math.cos(angle + bend))
+    else:
+        e = (sh[0] + out, sh[1] - ARM + max(0.0, math.sin(angle)) * 0.03)
+        w = (e[0] + out * 0.6, e[1] - FORE + max(0.0, math.sin(angle)) * 0.05)
+    return e, w
+
+
+# hurt, cast, shoot, death: keyframed poses (t, changes from REST), eased between keys. Angles in degrees; side-view
+# arms are (shoulder angle from hanging, + forward; elbow bend), front-view arms are (elbow dx, dy, wrist dx, dy) from
+# the shoulder with + dx toward the body's middle. fall: degrees the body has toppled around the feet (death)
+REST = {"lean": 0.0, "drop": 0.0, "duck": 0.0, "fall": 0.0, "ra": -8.0, "rb": 15.0, "la": -8.0, "lb": 15.0,
+        "rf": (-0.06, -0.07, -0.096, -0.13), "lf": (-0.06, -0.07, -0.096, -0.13)}
+_GUARD = {"lean": -0.06, "drop": 0.04, "duck": 0.025, "ra": 30.0, "rb": 120.0, "la": 25.0, "lb": 125.0,
+          "rf": (-0.03, -0.04, 0.04, 0.06), "lf": (-0.03, -0.04, 0.04, 0.05)}      # flinch: lean back, guard the face
+_THRUST = {"lean": 0.035, "ra": 88.0, "rb": 0.0, "la": 80.0, "lb": 8.0,
+           "rf": (-0.02, -0.04, 0.10, -0.01), "lf": (-0.02, -0.04, 0.10, -0.01)}  # both hands out toward the target
+_AIM = {"ra": 85.0, "rb": 5.0, "la": 70.0, "lb": 40.0,
+        "rf": (-0.01, -0.03, 0.08, 0.01), "lf": (0.0, -0.05, 0.09, -0.03)}        # weapon up at the shoulder
+KEYS = {
+    "hurt": [(0.0, {}), (0.12, _GUARD), (0.45, _GUARD), (0.9, {}), (1.0, {})],
+    "cast": [(0.0, {}), (0.22, {"lean": -0.02, "ra": -35.0, "rb": 70.0, "la": -30.0, "lb": 75.0,
+                                "rf": (-0.05, -0.06, 0.02, -0.09), "lf": (-0.05, -0.06, 0.02, -0.09)}),
+             (0.38, _THRUST), (0.7, _THRUST), (0.95, {}), (1.0, {})],
+    "shoot": [(0.0, {}), (0.25, _AIM), (0.45, _AIM),
+              (0.52, dict(_AIM, lean=-0.03, ra=100.0, rb=0.0, la=82.0, lb=35.0,
+                          rf=(-0.01, -0.02, 0.08, 0.03), lf=(0.0, -0.04, 0.09, -0.01))),   # recoil
+              (0.62, _AIM), (0.8, _AIM), (0.97, {}), (1.0, {})],
+    "death": [(0.0, {}), (0.15, dict(_GUARD, drop=0.03, duck=0.03)),
+              (0.45, {"lean": 0.04, "drop": 0.12, "duck": 0.02, "ra": 15.0, "rb": 20.0, "la": 10.0, "lb": 20.0}),
+              (0.8, {"drop": 0.04, "fall": 90.0, "ra": -10.0, "rb": 10.0, "la": -10.0, "lb": 10.0}),
+              (1.0, {"drop": 0.04, "fall": 90.0, "ra": -10.0, "rb": 10.0, "la": -10.0, "lb": 10.0})],
+}
+# Anticipation (opt-in: keypoints() / frames() anticipation=a, a in (0, 1]; the character key "anticipation"): an
+# extra wind-up just before the strike of attack, cast and shoot. The body leans away from the target and sinks a
+# little, the striking arm draws further back, then the strike snaps through. At a = 0 (the default) nothing here is
+# used: every action keeps its keys exactly, so VERSION and the clip cache keys stay as they are.
+# WIND: the pull-back at a = 1, added to the pose at that moment (lean / drop in figure units, side-view arm angles in
+# degrees, front-view arms (elbow dx, dy, wrist dx, dy): the hands go out from the body's middle and down, gathering)
+WIND = {"lean": -0.05, "drop": 0.025, "ra": -30.0, "la": -25.0,
+        "rf": (-0.02, -0.01, -0.05, -0.03), "lf": (-0.02, -0.01, -0.05, -0.03)}
+WIND_ATTACK = (0.04, 0.25, 0.38)   # attack (not keyframed): the pull-back starts, is deepest, is gone (loop phase t)
+ANTICIPATE = ("attack", "cast", "shoot")
+# The strike of each skeleton strike, as a loop phase t: the frame between the wind-up and the blow, which the holds
+# sit around (animpolish.durations: the frame before is held as the wind-up, the frame after as the impact). attack:
+# the middle of the overhead swing (0.25 -> 0.6); cast: the middle of the thrust (the draw at 0.22, the thrust lands
+# at 0.38; with anticipation 0.26 and 0.4); shoot: the recoil (0.52), after the held aim. The skeleton knows these, so
+# the holds need not guess from measured motion: a plain shoot's largest motion is the arm coming up from rest (#180)
+STRIKE = {"attack": 0.425, "cast": 0.30, "shoot": 0.52}
+STRIKE_WIND = {"cast": 0.33}
+CONTROL_FRAMES = 33   # frames() default n: the control video's length (one loop, its last frame = its first)
+
+
+def _deeper(key, a):
+    """A key's changes with the wind-up added at amount a (REST fills what the key leaves out)."""
+    out = dict(key)
+    for k, v in WIND.items():
+        base = key.get(k, REST[k])
+        out[k] = tuple(p + q * a for p, q in zip(base, v)) if isinstance(v, tuple) else base + v * a
+    return out
+
+
+def _wind_keys(action, a):
+    """KEYS[action] with the wind-up key at amount a. cast: the draw goes deeper and holds to 0.26 (was 0.22), the
+    thrust lands at 0.4 (was 0.38). shoot: a pull-back from rest at 0.14 before the weapon comes up, the aim settles at
+    0.3 (was 0.25). Timing is the same for every a > 0, only the depth scales; the later keys are untouched, so the
+    loop still closes on rest."""
+    k = KEYS[action]
+    if action == "cast":
+        return [k[0], (0.26, _deeper(k[1][1], a)), (0.4, k[2][1])] + k[3:]
+    if action == "shoot":
+        return [k[0], (0.14, _deeper({}, a)), (0.3, k[1][1])] + k[2:]
+    return k
+
+
+def _bump(t, t0, tp, t1):
+    """0 before t0 and after t1, rising (eased) to 1 at tp and falling back: the wind-up envelope."""
+    if t <= t0 or t >= t1:
+        return 0.0
+    return _ease((t - t0) / (tp - t0)) if t < tp else 1.0 - _ease((t - tp) / (t1 - tp))
+
+
+def _ease(x):
+    x = min(1.0, max(0.0, x))
+    return x * x * (3 - 2 * x)
+
+
+def _at(action, t, wind=0.0):
+    """The keyframed parameters of action at t (REST filled in), eased between the two keys around t. wind: the
+    anticipation amount (0: the action's own keys)."""
+    keys = [(k, dict(REST, **ch)) for k, ch in (_wind_keys(action, wind) if wind else KEYS[action])]
+    for (t0, a), (t1, b) in zip(keys, keys[1:]):
+        if t <= t1:
+            u = _ease((t - t0) / (t1 - t0)) if t1 > t0 else 1.0
+            return {k: tuple(p + (q - p) * u for p, q in zip(a[k], b[k])) if isinstance(a[k], tuple)
+                    else a[k] + (b[k] - a[k]) * u for k in a}
+    return keys[-1][1]
+
+
+def _knee(hip, ankle, toward, spread=1.0):
+    """Knee of a leg whose ankle stays planted (two bones, THIGH and SHIN): it bends toward the + or - x side
+    (toward), by spread of its full sideways reach (front view: 0.5, the knee comes at the camera)."""
+    dx, dy = ankle[0] - hip[0], ankle[1] - hip[1]
+    d = math.hypot(dx, dy) or 1e-6
+    if d >= THIGH + SHIN:
+        return hip[0] + dx * THIGH / d, hip[1] + dy * THIGH / d
+    a = (THIGH ** 2 - SHIN ** 2 + d ** 2) / (2 * d)
+    h = math.sqrt(max(0.0, THIGH ** 2 - a ** 2)) * spread
+    px, py = -dy / d, dx / d
+    if px * toward < 0:
+        px, py = -px, -py
+    return hip[0] + dx / d * a + px * h, hip[1] + dy / d * a + py * h
+
+
+def _keyed(action, t, view, hh, ear, wind=0.0):
+    """keypoints() for the keyframed actions: feet planted (the legs bend at the knee when the body drops), the upper
+    body leans and ducks, then death topples the whole figure 90 degrees around its feet onto the ground."""
+    p = _at(action, t, wind)
+    side, quarter = view in ("side", "quarter"), view == "quarter"
+    half_hip, half_sh = (0.05, 0.09) if quarter else (0.02, 0.03) if side else (0.08, 0.15)
+    xh, xs = 0.4 * p["lean"], p["lean"]          # the hips move less than the shoulders
+    hip_h, sh_h = hh["hip"] - p["drop"], hh["shoulder"] - p["drop"]
+    neck = (xs, hh["neck"] - p["drop"] - p["duck"] * 0.5)
+    face = hh["face"] - p["drop"] - p["duck"]
+    r_hip, l_hip = (xh - half_hip, hip_h), (xh + half_hip, hip_h)
+    r_sh, l_sh = (xs - half_sh, sh_h), (xs + half_sh, sh_h)
+    foot = 0.02 if side else half_hip
+    ra_, la_ = (-foot, H["ankle"]), (foot, H["ankle"])
+    if side:
+        rk, lk = _knee(r_hip, ra_, 1), _knee(l_hip, la_, 1)
+        re_, rw = _arm(r_sh, math.radians(p["ra"]), math.radians(p["rb"]), True)
+        le, lw = _arm(l_sh, math.radians(p["la"]), math.radians(p["lb"]), True)
+        nose = (xs + 0.12, face)
+        r_eye = l_eye = (xs + 0.09, face + 0.04)
+        r_ear = l_ear = (xs - 0.04, face + 0.02)
+    else:
+        rk, lk = _knee(r_hip, ra_, -1, 0.5), _knee(l_hip, la_, 1, 0.5)
+        rf, lf = p["rf"], p["lf"]
+        re_, rw = (r_sh[0] + rf[0], r_sh[1] + rf[1]), (r_sh[0] + rf[2], r_sh[1] + rf[3])
+        le, lw = (l_sh[0] - lf[0], l_sh[1] + lf[1]), (l_sh[0] - lf[2], l_sh[1] + lf[3])
+        nose = (xs, face)
+        r_eye, l_eye = (xs - 0.05, face + 0.04), (xs + 0.05, face + 0.04)
+        r_ear, l_ear = (xs - ear, face + 0.02), (xs + ear, face + 0.02)
+    pts = [nose, neck, r_sh, re_, rw, l_sh, le, lw, r_hip, rk, ra_, l_hip, lk, la_, r_eye, l_eye, r_ear, l_ear]
+    if quarter:
+        pts = [(x * 0.7, y) for x, y in pts]
+    if p["fall"]:
+        # side views fall backward (away from the facing side), front / back views sideways; the body slides the
+        # other way so it lies centred where the character stood, and rests on the ground line, not under it
+        s = p["fall"] / 90.0
+        if not side:   # seen from above, a body on its side stacks its shoulders into the screen, not up it
+            pts = [(x * (1 - 0.75 * s), y) for x, y in pts]
+        th = math.radians(p["fall"]) * (1 if side else -1)
+        c, sn = math.cos(th), math.sin(th)
+        pts = [(x * c - (y - H["ankle"]) * sn, x * sn + (y - H["ankle"]) * c + H["ankle"]) for x, y in pts]
+        shift = 0.45 * s * (1 if side else -1)
+        lift = max(0.0, H["ankle"] + 0.05 * s - min(y for _, y in pts))
+        pts = [(x + shift, y + lift) for x, y in pts]
+    return pts
+
+
+def fit(sprite):
+    """Where this sprite's head and face sit, in figure units (feet 0, top 1): {"x": the head's middle column, and
+    when a face shows "face", "neck", "shoulder", "ear"}. The head is the run of columns around the widest one in the
+    top 55 % (a bow or a staff does not widen it; the bbox middle sat 0.09 of the height off the scout's head); the
+    face is light warm skin in it (the skin test of qa.face_side). A sprite with no face showing keeps H."""
+    a = np.asarray(sprite.convert("RGBA")).astype(int)
+    op = a[..., 3] > 127
+    ys, xs = np.nonzero(op)
+    if not len(ys):
+        return {"x": 0.0}
+    top, bot = ys.min(), ys.max()
+    h = bot - top + 1
+    rows = slice(top, top + max(4, int(h * 0.55)))
+    head = op[rows]
+    prof = head.sum(0)
+    wide = prof >= 0.35 * prof.max()
+    x0 = x1 = int(np.argmax(prof))
+    while x0 > 0 and wide[x0 - 1]:
+        x0 -= 1
+    while x1 < len(wide) - 1 and wide[x1 + 1]:
+        x1 += 1
+    out = {"x": ((x0 + x1) / 2 - (xs.min() + xs.max()) / 2) / h, "ear": (x1 - x0 + 1) / 2 / h * 0.85}
+    r, g, b = (a[rows][..., k] for k in range(3))
+    skin = head & (r >= 200) & (g >= 130) & (b >= 100) & (r > g) & (g > b) & (r - b >= 35) & (r - b <= 120)
+    skin[:, :x0] = False
+    skin[:, x1 + 1:] = False
+    sy = np.nonzero(skin)[0]
+    if len(sy) < 8:
+        return {"x": out["x"]}
+    fy = (bot - (sy + top)) / h
+    out["face"] = float(np.median(fy))
+    out["neck"] = float(np.percentile(fy, 5)) - 0.02      # just under the chin
+    out["shoulder"] = out["neck"] - 0.04
+    return out
+
+
+def keypoints(action, t, view, fitted=None, anticipation=0.0):
+    """18 (x, y) points in figure units (feet at y = 0, up is +y, x + is the facing side in side view) for loop phase
+    t in [0, 1); view "side", "quarter" (three-quarter: the side motion foreshortened, half-width shoulders and hips)
+    or "front" ("back" = front or quarter mirrored by the caller); fitted: fit() of the sprite (face, neck, shoulder
+    heights and ear spread). anticipation: the wind-up amount (0 .. 1) for attack, cast and shoot (WIND); other
+    actions ignore it."""
+    hh = dict(H, **{k: v for k, v in (fitted or {}).items() if k in H})
+    ear = (fitted or {}).get("ear", 0.12)
+    wind = float(anticipation or 0.0) if action in ANTICIPATE else 0.0
+    if action in KEYS:
+        return _keyed(action, t, view, hh, ear, wind)
+    side = view in ("side", "quarter")
+    quarter = view == "quarter"
+    ph = 2 * math.pi * t
+    lean, bob, jump_y = 0.0, 0.0, 0.0
+    swing, bend_k, arm_sw, arm_bend = 0.0, 0.1, 0.0, 0.2
+    attack_arm = None
+    if action == "walk":
+        swing, bob, arm_sw = math.radians(24) * math.sin(ph), 0.012 * math.cos(2 * ph), math.radians(22) * math.sin(ph)
+        bend_k = math.radians(28) * max(0.0, -math.sin(ph))
+    elif action == "run":
+        swing, bob, arm_sw = math.radians(38) * math.sin(ph), 0.025 * math.cos(2 * ph), math.radians(40) * math.sin(ph)
+        bend_k, lean, arm_bend = math.radians(55) * max(0.0, -math.sin(ph)), 0.04, 1.2
+    elif action == "idle":
+        bob = 0.008 * math.sin(ph)
+    elif action == "attack":   # wind up behind, swing over and through, back to rest
+        a = (math.radians(-130) + math.radians(200) * min(1.0, max(0.0, (t - 0.25) / 0.35))) if t >= 0.25 else \
+            math.radians(-40) - math.radians(90) * (t / 0.25)
+        if t > 0.75:
+            a = a + (math.radians(-20) - a) * ((t - 0.75) / 0.25)
+        attack_arm = a
+        lean = 0.05 * math.sin(math.pi * min(1.0, t / 0.75))
+        if wind:   # the arm goes further over and behind the head, the body leans away and sinks, then the swing
+            b = wind * _bump(t, *WIND_ATTACK)   # snaps through. Lean counts twice at the shoulders here: 0.7 of WIND
+            attack_arm = a + math.radians(WIND["ra"]) * b
+            lean += b * (WIND["lean"] * 0.7 - max(0.0, lean))   # the forward lean of the wind-up is replaced
+            bob -= WIND["drop"] * b
+    elif action == "jump":   # crouch, rise, tuck, land
+        crouch = math.sin(math.pi * min(1.0, t / 0.2)) if t < 0.2 else 0.0
+        air = math.sin(math.pi * (t - 0.2) / 0.6) if 0.2 <= t <= 0.8 else 0.0
+        land = math.sin(math.pi * (t - 0.8) / 0.2) if t > 0.8 else 0.0
+        jump_y = 0.18 * air   # higher leaves the model canvas (a 72 px sprite fills 70 % of it)
+        bob = -0.08 * (crouch + land)
+        bend_k = math.radians(60) * (crouch + land) + math.radians(70) * air
+        arm_sw = math.radians(-60) * (crouch + land) + math.radians(150) * air
+    else:
+        raise ValueError(f"pose action {action!r}: one of {', '.join(ACTIONS)}")
+    hip_h = hh["hip"] + bob + jump_y
+    x0 = lean
+    half_hip, half_sh = (0.05, 0.09) if quarter else (0.02, 0.03) if side else (0.08, 0.15)
+    r_hip, l_hip = (x0 - half_hip, hip_h), (x0 + half_hip, hip_h)
+    sh_h = hh["shoulder"] + bob + jump_y
+    r_sh, l_sh = (x0 + lean - half_sh, sh_h), (x0 + lean + half_sh, sh_h)
+    neck = (x0 + lean, hh["neck"] + bob + jump_y)
+    rk, ra = _leg(r_hip, swing, bend_k, side)
+    lk, la = _leg(l_hip, -swing, bend_k if action in ("jump", "idle") else math.radians(28) * max(0.0, math.sin(ph))
+                  if action == "walk" else bend_k, side)
+    if attack_arm is not None:
+        re_, rw = _arm(r_sh, attack_arm, 0.15, side, -0.06)
+        le, lw = _arm(l_sh, math.radians(-20), 0.4, side, 0.06)
+    else:
+        re_, rw = _arm(r_sh, -arm_sw, arm_bend, side, -0.06)
+        le, lw = _arm(l_sh, arm_sw, arm_bend, side, 0.06)
+    face = hh["face"] + bob + jump_y
+    if side:   # facing +x: the face points forward, one eye and one ear show
+        nose = (x0 + lean + 0.12, face)
+        r_eye, l_eye = (x0 + lean + 0.09, face + 0.04), (x0 + lean + 0.09, face + 0.04)
+        r_ear, l_ear = (x0 + lean - 0.04, face + 0.02), (x0 + lean - 0.04, face + 0.02)
+    else:
+        nose = (x0, face)
+        r_eye, l_eye = (x0 - 0.05, face + 0.04), (x0 + 0.05, face + 0.04)
+        r_ear, l_ear = (x0 - ear, face + 0.02), (x0 + ear, face + 0.02)
+    pts = [nose, neck, r_sh, re_, rw, l_sh, le, lw, r_hip, rk, ra, l_hip, lk, la, r_eye, l_eye, r_ear, l_ear]
+    if quarter:   # turned 45 degrees: motion along the facing axis shows at about 0.7 of its length
+        pts = [(x0 + (x - x0) * 0.7, y) for x, y in pts]
+    return pts
+
+
+def strike_frame(action, n, picked=None, skip=1, source=CONTROL_FRAMES, anticipation=0.0):
+    """The clip frame (0 .. n-1) nearest the skeleton's strike (STRIKE), or None (not a strike, under 3 frames).
+    picked: the control frames SpriteKiln's frame select kept (its "picked [...]", counted after skip frames), when
+    the render recorded them; without them the n frames are taken as spread evenly over one loop from its start, as a
+    looping selection keeps them. The nearest frame wins round the loop; the earlier one on a tie."""
+    t0 = (STRIKE_WIND if anticipation else {}).get(action, STRIKE.get(action))
+    if t0 is None or n < 3:
+        return None
+    span = source - 1
+    ts = [((skip + p) % span) / span for p in picked] if picked and len(picked) == n else [i / n for i in range(n)]
+    return min(range(n), key=lambda i: (min(abs(ts[i] - t0), 1 - abs(ts[i] - t0)), i))
+
+
+def canvas_map(sprite_w, sprite_h, pad=8, target=640):
+    """(scale, ox, oy): sprite pixel (x, y) sits at canvas (x * scale + ox, y * scale + oy) after SpriteKiln's
+    SK_ToCanvas (padding pad, target target x target), so the skeleton lands on the figure."""
+    w0, h0 = sprite_w + 2 * pad, sprite_h + 2 * pad
+    s = max(1, min(target // w0, target // h0))
+    aw, ah = max(w0, target // s), max(h0, target // s)
+    px, py = (aw - w0) // 2, (ah - h0) // 2
+    return s, (pad + px) * s, (pad + py) * s
+
+
+def frames(action, direction, sprite, n=CONTROL_FRAMES, size=640, pad=8, face=True, anticipation=0.0):
+    """n control frames (PIL RGB, size x size) for one clip: the skeleton fitted to the sprite's figure (its height,
+    feet line and centre), facing direction (e / w side, s front, n back). One loop over the clip, last = first;
+    a ONE_SHOT action runs once instead and ends on its last pose (death lies on the ground). anticipation: the
+    wind-up amount for attack, cast and shoot (keypoints())."""
+    im = sprite.convert("RGBA")
+    bb = im.getbbox()
+    s, ox, oy = canvas_map(im.width, im.height, pad, size)
+    fh = (bb[3] - bb[1]) * s
+    fitted = fit(im)   # the face and the head, not the bbox: a bow or a staff widens the bbox
+    cx = ((bb[0] + bb[2]) / 2) * s + ox + fitted["x"] * fh
+    feet = bb[3] * s + oy
+    view = "side" if direction in ("e", "w") else "quarter" if len(direction) == 2 else "front"
+    flip = -1 if direction in ("w", "sw", "nw") else 1
+    out = []
+    stick = max(4, round(size / 110))
+    for i in range(n):
+        t = i / (n - 1) if action in ONE_SHOT else (i % (n - 1)) / (n - 1)
+        kp = keypoints(action, t, view, fitted, anticipation)
+        if direction in ("n", "ne", "nw"):   # seen from behind: the character's right is on the screen's right
+            kp = [(-x, y) for x, y in kp]
+        pts = [(cx + flip * x * fh, feet - y * fh) for x, y in kp]
+        if direction in ("n", "ne", "nw"):   # no face from behind: OpenPose draws nose / eyes only when seen
+            for j in (0, 14, 15):
+                pts[j] = None
+        if not face:   # body only: the reference sprite keeps its own face
+            for j in (0, 14, 15, 16, 17):
+                pts[j] = None
+        img = Image.new("RGB", (size, size), (0, 0, 0))
+        d = ImageDraw.Draw(img)
+        for k, (a, b) in enumerate(LIMBS):
+            if pts[a] is None or pts[b] is None:
+                continue
+            col = tuple(int(c * 0.6) for c in COLOURS[k])
+            d.line([pts[a], pts[b]], fill=col, width=stick)
+        for j, p in enumerate(pts):
+            if p is not None:
+                d.ellipse([p[0] - stick, p[1] - stick, p[0] + stick, p[1] + stick], fill=COLOURS[j])
+        out.append(img)
+    return out
+
+
+def control_graph(g, control_names, high, low, drop_loras=()):
+    """The SpriteKiln animate graph (wf10, already loaded and saved-path-set) turned into a pose-driven one: the
+    Fun-Control models replace the i2v models, Wan22FunControlToVideo replaces WanImageToVideo (the sprite canvas is
+    the reference, the uploaded skeleton frames the control video). The rest (prompt preset, two-stage sampling,
+    pixel clean-up) is unchanged."""
+    i2v = next(k for k, n in g.items() if n["class_type"] == "WanImageToVideo")
+    loaders = [k for k, n in g.items() if n["class_type"] == "UnetLoaderGGUF"]
+    if len(loaders) != 2:
+        raise ValueError("animate graph: expected two GGUF loaders (high and low noise)")
+    for k, name in zip(sorted(loaders, key=int), (high, low)):
+        g[k]["inputs"]["unet_name"] = name
+    for k, n in list(g.items()):   # bypass a LoRA made for the image-to-video model: its output feeds the next node
+        if n["class_type"] == "LoraLoaderModelOnly" and n["inputs"]["lora_name"] in drop_loras:
+            src = n["inputs"]["model"]
+            for m in g.values():
+                for key, v in m["inputs"].items():
+                    if v == [k, 0]:
+                        m["inputs"][key] = src
+            del g[k]
+    nid = max(int(k) for k in g) + 1
+    prev = None
+    for j, fn in enumerate(control_names):
+        g[str(nid)] = {"class_type": "LoadImage", "inputs": {"image": fn}}
+        cur = [str(nid), 0]
+        nid += 1
+        if prev is not None:
+            g[str(nid)] = {"class_type": "ImageBatch", "inputs": {"image1": prev, "image2": cur}}
+            cur = [str(nid), 0]
+            nid += 1
+        prev = cur
+    inp = dict(g[i2v]["inputs"])
+    ref = inp.pop("start_image", None)
+    inp.pop("clip_vision_output", None)
+    inp["ref_image"] = ref
+    inp["control_video"] = prev
+    inp["length"] = len(control_names)
+    g[i2v] = {"class_type": "Wan22FunControlToVideo", "inputs": inp}
+    return g
+
+
+if __name__ == "__main__":
+    if len(sys.argv) not in (4, 5) or sys.argv[1] not in ACTIONS:
+        print("usage: python pose.py ACTION DIRECTION OUT_DIR [ANTICIPATION]   (ACTION: " + ", ".join(ACTIONS) + "; "
+              "DIRECTION: s e n w or a diagonal; ANTICIPATION: 0 .. 1, the wind-up of attack, cast and shoot)")
+        sys.exit(2)
+    os.makedirs(sys.argv[3], exist_ok=True)
+    dummy = Image.new("RGBA", (72, 72), (0, 0, 0, 0))
+    dummy.paste((200, 100, 60, 255), (24, 6, 48, 70))
+    wind = float(sys.argv[4]) if len(sys.argv) > 4 else 0.0
+    for i, f in enumerate(frames(sys.argv[1], sys.argv[2], dummy, anticipation=wind)):
+        f.save(os.path.join(sys.argv[3], f"pose_{i:02d}.png"))
+    print(f"[ OK ] {sys.argv[3]}")

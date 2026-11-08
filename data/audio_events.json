@@ -1,0 +1,188 @@
+{
+ "version": 1,
+ "seed": 7,
+ "buses": {
+  "master": {},
+  "sfx": {
+   "parent": "master",
+   "volume_db": -4
+  },
+  "ui": {
+   "parent": "master",
+   "volume_db": -6
+  }
+ },
+ "events": {
+  "eat_algae": {
+   "bus": "sfx",
+   "files": [
+    "sfx/eat_algae_1.wav",
+    "sfx/eat_algae_2.wav",
+    "sfx/eat_algae_3.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -2,
+    2
+   ],
+   "volume_db": [
+    -7,
+    -4
+   ],
+   "max_voices": 3,
+   "steal": "oldest",
+   "cooldown_ms": 40,
+   "caption": "[plip]"
+  },
+  "eat_meat": {
+   "bus": "sfx",
+   "files": [
+    "sfx/eat_meat_1.wav",
+    "sfx/eat_meat_2.wav",
+    "sfx/eat_meat_3.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -2,
+    2
+   ],
+   "volume_db": [
+    -5,
+    -2
+   ],
+   "max_voices": 3,
+   "steal": "oldest",
+   "cooldown_ms": 40,
+   "caption": "[squelch]"
+  },
+  "bump": {
+   "bus": "sfx",
+   "files": [
+    "sfx/bump_1.wav",
+    "sfx/bump_2.wav",
+    "sfx/bump_3.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -2,
+    2
+   ],
+   "volume_db": [
+    -2,
+    0
+   ],
+   "max_voices": 3,
+   "steal": "oldest",
+   "cooldown_ms": 60,
+   "caption": "[thud]"
+  },
+  "pop": {
+   "bus": "sfx",
+   "files": [
+    "sfx/pop_1.wav",
+    "sfx/pop_2.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -2,
+    2
+   ],
+   "volume_db": [
+    -1,
+    0
+   ],
+   "max_voices": 3,
+   "steal": "oldest",
+   "caption": "[pop]"
+  },
+  "part": {
+   "bus": "sfx",
+   "files": [
+    "sfx/part.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -1,
+    1
+   ],
+   "volume_db": [
+    0,
+    0
+   ],
+   "max_voices": 2,
+   "steal": "oldest",
+   "caption": "[part absorbed]"
+  },
+  "upgrade": {
+   "bus": "sfx",
+   "files": [
+    "sfx/upgrade.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -1,
+    1
+   ],
+   "volume_db": [
+    0,
+    0
+   ],
+   "max_voices": 2,
+   "steal": "oldest",
+   "caption": "[upgrade]"
+  },
+  "deny": {
+   "bus": "ui",
+   "files": [
+    "sfx/deny.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    0
+   ],
+   "volume_db": [
+    -2,
+    -2
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "cooldown_ms": 250
+  },
+  "evolve": {
+   "bus": "sfx",
+   "files": [
+    "sfx/evolve.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -0.5,
+    0.5
+   ],
+   "volume_db": [
+    0,
+    0
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "caption": "[evolving swell]"
+  },
+  "choose": {
+   "bus": "ui",
+   "files": [
+    "sfx/choose.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    1
+   ],
+   "volume_db": [
+    0,
+    0
+   ],
+   "max_voices": 2,
+   "steal": "oldest"
+  }
+ }
+}

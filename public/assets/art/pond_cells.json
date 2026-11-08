@@ -1,0 +1,28 @@
+{
+  "cell": 32,
+  "columns": 4,
+  "rows": [
+    {
+      "index": 0,
+      "pose": "swim",
+      "direction": "prickle",
+      "frames": 4,
+      "first_frame": 0
+    },
+    {
+      "index": 1,
+      "pose": "swim",
+      "direction": "snail",
+      "frames": 4,
+      "first_frame": 4
+    },
+    {
+      "index": 2,
+      "pose": "swim",
+      "direction": "sipper",
+      "frames": 4,
+      "first_frame": 8
+    }
+  ],
+  "image": "pond_cells.png"
+}

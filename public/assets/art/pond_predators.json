@@ -1,0 +1,14 @@
+{
+  "cell": 64,
+  "columns": 4,
+  "rows": [
+    {
+      "index": 0,
+      "pose": "swim",
+      "direction": "gulper",
+      "frames": 4,
+      "first_frame": 0
+    }
+  ],
+  "image": "pond_predators.png"
+}

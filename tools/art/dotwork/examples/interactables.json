@@ -1,0 +1,102 @@
+{
+ "name": "interactables",
+ "_comment": "State props (chest, door, lever, save point, ambient loops (torch, banner, smokestack, gear, fern) glow), two props animated by Wan clips (a cauldron that bubbles in a loop, a flower bud that blooms once) and an 8-direction airship with a ground shadow. Authored: written with Claude (Opus 5.5, claude-opus-5-5).",
+ "design": {
+  "setting": "steampunk"
+ },
+ "animprops": [
+  {
+   "name": "chest",
+   "seed": 9500,
+   "kind": "chest",
+   "prompt": "a wooden treasure chest with gold trim",
+   "size": 32
+  },
+  {
+   "name": "door",
+   "seed": 9501,
+   "kind": "door",
+   "prompt": "a sturdy wooden door with iron bands in a stone frame",
+   "cells": [
+    1,
+    2
+   ]
+  },
+  {
+   "name": "lever",
+   "seed": 9502,
+   "kind": "lever",
+   "prompt": "an iron lever switch on a stone base",
+   "size": 28
+  },
+  {
+   "name": "save_point",
+   "seed": 9503,
+   "kind": "glow",
+   "prompt": "a floating glowing blue crystal on a small stone base",
+   "size": 48
+  },
+  {
+   "name": "wall_torch",
+   "kind": "flame",
+   "prompt": "a wall torch: a short wooden handle with a bright lit orange flame",
+   "size": 32,
+   "seed": 9520
+  },
+  {
+   "name": "guild_banner",
+   "kind": "flag",
+   "prompt": "a red cloth banner hanging from a short horizontal pole on a post",
+   "size": 40,
+   "seed": 9521
+  },
+  {
+   "name": "smokestack",
+   "kind": "smoke",
+   "prompt": "a short brick smokestack with a soot-black rim",
+   "size": 40,
+   "seed": 9522
+  },
+  {
+   "name": "brass_gear",
+   "kind": "spin",
+   "prompt": "a single round brass cog gear with eight teeth, seen straight on",
+   "size": 24,
+   "seed": 9523,
+   "sym": 8
+  },
+  {
+   "name": "potted_fern",
+   "kind": "sway",
+   "prompt": "a green fern in a small clay pot",
+   "size": 32,
+   "seed": 9524
+  },
+  {
+   "name": "cauldron",
+   "kind": "clip",
+   "prompt": "a black iron cauldron full of bubbling green liquid",
+   "size": 32,
+   "motion": "the green liquid bubbles and churns, round bubbles rise and pop at the surface",
+   "loop": true,
+   "seed": 9530
+  },
+  {
+   "name": "flower_bud",
+   "kind": "clip",
+   "prompt": "a closed pink flower bud on a short green stem in a small clay pot",
+   "size": 32,
+   "motion": "the pink flower bud slowly opens its petals into a full bloom and stays open",
+   "seed": 9531
+  }
+ ],
+ "vehicles": [
+  {
+   "name": "airship",
+   "prompt": "a steampunk airship with a wooden hull, brass propellers and a striped balloon",
+   "size": 72,
+   "seed": 9600,
+   "altitude": 24
+  }
+ ]
+}

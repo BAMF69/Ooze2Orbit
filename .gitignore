@@ -1,0 +1,98 @@
+# ---- Claude Code Game Kit ----
+# ---- Universal ignores (engine-specific ones are appended below by the scaffolder) ----
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# Secrets and local config (never commit)
+.env
+.env.*
+secrets/
+*.pem
+*.key
+*.keystore
+*.pfx
+*.p12
+*.jks
+*.p8
+
+# Progress screenshots and GIF frames taken while building (CLAUDE.md "While building")
+captures/
+
+# Python tooling
+__pycache__/
+*.pyc
+
+# Downloaded asset packs (tools/fetch_asset.py keeps them here; only picked files enter assets/)
+.asset_cache/
+.venv/
+
+# Claude Code local-only files
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Scratch
+scratch/
+*.log
+*.tmp
+# Hand-polish backups (dotwork.py aseprite / pixelorama --overwrite keep the replaced source here)
+*.aseprite.bak
+*.pxo.bak
+# DAW round trip (wavesmith.py daw): REAPER's backups and peak files, the folder each re-export renders into
+*.rpp-bak
+*.rpp.bak
+*.reapeaks
+assets_src/daw/*/render/
+
+
+# Cloud deployments (tools/cloud/ship.py): OpenTofu state can hold generated secrets; never commit it
+/deploy/
+
+# ---- Web (Phaser + Vite) ----
+node_modules/
+/dist/
+/build/
+.vite/
+*.tsbuildinfo
+playwright-report/
+test-results/
+npm-debug.log*
+
+# Kit files that arrived as bare Git LFS pointers (no image content on this machine). Kept on disk, out of git:
+# pushing them would publish broken LFS objects (docs/TROUBLESHOOTING.md, 2026-11-07).
+/data/golden/shaders/colorblind.png
+/data/golden/shaders/crt.png
+/data/golden/shaders/dissolve.png
+/data/golden/shaders/flash.png
+/data/golden/shaders/outline.png
+/data/golden/shaders/palette_swap.png
+/data/golden/shaders/scroll_water.png
+/data/golden/shaders/sprite_light.png
+/data/golden/shaders/toon_rim.png
+/data/golden/shaders/triplanar.png
+/data/golden/shaders/vignette.png
+/data/shaders/inputs/indexed.png
+/data/shaders/inputs/noise.png
+/data/shaders/inputs/palette.png
+/data/shaders/inputs/scene.png
+/data/shaders/inputs/sphere_normal.png
+/data/shaders/inputs/sprite.png
+/data/shaders/inputs/sprite_normal.png
+/data/shaders/inputs/tile.png
+/tools/art/dotwork/palettes/dotwork_default_env_swatch.png
+/tools/art/dotwork/palettes/dotwork_default_swatch.png
+/tools/art/dotwork/tests/fixtures/duelist_hem.png
+/tools/art/dotwork/tests/fixtures/duelist_lunge.png
+/tools/art/dotwork/tests/fixtures/duelist_turn.png
+/tools/art/dotwork/tests/fixtures/dwarf_rot_ew.png
+/tools/art/dotwork/tests/fixtures/dwarf_smash.png

@@ -1,0 +1,694 @@
+#!/usr/bin/env python3
+# ---------------------------------------------------------------------------
+# dotwork.py
+# Purpose : make a game's 2D pixel art with local models (ComfyUI on your own GPU): characters with 4-direction
+#           idle / walk / attack animations and battle or emote poses, props with collision scenes, layered terrain
+#           and buildings, maps from text, effects, enemies, battle backgrounds, title screens, fonts, window skins.
+#           Everything lands in the game itself (assets/ and assets_src/) with a manifest for docs/ASSET_LOG.md.
+# Usage   : python tools/art/dotwork/dotwork.py setup --check            # ComfyUI, nodes, models, SpriteKiln, Godot
+#           python tools/art/dotwork/dotwork.py pack --spec assets_src/specs/town.json
+#           python tools/art/dotwork/dotwork.py character --name guard --prompt "a town guard in a brass helmet"
+#           python tools/art/dotwork/dotwork.py audition --name guard --clip walk_e --seeds 8101 8102 8103
+#           python tools/art/dotwork/dotwork.py materials [--only cobble sand] | palette extract "assets_src/*.png" ...
+#           python tools/art/dotwork/dotwork.py verify | aseprite [--overwrite] | aseprite --reexport | log
+#           python tools/art/dotwork/dotwork.py preview battle|title|attack ...
+#           python tools/art/dotwork/dotwork.py pixelorama [--overwrite] | pixelorama --reexport [--clear-export-path]   # hand polish
+#           python tools/art/dotwork/dotwork.py pixelorama --install-extension   # the Dotwork panel inside Pixelorama
+#           python tools/art/dotwork/dotwork.py qa pack [--json OUT] [--lineup OUT.png]   # style check, read only
+#           Global: --project GAME (default: current folder), --config FILE, --engine godot|none, --debug
+# Notes   : Needs ComfyUI (local, http://127.0.0.1:8188 by default) with the SpriteKiln and GGUF node packs and the
+#           models in models.lock.json; Godot 4 for maps and verify. README.md walks through setup and every lane.
+#           Python: Pillow + numpy (the ComfyUI venv has both). Exit: 0 ok, 1 a task failed, 2 environment or usage.
+# Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
+# Updated : 2026-11-04 with Claude (Opus 5.5, claude-opus-5-5): pixelorama --install-extension and --info (the
+#           Dotwork panel inside Pixelorama, pxo_panel.py)
+# ---------------------------------------------------------------------------
+import argparse
+import ast
+import json
+import os
+import sys
+import traceback
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import fcore  # noqa: E402
+
+LANES = ("props", "effects", "tiles", "ui", "icons", "portraits", "tools", "img2px", "fonts", "battle_bgs", "enemies",
+         "windows", "balloons", "scenes", "hitfx", "spells", "animprops", "vehicles", "widgets", "transitions", "weather",
+         "status", "npcs", "platforms", "iso", "uikit", "store", "screens", "bdf", "diorama", "vfx", "lighting")
+LATE = ("lighting",)   # lanes that read what the others made: they run after every other lane, ground included
+
+
+# ---- binding -------------------------------------------------------------------------
+def setup_run(a, spec=None, game=True):
+    """Settings for this game, bound into every module before any lane is imported. game=True (every command that
+    writes into the game) refuses a folder that is not a game and creates the work folder; setup, config and palette
+    pass game=False and create nothing."""
+    s = fcore.Settings(a.project, a.config, a.engine, spec)
+    if game:
+        s.require_game()
+        s.ensure_work()
+    fcore.bind(s)
+    fcore.load_lock()
+    import engine
+    import godot
+    import spritekiln
+    engine.bind(s.conf)
+    spritekiln.bind(s.conf)
+    godot.ENABLED = s.godot()
+    return s
+
+
+def load_spec(path):
+    try:
+        with open(path, encoding="utf-8") as f:   # specs are hand-written UTF-8 (glyph keys like the hand cursor)
+            spec = json.load(f)
+    except FileNotFoundError:
+        raise fcore.ToolError(f"spec {path} not found")
+    except ValueError as exc:
+        raise fcore.ToolError(f"spec {path} is not valid JSON: {exc}")
+    if not isinstance(spec, dict) or "name" not in spec:
+        raise fcore.ToolError(f"spec {path}: a JSON object with at least a \"name\" (see README: Pack spec)")
+    unknown = set(spec) - set(LANES) - {"name", "_comment", "design", "characters", "ground"}
+    if unknown:
+        raise fcore.ToolError(f"spec {path}: unknown keys {', '.join(sorted(unknown))} (lanes: {', '.join(LANES)}, "
+                              "characters, ground)")
+    for lane in [x for x in (*LANES, "characters") if spec.get(x) is not None]:
+        entries = spec[lane]
+        if not isinstance(entries, list) or not all(isinstance(e, dict) for e in entries):
+            raise fcore.ToolError(f"spec {path}: \"{lane}\" must be a list of objects (README: Pack spec)")
+        known = entry_keys(lane)
+        for i, e in enumerate(entries):
+            if not isinstance(e.get("name"), str) or not e["name"].strip():
+                raise fcore.ToolError(f"spec {path}: {lane} entry {i + 1} needs a \"name\"")
+            for k in sorted(set(e) - known):
+                print(f"[warn] spec {path}: {lane} {e['name']!r}: key {k!r} is not read by Dotwork (a typo?)",
+                      file=sys.stderr)
+    return spec
+
+
+ENTRY_VARS = ("e", "self.e", "entry")   # the names lane code gives a spec entry
+ENTRY_HELPERS = ("recolor",)            # non-lane modules that read spec entry keys for a lane (palette swaps)
+
+
+def _dotted(node):
+    """"e" / "self.e" for a Name or one-level Attribute node, else None (ast.unparse needs Python 3.9; the kit's
+    floor is 3.8)."""
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
+        return f"{node.value.id}.{node.attr}"
+    return None
+
+
+def _subscript_key(node):
+    """The constant inside e["k"]: Python 3.8 wraps it in ast.Index, 3.9+ does not."""
+    s = node.slice
+    if isinstance(s, getattr(ast, "Index", ())):
+        s = s.value
+    return s.value if isinstance(s, ast.Constant) and isinstance(s.value, str) else None
+
+
+def entry_keys(lane):
+    """Every key the lane's code reads from a spec entry (e["k"], e.get("k"), "k" in e, on e or self.e), found by
+    reading the lane's source (and the lane modules it imports from) without importing it. A spec key outside this set
+    is warned about: a window entry with "styl" used to build the default style without a word (2026-10-30 audit)."""
+    files, seen, keys = [f"lane_{'character' if lane == 'characters' else lane}.py"], set(), {"name", "seed", "_comment"}
+    while files:
+        fn = files.pop()
+        if fn in seen or not os.path.exists(os.path.join(HERE, fn)):
+            continue
+        seen.add(fn)
+        with open(os.path.join(HERE, fn), encoding="utf-8") as f:
+            tree = ast.parse(f.read())
+        for n in ast.walk(tree):
+            if isinstance(n, ast.ImportFrom) and (n.module or "").startswith("lane_"):
+                files.append(n.module + ".py")
+            elif isinstance(n, ast.Import):
+                files += [a.name + ".py" for a in n.names if a.name in ENTRY_HELPERS]
+            elif isinstance(n, ast.Subscript) and _dotted(n.value) in ENTRY_VARS and _subscript_key(n):
+                keys.add(_subscript_key(n))
+            elif (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "get" and n.args
+                    and _dotted(n.func.value) in ENTRY_VARS and isinstance(n.args[0], ast.Constant)):
+                keys.add(n.args[0].value)
+            elif (isinstance(n, ast.Compare) and isinstance(n.left, ast.Constant) and isinstance(n.ops[0], ast.In)
+                    and _dotted(n.comparators[0]) in ENTRY_VARS):
+                keys.add(n.left.value)
+    return keys
+
+
+def finish_verify(s, man, no_verify):
+    if no_verify or not s.godot():
+        return 0
+    import verify
+    r = verify.verify(s, [row["file"] for row in man.data["assets"]])
+    if not r["ok"]:
+        raise fcore.JobError(f"verify failed in the game (see {fcore.work('verify_report.json')})")
+    return 0
+
+
+# ---- commands --------------------------------------------------------------------------
+def spec_path(a):
+    """--spec as typed (relative to the current folder), else relative to --project; the error names both paths it
+    tried (it used to show only the relative one)."""
+    if os.path.isabs(a.spec) or os.path.exists(a.spec):
+        return a.spec
+    alt = os.path.join(a.project, a.spec)
+    if os.path.exists(alt):
+        return alt
+    raise fcore.ToolError(f"spec not found: looked for {os.path.abspath(a.spec)} and {os.path.abspath(alt)}")
+
+
+def cmd_pack(a):
+    a.spec = spec_path(a)
+    spec = load_spec(a.spec)
+    s = setup_run(a, spec)
+    man = fcore.Manifest(s, spec["name"])
+    conf = s.conf
+    where = "characters"   # the lane running now, for the missing-key message below
+    try:
+        if spec.get("characters"):
+            import lane_character
+            for e in spec["characters"]:
+                lane_character.Character(e, s.project, man, conf).run()
+        for lane in LANES:
+            if spec.get(lane) and lane not in LATE:
+                where = lane
+                mod = __import__(f"lane_{lane}")
+                mod.run(spec[lane], s.project, man, conf)
+        where = "ground"
+        grounds = spec.get("ground") or []
+        for g in grounds if isinstance(grounds, list) else [grounds]:
+            import lane_ground
+            import mapbuild
+            built = lane_ground.run(g, s.project, man, conf)
+            for m in g.get("maps", []) + ([g["map"]] if g.get("map") else []):
+                scene, summary = mapbuild.build(m, built, s.project, conf)
+                man.add(scene, "scene", node="Node2D + TileMapLayers", layers=summary, tileset=built["res"],
+                        note="painted by Godot's terrain solver from an ASCII map (mapbuild)")
+        for lane in LATE:
+            if spec.get(lane):
+                where = lane
+                __import__(f"lane_{lane}").run(spec[lane], s.project, man, conf)
+    except KeyError as exc:   # a key a lane needs is not in the entry: say so instead of "unexpected failure"
+        if fcore.DEBUG:
+            raise
+        raise fcore.ToolError(f"spec {a.spec}: a {where} entry is missing the key {exc} (README: Pack spec; "
+                              "--debug shows where it was read)")
+    finally:
+        fcore.stop_comfy()
+    man.drop_engine_rows()
+    man.save()
+    print(f"[ OK ] pack {spec['name']}: {len(man.data['assets'])} files; manifest {os.path.relpath(man.path, s.project)}")
+    return finish_verify(s, man, a.no_verify)
+
+
+def cmd_character(a):
+    s = setup_run(a)
+    import lane_character
+    fixes = {}
+    for item in a.fix:   # "punch_w:keep=4"
+        clip, sep, kv = item.partition(":")
+        k, sep2, v = kv.partition("=")
+        if not sep or not sep2:
+            raise fcore.ToolError(f"--fix {item!r}: use CLIP:KEY=VALUE, e.g. punch_w:keep=4")
+        fixes.setdefault(clip, {})[k] = int(v) if v.lstrip("-").isdigit() else v
+    bad = [m for m in a.motion if "=" not in m]
+    if bad:
+        raise fcore.ToolError(f"--motion {bad[0]!r}: use ACTION=TEXT, e.g. attack=\"swing the wrench overhead\"")
+    if a.source and os.path.isabs(a.source):
+        fcore.TRUSTED.add(os.path.normpath(a.source))   # typed by the user, so it may live outside the game
+    entry = {"name": a.name, "prompt": a.prompt, "source": a.source, "asymmetric": a.asymmetric, "actions": a.actions,
+             "directions": a.directions, "seeds": a.seeds, "east_edit": a.east_edit, "subject": a.subject,
+             "clip_fix": fixes, "motions": dict(m.split("=", 1) for m in a.motion),
+             "poses": a.poses, "pose_dirs": a.pose_dirs}
+    if not (a.prompt or a.source):
+        raise fcore.ToolError("character needs --prompt (generate the south sprite) or --source (an existing one)")
+    man = fcore.Manifest(s, a.name)
+    try:
+        tres, canvas = lane_character.Character(entry, s.project, man, s.conf).run()
+        fcore.log(f"character {a.name} done: canvas {canvas}")
+    finally:
+        fcore.stop_comfy()
+    if man.drop_engine_rows():
+        man.save()
+    return finish_verify(s, man, a.no_verify)
+
+
+def cmd_audition(a):
+    s = setup_run(a)
+    import audition
+    hue = tuple(int(x) for x in a.feature_hue.split("-")) if a.feature_hue else None
+    entry = {"name": a.name, "asymmetric": a.asymmetric, "subject": a.subject,
+             "motions": dict(m.split("=", 1) for m in a.char_motion)}
+    if a.promote:
+        meta = audition.promote(entry, a.clip, a.promote)
+        print(f"[ OK ] {a.promote} is now the shipped {a.clip}. Re-run the character with its usual arguments plus:\n"
+              f"       --fix {audition.apply_hint(a.clip, meta)}")
+        return 0
+    if not a.seeds:
+        raise fcore.ToolError("audition needs --seeds (or --promote TAG)")
+    try:
+        report, sheet, ranked = audition.run(entry, a.clip, a.seeds, a.motion, hue, s.project)
+    finally:
+        fcore.stop_comfy()
+    print(f"[ OK ] {sheet}")
+    for t in ranked:
+        extra = f" feature {t['feature_retention']:.0%}" if "feature_retention" in t else ""
+        print(f"  #{t['rank']} {t['tag']:<10} score {t['score']:>6}{extra} reach {t['reach_px']}px"
+              f"{' TURN?' if t['turned'] else ''}{' HEIGHT' if t['height_drift'] else ''}")
+    if ranked:
+        print(f"[info] the score only sorts the sheet; look at it. To ship #1: --fix {audition.apply_hint(a.clip, ranked[0])}")
+    return 0
+
+
+def cmd_materials(a):
+    s = setup_run(a)
+    import materials
+    if a.extend_palette:
+        return materials.extend_palette(a.add, a.out)
+    try:
+        p, n = materials.render(a.only)
+    finally:
+        fcore.stop_comfy()
+    print(f"[ OK ] {n} materials -> {p}")
+    return 0
+
+
+def cmd_palette(a):
+    setup_run(a, game=False)   # builds a palette file anywhere
+    import palette
+    return palette.cmd(a)
+
+
+def cmd_verify(a):
+    s = setup_run(a)
+    if not s.godot():   # it used to start Godot anyway
+        raise fcore.ToolError("verify loads the assets inside Godot; with --engine none there is no Godot resource to "
+                              "check (the PNGs, sheets + JSON and .fnt fonts are the output)")
+    import glob
+    import verify
+    rows = []
+    for p in glob.glob(os.path.join(s.src, "dotwork", "manifest_*.json")):
+        with open(p, encoding="utf-8") as f:
+            rows += [r["file"] for r in json.load(f)["assets"]]
+    if not rows:
+        raise fcore.ToolError("nothing to verify: no Dotwork manifests in this game yet")
+    r = verify.verify(s, rows)
+    for line in r["load_lines"]:
+        print(" ", line)
+    if not r["ok"]:
+        raise fcore.JobError("verify failed (see verify_report.json in the Dotwork work folder)")
+    print(f"[ OK ] {len(r['resources'])} resources load in the game")
+    return 0
+
+
+def cmd_capture(a):
+    s = setup_run(a)
+    if not s.godot():
+        raise fcore.ToolError("capture records a Godot scene; with --engine none there is no scene to run")
+    import capture
+    r = capture.run(s, a.scene, a.frames, a.fps, capture.parse_size(a.size) if a.size else None, a.out, a.gif)
+    print(f"[ OK ] capture: {r['frames']} frames at {r['fps']} fps in {r['out']}; first and last frame differ in "
+          f"{r['first_last_changed_px']} px; strip {r['strip']}" + (f"; gif {r['gif']}" if r.get("gif") else ""))
+    if not r["first_last_changed_px"]:
+        print("[warn] the first and last frame are identical: nothing moved (a still scene, or too few frames)")
+    return 0
+
+
+def report_reexport(r):
+    """The hand-polish re-export's last line: verified in Godot, or written only (--engine none has no Godot proof,
+    as pack --engine none)."""
+    if not r["ok"]:
+        raise fcore.JobError("re-exported files failed verify")
+    if r.get("verified", True):
+        print(f"[ OK ] re-exported and verified ({r.get('changed', 0)} files changed)")
+    else:
+        print(f"[ OK ] re-exported ({r.get('changed', 0)} files changed; no Godot verify with --engine none)")
+
+
+def cmd_aseprite(a):
+    s = setup_run(a)
+    import aseprite
+    if a.reexport:
+        report_reexport(aseprite.reexport(s.project, s.conf))
+        return 0
+    report_sources(s, aseprite.build(s.project, s.conf, overwrite=a.overwrite), "aseprite")
+    return 0
+
+
+def cmd_pixelorama(a):
+    if a.install_extension or a.info:
+        return cmd_pixelorama_panel(a)
+    s = setup_run(a)
+    import pixelorama
+    if a.reexport:
+        report_reexport(pixelorama.reexport(s.project, s.conf))
+    else:
+        report_sources(s, pixelorama.build(s.project, s.conf, overwrite=a.overwrite), "pixelorama")
+    for rel, folder, cleared in pixelorama.local_paths(s.project, s.conf, clear=a.clear_export_path):
+        if cleared:
+            print(f"[ OK ] {rel}: the export folder Pixelorama saved in it ({folder}) is now blank")
+        else:
+            print(f"[warn] {rel} holds the folder Pixelorama last exported it to, {folder}: a full path on your "
+                  "machine that a public repository would show. --clear-export-path blanks it (frames untouched)")
+    return 0
+
+
+def cmd_pixelorama_panel(a):
+    """The Dotwork panel inside Pixelorama: install it (--install-extension) or answer it (--info, pxo_panel.py)."""
+    if a.reexport or a.overwrite or (a.install_extension and a.info):
+        raise fcore.ToolError("--install-extension and --info each run on their own (no --reexport or --overwrite)")
+    s = setup_run(a)
+    import pxo_panel
+    if a.info:
+        # a full path (the panel's) or one relative to the game: info answers only for the game's own sources
+        path = a.info if os.path.isabs(a.info) else os.path.join(s.project, a.info)
+        pxo_panel.print_info(pxo_panel.info(s.project, s.conf, path))
+        return 0
+    r = pxo_panel.install(s, a.pixelorama_user)
+    e = r["entry"]
+    print(f"[ OK ] Dotwork panel {'installed' if r['changed'] else 'already current'}: {r['zip']}")
+    print(f"[ OK ] {r['config']}: this game ({e['project']}) runs Dotwork with {e['python']}")
+    if not e["godot_bin"]:
+        print("[warn] no Godot found (GODOT_BIN or godot_bin): the panel's re-export will stop at verify. Set "
+              "GODOT_BIN and install again")
+    print("[info] next: restart Pixelorama, then Edit > Preferences > Extensions: select \"Dotwork panel\" and "
+          "Enable (once). The panel is a tab named Dotwork (Window > Panels shows or hides it)")
+    return 0
+
+
+def report_sources(s, done, editor):
+    """What a hand-polish build did (aseprite.build or pixelorama.build: written, unchanged, kept, backups)."""
+    ext = {"aseprite": ".aseprite", "pixelorama": ".pxo"}[editor]
+    print(f"[ OK ] {len(done['written'])} {ext} files written, {len(done['unchanged'])} unchanged, under "
+          f"{os.path.join(s.src, editor)}")
+    for p in done["kept"]:
+        print(f"[warn] kept {os.path.relpath(p, s.project)}: it differs from the game's frames (hand polish not "
+              "re-exported yet, or newer art in the game); --overwrite replaces it with the game's frames")
+    for p in done["backups"]:
+        print(f"[info] replaced {os.path.relpath(p[:-4], s.project)}; the old file is kept as {os.path.basename(p)}")
+
+
+PREVIEWS = {"battle": ("battle_mock", "a battle screen from a party character, enemies and a background"),
+            "title": ("title_mock", "the title screen over a scene"),
+            "attack": ("demo_attack", "an animated attack: character, projectile, impact")}
+
+
+def cmd_preview(a, rest):
+    wants_help = any(x in ("-h", "--help") for x in rest)
+    if not a.kind:   # `preview --help` used to exit 2 with "the following arguments are required: kind"
+        print("usage: dotwork.py preview KIND [options]   (KIND --help lists its options)\n\nkinds:")
+        for k, (_, what) in PREVIEWS.items():
+            print(f"  {k:<8} {what}")
+        if wants_help:
+            return 0
+        raise fcore.ToolError("preview needs a kind: " + ", ".join(PREVIEWS))
+    mod = PREVIEWS[a.kind][0]
+    if wants_help:   # a module's help needs no game folder
+        return __import__(mod).main(rest)
+    setup_run(a)
+    try:
+        return __import__(mod).main(rest)
+    except FileNotFoundError as exc:   # the defaults name the example assets; a game without them needs its own
+        raise fcore.ToolError(f"preview {a.kind}: {exc.filename or exc} not found; pass this game's art instead "
+                              f"(dotwork.py preview {a.kind} --help)")
+
+
+def cmd_clean(a):
+    s = setup_run(a)
+    import pxclean
+    return pxclean.cmd(a, s)
+
+
+def cmd_recolor(a):
+    s = setup_run(a)
+    import recolor
+    return recolor.cmd(a, s)
+
+
+def cmd_setup(a):
+    s = setup_run(a, game=False)   # reports a wrong folder instead of refusing
+    import setup_check
+    return setup_check.run(s, a)
+
+
+def cmd_log(a):
+    s = setup_run(a)
+    import asset_log
+    return asset_log.run(s, a)
+
+
+def cmd_qa(a):
+    s = setup_run(a, game=False)   # read only: creates no work folder
+    s.require_game()
+    import qa_pack
+    return qa_pack.run(s, a)
+
+
+def cmd_fonts_check(a):
+    """Font coverage (fontcheck.py): every character of the strings files must be in the font. Writes nothing and
+    needs no Dotwork config: the font is a glyph file or a built .fnt, the strings any UTF-8 JSON, CSV, PO or text."""
+    import fontcheck
+    return fontcheck.cmd(a, os.path.abspath(a.project), HERE)
+
+
+def cmd_config(a):
+    s = setup_run(a, game=False)
+    print(json.dumps({k: v for k, v in s.conf.items() if k != "fixed"}, indent=1, ensure_ascii=False))
+    return 0
+
+
+# ---- arguments --------------------------------------------------------------------------
+def build_parser():
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--project", default=".", help="the game's folder (default: current folder)")
+    common.add_argument("--config", help="Dotwork config JSON (default <project>/art_src/dotwork/dotwork.config.json)")
+    common.add_argument("--engine", choices=["godot", "none"], help="godot (default): write .tres/.tscn; none: "
+                        "PNGs, sheets and JSON only (web, Bevy, other engines)")
+    common.add_argument("--debug", action="store_true", help="tracebacks and request logs")
+    ap = argparse.ArgumentParser(description="Dotwork: local pixel-art assets for a game, made with ComfyUI on your GPU. "
+                                             "Global options, before or after the command: --project GAME, "
+                                             "--config FILE, --engine godot|none, --debug. `dotwork.py COMMAND --help` "
+                                             "lists a command's own options.",
+                                 formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 epilog="Exit: 0 ok, 1 a task failed, 2 environment or usage. README.md: setup, lanes, "
+                                        "limits.")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p = sub.add_parser("setup", parents=[common], help="check ComfyUI, node packs, models, SpriteKiln and Godot")
+    p.add_argument("--check", action="store_true", help="check only (the default; Dotwork never downloads models)")
+    p.add_argument("--tier", choices=["sprites", "rotate", "animate", "pose", "all"], default="all",
+                   help="check only the models one tier needs (sprites 15 GB, rotate 29 GB, animate 33 GB, pose 19 GB "
+                        "more: skeleton-driven clips, optional)")
+    p.add_argument("--hash", action="store_true", help="also SHA-256 every model file (slow: tens of GB)")
+    p.set_defaults(fn=cmd_setup)
+
+    p = sub.add_parser("pack", parents=[common], help="build everything in a pack spec (README: Pack spec)")
+    p.add_argument("--spec", required=True, help="the pack spec JSON (examples/ has one per capability)")
+    p.add_argument("--no-verify", action="store_true", help="skip the in-game Godot proof")
+    p.set_defaults(fn=cmd_pack)
+
+    p = sub.add_parser("character", parents=[common], help="one animated character")
+    p.add_argument("--name", required=True, help="character name (file and folder names)")
+    p.add_argument("--prompt", help="describe the character (Dotwork draws the south sprite)")
+    p.add_argument("--source", help="an existing south-facing sprite PNG instead")
+    p.add_argument("--asymmetric", action="store_true", help="generate west instead of mirroring east")
+    p.add_argument("--actions", nargs="+", help="default: design.character.actions (idle walk attack)")
+    p.add_argument("--directions", nargs="+", choices=["s", "e", "n", "w", "se", "ne", "nw", "sw"],
+                   help="default: all four; any diagonal makes an 8-way rotation")
+    p.add_argument("--seeds", type=int, default=3, help="south-sprite candidates when generating")
+    p.add_argument("--east-edit", help="edit instruction applied to the east sprite before animating")
+    p.add_argument("--subject", help='animation subject wording, e.g. "the pixel art guard with a halberd"')
+    p.add_argument("--motion", nargs="*", default=[], metavar="ACTION=TEXT", help="per-character motion wording")
+    p.add_argument("--fix", nargs="*", default=[], metavar="CLIP:KEY=VAL",
+                   help='per-clip fixes: walk_n:seed=5151 punch_w:keep=4 "punch_w:motion=TEXT"')
+    p.add_argument("--poses", choices=["battle", "field"], help="add still poses (battle: facing left; field: emotes)")
+    p.add_argument("--pose-dirs", nargs="+", default=None, help="directions for --poses (battle w, field s)")
+    p.add_argument("--no-verify", action="store_true", help="skip the in-game Godot proof")
+    p.set_defaults(fn=cmd_character)
+
+    p = sub.add_parser("audition", parents=[common], help="extra takes of one clip on one sheet (shipped clip untouched)")
+    p.add_argument("--name", required=True, help="a character Dotwork already made (its rotations are reused)")
+    p.add_argument("--clip", required=True, help="action_direction, e.g. walk_e")
+    p.add_argument("--seeds", nargs="+", type=int, help="one take per seed, e.g. 8101 8102 8103")
+    p.add_argument("--promote", metavar="TAG", help="make take TAG (e.g. m1_s8101) the shipped clip, no render")
+    p.add_argument("--motion", nargs="*", default=[""], metavar="TEXT", help='wordings to try; "" = the default')
+    p.add_argument("--char-motion", nargs="*", default=[], metavar="ACTION=TEXT",
+                   help="the character's per-action motion wording, as in its spec")
+    p.add_argument("--feature-hue", metavar="LO-HI", help="signature colour hue range to track, e.g. brass 30-56")
+    p.add_argument("--asymmetric", action="store_true", help="as in the character's spec (west not mirrored)")
+    p.add_argument("--subject", help="as in the character's spec")
+    p.set_defaults(fn=cmd_audition)
+
+    p = sub.add_parser("materials", parents=[common], help="render the material catalog for review / grow the env palette")
+    p.add_argument("--only", nargs="+", help="material names from catalog/materials.json (default: all)")
+    p.add_argument("--extend-palette", action="store_true", help="grow the environment palette from the renders")
+    p.add_argument("--add", type=int, default=32, help="--extend-palette: colours to add")
+    p.add_argument("--out", help="palette file for --extend-palette")
+    p.set_defaults(fn=cmd_materials)
+
+    p = sub.add_parser("palette", parents=[common], help="build a palette from your own art")
+    p.add_argument("action", choices=["extract", "extend"], help="extract: a new palette; extend: add to --base")
+    p.add_argument("sources", nargs="+", help="PNG globs")
+    p.add_argument("--colors", type=int, default=64, help="extract: palette size")
+    p.add_argument("--base", help="extend: the palette to keep")
+    p.add_argument("--add", type=int, default=32, help="extend: colours to add")
+    p.add_argument("--gap", type=float, default=0.04, help="extend: OKLab distance that counts as missing")
+    p.add_argument("--out", required=True, help=".hex file to write")
+    p.set_defaults(fn=cmd_palette)
+
+    p = sub.add_parser("clean", parents=[common], help="any image to clean pixel art, no model: grid, palette, specks")
+    p.add_argument("--source", nargs="+", required=True, help="image globs inside the game (PNG, JPG, WebP, BMP)")
+    p.add_argument("--out", required=True, help="folder inside the game for the cleaned PNGs (same names)")
+    p.add_argument("--cell", default="auto", help="screen pixels per art pixel: auto (measured) or a number")
+    p.add_argument("--width", type=int, help="shrink a smooth image to this many pixels wide instead of a grid")
+    p.add_argument("--bg", choices=["auto", "white", "black", "none"], default="auto",
+                   help="plain background to key out (auto: the border colour, if the border is plain)")
+    p.add_argument("--palette", default="obj", help="obj (default), env, none, or a .hex file in the game")
+    p.add_argument("--colors", type=int, default=0, help="with --palette none: reduce to this many colours")
+    p.add_argument("--max-colors", type=int, default=0, help="cap the colours used from the palette (0 = no cap)")
+    p.add_argument("--outline", default="none", help="#RRGGBB 1 px outline, or none (default)")
+    p.add_argument("--islands", type=int, default=4, help="drop specks smaller than this many pixels (0 keeps all)")
+    p.set_defaults(fn=cmd_clean)
+
+    p = sub.add_parser("recolor", parents=[common], help="palette swap: recolour PNGs (a frame set shares one map)")
+    p.add_argument("--source", nargs="+", required=True, help="PNG globs inside the game, e.g. \"assets/art/props/barrel/*.png\"")
+    p.add_argument("--out", required=True, help="folder inside the game for the recoloured copies (same file names)")
+    p.add_argument("--hue", type=float, default=0, help="turn coloured ramps by this many degrees (OKLCh)")
+    p.add_argument("--to", help="#RRGGBB: turn the sprite's main hue to this colour's instead of --hue")
+    p.add_argument("--saturation", type=float, default=1.0, help="chroma multiplier (0.5 duller, 1.4 more vivid)")
+    p.add_argument("--lightness", type=float, default=0.0, help="add to OKLab lightness (-0.2 darker .. 0.2 lighter)")
+    p.add_argument("--hues", type=float, nargs=2, metavar=("LO", "HI"), help="only source hues in this range "
+                   "(degrees; 330 30 wraps through red)")
+    p.add_argument("--min-chroma", type=float, default=0.02, help="colours greyer than this stay (outline, steel)")
+    p.add_argument("--palette", default="obj", help="obj (default), env or a .hex file: the palette results snap to")
+    p.set_defaults(fn=cmd_recolor)
+
+    p = sub.add_parser("verify", parents=[common], help="prove this game's Dotwork assets load (Godot)")
+    p.set_defaults(fn=cmd_verify)
+
+    p = sub.add_parser("capture", parents=[common], help="record a scene with Godot's Movie Maker (trailer frames)")
+    p.add_argument("--scene", required=True, help="res:// path or a path in the game of the scene to record")
+    p.add_argument("--frames", type=int, default=90, help="frames to write (default 90)")
+    p.add_argument("--fps", type=int, default=30, help="fixed frame rate (default 30)")
+    p.add_argument("--size", help="window size WIDTHxHEIGHT (default: the project's; a game that stretches its "
+                   "viewport still writes frames at the viewport size)")
+    p.add_argument("--out", help="folder in the game for the PNGs (default <src_dir>/captures/<scene>)")
+    p.add_argument("--gif", action="store_true", help="also write a GIF of the capture")
+    p.set_defaults(fn=cmd_capture)
+
+    p = sub.add_parser("aseprite", parents=[common], help="editable .aseprite sources / re-export after hand polish")
+    p.add_argument("--reexport", action="store_true", help="push hand-polished .aseprite files back into the game")
+    p.add_argument("--overwrite", action="store_true",
+                   help="replace a .aseprite that differs from the game's frames (it may hold hand polish)")
+    p.set_defaults(fn=cmd_aseprite)
+
+    p = sub.add_parser("pixelorama", parents=[common],
+                       help="editable Pixelorama .pxo sources / re-export after hand polish (no Pixelorama install needed)")
+    p.add_argument("--reexport", action="store_true", help="push hand-polished .pxo files back into the game")
+    p.add_argument("--overwrite", action="store_true",
+                   help="replace a .pxo that differs from the game's frames (it may hold hand polish)")
+    p.add_argument("--clear-export-path", action="store_true",
+                   help="blank the export folder Pixelorama saves in each .pxo (a full path on your machine, often "
+                        "with your user name); without it, a .pxo holding one only gets a warning")
+    p.add_argument("--install-extension", action="store_true",
+                   help="put the Dotwork panel into Pixelorama (its extensions folder) and record this game in the "
+                        "panel's config; enable it once in Pixelorama's Edit > Preferences > Extensions")
+    p.add_argument("--pixelorama-user", metavar="DIR",
+                   help="Pixelorama's user folder for --install-extension (default: %%APPDATA%%/pixelorama, "
+                        "~/.local/share/pixelorama or ~/Library/Application Support/pixelorama)")
+    p.add_argument("--info", metavar="PXO", help="what the panel shows for one .pxo, as one JSON line (the panel "
+                   "runs this)")
+    p.set_defaults(fn=cmd_pixelorama)
+
+    # add_help=False: "preview battle --help" reaches the battle module, which lists its own flags (--char, --bg ...)
+    p = sub.add_parser("preview", parents=[common], add_help=False,
+                       help="mock screens from the game's art (battle, title, attack); "
+                            "`preview KIND --help` lists each one's options")
+    p.add_argument("kind", nargs="?", choices=["battle", "title", "attack"], help="battle, title or attack")
+    p.set_defaults(fn=None)
+
+    p = sub.add_parser("log", parents=[common], help="add docs/ASSET_LOG.md rows for a pack's manifest")
+    p.add_argument("--pack", required=True, help="the pack name (spec \"name\")")
+    p.add_argument("--dry-run", action="store_true", help="print the row, write nothing")
+    p.set_defaults(fn=cmd_log)
+
+    p = sub.add_parser("qa", parents=[common], help="style check across the game's whole Dotwork asset set (read only)",
+                       description="qa pack: pixel scale, off-palette colours, outline, light direction, figure "
+                                   "height, contrast on the ground tiles and colour-blind separation over every PNG "
+                                   "the game's Dotwork manifests list. Exit 0 clean, 1 findings, 2 usage.")
+    p.add_argument("what", choices=["pack"], help="pack: every asset in the game's manifests")
+    p.add_argument("--json", metavar="OUT", help="also write every finding and measurement to this JSON file")
+    p.add_argument("--lineup", metavar="OUT.png", help="also write a lineup PNG: every character and prop at game "
+                   "scale on a ground tile, labelled, for a by-eye check")
+    p.set_defaults(fn=cmd_qa)
+
+    p = sub.add_parser("fonts-check", parents=[common], help="list characters a game's strings use that a font lacks "
+                                                             "(exit 1 when one is missing)")
+    p.add_argument("--font", required=True, help="a glyph file (glyphs/dialogue_latin.txt: as typed, Dotwork's "
+                   "folder, then the game) or a built .fnt")
+    p.add_argument("--strings", nargs="+", required=True, metavar="FILE",
+                   help="strings files: JSON (string values at any depth), CSV (Godot translation CSV: keys,en,fr), "
+                        "PO / POT, or text (one string per line)")
+    p.add_argument("--caps-only", action="store_true", help="as the spec key: lowercase is drawn with the capitals "
+                   "(title fonts)")
+    p.set_defaults(fn=cmd_fonts_check)
+
+    p = sub.add_parser("config", parents=[common], help="print the merged settings")
+    p.set_defaults(fn=cmd_config)
+    return ap
+
+
+GLOBAL_OPTS = {"--project": True, "--config": True, "--engine": True, "--debug": False}   # option: takes a value
+
+
+def sink_global_options(argv, commands):
+    """The kit's rule: global options work before or after the subcommand. They live on each subcommand here, so
+    `dotwork.py --debug setup --check` becomes `dotwork.py setup --debug --check`. Anything else before the subcommand
+    is left alone for argparse to report."""
+    front, i = [], 0
+    while i < len(argv) and argv[i] not in commands:
+        name = argv[i].split("=", 1)[0]
+        if name not in GLOBAL_OPTS:
+            return argv
+        front.append(argv[i])
+        if GLOBAL_OPTS[name] and "=" not in argv[i] and i + 1 < len(argv):
+            front.append(argv[i + 1])
+            i += 1
+        i += 1
+    return argv if i >= len(argv) else [argv[i]] + front + argv[i + 1:]
+
+
+def main(argv=None):
+    fcore.utf8_stdio()
+    ap = build_parser()
+    sub = next(x for x in ap._actions if isinstance(x, argparse._SubParsersAction))
+    argv = sink_global_options(list(sys.argv[1:] if argv is None else argv), sub.choices)
+    a, rest = ap.parse_known_args(argv)
+    fcore.DEBUG = a.debug
+    if rest and a.cmd != "preview":
+        ap.error(f"unrecognized arguments: {' '.join(rest)}")
+    try:
+        return cmd_preview(a, rest) if a.cmd == "preview" else a.fn(a)
+    except fcore.ToolError as exc:
+        print(f"[error] {exc}", file=sys.stderr)
+        return 2
+    except fcore.JobError as exc:
+        print(f"[FAIL] {exc}", file=sys.stderr)
+        return 1
+    except KeyboardInterrupt:
+        print("\n[abort] interrupted (a queued ComfyUI job keeps running; cancel it in ComfyUI)", file=sys.stderr)
+        return 1
+    except Exception as exc:  # noqa: BLE001
+        print(f"[error] unexpected failure: {exc!r}. Re-run with --debug.", file=sys.stderr)
+        if fcore.DEBUG:
+            traceback.print_exc()
+        return 2
+    finally:
+        fcore.stop_comfy()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

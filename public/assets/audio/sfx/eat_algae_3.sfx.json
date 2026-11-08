@@ -1,0 +1,8 @@
+{
+ "tool": "assets_src/audio/make_sfx.py",
+ "sound": "eat_algae",
+ "variant": 3,
+ "seed": 3942,
+ "rate": 44100,
+ "seconds": 0.057
+}
