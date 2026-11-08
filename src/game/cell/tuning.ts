@@ -40,6 +40,16 @@ export const TUNING = {
     accel: 520, // px/s^2 while steering
     maxSpeed: 150,
     drag: 2.2, // velocity *= exp(-drag * dt): the water slows you gently
+    // accel and drag above are the SNAPPIEST handling: what full mobility gives at any form.
+    // Momentum (playtest 2026-11-08 "add momentum, more as it grows; full agility gets today's snappy controls"):
+    // heaviness divides both accel and drag, so top speed is unchanged but starting, stopping and turning take
+    // longer. Heaviness per form (1, 2, 3) with no mobility; each mobility level takes it 1/maxLevel back to 1.
+    heaviness: [2.0, 2.5, 3.0] as readonly number[],
+    // Playtest 2026-11-08 "too easy, even more sluggish to start": thrust builds up while you hold a direction, from
+    // spoolMinThrust to full over spoolS seconds (per form 1, 2, 3); letting go resets it. Only starting gets slower:
+    // stopping and top speed are unchanged. Mobility shortens it like heaviness; full mobility = instant.
+    spoolS: [0.7, 0.9, 1.1] as readonly number[],
+    spoolMinThrust: 0.25,
     formScale: [1.6, 2.0, 2.4] as readonly number[], // sprite scale per form (form 1, 2, 3)
     radiusPerScale: 10.5, // collision radius = scale * this (matches the drawn body at every form)
     eatRadiusBonus: 4,
@@ -69,8 +79,7 @@ export const TUNING = {
   speedDragPerLevel: 0.08, // drag x (1 - this * level): a streamlined body glides further (lets top speed be reached)
   attackPerLevel: 1, // bump damage + this * level
   defensePerLevel: 0.12, // food lost per bump x (1 - this * level)
-  mobilityAccelPerLevel: 0.35, // acceleration x (1 + this * level): level 5 = 2.75x, near-instant turns (was 0.15)
-  mobilityDragPerLevel: 0.2, // drag x (1 + this * level): you also stop on a dime instead of drifting
+  // Mobility's handling effect is player.heaviness above (was: accel x 2.75 and drag x 2 at level 5).
   mobilityKnockPerLevel: 0.15, // knockback you take x (1 - this * level) (was 0.1)
 
   // ---- growth and evolution ----
@@ -102,6 +111,13 @@ export const TUNING = {
     swimAccel: 300,
     swimDrag: 1.5,
     huntWarnS: 8, // "something is hunting you" at most this often
+    // Pond cells bump each other (playtest 2026-11-08). Hit = bumpFoodLoss x bumpMult x this, taken off the other
+    // cell's hp: "half damage" of what that cell's bump costs you. prickle 4.5, snail/sipper 3, gulper 10.5.
+    cellOnCellMult: 0.5,
+    cellKnockback: 120, // px/s each is pushed apart (the player's bumps use bumpKnockback)
+    // Playtest 2026-11-08 "too easy": a cell killed by another cell (bumped or swallowed) drops this share of
+    // its meat, rounded down, at least 1. Your own kills drop it all.
+    otherKillMeatMult: 0.5,
     /** One row per organism. alive = base + perForm * player form (more predators as you grow).
      *  chase: they swim at you inside this distance (0 = never). bumpMult: x bumpFoodLoss per bump.
      *  Playtest 2026-11-07 "bigger and more dangerous enemies": the gulper, a predator that hunts you. */
@@ -123,14 +139,16 @@ export const TUNING = {
     sight: 340, // px: it notices creatures this close (was its only behavior: chase you inside 340)
     loseSight: 420, // px: it gives up a target that gets this far away
     thinkS: 0.5, // seconds between decisions (not every frame)
-    playerWeight: 1, // scores are distance x weight; lower = more tempting
-    preyWeight: 0.75, // small cells are tempting: at equal distance it goes for them
+    // Playtest 2026-11-08 "too easy, gulpers more likely to chase the player": you are now the favourite (was
+    // playerWeight 1, preyWeight 0.75). It still turns to prey that is under 70 % of your distance (the lure).
+    playerWeight: 0.7, // scores are distance x weight; lower = more tempting
+    preyWeight: 1, // small cells only win when clearly closer than you
     stickiness: 0.6, // switch only if the new target scores under 60 % of the current one
     huntPlayerMaxS: 6, // it tires after chasing you this long...
     tiredS: 3, // ...and drifts slowly for this long
     satedS: 6, // after swallowing a small cell it ignores everything this long (your escape window)
     restSpeedMult: 0.4, // swim speed while sated or tired
-    scrapsOnGulp: 1, // meat left floating when it swallows a small cell (carnivores can scavenge)
+    // (scrapsOnGulp removed 2026-11-08: a swallowed cell now drops its full meat and its part, like any death)
   },
 
   // ---- the look (GDD "lit and moody, under a microscope", mockup D) ----

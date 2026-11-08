@@ -17,7 +17,9 @@ civilization, space) is the plan. It is a prototype, so expect rough edges, and 
   value. You choose at the start and can switch every time you evolve.
 - **Spend what you eat.** Algae earns plant points for **defense** and **mobility**; meat earns meat points for
   **attack** and **speed**. Every upgrade shows on your cell: a tail fin, side paddles, an outer membrane, mandibles.
-- **Collect parts.** Beaten cells drop the part they wear: spikes, a shell or a filter mouth. Each one changes your
+- **Feel the weight.** Your cell has momentum, more with every form; mobility upgrades bring back snappy handling.
+- **Collect parts.** Dead cells drop the part they wear and their meat, whatever killed them (the pond's creatures
+  bump and fight each other too): spikes, a shell or a filter mouth. Each one changes your
   look and how you play. Slots are limited, so a new part replaces your oldest.
 - **Survive the gulpers.** Big predators hunt you, and more of them each time you evolve. They also hunt the small
   cells and get distracted by them, so you can lure one onto a snail and slip away. Once they have eaten, or chased

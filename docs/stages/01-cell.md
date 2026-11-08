@@ -38,6 +38,18 @@ Time per loop: about 15 to 30 seconds *(Claude's pick)*. The fun must be present
 | Every ~10 minutes | Evolves into a new form with the parts chosen | Sees the creature visibly change |
 | Whole stage | Reaches the last form | The pond floods from outside the slide: on to the aquatic stage *(ending: parking lot)* |
 
+## Pond rules (2026-11-08)
+- **Momentum:** your cell is heavy in the water: it starts, stops and turns slowly, and each form is heavier
+  (`TUNING.player.heaviness`). Each mobility level lightens it; full mobility gives the snappiest handling at any form.
+  Top speed is not affected (that is the speed upgrade). Thrust also builds up while you hold a direction
+  (`TUNING.player.spoolS`), so getting going is the slowest part.
+- **Gulpers favour you:** at equal distance they come for you; a small cell distracts one only when it is clearly
+  closer (`TUNING.gulper.playerWeight`, `preyWeight`).
+- **The pond fights itself:** pond cells that touch bump each other, each taking half of what the other's bump costs
+  you (`TUNING.cell.cellOnCellMult`).
+- **Every death drops loot:** whatever kills a cell (you, another cell, a gulper swallowing it), it drops its part and
+  its meat where it died. A cell killed by the pond drops only half its meat (`TUNING.cell.otherKillMeatMult`).
+
 ## Stage win and lose
 - **Stage end:** reach the last form (`TUNING.maxForm`). Today the stage stops there; the flood ending is in the
   ROADMAP Parking lot.

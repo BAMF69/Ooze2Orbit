@@ -19,8 +19,13 @@ describe("gulper choices", () => {
     expect(think(newBrain(), me, [you(P.sight + 50)], 0.016, P).state).toBe("wander");
   });
 
-  it("at equal distance it goes for the small cell, not you (distracted)", () => {
+  it("at equal distance it comes for you (playtest 2026-11-08: you are the favourite)", () => {
     const b = think(newBrain(), me, [you(150), prey(7, 150)], 0.016, P);
+    expect(b).toMatchObject({ state: "hunt", targetId: PLAYER_ID });
+  });
+
+  it("is distracted by a small cell clearly closer than you", () => {
+    const b = think(newBrain(), me, [you(150), prey(7, 80)], 0.016, P);
     expect(b).toMatchObject({ state: "hunt", targetId: 7 });
   });
 
@@ -69,9 +74,9 @@ describe("gulper limits (SOP-14: a chase that never ends makes any mistake fatal
 });
 
 describe("scenario: lure it onto a snail", () => {
-  it("a gulper between you and a snail goes for the snail when it is about as close", () => {
-    // you 160 px to its right, a snail 140 px to its left: it turns away from you
-    const b = think(newBrain(), me, [you(160), prey(3, -140)], 0.016, P);
+  it("a gulper between you and a snail goes for the snail when the snail is clearly closer", () => {
+    // you 160 px to its right, a snail 90 px to its left: it turns away from you
+    const b = think(newBrain(), me, [you(160), prey(3, -90)], 0.016, P);
     expect(b.targetId).toBe(3);
   });
 });
