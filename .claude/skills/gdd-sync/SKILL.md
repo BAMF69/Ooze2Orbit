@@ -7,7 +7,7 @@ description: Reconcile the GDD, ROADMAP, and ARCHITECTURE docs with what the gam
 
 Follow `docs/sop/SOP-08-scope-control.md`.
 
-1. Read `docs/GDD.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`. Skim the code layout for what exists (use an Explore-style search or the `design-critic` subagent for a read-only review).
+1. Read `docs/GDD.md` (the spine), the active stage's doc in `docs/stages/`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`. Skim the code layout for what exists (use an Explore-style search or the `design-critic` subagent for a read-only review).
 2. Produce a **delta report**:
    - Built but not in the GDD
    - In the GDD but not built (and not on the roadmap)

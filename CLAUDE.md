@@ -4,7 +4,9 @@
 > Scaffolded 2026-11-07 from the Claude Code Game Kit. Engine: **Web (Phaser 4 + TypeScript + Vite)**.
 
 ## What this is
-One paragraph pitch lives in `docs/GDD.md`. Read that before any design-affecting work.
+One paragraph pitch lives in `docs/GDD.md` (the spine: game-wide pillars, stages, the active stage and its tier). Before any
+design-affecting work, read it and the **active stage's** doc in `docs/stages/` (the spine names it). Story: `docs/LORE.md`;
+what carries between stages: `docs/HANDOFF_CONTRACT.md`.
 Developer: BAMF69. Solo dev, Claude is the pair programmer.
 
 ## Read first, every session
@@ -51,7 +53,9 @@ gets "nothing ran" from `test`: write the first test, or record the gap in `docs
 | Need | Look at |
 |---|---|
 | New game, first hour | `docs/FIRST_HOUR.md` |
-| Design pillars, scope, MVP | `docs/GDD.md`, slice brief in `docs/VERTICAL_SLICE.md` |
+| Design pillars, scope, MVP | `docs/GDD.md` (spine), the active stage's doc in `docs/stages/`, slice brief in `docs/VERTICAL_SLICE.md` |
+| Lore, story, the enemy | `docs/LORE.md` |
+| What passes between stages | `docs/HANDOFF_CONTRACT.md` |
 | Next tier, production backlog and milestones | `/next-tier`, `docs/PRODUCTION.md` (live after the greenlight) |
 | Code organization, budgets | `docs/ARCHITECTURE.md` |
 | What to do next | `docs/ROADMAP.md`, `docs/HANDOFF.md` |

@@ -6,7 +6,8 @@
 // Usage   : Registered in src/main.ts as "main"; the shell (src/shell/app.ts) starts, pauses and stops it.
 //           ?autoplay: a simple pilot steers and buys (for `dev.py smoke --drive play:N --query autoplay`);
 //           add &diet=herbivore|carnivore|omnivore to pick its diet (default omnivore), the picker is skipped.
-//           ?debug: draws collision circles and logs channel "cell".
+//           ?debug: draws collision circles and logs channel "cell"; channel "lineage" logs the temperament at each
+//           evolution and the lineage written at the stage's end (save slot "lineage", docs/HANDOFF_CONTRACT.md).
 // Notes   : PROTOTYPE (toy tier). Rules live in src/game/cell/rules.ts, numbers in cell/tuning.ts, movement maths
 //           in cell/steer.ts, the pilot in cell/pilot.ts, UI in cell/hud.ts, upgradePanel.ts, dietPicker.ts. This
 //           file wires them to sprites. No physics engine: a few dozen circles, checked by distance each frame.
@@ -21,9 +22,12 @@
 //            -> mouth pulls algae -> eat edible food (points from fresh food) -> pick up parts -> pond cells
 //            wander (prickles chase) -> bumps (damage the cell, knock food out of you, push apart) -> popped cells
 //            drop meat + their part -> food sinks after a while -> regrow algae, respawn cells -> HUD, panel
+//   record : diet picks, rams, pops, bites, gulper escapes and lures go into a CellRecord (cell/record.ts); at the
+//            last form the lineage is built from it and saved once
 // Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
 // ---------------------------------------------------------------------------
 import * as Phaser from "phaser";
+import { describeTemperament, shipSpecialty } from "../core/lineage";
 import { Log } from "../core/log";
 import { effectiveShake } from "../core/settings";
 import { shell } from "../shell/app";
@@ -34,6 +38,7 @@ import { PondMood } from "./cell/mood";
 import { cellSfx, type CellSfx } from "./cell/sfx";
 import { pilotBuy, pilotTarget } from "./cell/pilot";
 import { PLAYER_ID, ate, newBrain, think, type GulperBrain, type Seen } from "./cell/predator";
+import { bump, cellLineage, cellTemperament, gulperEvent, newCellRecord, recordDiet, type CellRecord } from "./cell/record";
 import {
   accel, addPart, bumpDamage, cellsWanted, changeDiet, drag, partAllowed, bumpFoodLoss, buyUpgrade, canEat, dropKinds, eat, eatFood, freshBase, knockbackTaken,
   loseFood, maxSpeed, newCreature, pullRadius, spriteRow, upgradeTier, type Creature,
@@ -48,6 +53,8 @@ import {
 const MAX_DT = 0.1; // s: clamp big gaps (tab in background, debugger pause)
 const ANIM_FPS = 6;
 const LOG = "cell";
+const LINEAGE_LOG = "lineage";
+const LINEAGE_SLOT = "lineage"; // save_lineage.json: what the aquatic stage will start from
 /** Upgrade layers around the body (player depth 4): the membrane furthest back, mandibles in front. */
 const UP_DEPTH: Readonly<Record<UpgradeStat, number>> = { defense: 3.7, speed: 3.8, mobility: 3.85, attack: 4.1 };
 
@@ -62,6 +69,8 @@ interface PondCell extends Body {
 
 export class MainScene extends Phaser.Scene {
   private creature: Creature = newCreature();
+  private record: CellRecord = newCellRecord();
+  private lineageSaved = false;
   private player!: Body & { spr: Phaser.GameObjects.Sprite };
   private upLayers!: Record<UpgradeStat, Phaser.GameObjects.Sprite>;
   private upsLayout!: AtlasLayout;
@@ -107,6 +116,9 @@ export class MainScene extends Phaser.Scene {
     if (askedDiet && !DIETS.includes(askedDiet)) Log.error(LOG, `?diet=${askedDiet} is not one of ${DIETS.join(", ")}`);
     this.rng = new Phaser.Math.RandomDataGenerator(["amber-pond"]); // same pond every run: repeatable captures
     this.creature = newCreature(askedDiet && DIETS.includes(askedDiet) ? askedDiet : "omnivore");
+    this.record = newCellRecord();
+    this.lineageSaved = false;
+    if (this.autoplay) this.record = recordDiet(this.record, this.creature.diet); // no picker: the asked diet is the pick
     this.foods = [];
     this.orbs = [];
     this.cells = [];
@@ -213,6 +225,7 @@ export class MainScene extends Phaser.Scene {
     if (d !== this.creature.diet) this.hud.toast("cell.diet_now", { diet: shell.i18n.t(`diet.${d}`) });
     const change = changeDiet(this.creature, d);
     this.creature = change.creature;
+    this.record = recordDiet(this.record, d);
     this.sfx.play("choose");
     for (const p of change.dropped) { // a part the new diet cannot use floats back out
       this.dropOrb(this.player.x, this.player.y - this.playerRadius() * 2, p);
@@ -221,6 +234,7 @@ export class MainScene extends Phaser.Scene {
     if (change.dropped.length) this.refreshPlayerLook();
     shell.input.clearPresses(); // the confirming press must not also buy an upgrade
     Log.info(LOG, `DIET ${d}`);
+    if (this.creature.form >= TUNING.maxForm) this.saveLineage(); // the last choice of the stage
   }
 
   private panelInput(): void {
@@ -312,7 +326,28 @@ export class MainScene extends Phaser.Scene {
     this.tweens.add({ targets: this.player.spr, scale: { from: from * 0.8, to: this.playerScale() }, duration: 450, ease: "Back.Out" });
     if (!shell.settings.access.reduce_motion) this.cameras.main.flash(TUNING.evolveFlashS * 1000, 255, 240, 200);
     this.hud.toast(this.creature.form >= TUNING.maxForm ? "cell.evolved_last" : "cell.evolved", { form: this.creature.form, slots: this.creature.form });
-    if (!this.autoplay) this.picker.show(this.creature.diet, "diet.title_evolve", { form: this.creature.form });
+    Log.info(LINEAGE_LOG, `form ${this.creature.form}: ${describeTemperament(cellTemperament(this.creature, this.record))}`);
+    if (this.autoplay) {
+      if (this.creature.form >= TUNING.maxForm) this.saveLineage(); // no picker: the stage ends at once
+    } else {
+      this.picker.show(this.creature.diet, "diet.title_evolve", { form: this.creature.form });
+    }
+  }
+
+  /** The stage's end (last form, last diet picked): build the lineage and save it once. A failed save must not end the run. */
+  private saveLineage(): void {
+    if (this.lineageSaved) return;
+    this.lineageSaved = true;
+    const lineage = cellLineage(this.creature, this.record);
+    const home = lineage.species[0];
+    try {
+      shell.saves.save(LINEAGE_SLOT, lineage as unknown as Record<string, unknown>);
+      const spec = shipSpecialty(home.temperament);
+      Log.info(LINEAGE_LOG, `saved (slot ${LINEAGE_SLOT}): ${describeTemperament(home.temperament)}; leans ${spec.kind} (${spec.tech})`);
+      for (const e of home.influence) Log.debug(LINEAGE_LOG, `  ${e.cause} ${JSON.stringify(e.effect)}`);
+    } catch (err) {
+      Log.error(LINEAGE_LOG, `could not save the lineage (slot ${LINEAGE_SLOT}): ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 
   // ---- food ----------------------------------------------------------------------
@@ -472,6 +507,11 @@ export class MainScene extends Phaser.Scene {
     const seen: Seen[] = [{ id: PLAYER_ID, x: this.player.x, y: this.player.y }];
     for (const c of this.cells) if (!c.brain && c.hp > 0) seen.push({ id: c.id, x: c.x, y: c.y });
     const next = think(brain, g, seen, dt, TUNING.gulper);
+    const ev = gulperEvent(brain, next);
+    if (ev) {
+      this.record = bump(this.record, ev === "escape" ? "gulperEscapes" : "gulpersLured");
+      Log.debug(LINEAGE_LOG, `gulper ${g.id}: ${ev}`);
+    }
     if (next.targetId === PLAYER_ID && brain.targetId !== PLAYER_ID) {
       Log.info(LOG, `HUNT player (gulper ${g.id})`);
       if (this.huntWarnCd <= 0) { // pillar 1: every danger is readable before it hits
@@ -515,6 +555,8 @@ export class MainScene extends Phaser.Scene {
       const into = toward(this.player, c); // am I swimming into it, or is it biting me?
       const ramming = this.player.vx * into.x + this.player.vy * into.y >= TUNING.rammingSpeed;
       c.hp -= bumpDamage(this.creature, ramming);
+      if (ramming) this.record = bump(this.record, "cellsRammed");
+      else if (c.kind === "gulper") this.record = bump(this.record, "timesBitten");
       const loss = bumpFoodLoss(this.creature, c.kind);
       this.creature = loseFood(this.creature, loss);
       this.scatterFood(this.player.x, this.player.y, dropKinds(this.creature, loss), false, TUNING.droppedFoodLifeS, 0.7, 1);
@@ -531,6 +573,7 @@ export class MainScene extends Phaser.Scene {
     const popped = this.cells.filter((c) => c.hp <= 0);
     if (!popped.length) return;
     this.cells = this.cells.filter((c) => c.hp > 0);
+    this.record = bump(this.record, "cellsPopped", popped.length); // only bumps with the player pop cells
     for (const c of popped) {
       Log.info(LOG, `POP ${c.kind}`);
       this.sfx.play("pop");

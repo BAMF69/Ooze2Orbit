@@ -150,4 +150,26 @@ export const TUNING = {
   // ---- feedback ----
   shakeOnBump: 3, // px, scaled by the player's shake setting
   evolveFlashS: 0.5,
+
+  // ---- temperament: how the cell stage feeds the lineage (docs/HANDOFF_CONTRACT.md; src/game/cell/record.ts) ----
+  // Each cause earns points toward one temperament; `full` points = 100 %. First draft (Claude's pick 2026-11-08):
+  // a creature that maxes attack (5), keeps the spikes (2) and picks carnivore at all 3 choices (3) is 100 %
+  // aggressive with no fighting at all; behavior adds on top, capped so grinding one action cannot do it alone.
+  temperament: {
+    full: 10, // points that make one temperament 100 %
+    perUpgradeLevel: { attack: 1, defense: 1, speed: 0.5, mobility: 0.5 }, // attack: aggressive, defense: cautious, speed + mobility: adaptable
+    spikesKept: 2, // aggressive: the part you finish the stage with
+    shellKept: 2, // cautious
+    carnivorePick: 1, // aggressive, per diet choice (start + each evolution)
+    omnivorePick: 0.5, // adaptable, per diet choice
+    dietSwitch: 1.5, // adaptable, per evolution where you changed diet
+    ram: 0.1, // aggressive, per cell you rammed...
+    ramMax: 3, // ...up to this many points
+    pop: 0.2, // aggressive, per cell you popped...
+    popMax: 2,
+    escape: 0.5, // cautious, per gulper that gave up on you (lost you, or tired of the chase)...
+    escapeMax: 3,
+    lure: 0.5, // adaptable, per gulper that turned from you to other prey...
+    lureMax: 2,
+  },
 } as const;

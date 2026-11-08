@@ -23,6 +23,10 @@
 - Captions for sound effects (events carry caption text; the shell's captions_sfx setting is not wired to them yet)
 - Music: an ambient, watery loop (GDD audio direction)
 - Gamepad control of the upgrade panel (the d-pad already swims)
+- Cell stage: a rare hexagonal fleck in the pond background that gulpers avoid (first `T0|▼|` hint, art only; `docs/LORE.md`)
+- Cell stage ending: the pond floods from outside the slide (bridge to the aquatic stage)
+- Space stage: temperament readout (cautious = shields, aggressive = weapons, adaptable = engines)
+- Connected mode: other players' or AI-generated species fill the universe (needs online play; after solo works)
 
 ## Milestones
 Scope, not dates. `/next-tier` moves the game from one tier to the next; after the slice, `docs/PRODUCTION.md` holds the
@@ -36,6 +40,8 @@ detail.
 | M4 Release candidate (v1.0.0-rc.N, then v1.0.0) | `/release-check` green | |
 
 ## Done (recent, newest first)
+- 2026-11-08: Cell-stage recording: diet picks, rams, pops, bites, gulper escapes and lures become a cause log; temperament with the 50 % per-stage shift cap (`src/core/lineage.ts`); the lineage is saved to slot `lineage` at the stage's end (`src/game/cell/record.ts`, tests)
+- 2026-11-08: Design docs: GDD split into a spine (`docs/GDD.md`) plus one doc per stage (`docs/stages/`, cell full, stages 2 to 5 outlined); `docs/LORE.md` (the Gardener, `T0|▼|`, three worlds, Endless Sky style space stage); `docs/HANDOFF_CONTRACT.md` (the lineage file); pillars 1 and 2 rewritten; win is now defeating `T0|▼|`
 - 2026-11-08: Codename removed (Ooze2Orbit everywhere); README with play link, screenshots, GIFs, controls; fixed: Enter on the menu picked the default diet for keyboard players
 - 2026-11-07: Gulpers get distracted: an FSM picks you or the small cells (prefers prey), swallows prey (meat scrap left), rests when sated, tires of chasing you. Autoplay 2 min: 14-16 prey swallowed, 4-9 hunts on the player
 - 2026-11-07: Renamed Ooze2Orbit; carnivores cannot take the filter mouth (shed on switching); gulper predator (hunts, 21-food bite, 1 per form, warning toast); only ramming fully damages a cell; SFX re-made as organic squishy sounds
