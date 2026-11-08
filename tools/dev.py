@@ -372,7 +372,9 @@ def cmd_test(args):
         return 2
     m = re.search(r"Tests\s+(?:(\d+) failed \| )?(\d+) passed", out)
     if rc != 0 or not m:
-        print("[FAIL] tests failed")
+        # say which check failed: on CI a green summary with a non-zero exit code looked like an unexplained FAIL
+        why = f"vitest exit code {rc}" if rc != 0 else "no 'Tests ... passed' summary in the output"
+        print(f"[FAIL] tests failed ({why})")
         return 1
     print(f"[ OK ] {m.group(2)} test(s) passed")
     return 0
