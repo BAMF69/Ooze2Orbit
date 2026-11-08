@@ -42,6 +42,8 @@ Engine-specific folder layout is documented in `docs/ENGINE.md`. Universal folde
 | Pond organisms | Per-kind table (hp, speed, size, chase, bite, meat, count per form) incl. the gulper predator; refill toward `cellsWanted` | `TUNING.cell.kinds`, `MainScene` (spawnCell, moveCells, bumps, refill) | `tests/cellRules.test.ts` (predators, ramming) |
 | Gulper mind | FSM: wander / hunt (you or prey; prey preferred at equal distance; sticky) / sated after eating / tired after chasing you | `src/game/cell/predator.ts`, `MainScene.thinkGulper`, `gulps` | `tests/cellPredator.test.ts` |
 | Autoplay pilot | What the ?autoplay pilot swims at and buys | `src/game/cell/pilot.ts` | `tests/cellPilot.test.ts` |
+| Lineage and temperament | The lineage file every stage hands on, the cause log, temperament maths with the 50 % per-stage shift cap (no Phaser; shared by all stages) | `src/core/lineage.ts` | `tests/lineage.test.ts` |
+| Cell recording | Diet picks, rams, pops, bites, gulper escapes and lures; cell cause log and lineage, saved to slot `lineage` at the stage's end (log channel `lineage`) | `src/game/cell/record.ts`, `MainScene.saveLineage` | `tests/cellRecord.test.ts` |
 | Pond scene | Wires rules + movement to sprites; spawns, bumps, pickups | `src/game/MainScene.ts` | `dev.py smoke --drive play:N --query autoplay` |
 
 ## Data flow and events
