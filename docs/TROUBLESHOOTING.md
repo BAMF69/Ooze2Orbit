@@ -16,6 +16,18 @@
 ```
 
 ## Entries
+### Keyboard players never got to choose a diet (Enter on "Play" picked omnivore)
+- First seen: 2026-11-08 (found while capturing README screenshots)
+- Environment: any browser, keyboard
+- Symptom: after pressing Enter on "Play", the diet picker closed at once with the default diet. Clicking "Play" with
+  the mouse worked, which hid it during playtests.
+- Root cause: menu presses wait in the input queue until the shell shows the play screen and clears it, but the
+  scene already runs under the loading screen; the picker read the leftover Enter.
+- Fix: MainScene reads picker and upgrade-panel keys only while `shell.topId === "play"`.
+- How to verify: `python tools/dev.py smoke --gpu --drive play:3 --screenshot x.png` shows the picker, and the log has
+  no DIET line.
+- Related: src/game/MainScene.ts update()
+
 ### CI says "[FAIL] tests failed" although every test passed
 - First seen: 2026-11-07
 - Environment: GitHub Actions (ubuntu-latest), Vitest 5.0.5, `python tools/dev.py test`

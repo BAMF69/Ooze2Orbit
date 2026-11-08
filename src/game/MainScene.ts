@@ -151,12 +151,16 @@ export class MainScene extends Phaser.Scene {
       throw new Error("planted crash (dev.py smoke --drive crash)"); // proves the crash hook end to end
     }
     const dt = Math.min(deltaMs / 1000, MAX_DT) * shell.settings.access.game_speed;
+    // This scene already runs under the loading screen, while presses made on the menus (Enter on "Play") still
+    // sit in the input queue; the shell clears it only when the play screen appears. Read keys only from then
+    // on, or that leftover Enter picked the default diet before a keyboard player could choose (2026-11-08).
+    const playing = shell.topId === "play";
     if (this.picker.isOpen) {
-      this.pickerInput();
+      if (playing) this.pickerInput();
       this.hud.update(this.creature, dt);
       return; // the pond waits while you choose a diet
     }
-    this.panelInput();
+    if (playing) this.panelInput();
     this.movePlayer(dt);
     this.syncUpgradeLayers();
     this.mood.follow(this.player.x, this.player.y);
