@@ -8,7 +8,7 @@
 **Engine version:** see `docs/ENGINE.md`
 
 ## Where we are
-Ooze2Orbit (codename Project_Amber_Gryphon), tier Toy. The cell stage is playable and BAMF69 likes it ("its cool!"):
+Ooze2Orbit, tier Toy. Live at https://bamf69.github.io/Ooze2Orbit/ (every push to main redeploys). The cell stage is playable and BAMF69 likes it ("its cool!"):
 pick a diet, swim a dark lit pond, eat algae/meat, bump cells, collect parts, buy 4 upgrades (E panel), evolve twice,
 dodge or hunt gulper predators. Code-made sprites (lit microscope style) and code-made organic SFX.
 
@@ -30,7 +30,6 @@ dodge or hunt gulper predators. Code-made sprites (lit microscope style) and cod
 ## Known broken or flaky
 - Headless smoke captures can show tilted sprites split along a diagonal (SwiftShader); real browser is fine
   (`docs/TROUBLESHOOTING.md`).
-- `smoke --drive play:N` without `autoplay`: a stray press closes the diet picker (parking lot).
 - 26 kit LFS pointer stubs (shader goldens, Dotwork fixtures) are untracked: `smoke --shaders` cannot compare (TROUBLESHOOTING).
 - No music, no SFX captions, no gamepad control of the upgrade panel, no left-stick movement (parking lot).
 
@@ -38,12 +37,13 @@ dodge or hunt gulper predators. Code-made sprites (lit microscope style) and cod
 ```
 python tools/dev.py check
 python tools/dev.py test
-python tools/dev.py smoke --drive play:60 --query "autoplay&diet=carnivore" --screenshot captures/progress/x.png
+python tools/dev.py smoke --gpu --drive play:60 --query "autoplay&diet=carnivore" --screenshot captures/progress/x.png
 python tools/art/pixel_sprite.py build assets_src/sprites/<file>.py --out public/assets/art/<file> --overwrite --preview-scale 0
 python assets_src/audio/make_sfx.py
 ```
 
 ## Context a fresh Claude needs
+- Captures for docs/README: use `smoke --gpu` (real rendering); plain headless splits tilted sprites (TROUBLESHOOTING).
 - All feel numbers: `src/game/cell/tuning.ts`. Rules (pure, tested): `src/game/cell/rules.ts`. Scene: `src/game/MainScene.ts`.
 - Autoplay pilot is a reckless player: its pacing is a rough guide only, never a substitute for BAMF69 playing.
 - `player_upgrades` overlays fail the art floor alone by design; check the composite (see the file header).

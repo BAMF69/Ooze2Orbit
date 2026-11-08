@@ -7,6 +7,6 @@
 import { version } from "../../package.json";
 
 export const GAME_NAME = "Ooze2Orbit";
-export const GAME_SLUG = "project_amber_gryphon"; // the save-data prefix: kept from the codename so saved settings survive the rename
+export const GAME_SLUG = "ooze2orbit"; // file and download names (was the codename project_amber_gryphon until 2026-11-08)
 export const GAME_VERSION: string = version;
 export const SETTINGS_FILE = "settings.json";

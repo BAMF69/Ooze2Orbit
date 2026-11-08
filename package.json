@@ -1,9 +1,9 @@
 {
-  "name": "project_amber_gryphon",
+  "name": "ooze2orbit",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Project_Amber_Gryphon: a browser game (Phaser 4, TypeScript, Vite). Use python tools/dev.py for every command.",
+  "description": "Ooze2Orbit: a browser game (Phaser 4, TypeScript, Vite). Use python tools/dev.py for every command.",
   "engines": {
     "node": ">=22.12.0"
   },

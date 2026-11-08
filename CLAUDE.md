@@ -1,4 +1,4 @@
-# Project_Amber_Gryphon
+# Ooze2Orbit
 
 > Project memory for Claude Code. Keep this file lean. Detail lives in `docs/`.
 > Scaffolded 2026-11-07 from the Claude Code Game Kit. Engine: **Web (Phaser 4 + TypeScript + Vite)**.

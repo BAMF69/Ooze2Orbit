@@ -1,11 +1,11 @@
-# Project_Amber_Gryphon: Game Design Document
+# Ooze2Orbit: Game Design Document
 
 > Living document. Short beats complete. Update with `/gdd-sync` when reality diverges from this page.
 > Last reviewed: 2026-11-07
 > Written from the kit's start-up interview with BAMF69. Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69.
 
 ## Identity
-- **Working title:** Ooze2Orbit (picked by BAMF69 2026-11-07, first as "Ooze to Orbit"; codename Project_Amber_Gryphon stays as the repo and save-data name)
+- **Title:** Ooze2Orbit (picked by BAMF69 2026-11-07, first as "Ooze to Orbit"). Repo: github.com/BAMF69/Ooze2Orbit, playable at bamf69.github.io/Ooze2Orbit
 - **One-line pitch:** A moody, lit, top-down pixel-art game where you play a little creature that eats and battles its way up from a single cell to the stars.
 - **Genre:** Evolution adventure
 - **Perspective:** 2D top-down

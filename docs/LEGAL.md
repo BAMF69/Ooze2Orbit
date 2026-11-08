@@ -1,4 +1,4 @@
-# Legal checklist (Project_Amber_Gryphon)
+# Legal checklist (Ooze2Orbit)
 
 > Fill-in checklists, **not legal advice**. They make sure nothing obvious is missing before you ask a lawyer (do, for
 > anything commercial at scale). Procedure: `docs/sop/SOP-21-ship-on-steam-and-itch.md` step 6. Items marked

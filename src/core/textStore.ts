@@ -13,7 +13,7 @@
 // ---------------------------------------------------------------------------
 
 // ---- Tunables ----------------------------------------------------------------
-export const DEFAULT_DATA_PREFIX = "project_amber_gryphon/";
+export const DEFAULT_DATA_PREFIX = "ooze2orbit/";
 export const DATA_DIR_PARAM = "data-dir";
 
 export interface TextStore {

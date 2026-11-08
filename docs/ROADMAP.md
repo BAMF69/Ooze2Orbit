@@ -23,7 +23,6 @@
 - Captions for sound effects (events carry caption text; the shell's captions_sfx setting is not wired to them yet)
 - Music: an ambient, watery loop (GDD audio direction)
 - Gamepad control of the upgrade panel (the d-pad already swims)
-- smoke `--drive play:N` without autoplay: the diet picker gets closed by a stray press, so the capture shows the pond instead of the picker
 
 ## Milestones
 Scope, not dates. `/next-tier` moves the game from one tier to the next; after the slice, `docs/PRODUCTION.md` holds the
@@ -37,6 +36,7 @@ detail.
 | M4 Release candidate (v1.0.0-rc.N, then v1.0.0) | `/release-check` green | |
 
 ## Done (recent, newest first)
+- 2026-11-08: Codename removed (Ooze2Orbit everywhere); README with play link, screenshots, GIFs, controls; fixed: Enter on the menu picked the default diet for keyboard players
 - 2026-11-07: Gulpers get distracted: an FSM picks you or the small cells (prefers prey), swallows prey (meat scrap left), rests when sated, tires of chasing you. Autoplay 2 min: 14-16 prey swallowed, 4-9 hunts on the player
 - 2026-11-07: Renamed Ooze2Orbit; carnivores cannot take the filter mouth (shed on switching); gulper predator (hunts, 21-food bite, 1 per form, warning toast); only ramming fully damages a cell; SFX re-made as organic squishy sounds
 - 2026-11-07: Named Ooze2Orbit (briefly "Ooze to Orbit"); GDD art direction now lit and moody; all sprites redrawn; style-D mood (dark pond, light, falloff); speed/mobility upgrades made dramatic and shown on the cell (fin, paddles, membrane, mandibles); first sound effects (Wavesmith, code-made)
