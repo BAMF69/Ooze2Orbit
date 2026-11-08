@@ -874,6 +874,30 @@ def render(obj):
     return json.dumps(obj, indent=1, sort_keys=True, ensure_ascii=False) + "\n"
 
 
+def _same(a, b):
+    """Equal, with numbers compared within TOLERANCE: the platform's math library (Windows UCRT vs Linux glibc) can
+    differ in the last digit of sin/exp, which made a byte-exact --check fail on CI (2026-11-07). Ports already
+    compare within TOLERANCE; so does the check now. Booleans and everything else compare exactly."""
+    num = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool)
+    if num(a) and num(b):
+        return abs(a - b) <= TOLERANCE
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(_same(a[k], b[k]) for k in a)
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(_same(x, y) for x, y in zip(a, b))
+    return type(a) is type(b) and a == b
+
+
+def _same_text(on_disk, text):
+    """--check: identical bytes, or the same JSON within TOLERANCE."""
+    if on_disk == text.encode("utf-8"):
+        return True
+    try:
+        return _same(json.loads(on_disk.decode("utf-8")), json.loads(text))
+    except ValueError:
+        return False
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Reference logic and golden vectors for the engine ports.")
     g = ap.add_mutually_exclusive_group(required=True)
@@ -897,7 +921,7 @@ def main(argv=None):
             (out / name).write_bytes(text.encode("utf-8"))
             print(f"[ OK ] wrote {out / name}")
         return 0
-    stale = [n for n, t in files.items() if not (out / n).exists() or (out / n).read_bytes() != t.encode("utf-8")]
+    stale = [n for n, t in files.items() if not (out / n).exists() or not _same_text((out / n).read_bytes(), t)]
     for n in files:
         print(f"[{'FAIL' if n in stale else ' OK '}] {n}")
     return 1 if stale else 0
