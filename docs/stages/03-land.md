@@ -7,7 +7,7 @@
 - **Pitch:** life leaves the water: branches split between land, air and sea.
 - **Lens:** coastline, then continent.
 - **God mode:** drying lakes push lineages onto land; rivers, climate, ice ages, volcanoes, isolated islands. Branches
-  can die out (pillar 1, after the cell stage). The two outer gardens get a few big nudges per stage, no avatar.
+  can die out (pillar 1, after the cell stage).
 - **Avatar mode:** one member of a pack (hunting, nesting, territory). Camera: top-down or angled.
 - **Tracking starts:** the gentle vs. harsh Gardener tracker (how violent your interventions were), which matters in
   the civilization and space stages.

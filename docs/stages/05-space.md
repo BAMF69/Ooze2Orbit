@@ -17,4 +17,6 @@
 - **Modes** *(approved)*: solo (the player raised all three species); connected (other players' or AI-generated species
   fill the universe; needs online play, out of scope for now).
 - **Played on its own:** starts from three default or generated species.
-- **Receives:** three spacefaring species, per `docs/HANDOFF_CONTRACT.md`.
+- **Outer gardens** *(BAMF69 2026-11-08)*: the two outer gardens are seeded only when the player chooses to interact
+  with them, which for now happens here. Until this stage the game follows the home world alone.
+- **Receives:** the home species, per `docs/HANDOFF_CONTRACT.md`; it adds the two outer-garden species.
