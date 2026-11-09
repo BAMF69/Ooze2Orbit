@@ -9,7 +9,7 @@
 //           Temperament only changes through the cause log (contract rule 1): nothing here sets it directly.
 //           The shift cap (BAMF69 2026-11-08): the first stage (cell) sets each temperament freely, 0 to 1; every
 //           later stage can move it at most STAGE_SHIFT_CAP away from where the stage before left it. A 100 %
-//           aggressive cell can be 50 % aggressive at the end of the aquatic stage at the least, 0 % after land.
+//           aggressive cell can be 50 % aggressive at the end of the aquatic stage at the least, 0 % after the creature stage.
 //
 // Pseudocode (temperamentOf):
 //   t = null
@@ -24,7 +24,7 @@ export const LINEAGE_SCHEMA = 1;
 /** Most one stage can move a temperament from where the stage before left it (0..1 scale). */
 export const STAGE_SHIFT_CAP = 0.5;
 
-export const STAGES = ["cell", "aquatic", "land", "civ", "space"] as const;
+export const STAGES = ["cell", "aquatic", "creature", "civ", "space"] as const; // "creature" was "land" until 2026-11-09
 export type StageId = (typeof STAGES)[number];
 
 export const TEMPERAMENTS = ["cautious", "aggressive", "adaptable"] as const;

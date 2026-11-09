@@ -69,7 +69,7 @@ Time per loop: about 30 to 60 seconds in avatar mode between looks through the l
 |---|---|---|
 | Every ~30 seconds | Eats, escapes or catches something | Grows; survives a threat |
 | Every few minutes | Changes the water; a generation passes | Sees a trait drift and why |
-| Whole stage | Steers the lineage through the lake | The body plan and temperament it hands to land/air |
+| Whole stage | Steers the lineage through the lake | The body plan and temperament it hands to the creature stage |
 
 ## Maps and river runs (v3, BAMF69 2026-11-08)
 One map per form, joined by a minigame:

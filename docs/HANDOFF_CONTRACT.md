@@ -50,7 +50,7 @@ lineage has its own `schemaVersion` so it can also be exported as a plain file i
 | Field | Meaning | Written by |
 |---|---|---|
 | `schemaVersion` | Version of this contract. Bump it and add a migration when the shape changes | Any stage that changes the shape |
-| `lastStage` | The last stage that finished: `cell`, `aquatic`, `land`, `civ`, `space` | Every stage, at its end |
+| `lastStage` | The last stage that finished: `cell`, `aquatic`, `creature`, `civ`, `space` | Every stage, at its end |
 | `gardener.harshness` | 0 = gentle, 1 = harsh: how violent the Gardener's interventions were. Decides how species treat the Gardener (`docs/LORE.md`) | God-mode stages (aquatic on) |
 | `species[]` | Every species in the game: only `home` until the player chooses to interact with an outer garden (the space stage, for now; BAMF69 2026-11-08), then up to three | Cell creates the first; space adds the outer gardens and any replacements |
 | `species[].world` | `home`, or the outer garden it lives on | The stage that creates it |
@@ -69,7 +69,7 @@ lineage has its own `schemaVersion` so it can also be exported as a plain file i
 2. **Each stage can shift a temperament at most 50 % from where the stage before left it** (approved by BAMF69
    2026-11-08). The cell stage sets each temperament freely, 0 to 100 %. Every later stage adds its causes to where
    the stage before ended, then clamps each temperament to that value ± 50 % (and to 0..100 %). Example: a cell stage
-   that ends 100 % aggressive (a carnivore) can end the aquatic stage no lower than 50 % aggressive, and the land/air
+   that ends 100 % aggressive (a carnivore) can end the aquatic stage no lower than 50 % aggressive, and the creature
    stage as low as 0 %. A stage with no causes for a species leaves it where it was. The cap is `STAGE_SHIFT_CAP` in
    `src/core/lineage.ts`; `stageRange()` tells a stage (and its readout) the lowest and highest each temperament can
    still reach.
@@ -87,7 +87,7 @@ lineage has its own `schemaVersion` so it can also be exported as a plain file i
 |---|---|---|---|
 | **Cell** | Nothing: always starts fresh | Creates species `home`; its `cell` block; diet; first influence entries | Not needed |
 | **Aquatic** | `home`: temperament, diet, `stages.cell` (final form, parts, upgrades: the starting body plan) | Its block; branches; `gardener.harshness` | A balanced omnivore cell, all temperaments low |
-| **Land/Air** | All species: temperament, diet, branches, aquatic body plan | Its block; branch extinctions; habitat (land, air, sea) per branch | One generated aquatic species (`home`) |
+| **Creature** | All species: temperament, diet, branches, aquatic body plan | Its block (levels cleared and how: fight, puzzle or stealth per obstacle; parts used); inherited traits from the most-used parts; branch extinctions; habitat (land, air, sea) per branch | One generated aquatic species (`home`) |
 | **Civilization** | All species: temperament, diet, habitat, `gardener.harshness` | Its block; culture; how the species sees the Gardener; whether it adopted T0&#124;▼&#124; tech | One generated land species (`home`) |
 | **Space** | All species: temperament (ship specialty), diet (second layer), culture, T0&#124;▼&#124; tech flag | Fleet and campaign state; the two outer-garden species when the player first reaches out to them, seeded from `home`'s lineage; extinct species and their `generated` replacements | One generated spacefaring species (`home`) |
 

@@ -12,9 +12,10 @@
 - **Title:** Ooze2Orbit (picked by BAMF69 2026-11-07, first as "Ooze to Orbit"). Repo: github.com/BAMF69/Ooze2Orbit, playable at bamf69.github.io/Ooze2Orbit
 - **One-line pitch:** A moody, lit, top-down pixel-art game where you raise life from a single cell to the stars, as the creature and as the unseen Gardener shaping its world, to build the alliance that can defeat `T0|▼|`.
 - **Genre:** Evolution adventure; five stages, each a small game of its own
-- **Perspective:** 2D. Top-down in the cell stage and in god mode; from the aquatic stage on, avatar mode is a
-  **pseudo-3D view from behind the creature** (approved by BAMF69 2026-11-08), still drawn in 2D Phaser
-- **Reference games (2 to 3) and what you borrow from each:** Spore for the stage-by-stage evolution (cell, water, land, civilization, space); Stardew Valley for the readable top-down pixel art; Endless Sky for the space stage (top-down 2D ships, a star map, trade, missions, outfitting a fleet). Same kind of mechanics only: no Spore or Endless Sky names, creatures, ships, story, art, music or look; everything here is this game's own.
+- **Perspective:** 2D. Top-down in the cell stage and in god mode; in the aquatic stage, avatar mode is a
+  **pseudo-3D view from behind the creature** (approved by BAMF69 2026-11-08), still drawn in 2D Phaser; in the
+  creature stage, avatar mode is a **16-bit sidescroller** and god mode a top-down world map (BAMF69 2026-11-09)
+- **Reference games (2 to 3) and what you borrow from each:** Spore for the stage-by-stage evolution (cell, aquatic, creature, civilization, space); Stardew Valley for the readable top-down pixel art; Endless Sky for the space stage (top-down 2D ships, a star map, trade, missions, outfitting a fleet). For the creature stage (BAMF69 2026-11-09): Super Mario World for the world map and level selector, Donkey Kong Country for the lit, moody sidescroller look, Kirby and Mega Man for picking up abilities in a level. Same kind of mechanics and era style only: no names, characters, creatures, ships, story, art, music, level designs or look from any of them; everything here is this game's own.
 - **The twist:** You are not only the creature. You are the Gardener looking down the lens (the top-down view), shaping the environment so life evolves on its own, because the enemy, a rogue AI, can counter anything designed but not what evolved. Less creature editor, more shaping the world that shapes the creature.
 
 ## Pillars (3 max)
@@ -33,7 +34,7 @@ the stage before), and hands its lineage to the next through `docs/HANDOFF_CONTR
 |---|---|---|---|---|---|
 | 1 | Cell | `docs/stages/01-cell.md` | Avatar | Toy done, **Vertical slice** next | Fun (BAMF69 2026-11-08); paused while the aquatic Toy is built |
 | 2 | Aquatic | `docs/stages/02-aquatic.md` | Avatar (behind view) + god | **Toy** | Toy doc written, not built (**active**) |
-| 3 | Land/Air | `docs/stages/03-land.md` | Avatar + god | none | Not started (outline) |
+| 3 | Creature (was Land/Air) | `docs/stages/03-creature.md` | Sidescroller levels (avatar) + world map (god) | none | Designed 2026-11-09, not started |
 | 4 | Civilization | `docs/stages/04-civilization.md` | Avatar + god | none | Not started (outline) |
 | 5 | Space | `docs/stages/05-space.md` | Fleet (Endless Sky style) | none | Not started (outline) |
 
@@ -51,7 +52,7 @@ new stage means making it the active stage here (and at Toy, it gets a full doc 
 | Mode | In the lore | What the player does |
 |---|---|---|
 | **God mode** | The Gardener looking down the lens | Shapes the environment (food, temperature, currents, terrain, climate, predators, events). The simulation evolves the creatures |
-| **Avatar mode** | The Gardener living inside one creature | Plays one individual directly, seen from behind (pseudo-3D). What the avatar does, the lineage leans toward |
+| **Avatar mode** | The Gardener living inside one creature | Plays one individual directly: seen from behind (pseudo-3D) in the aquatic stage, side-on in the creature stage's sidescroller levels. What the avatar does, the lineage leans toward |
 
 Switching is a smooth camera move: the overhead lens swings down behind the creature, like a microscope's focus knob
 *(Claude's pick: keeps every stage 2D)*. Avatar mode's behind view is approved (BAMF69 2026-11-08); god mode stays top-down. The space stage
@@ -74,7 +75,7 @@ The contract for every stage's inputs and outputs is `docs/HANDOFF_CONTRACT.md`.
 the space stage (cautious creatures build strong shields, aggressive ones strong weapons, adaptable ones fast engines).
 **Each stage can shift a temperament at most 50 % from where the stage before left it** (approved by BAMF69
 2026-11-08): a 100 % aggressive cell is still at least 50 % aggressive after the aquatic stage, and can reach 0 % after
-land/air. Early choices matter; no single stage locks the species in.
+the creature stage. Early choices matter; no single stage locks the species in.
 **Temperament stays hidden in the cell stage** (BAMF69 2026-11-08): it is recorded but never shown, and is revealed
 for the first time at the transition into the aquatic stage. From then on it stays readable, with its causes.
 
@@ -95,7 +96,7 @@ Each stage doc adds its own palette, scale and camera. Across all stages:
 ## Platform and engine target
 - Engine: see `ENGINE.md` (Phaser 4, 2D). Storefront: web, played in the browser on Windows *(Claude's pick)*.
 - **One engine for every stage, as long as it holds** *(Claude's pick, agreed 2026-11-08)*: all five stages, including the Endless Sky style space stage, fit 2D Phaser. A stage that needs another engine must make the case in an ADR (`docs/adr/`) and still read and write the lineage file from `docs/HANDOFF_CONTRACT.md`, so saves cross engines.
-- Code layout: one folder per stage under `src/game/` (`cell/`, later `aquatic/`, `land/`, `civ/`, `space/`), shared code in `src/core/`.
+- Code layout: one folder per stage under `src/game/` (`cell/`, `aquatic/`, later `creature/`, `civ/`, `space/`), shared code in `src/core/`.
 - Input: keyboard, gamepad optional *(Claude's pick)*
 
 ## Risks and unknowns (game-wide)

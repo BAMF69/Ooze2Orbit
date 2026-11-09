@@ -37,7 +37,7 @@ is why the space-stage fleet must keep changing (see "`T0|▼|` adapts" below).
 The Gardeners built `T0|▼|`. Late in the space stage, the species learn that their creator made the thing they
 are fighting, and that they were grown, in part, as weapons. How they react (forgive, resent, or turn away) depends on
 how the player gardened: a gentle Gardener is forgiven, a harsh one is not *(Claude's pick; needs a "gentle vs harsh"
-tracker from the land stage on)*.
+tracker from the creature stage on)*.
 
 ## The two modes
 | Mode | What it is in the lore | What the player does | Camera |
@@ -74,7 +74,7 @@ Each stage zooms the lens out (pillar 3, "small world, growing bigger").
 |---|---|---|---|---|
 | **Cell** (built) | A microscope slide | None yet: the cell stage is the hidden first act | What exists now | Rarely, a perfect hexagonal fleck drifts in the background of the pond. Gulpers avoid it. Nothing explains it |
 | **Aquatic** | Pond, then lake, then sea | First real tools: algae blooms, temperature, currents, oxygen, predator spawns | Swim and hunt as one creature, bigger body, seen from behind (pseudo-3D) | A meteor fragment with lattice markings sinks into the sea. Near it, **evolution slows**: traits stop varying. The first "stillness zone" |
-| **Land/Air** | Coastline, then continent | Drying lakes push lineages onto land; rivers, climate, ice ages, volcanoes. Branches of a species can die out | One member of a pack | The lens flickers: sometimes an intervention fails. A dead moon in the night sky is perfectly smooth |
+| **Creature** (was Land/Air) | Coastline, then continent | A top-down world map: drain lakes, raise mountains, ice ages, predator ranges. Map changes alter levels and open paths. Branches of a species can die out | A 16-bit sidescroller per level, cleared by fighting, puzzles or stealth (aggressive, adaptable, cautious); parts picked up in a level, the most used become inherited (BAMF69 2026-11-09; `docs/stages/03-creature.md`) | The lens flickers: sometimes an intervention fails. A dead moon in the night sky is perfectly smooth |
 | **Civilization** | Continent, then planet | Interventions are now seen: a flood is punishment, a harvest a blessing. Fewer, costlier, riskier tools | A leader or prophet | Myths of two gods: **the Watcher** (the Gardener) and **the Maker**. A T0&#124;▼&#124; probe crashes. **Choice:** adopting its tech speeds the species up but makes them easier for T0&#124;▼&#124; to read later |
 | **Space** | Star systems | Merges with the fleet game (below) | Captain of a ship | T0&#124;▼&#124; in full. Contact with the other two species |
 

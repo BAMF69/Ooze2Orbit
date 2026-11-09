@@ -18,12 +18,12 @@ describe("the per-stage shift cap", () => {
     expect(STAGE_SHIFT_CAP).toBe(0.5);
   });
 
-  it("BAMF69's example: 100 % aggressive cell, at least 50 % after aquatic, can reach 0 % after land", () => {
+  it("BAMF69's example: 100 % aggressive cell, at least 50 % after aquatic, can reach 0 % after the creature stage", () => {
     const cell = [cause("cell", { aggressive: 1 })];
     expect(temperamentOf(cell).aggressive).toBe(1);
     const afterAquatic = [...cell, cause("aquatic", { aggressive: -1 })]; // pushes as hard as it can the other way
     expect(temperamentOf(afterAquatic).aggressive).toBe(0.5);
-    const afterLand = [...afterAquatic, cause("land", { aggressive: -1 })];
+    const afterLand = [...afterAquatic, cause("creature", { aggressive: -1 })];
     expect(temperamentOf(afterLand).aggressive).toBe(0);
   });
 
@@ -43,8 +43,8 @@ describe("the per-stage shift cap", () => {
   });
 
   it("leaves temperament alone through a stage with no causes", () => {
-    const log = [cause("cell", { aggressive: 1 }), cause("land", { aggressive: -1 })]; // aquatic had none
-    expect(temperamentOf(log).aggressive).toBe(0.5); // land can still only move it 50 %
+    const log = [cause("cell", { aggressive: 1 }), cause("creature", { aggressive: -1 })]; // aquatic had none
+    expect(temperamentOf(log).aggressive).toBe(0.5); // the creature stage can still only move it 50 %
   });
 
   it("treats each temperament on its own", () => {
