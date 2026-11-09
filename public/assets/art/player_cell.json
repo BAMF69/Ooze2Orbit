@@ -169,6 +169,62 @@
       "direction": "s1h1m1",
       "frames": 4,
       "first_frame": 92
+    },
+    {
+      "index": 24,
+      "pose": "form4",
+      "direction": "s0h0m0",
+      "frames": 4,
+      "first_frame": 96
+    },
+    {
+      "index": 25,
+      "pose": "form4",
+      "direction": "s0h0m1",
+      "frames": 4,
+      "first_frame": 100
+    },
+    {
+      "index": 26,
+      "pose": "form4",
+      "direction": "s0h1m0",
+      "frames": 4,
+      "first_frame": 104
+    },
+    {
+      "index": 27,
+      "pose": "form4",
+      "direction": "s0h1m1",
+      "frames": 4,
+      "first_frame": 108
+    },
+    {
+      "index": 28,
+      "pose": "form4",
+      "direction": "s1h0m0",
+      "frames": 4,
+      "first_frame": 112
+    },
+    {
+      "index": 29,
+      "pose": "form4",
+      "direction": "s1h0m1",
+      "frames": 4,
+      "first_frame": 116
+    },
+    {
+      "index": 30,
+      "pose": "form4",
+      "direction": "s1h1m0",
+      "frames": 4,
+      "first_frame": 120
+    },
+    {
+      "index": 31,
+      "pose": "form4",
+      "direction": "s1h1m1",
+      "frames": 4,
+      "first_frame": 124
     }
   ],
   "image": "player_cell.png"

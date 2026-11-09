@@ -18,7 +18,10 @@
 > schools break off before killing you, a clickable admin panel, dash and breach cost a flat 50 stamina, upgrades a
 > little dearer, the river part shows up later, no more seabed blobs growing into the camera; v7: river hits hurt
 > twice as much, dying costs half your food progress, a health bar, full-speed streaks, a shark banner and hunt
-> music, the large shark is a hammerhead, cutscenes for the leaps into and out of the rivers. Waiting for BAMF69's playtest.
+> music, the large shark is a hammerhead, cutscenes for the leaps into and out of the rivers; v8 2026-11-09: the water matters (body thickness is a trade-off
+> of health against speed, temperature changes food and hunters at once, both explained on screen), form 4 unlocks
+> the evolve, a chomp per fish, a black-screen death, a "move on" banner, calm music; v9: the evolve waits for the coast,
+> the run autosaves and the menu has Continue, Export and Import. Waiting for BAMF69's playtest.
 > Play it: main menu "Aquatic stage (prototype)". Code: `src/game/AquaticScene.ts`, `src/game/aquatic/`.
 
 ## Identity

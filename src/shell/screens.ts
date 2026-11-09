@@ -13,6 +13,7 @@ import { glyphName, glyphSet, promptBinding } from "../core/bindings";
 import type { GameKey, Screen, Shell } from "./app";
 import { GAME_VERSION } from "./meta";
 import { settingsScreen } from "./settingsScreen";
+import { exportSaves, hasRun, importSaves } from "./saveFiles";
 import { Menu, buttonItem, el, glyph, tl, val } from "./ui";
 
 // ---- Tunables ----------------------------------------------------------------
@@ -101,8 +102,11 @@ export function menu(shell: Shell): Screen {
     p.append(tl(shell.i18n, "game.title", "heading", {}, "div"));
     const list = el("div", "list");
     const add = (key: string, fn: () => void) => list.append(m.add(buttonItem(shell.i18n, key, fn)).el);
+    if (hasRun(shell)) add("menu.continue", () => shell.continueAquatic()); // 2026-11-09: pick up where you left off
     add("menu.play", () => shell.startGame("main"));
     add("menu.aquatic", () => shell.startGame("aquatic")); // the aquatic stage Toy (docs/stages/02-aquatic.md)
+    add("menu.export", () => exportSaves(shell));
+    add("menu.import", () => importSaves(shell, () => shell.reset(menu(shell))));
     add("menu.settings", () => shell.push(settingsScreen(shell)));
     add("menu.credits", () => shell.push(creditsScreen(shell)));
     if (shell.debugBuild) add("menu.juice", () => shell.startGame("juice"));

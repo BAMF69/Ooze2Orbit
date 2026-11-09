@@ -7,7 +7,7 @@
 import { describe, expect, it } from "vitest";
 import {
   accel, addPart, cellHitDamage, deathMeat, nextSpool, spoolTime, thrustAt, cellsWanted, heaviness, changeDiet, bumpDamage, drag, bumpFoodLoss, buyUpgrade, canEat, dropKinds, eat, eatFood, evolveNeed, foodValue,
-  knockbackTaken, loseFood, upgradeTier, maxSpeed, newCreature, pullRadius, setDiet, spriteRow, upgradeCost, type Creature,
+  knockbackTaken, loseFood, upgradeTier, maxSpeed, newCreature, pullRadius, setDiet, slots, spriteRow, upgradeCost, type Creature,
 } from "../src/game/cell/rules";
 import { TUNING, type Diet } from "../src/game/cell/tuning";
 
@@ -30,7 +30,7 @@ describe("growth and evolution", () => {
     expect(r.creature.diet).toBe("herbivore"); // evolving keeps everything else
   });
 
-  it("evolves exactly twice, then stops", () => {
+  it("evolves up to the last form (4 since 2026-11-09), then stops", () => {
     let c = newCreature();
     let evolutions = 0;
     for (let i = 0; i < 500; i++) {
@@ -38,9 +38,15 @@ describe("growth and evolution", () => {
       c = r.creature;
       if (r.evolved) evolutions++;
     }
-    expect(evolutions).toBe(2);
+    expect(evolutions).toBe(TUNING.maxForm - 1);
     expect(c.form).toBe(TUNING.maxForm);
     expect(evolveNeed(c)).toBe(Infinity);
+  });
+
+  it("form 4 grows the cell but adds no fourth part slot (three kinds of part)", () => {
+    expect(TUNING.maxForm).toBe(4);
+    expect(slots({ ...newCreature(), form: 4 })).toBe(3);
+    expect(TUNING.player.formScale.length).toBe(TUNING.maxForm);
   });
 
   it("refuses negative food", () => {

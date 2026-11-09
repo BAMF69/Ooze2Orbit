@@ -122,6 +122,20 @@ export class Shell {
   game: PhaserNS.Game | null = null;
   /** The running gameplay scene ("main" or "juice"), if any. */
   scene: GameKey | null = null;
+  private continueAsked = false; // menu "Continue": the next aquatic start resumes the saved run
+
+  /** Start the aquatic stage from the saved run. */
+  continueAquatic(): void {
+    this.continueAsked = true;
+    this.startGame("aquatic");
+  }
+
+  /** The aquatic scene asks once at start whether to resume (and clears it). */
+  takeContinue(): boolean {
+    const c = this.continueAsked;
+    this.continueAsked = false;
+    return c;
+  }
   consentAsked = false;
   settingsTab = 0;
   plantedCrash = false;

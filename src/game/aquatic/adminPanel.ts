@@ -11,6 +11,9 @@
 // ---------------------------------------------------------------------------
 import * as Phaser from "phaser";
 import type { TemperamentKind } from "../../core/lineage";
+import { AQ } from "./tuning";
+
+const AQ_FORMS = AQ.forms.size.length; // form 4 added 2026-11-09
 
 export const DESTINATIONS = ["pond", "river1", "lake", "river2", "ocean"] as const;
 export type Destination = (typeof DESTINATIONS)[number];
@@ -105,7 +108,7 @@ export class AdminPanel {
       if (step) this.dest = (this.dest + step + DESTINATIONS.length) % DESTINATIONS.length;
       if (accept) this.actions.goTo(DESTINATIONS[this.dest]);
     } else if (row === "form") {
-      if (step) this.actions.setForm(Math.max(1, Math.min(3, s.form + step)));
+      if (step) this.actions.setForm(Math.max(1, Math.min(AQ_FORMS, s.form + step)));
     } else if (row === "invincible") {
       if (accept || step) this.actions.toggleInvincible();
     } else if (accept) this.actions.addPoints();

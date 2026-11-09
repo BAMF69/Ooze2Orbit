@@ -33,6 +33,11 @@ export class AquaticHud {
   private readonly noticeText: Phaser.GameObjects.Text;
   private readonly bannerText: Phaser.GameObjects.Text;
   private readonly healthGfx: Phaser.GameObjects.Graphics;
+  private readonly blackRect: Phaser.GameObjects.Rectangle;
+  private readonly blackText: Phaser.GameObjects.Text;
+  private blackLeft = 0; // seconds of full black left
+  private fadeLeft = 0; // then seconds of fading in
+  private fadeS = 1;
   private noticeLeft = 0;
   private readonly toastText: Phaser.GameObjects.Text;
   private readonly warnGfx: Phaser.GameObjects.Graphics;
@@ -58,6 +63,33 @@ export class AquaticHud {
     this.healthGfx = scene.add.graphics().setDepth(DEPTH + 5);
     this.warnGfx = scene.add.graphics().setDepth(DEPTH);
     this.panelGfx = scene.add.graphics().setDepth(DEPTH + 10);
+    // a death (2026-11-09): the whole screen black, only the words, then a fade in on the relative
+    this.blackRect = scene.add.rectangle(0, 0, this.w, this.h, 0x000000, 1).setOrigin(0, 0).setScrollFactor(0).setDepth(DEPTH + 30).setVisible(false);
+    this.blackText = scene.add.text(this.w / 2, this.h / 2, "", { ...FONT, fontSize: "14px", color: "#f0e6d8", align: "center", wordWrap: { width: this.w - 160 } })
+      .setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH + 31).setResolution(2).setVisible(false);
+  }
+
+  /** True while the screen is black or fading back in: the scene holds the world still. */
+  get blackedOut(): boolean {
+    return this.blackLeft > 0 || this.fadeLeft > 0;
+  }
+
+  /** Black screen with one message for holdS seconds, then a fade back in over fadeS. */
+  blackout(s: string, holdS: number, fadeS: number): void {
+    this.blackLeft = holdS;
+    this.fadeS = this.fadeLeft = Math.max(0.01, fadeS);
+    this.blackRect.setVisible(true).setAlpha(1);
+    this.blackText.setVisible(true).setAlpha(1).setText(s);
+  }
+
+  private tickBlackout(dt: number): void {
+    if (this.blackLeft > 0) { this.blackLeft -= dt; return; }
+    if (this.fadeLeft <= 0) return;
+    this.fadeLeft -= dt;
+    const a = Math.max(0, this.fadeLeft / this.fadeS);
+    this.blackRect.setAlpha(a);
+    this.blackText.setAlpha(a);
+    if (this.fadeLeft <= 0) { this.blackRect.setVisible(false); this.blackText.setVisible(false); }
   }
 
   private text(x: number, y: number, s: string, style: Phaser.Types.GameObjects.Text.TextStyle): Phaser.GameObjects.Text {
@@ -108,11 +140,13 @@ export class AquaticHud {
     this.toastLeft = seconds;
   }
 
-  /** A message pinned to the top of the screen while it applies (null hides it). */
-  banner(s: string | null): void {
+  /** A message pinned to the top of the screen while it applies (null hides it): red for danger, green for good news. */
+  banner(s: string | null, tone: "danger" | "good" = "danger"): void {
     if (s === null) { this.bannerText.setVisible(false); return; }
-    const pulse = 0.75 + 0.25 * Math.sin(this.scene.time.now / 220);
-    this.bannerText.setVisible(true).setText(s).setAlpha(pulse);
+    const danger = tone === "danger";
+    const pulse = danger ? 0.75 + 0.25 * Math.sin(this.scene.time.now / 220) : 1;
+    this.bannerText.setVisible(true).setText(s).setAlpha(pulse)
+      .setBackgroundColor(danger ? "#5a0c0ccc" : "#0c4a26cc").setColor(danger ? "#ffe0d8" : "#e0ffe8");
   }
 
   /** The health bar, right under the numbers in the status block (2026-11-08): green, then yellow, then red. */
@@ -132,6 +166,7 @@ export class AquaticHud {
   }
 
   tick(dt: number): void {
+    this.tickBlackout(dt);
     if (this.noticeLeft > 0) {
       this.noticeLeft -= dt;
       this.noticeText.setAlpha(Math.min(1, this.noticeLeft / 0.6));
@@ -218,7 +253,7 @@ export class AquaticHud {
   }
 
   /** Toy 3: the lens. Water temperature, your kin's thickness (one bar each, sorted), the latest causes. */
-  showLens(tempC: number, tMin: number, tMax: number, kin: readonly number[], causes: readonly string[], generation: number): void {
+  showLens(tempC: number, tMin: number, tMax: number, kin: readonly number[], causes: readonly string[], generation: number, effects: readonly string[] = []): void {
     this.clearPanel();
     const w = 250, x = this.w - w - 8, y = 8, h = this.h - 16;
     this.box(x, y, w, h);
@@ -240,6 +275,11 @@ export class AquaticHud {
       this.panelGfx.fillStyle(0xd0a060, 1).fillRect(bx + i * cw + 1, hy + hh - bh, cw - 2, bh);
     });
     let cy = hy + hh + 8;
+    for (const e of effects) { // what the water does now and what your body does (2026-11-09)
+      const t = this.line(x + 10, cy, e, { ...SMALL, color: "#fff0b8" }, w - 20);
+      cy += t.height + 4;
+    }
+    cy += 4;
     for (const c of causes.slice(-3).reverse()) {
       const t = this.line(x + 10, cy, c, SMALL, w - 20);
       cy += t.height + 4;

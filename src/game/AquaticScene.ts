@@ -50,8 +50,10 @@ import { critterIntent, schoolTarget } from "./aquatic/critters";
 import { seabedContact } from "./aquatic/seabed";
 import { newSharkBrain, sharkBit, sharkThink, type SharkBrain } from "./aquatic/sharks";
 import { AquaticHud } from "./aquatic/hud";
+import { describeBody, describeWater, waterEffects, type WaterEffects } from "./aquatic/gardener";
 import { average, bodyWord, mulberry32, newPopulation, nextGeneration, type Population } from "./aquatic/population";
 import { revealFrom } from "./aquatic/reveal";
+import { RUN_SLOT, packRun, unpackRun, type AqRun } from "./aquatic/runSave";
 import { hitAt, makeRiver, newRiverBody, riverJump, riverStep, type RiverBody, type RiverRun, type RiverThing } from "./aquatic/river";
 import {
   AQ, AQ_KINDS, AQ_PAID_WITH, AQ_PARTS, AQ_STATS, KINDS, MAPS, RIVERS, SHARKS, SHARK_MIND, UNIQUE_PARTS, type AqKind, type AqPart, type AqStat, type KindTuning,
@@ -140,12 +142,23 @@ interface School {
 type Mode = "reveal" | "swim" | "lens" | "river" | "cutscene";
 type Pilot = { s: { turn: number; push: number; rise: number }; doJump: boolean; doDash: boolean };
 
+/** Each biter has its own chomp (2026-11-09); river rocks and logs thud. */
+function chompFor(by: string): string {
+  if (by.startsWith("shark (large")) return "chomp_hammer";
+  if (by.startsWith("shark")) return "chomp_shark";
+  if (by === "darters") return "chomp_darter";
+  if (by === "spinefish" || by === "shellback") return `chomp_${by}`;
+  if (by === "deepmaw") return "chomp";
+  return "bump";
+}
+
 export class AquaticScene extends Phaser.Scene {
   private rng!: () => number;
   private av!: Avatar;
   private me!: AqCreature;
   private avatarSpr!: Phaser.GameObjects.Sprite;
   private thickness = 0.5;
+  private climate: WaterEffects = waterEffects(AQ.population.neutralTemp); // what the water does now (gardener.ts)
   private critters: Critter[] = [];
   private kin: Critter[] = [];
   private items: Item[] = [];
@@ -183,6 +196,8 @@ export class AquaticScene extends Phaser.Scene {
   private look = "0"; // the body look's atlas suffix: 0, 1..3 (shark), c1..c3 (armoured), a1..a3 (streamlined)
   private lookName = "plain 0";
   private forceLook: string | null = null; // ?look=2 or ?look=c3 or ?look=a1: show that look (captures, tuning)
+  private allowSave = false; // autosave the run (off for autoplay and debug starts, so tests never touch your save)
+  private saveIn = 0;
   private breaches = 0; // breaches this stage: they make the body more streamlined (adaptable)
   private sharks: Shark[] = [];
   private partLayers: Partial<Record<AqPart, Phaser.GameObjects.Sprite>> = {};
@@ -280,7 +295,7 @@ export class AquaticScene extends Phaser.Scene {
       toggleInvincible: () => { this.invincible = !this.invincible; Log.info(LOG, `ADMIN invincible ${this.invincible}`); },
     });
     window.addEventListener("keydown", this.onAdminKey);
-    this.events.once("shutdown", () => { window.removeEventListener("keydown", this.onAdminKey); this.sfx.loop("hunt", "music/hunt.wav", false); });
+    this.events.once("shutdown", () => { window.removeEventListener("keydown", this.onAdminKey); this.sfx.loop("hunt", "music/hunt.wav", false); this.sfx.loop("calm", "music/calm.wav", false); this.saveRun(); });
     this.wantFast = false;
     this.readLineage();
     // debug starts: ?map=lake | ocean, ?river=1 | 2 (you are at least the form that map is for)
@@ -292,7 +307,10 @@ export class AquaticScene extends Phaser.Scene {
     if (askForm >= 1 && askForm <= 3) this.me = { ...this.me, form: Math.floor(askForm) };
     this.me = { ...this.me, hp: maxHp(this.me) };
     for (const p of (params.get("parts") ?? "").split(",")) if (isPart(p)) this.me = addPart(this.me, p).creature; // ?parts=fins,jaws (captures)
-    this.buildMap(Math.max(0, askMap), "start");
+    this.allowSave = !this.autoplay && !params.has("map") && !params.has("river") && !params.has("form");
+    const resumed = shell.takeContinue() || params.has("continue") ? this.loadRun() : null; // menu "Continue" (or ?continue): the saved run (2026-11-09)
+    this.buildMap(resumed ? resumed.map : Math.max(0, askMap), "start");
+    if (resumed) { this.closeReveal(); this.hud.toast(shell.i18n.t("aq.welcome_back", { form: this.me.form }), 5); }
     if (askRiver === 1 || askRiver === 2) this.startRiver(askRiver - 1);
     if (params.has("threat")) { // a deepmaw right behind you (?threat) or ahead, facing you (?threat=front)
       const d = this.critters.find((c) => c.kind === "deepmaw");
@@ -354,7 +372,9 @@ export class AquaticScene extends Phaser.Scene {
   /** A kind's numbers in this map: tougher and bigger in the lake and the ocean, its depth band scaled to the water. */
   private K(kind: AqKind): KindTuning {
     const k = KINDS[kind], m = this.map.mult, zs = this.map.surface / AQ.water.surface;
-    return { ...k, hp: k.hp * m.hp, bite: k.bite * m.bite, size: k.size * m.size, zMin: k.zMin * zs, zMax: k.zMax * zs };
+    const hunter = kind === "deepmaw" || kind === "spinefish", w = this.climate; // the water: warm hunters are faster and keener
+    return { ...k, hp: k.hp * m.hp, bite: k.bite * m.bite, size: k.size * m.size, zMin: k.zMin * zs, zMax: k.zMax * zs,
+      speed: k.speed * (hunter ? w.hunterSpeed : w.preySpeed), aggro: k.aggro * (hunter ? w.hunterSight : 1) };
   }
 
   private clearMap(): void {
@@ -404,6 +424,7 @@ export class AquaticScene extends Phaser.Scene {
     });
     const counts = AQ_KINDS.map((k) => `${k} ${this.map.counts[k]}`).join(", ");
     Log.info(LOG, `MAP ${this.map.id} (${w} px, depth ${this.map.surface}): ${counts}; you are form ${this.me.form}`);
+    this.saveRun();
   }
 
   private schoolWait(): number {
@@ -490,10 +511,14 @@ export class AquaticScene extends Phaser.Scene {
     this.mode = "swim";
     this.hud.hidePanel();
     this.lensBg.setVisible(false);
+    this.hud.notice(shell.i18n.t("aq.water_now", { t: Math.round(this.tempC), what: describeWater(this.tempC) }), 6);
   }
 
   private renderLensPanel(): void {
-    this.hud.showLens(this.tempC, AQ.lens.tempMin, AQ.lens.tempMax, this.kin.map((k) => k.thickness), this.causes, this.pop.generation);
+    this.hud.showLens(this.tempC, AQ.lens.tempMin, AQ.lens.tempMax, this.kin.map((k) => k.thickness), this.causes, this.pop.generation, [
+      shell.i18n.t("aq.lens_water_now", { what: describeWater(this.tempC) }),
+      shell.i18n.t("aq.lens_body_now", { what: describeBody(this.thickness) }),
+    ]);
   }
 
   private setTemp(step: number): void {
@@ -502,6 +527,87 @@ export class AquaticScene extends Phaser.Scene {
     this.tempC = t;
     this.sfx.play("choose");
     this.renderLensPanel();
+  }
+
+  /** Body and water (BAMF69 2026-11-09 "why should the player care?"): your body is your kin's, the water acts now. */
+  private syncGardener(): void {
+    this.climate = waterEffects(this.tempC);
+    if (this.me.thickness === this.thickness) return;
+    const frac = this.me.hp / maxHp(this.me); // a new body keeps the same share of its health
+    this.me = { ...this.me, thickness: this.thickness };
+    this.me = { ...this.me, hp: Math.max(1, frac * maxHp(this.me)) };
+  }
+
+  /**
+   * The top banner and the music, every frame. A shark on you: its banner (it smells blood when you are under half
+   * health and it will not stop) and the hunt music, loud; otherwise the calm loop. With no shark: the evolve, or
+   * the open river mouth (2026-11-09: "leave a message at the top of the screen telling the player").
+   */
+  private musicAndBanner(): void {
+    const swim = this.mode === "swim" && !this.hud.blackedOut;
+    const on = swim ? this.sharks.filter((sh) => sh.respawnIn <= 0 && sh.brain.mode === "hunt") : [];
+    const blood = on.some((sh) => sh.rules.relentlessLow) && this.me.hp / maxHp(this.me) < 0.5;
+    if (on.length) this.hud.banner(shell.i18n.t(blood ? "aq.shark_blood" : "aq.shark_hunts"), "danger");
+    else if (swim && this.evolveReady()) this.hud.banner(shell.i18n.t("aq.evolve_ready"), "good");
+    else if (swim && this.mouthOpen()) this.hud.banner(shell.i18n.t("aq.next_map"), "good");
+    else this.hud.banner(null);
+    this.sfx.loop("hunt", "music/hunt.wav", on.length > 0, AQ.music.huntLevel);
+    this.sfx.loop("calm", "music/calm.wav", on.length === 0, AQ.music.calmLevel);
+  }
+
+  /** Form 4 is the last; your lineage leaves the water only from the coast (2026-11-09), even if it got there earlier. */
+  private evolveReady(): boolean {
+    return this.me.form >= AQ.forms.size.length && this.map.exitForm === null && !this.run;
+  }
+
+  /** Form 4 reached before the coast: say where the evolve waits. */
+  private finalFormAway(): boolean {
+    return this.me.form >= AQ.forms.size.length && !this.evolveReady();
+  }
+
+  private evolveOut(): void {
+    Log.info(LOG, "EVOLVE out of the aquatic stage (next stage not built yet)");
+    this.saveRun(true); // no Continue for a lineage that left the water
+    this.allowSave = false;
+    shell.quitToTitle();
+    shell.toast("aq.next_stage_soon");
+  }
+
+  // ---- pick up where you left off (2026-11-09) ----------------------------------------------------------------
+  /** The run in the save slot, applied over the fresh start (lineage, debug starts); null when there is none. */
+  private loadRun(): AqRun | null {
+    try {
+      const r = unpackRun(shell.saves.load(RUN_SLOT).envelope?.data);
+      if (r.problems.length) Log.warn(LOG, `saved run: ${r.problems.join("; ")}`);
+      if (!r.run) return null;
+      const run = r.run;
+      this.me = run.me;
+      this.me = { ...this.me, hp: Math.min(this.me.hp, maxHp(this.me)), stamina: Math.min(this.me.stamina, maxStamina(this.me)) };
+      this.thickness = run.me.thickness ?? average(run.pop);
+      Object.assign(this, { tempC: run.tempC, pop: run.pop, causes: run.causes, kills: run.kills, deaths: run.deaths, breaches: run.breaches });
+      this.temper = { ...run.temper };
+      this.allowSave = true;
+      Log.info(LOG, `CONTINUE map ${MAPS[run.map].id}, form ${run.me.form}, generation ${run.pop.generation}`);
+      return run;
+    } catch (err) {
+      Log.warn(LOG, `could not read the saved run: ${err instanceof Error ? err.message : String(err)}`);
+      return null;
+    }
+  }
+
+  /** Autosave: on a new map, each generation, every AQ.save.everyS, after a death and on leaving. Never mid-river. */
+  private saveRun(finished = false): void {
+    if (!this.allowSave || (this.run && !finished)) return;
+    try {
+      const data = finished ? { kind: "aquatic_run", v: 1, finished: true } : packRun({
+        map: this.mapIndex, me: { ...this.me, thickness: this.thickness }, tempC: this.tempC, pop: this.pop, causes: this.causes,
+        temper: this.temper, kills: this.kills, deaths: this.deaths, breaches: this.breaches,
+      });
+      shell.saves.save(RUN_SLOT, data as Parameters<typeof shell.saves.save>[1]);
+      Log.debug(LOG, `SAVED run (${finished ? "finished" : MAPS[this.mapIndex].id})`);
+    } catch (err) {
+      Log.warn(LOG, `could not save the run: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 
   private passGeneration(): void {
@@ -513,8 +619,9 @@ export class AquaticScene extends Phaser.Scene {
     this.genLeft = AQ.population.generationS;
     this.sfx.play("evolve");
     Log.info(LOG, `GENERATION ${this.pop.generation}: ${g.cause}`);
+    this.saveRun();
     if (this.mode === "lens") this.renderLensPanel();
-    else this.hud.notice(g.cause, 8); // at the bottom of the screen (BAMF69 2026-11-08)
+    else this.hud.notice(`${g.cause} ${shell.i18n.t("aq.body_now", { what: describeBody(g.after) })}`, 9); // at the bottom (2026-11-08)
   }
 
   // ---- the frame --------------------------------------------------------------------------------
@@ -525,6 +632,13 @@ export class AquaticScene extends Phaser.Scene {
     this.hud.tick(dt);
     this.sfx.update(shell.settings.audio);
     this.updateLook();
+    this.syncGardener();
+    this.musicAndBanner();
+    if (this.hud.blackedOut) { // a death: the world waits behind the black, then fades in on the relative
+      if (this.run) this.drawRiver(0);
+      else this.drawBehind(0);
+      return;
+    }
     if (this.admin.isOpen) { // the world waits while the admin panel is open
       if (playing) this.admin.input({ up: inp.takePress("ui_up"), down: inp.takePress("ui_down"), left: inp.takePress("ui_left"), right: inp.takePress("ui_right"), accept: inp.takePress("ui_accept") }, this.adminState());
       this.admin.render(this.adminState());
@@ -558,6 +672,7 @@ export class AquaticScene extends Phaser.Scene {
     if (playing && !this.autoplay) {
       if (inp.takePress("lens")) { this.openLens(); this.drawLens(); return; }
       this.panelInput();
+      if (this.evolveReady() && !this.panel.isOpen && inp.takePress("ui_accept")) { this.evolveOut(); return; }
     }
     this.steer(dt, playing);
     if (this.mode !== "swim") return; // the river took you
@@ -679,7 +794,7 @@ export class AquaticScene extends Phaser.Scene {
     if (this.wantFast && this.me.stamina <= 0) this.wantFast = false; // at 0 you drop to cruise on your own
     const sp = paceSpeed(this.me, this.wantFast, p.s.push > 0);
     this.pace = sp.pace;
-    this.me = stepStamina(this.me, sp.pace, dt);
+    this.me = stepStamina(this.me, sp.pace, dt, this.climate.staminaRegen);
     const full = movement(this.me);
     const m = { ...full, maxSpeed: full.maxSpeed * sp.mult * (this.slowLeft > 0 ? AQ.seabed.weedSlow : 1) };
     const breachNow = !this.av.airborne && this.av.z >= this.water.surface - this.water.breachBand;
@@ -805,7 +920,8 @@ export class AquaticScene extends Phaser.Scene {
     if (!r.evolved) return;
     this.sfx.play("evolve");
     const open = this.map.exitForm !== null && this.me.form >= this.map.exitForm && this.mode === "swim";
-    this.hud.toast(shell.i18n.t(open ? "aq.evolved_mouth" : "aq.evolved", { n: this.me.form, slots: slots(this.me) }), 6);
+    const key = this.evolveReady() ? "aq.evolved_last" : this.finalFormAway() ? "aq.evolved_last_away" : open ? "aq.evolved_mouth" : "aq.evolved";
+    this.hud.toast(shell.i18n.t(key, { n: this.me.form, slots: slots(this.me) }), 6);
     Log.info(LOG, `EVOLVE form ${this.me.form}${open ? " (the river mouth opens)" : ""}`);
   }
 
@@ -983,11 +1099,12 @@ export class AquaticScene extends Phaser.Scene {
         continue;
       }
       const before = sh.brain.mode;
-      sh.brain = sharkThink(sh.brain, sh, you, dt, sh.spec, sh.rules, SHARK_MIND);
+      const spec = { ...sh.spec, sight: sh.spec.sight * this.climate.hunterSight };
+      sh.brain = sharkThink(sh.brain, sh, you, dt, spec, sh.rules, SHARK_MIND);
       if (sh.brain.mode === "hunt" && before !== "hunt") {
         Log.info(LOG, `SHARK (${sh.rules.kind}) hunts you${you.hpFrac < 0.5 && sh.rules.relentlessLow ? " relentlessly" : ""}`);
       }
-      const sp = sh.spec.speed;
+      const sp = sh.spec.speed * this.climate.hunterSpeed;
       const c = sh as unknown as Critter; // pursue / swimTo only need position, velocity and heading
       if (sh.brain.mode === "hunt") this.pursue(c, this.av, sp, dt);
       else if (sh.brain.mode === "rest") { // peel off: away from you
@@ -1013,7 +1130,7 @@ export class AquaticScene extends Phaser.Scene {
       const ramming = (this.av.vx * dx + this.av.vy * dy + this.av.vz * dz) / Math.max(1, dist) >= AQ.stats.rammingSpeed || this.av.dashLeft > 0;
       if (ramming) {
         sh.hp -= ramDamage(this.me) * (this.av.dashLeft > 0 ? AQ.stats.dashRamMult : 1);
-        this.sfx.play("bump");
+        this.sfx.play("chomp_you");
         if (sh.hp <= 0) {
           sh.respawnIn = 60;
           sh.spr.setVisible(false);
@@ -1055,7 +1172,7 @@ export class AquaticScene extends Phaser.Scene {
         c.hp -= ramDamage(this.me) * (this.av.dashLeft > 0 ? AQ.stats.dashRamMult : 1);
         c.provokedLeft = 6;
         this.knock(c, 1);
-        this.sfx.play("bump");
+        this.sfx.play("chomp_you");
         Log.debug(LOG, `RAM ${c.kind} hp ${Math.round(c.hp)}`);
         if (c.hp <= 0) { this.kill(c, true); continue; }
       }
@@ -1086,7 +1203,7 @@ export class AquaticScene extends Phaser.Scene {
     if (this.invincible) { this.flashLeft = 0.1; Log.debug(LOG, `HURT by ${by}: ignored (invincible)`); return; }
     const r = takeHit(this.me, dmg);
     this.me = r.creature;
-    this.sfx.play("chomp");
+    this.sfx.play(chompFor(by));
     this.cameras.main.shake(160, (Math.min(10, 3 + dmg / 3) * effectiveShake(shell.settings)) / this.scale.width);
     this.flashLeft = 0.18;
     Log.info(LOG, `HURT by ${by}: -${Math.round(r.damage)} hp (${Math.round(this.me.hp)}/${maxHp(this.me)})`);
@@ -1110,9 +1227,11 @@ export class AquaticScene extends Phaser.Scene {
       }
     }
     const part = r.lostPart ? shell.i18n.t("aq.died_part", { part: shell.i18n.t(`aq.part_${r.lostPart}`) }) : "";
-    this.hud.toast(shell.i18n.t("aq.died_v2", { part }), 6);
+    this.hud.clearToast();
+    this.hud.blackout(shell.i18n.t("aq.died_v2", { part }), AQ.death.blackS, AQ.death.fadeS); // 2026-11-09: black, the words, fade in
     this.sfx.play("pop");
     Log.info(LOG, `DIED (${this.deaths}): a relative carries on; lost part ${r.lostPart ?? "none"}`);
+    this.saveRun();
   }
 
   /** Every death drops the creature's meat and its part where it died (the cell stage's rule). */
@@ -1150,11 +1269,13 @@ export class AquaticScene extends Phaser.Scene {
     if (has(this.me, "gills")) this.me = heal(this.me, AQ.parts.gillsRegen * dt);
     this.genLeft -= dt;
     if (this.genLeft <= 0) this.passGeneration();
+    if ((this.saveIn -= dt) <= 0) { this.saveIn = AQ.save.everyS; this.saveRun(); }
     if ((this.regrowIn -= dt) <= 0) {
-      this.regrowIn = AQ.regrowS;
-      if (this.items.filter((i) => i.kind === "algae").length < this.map.algae) this.addItem("algae", { ...this.spot(300), z: 0 });
-      if (this.items.filter((i) => i.kind === "plankton").length < this.map.plankton) this.addItem("plankton", { ...this.spot(300), z: this.planktonZ() });
-      if (this.items.filter((i) => i.kind === "bloom").length < this.map.blooms && this.rng() < 0.15) this.addItem("bloom", { ...this.spot(400), z: 0 });
+      const food = this.climate.food; // warm water grows more, faster; cold water less, slower
+      this.regrowIn = AQ.regrowS / food;
+      if (this.items.filter((i) => i.kind === "algae").length < this.map.algae * food) this.addItem("algae", { ...this.spot(300), z: 0 });
+      if (this.items.filter((i) => i.kind === "plankton").length < this.map.plankton * food) this.addItem("plankton", { ...this.spot(300), z: this.planktonZ() });
+      if (this.items.filter((i) => i.kind === "bloom").length < Math.round(this.map.blooms * food) && this.rng() < 0.15 * food) this.addItem("bloom", { ...this.spot(400), z: 0 });
     }
   }
 
@@ -1205,7 +1326,7 @@ export class AquaticScene extends Phaser.Scene {
     this.kickCd = Math.max(0, this.kickCd - dt);
     // swimming with the current: full speed (W, fast pace) drains stamina; otherwise the river does the work
     this.pace = p.s.push > 0 && this.wantFast && this.me.stamina > 0 ? "fast" : p.s.push > 0 ? "cruise" : "still";
-    this.me = stepStamina(this.me, this.pace, dt);
+    this.me = stepStamina(this.me, this.pace, dt, this.climate.staminaRegen);
     if (p.s.push > 0 && this.pace !== "fast") p.s.push *= AQ.stamina.cruiseMult;
     if (p.doJump && rb.z >= spec.depth - 16 && !rb.airborne) {
       if (!canAbility(this.me)) this.tired();
@@ -1238,7 +1359,7 @@ export class AquaticScene extends Phaser.Scene {
       if (o.gone || o.t.kind === "bank" || o.t.kind === "rock" || o.t.kind === "log") continue;
       const t = o.t;
       if (t.kind === "spinefish" && Math.abs(t.s - rb.s) < 200) t.x += Math.sign(rb.x - t.x) * 60 * dt; // it lunges across at you
-      if (Math.hypot(t.s - rb.s, t.x - rb.x, t.z - rb.z) > me + t.r) continue;
+      if (Math.hypot(t.s - rb.s, t.x - rb.x, t.z - rb.z) > me + t.r * (t.kind === "part" ? AQ.riverPartReach : 1)) continue;
       if (t.kind === "part") { this.pickPart(spec.part); o.gone = true; o.spr.destroy(); Log.info(LOG, `RIVER PART ${spec.part}`); }
       else if (t.kind === "spinefish") {
         o.gone = true; o.spr.destroy();
@@ -1497,10 +1618,6 @@ export class AquaticScene extends Phaser.Scene {
     }
     this.hud.status(this.statusLines());
     this.hudExtras();
-    // a shark hunting you: the banner stays at the top while it lasts, and the hunt music plays
-    const sharkHunt = this.mode === "swim" && sharksOnYou.length > 0;
-    this.hud.banner(sharkHunt ? shell.i18n.t("aq.shark_hunts") : null);
-    this.sfx.loop("hunt", "music/hunt.wav", sharkHunt, 0.85);
     if (this.mode === "swim" && this.pace === "fast" && Math.hypot(this.av.vx, this.av.vy) > 80) this.drawSpeedStreaks();
   }
 
@@ -1568,9 +1685,11 @@ export class AquaticScene extends Phaser.Scene {
       `${i.t(`aq.map_${this.run ? "river" : this.map.id}`)}   ${i.t("aq.form", { n: me.form })}   ${i.t("aq.hp", { n: Math.ceil(me.hp), max: maxHp(me) })}`,
       " ", // room for the health bar
       need === Infinity ? "" : i.t("aq.food", { n: Math.floor(me.food), need }),
+      i.t("aq.diet_line", { diet: i.t(`diet.${me.diet}`) }), // 2026-11-09: "a line in the top right that tells you your fish's diet"
       i.t("aq.points", { a: Math.floor(me.points.algae), m: Math.floor(me.points.meat) }),
       this.av.dashCd > 0 ? i.t("aq.dash_wait", { s: this.av.dashCd.toFixed(1) }) : i.t(canAbility(me) ? "aq.dash_ready" : "aq.dash_tired"),
-      this.run ? "" : `${i.t("aq.body", { word: bodyWord(this.thickness) })}   ${i.t("aq.water", { t: Math.round(this.tempC) })}`,
+      this.run ? "" : `${i.t("aq.body", { word: bodyWord(this.thickness) })} (${describeBody(this.thickness)})`,
+      this.run ? "" : `${i.t("aq.water", { t: Math.round(this.tempC) })} (${describeWater(this.tempC).split(":")[0]})`,
       this.run ? "" : this.mouthLine(),
     ].filter((l) => l !== "");
   }

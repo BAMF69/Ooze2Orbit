@@ -36,7 +36,7 @@ PALETTE = {
     "bone": (214, 202, 168), "boneD": (140, 126, 98),
 }
 STATS = ("attack", "speed", "defense", "mobility")
-ROWS = [(stat, f"form{f}_t{t}") for stat in STATS for f in (1, 2, 3) for t in (1, 2, 3)]
+ROWS = [(stat, f"form{f}_t{t}") for stat in STATS for f in (1, 2, 3, 4) for t in (1, 2, 3)]
 
 
 def tail_fin(s, rx, t, f):

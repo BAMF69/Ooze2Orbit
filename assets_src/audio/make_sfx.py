@@ -199,6 +199,71 @@ def chomp(rng, j):
     return mix_into(s, squelch(j(900), j(200), j(0.2), 5, rng, wobble_hz=26, wobble=0.5), 0.02, 0.8)
 
 
+def clicks(rng, n, gap, decay, at=0.0):
+    """n sharp noise clicks gap seconds apart: teeth meeting."""
+    s = []
+    for k in range(n):
+        c = [rng.uniform(-1, 1) * math.exp(-i / (RATE * decay)) for i in range(int(decay * 6 * RATE))]
+        mix_into(s, c, at + k * gap, 1.0 - 0.2 * k)
+    return s
+
+
+def crunch(rng, dur, grains, cutoff):
+    """A gritty crunch: a run of short noise grains, lowpassed (a beak through shell)."""
+    s = silence(dur)
+    for _ in range(grains):
+        at = rng.uniform(0, dur * 0.8)
+        g = [rng.uniform(-1, 1) * math.exp(-i / (RATE * 0.004)) for i in range(int(0.02 * RATE))]
+        mix_into(s, g, at, rng.uniform(0.4, 1.0))
+    env = [math.exp(-(i / RATE) / (dur / 2.5)) for i in range(len(s))]
+    return lowpass([v * e for v, e in zip(s, env)], cutoff)
+
+
+# Each biter has its own chomp (BAMF69 2026-11-09: "can each fish have a unique chomp sound"). Read as size: the
+# smaller the fish, the higher, shorter and lighter its bite; the sharks are deep, long and tearing.
+def chomp_darter(rng, j):
+    """A darter school nibbling: a flurry of tiny high nips."""
+    s = clicks(rng, 3, j(0.035), 0.0012)
+    return mix_into(s, squelch(j(2600), j(1400), j(0.06), 6, rng), 0.01, 0.5)
+
+
+def chomp_spinefish(rng, j):
+    """A spinefish: a sharp needle snap and a bright rattle of spines."""
+    s = clicks(rng, 2, j(0.02), 0.0015)
+    mix_into(s, squelch(j(3000), j(900), j(0.09), 8, rng), 0.004, 0.7)
+    return mix_into(s, clicks(rng, 3, 0.018, 0.001), 0.06, 0.35)
+
+
+def chomp_shellback(rng, j):
+    """A shellback: a heavy beak crunching down, like a shell cracking."""
+    s = thud(j(140), j(70), 0.1, rng)
+    return mix_into(s, crunch(rng, j(0.22), 26, 2400), 0.01, 0.9)
+
+
+def chomp_shark(rng, j):
+    """A medium shark: two big jaw snaps, a deep body thud and a long tearing rip."""
+    s = clicks(rng, 2, j(0.05), 0.003)
+    mix_into(s, thud(j(90), j(38), 0.22, rng), 0.005, 1.0)
+    mix_into(s, squelch(j(700), j(140), j(0.35), 3, rng, wobble_hz=18, wobble=0.6), 0.04, 0.9)
+    return mix_into(s, crunch(rng, 0.3, 20, 1200), 0.08, 0.4)
+
+
+def chomp_hammer(rng, j):
+    """The hammerhead: deepest and longest, a crushing double bite with a sub-bass hit under it."""
+    s = clicks(rng, 2, j(0.09), 0.004)
+    mix_into(s, thud(j(70), j(28), 0.35, rng), 0.0, 1.0)
+    mix_into(s, thud(j(60), j(26), 0.3, rng), 0.09, 0.8)
+    mix_into(s, squelch(j(500), j(100), j(0.45), 3, rng, wobble_hz=14, wobble=0.6), 0.05, 0.9)
+    return mix_into(s, crunch(rng, 0.4, 30, 900), 0.1, 0.5)
+
+
+def chomp_you(rng, j):
+    """Your own bite when you ram something: a crisp satisfying chomp, mid-pitched, between the darter and the deepmaw."""
+    s = clicks(rng, 1, 0, 0.002)
+    mix_into(s, thud(j(170), j(85), 0.09, rng), 0.003, 0.9)
+    return mix_into(s, squelch(j(1500), j(400), j(0.12), 5, rng, wobble_hz=30, wobble=0.4), 0.012, 0.7)
+
+
 def twinkle(rng, j):
     """Aquatic river runs: the unique part comes into view. Bright rising chimes, a sparkle you notice over the water
     (2026-11-08, BAMF69: "twinkle sound effect when it comes into view")."""
@@ -215,6 +280,8 @@ SOUNDS = {
     "eat_algae": (3, eat_algae), "eat_meat": (3, eat_meat), "bump": (3, bump), "pop": (2, pop),
     "part": (1, part), "upgrade": (1, upgrade), "deny": (1, deny), "evolve": (1, evolve), "choose": (1, choose),
     "warn_behind": (1, warn_behind), "chomp": (2, chomp), "twinkle": (1, twinkle),
+    "chomp_darter": (2, chomp_darter), "chomp_spinefish": (2, chomp_spinefish), "chomp_shellback": (2, chomp_shellback),
+    "chomp_shark": (2, chomp_shark), "chomp_hammer": (2, chomp_hammer), "chomp_you": (3, chomp_you),
 }
 
 
@@ -239,43 +306,82 @@ MUSIC_OUT = ROOT / "public" / "assets" / "audio" / "music"
 
 
 def hunt_loop():
-    """Aquatic stage: the ominous loop while a shark hunts you (2026-11-08). An original 8 s seamless loop: a deep
-    beating drone, a heavy heartbeat thump, and a slow swelling low tritone. Every part repeats a whole number of
-    times in 8 s, so the loop point is seamless. (It deliberately avoids the famous two-note shark-film motif.)"""
+    """Aquatic stage: the ominous loop while a shark hunts you. An original 8 s seamless loop.
+    v2 2026-11-09 (BAMF69: "more ominous with more bass", "louder"): a sub-bass pedal under the beating drone, a
+    driving low pulse in eighths with growling overtones (so the bass carries on small speakers too), the heartbeat,
+    a slow swelling tritone, and a soft saturation that makes the whole loop denser and louder. Every frequency
+    repeats a whole number of times in 8 s, so the loop point is seamless. (It avoids the famous shark-film motif.)"""
     n = int(8.0 * RATE)
     out = [0.0] * n
     two_pi = 2 * math.pi
     for i in range(n):
         t = i / RATE
+        sub = 0.55 * math.sin(two_pi * 30.75 * t)  # felt more than heard
         drone = 0.45 * math.sin(two_pi * 41.0 * t) + 0.35 * math.sin(two_pi * 43.5 * t) + 0.12 * math.sin(two_pi * 82.0 * t)
         swell = 0.5 - 0.5 * math.cos(two_pi * t / 8.0)  # rises and falls once per loop
         tritone = swell * (0.22 * math.sin(two_pi * 55.0 * t) + 0.18 * math.sin(two_pi * 77.75 * t))
+        e = t % 0.4  # a driving low pulse in eighths: a growl at 41 Hz with its 2nd-4th overtones
+        pulse_env = math.exp(-e / 0.12) * (1.0 if int(t / 0.4) % 4 != 3 else 0.55)
+        growl = pulse_env * (0.6 * math.sin(two_pi * 41.0 * t) + 0.35 * math.sin(two_pi * 82.0 * t)
+                             + 0.25 * math.sin(two_pi * 123.0 * t) + 0.15 * math.sin(two_pi * 164.0 * t))
         beat = t % 0.8  # heartbeat: a thump, and a softer one after it
         thump = math.sin(two_pi * 52 * beat) * math.exp(-beat / 0.06) + 0.6 * (math.sin(two_pi * 48 * (beat - 0.22)) * math.exp(-(beat - 0.22) / 0.05) if beat > 0.22 else 0)
-        out[i] = 0.55 * drone + tritone + 0.7 * thump
-    out = lowpass(out, 700)
+        out[i] = sub + 0.5 * drone + tritone + 0.8 * growl + 0.8 * thump
+    out = lowpass(out, 900)
     peak = max(abs(v) for v in out) or 1
-    return [v * PEAK / peak for v in out]
+    out = [math.tanh(2.2 * v / peak) for v in out]  # soft saturation: denser, louder
+    peak = max(abs(v) for v in out) or 1
+    return [v * 0.85 / peak for v in out]
+
+
+def calm_loop():
+    """Aquatic stage: the regular background music (BAMF69 2026-11-09: "something calm and simple"). An original 16 s
+    seamless loop: a soft warm pad that breathes slowly, and a sparse, gentle plucked tune on an A minor pentatonic.
+    Pad frequencies are multiples of 1/16 Hz and the pluck tails wrap around, so the loop point is seamless."""
+    L = 16.0
+    n = int(L * RATE)
+    out = [0.0] * n
+    two_pi = 2 * math.pi
+    pad = [(110.0, 0.30), (164.8125, 0.18), (220.0, 0.12), (261.625, 0.08)]  # A2, E3, A3, C4
+    tune = [(0.0, 440.0), (2.0, 392.0), (3.0, 329.625), (4.5, 293.6875), (6.0, 329.625), (8.0, 261.625), (10.0, 293.6875),
+            (11.0, 329.625), (12.5, 392.0), (14.0, 329.625)]
+    for i in range(n):
+        t = i / RATE
+        breath = 0.75 + 0.25 * math.sin(two_pi * t / 8.0)
+        v = breath * sum(a * math.sin(two_pi * f * t) for f, a in pad)
+        for at, f in tune:
+            d = (t - at) % L  # tails wrap around the loop point
+            if d < 2.5:
+                v += 0.22 * math.exp(-d / 0.55) * min(1.0, d / 0.01) * (math.sin(two_pi * f * d) + 0.3 * math.sin(two_pi * 2 * f * d))
+        out[i] = v
+    out = lowpass(out, 2200)
+    peak = max(abs(v) for v in out) or 1
+    return [v * 0.6 / peak for v in out]
+
+
+def render_loop(name, fn, seconds_label):
+    MUSIC_OUT.mkdir(parents=True, exist_ok=True)
+    samples = fn()
+    clipped = write_wav(MUSIC_OUT / f"{name}.wav", samples, RATE)
+    if clipped:
+        raise SystemExit(f"[FAIL] {name}: {clipped} clipped samples")
+    (MUSIC_OUT / f"{name}.sfx.json").write_text(json.dumps(
+        {"tool": "assets_src/audio/make_sfx.py", "sound": f"{name} (loop)", "rate": RATE, "seconds": round(len(samples) / RATE, 3)}, indent=1) + "\n", encoding="utf-8")
+    print(f"[ OK ] music/{name}.wav: {seconds_label}")
 
 
 def render_music():
-    MUSIC_OUT.mkdir(parents=True, exist_ok=True)
-    samples = hunt_loop()
-    clipped = write_wav(MUSIC_OUT / "hunt.wav", samples, RATE)
-    if clipped:
-        raise SystemExit(f"[FAIL] hunt: {clipped} clipped samples")
-    (MUSIC_OUT / "hunt.sfx.json").write_text(json.dumps(
-        {"tool": "assets_src/audio/make_sfx.py", "sound": "hunt (loop)", "rate": RATE, "seconds": round(len(samples) / RATE, 3)}, indent=1) + "\n", encoding="utf-8")
-    print("[ OK ] music/hunt.wav: an 8 s loop")
+    render_loop("hunt", hunt_loop, "an 8 s loop")
+    render_loop("calm", calm_loop, "a 16 s loop")
 
 
 def main():
     ap = argparse.ArgumentParser(description="Render Ooze2Orbit's organic sound effects.")
     ap.add_argument("--only", help="render only this family")
     a = ap.parse_args()
-    if a.only in (None, "hunt"):
+    if a.only in (None, "music", "hunt", "calm"):
         render_music()
-    if a.only == "hunt":
+    if a.only in ("music", "hunt", "calm"):
         return
     for name, (variants, fn) in SOUNDS.items():
         if not a.only or a.only == name:

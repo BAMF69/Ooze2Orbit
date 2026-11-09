@@ -44,13 +44,13 @@ export const TUNING = {
     // Momentum (playtest 2026-11-08 "add momentum, more as it grows; full agility gets today's snappy controls"):
     // heaviness divides both accel and drag, so top speed is unchanged but starting, stopping and turning take
     // longer. Heaviness per form (1, 2, 3) with no mobility; each mobility level takes it 1/maxLevel back to 1.
-    heaviness: [2.0, 2.5, 3.0] as readonly number[],
+    heaviness: [2.0, 2.5, 3.0, 3.4] as readonly number[],
     // Playtest 2026-11-08 "too easy, even more sluggish to start": thrust builds up while you hold a direction, from
     // spoolMinThrust to full over spoolS seconds (per form 1, 2, 3); letting go resets it. Only starting gets slower:
     // stopping and top speed are unchanged. Mobility shortens it like heaviness; full mobility = instant.
-    spoolS: [0.7, 0.9, 1.1] as readonly number[],
+    spoolS: [0.7, 0.9, 1.1, 1.3] as readonly number[],
     spoolMinThrust: 0.25,
-    formScale: [1.6, 2.0, 2.4] as readonly number[], // sprite scale per form (form 1, 2, 3)
+    formScale: [1.6, 2.0, 2.4, 2.8] as readonly number[], // sprite scale per form (form 1..4)
     radiusPerScale: 10.5, // collision radius = scale * this (matches the drawn body at every form)
     eatRadiusBonus: 4,
   },
@@ -88,8 +88,11 @@ export const TUNING = {
   mouthPullRadius: 70, // and pulls nearby food toward you
   mouthPullSpeed: 120,
   // Playtest 2026-11-07 "slower progression": was [12, 20] (both evolutions in about 90 s of autoplay)
-  evolveFood: [40, 90] as readonly number[], // food to evolve from form 1, from form 2 (form 3 is the last)
-  maxForm: 3,
+  // 2026-11-09 BAMF69 "add form 4 ... when unlocked, the player can evolve to the next stage": form 4 is the last and
+  // unlocks the evolve into the aquatic stage.
+  evolveFood: [40, 90, 140] as readonly number[], // food to evolve from form 1, 2, 3 (form 4 is the last)
+  maxForm: 4,
+  maxSlots: 3, // part slots = form, capped here: the pond has three kinds of part
   partFoodOnDuplicate: 3, // a part you already have becomes this much food instead
 
   // ---- bumps (the fight) ----

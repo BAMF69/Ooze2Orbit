@@ -241,6 +241,127 @@
    "steal": "oldest",
    "cooldown_ms": 500,
    "caption": "[twinkle]"
+  },
+  "chomp_darter": {
+   "bus": "sfx",
+   "files": [
+    "sfx/chomp_darter_1.wav",
+    "sfx/chomp_darter_2.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -1,
+    1
+   ],
+   "volume_db": [
+    -7,
+    -6
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "cooldown_ms": 150,
+   "caption": "[nibbling]"
+  },
+  "chomp_spinefish": {
+   "bus": "sfx",
+   "files": [
+    "sfx/chomp_spinefish_1.wav",
+    "sfx/chomp_spinefish_2.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -1,
+    1
+   ],
+   "volume_db": [
+    -5,
+    -4
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "cooldown_ms": 150,
+   "caption": "[spiny snap]"
+  },
+  "chomp_shellback": {
+   "bus": "sfx",
+   "files": [
+    "sfx/chomp_shellback_1.wav",
+    "sfx/chomp_shellback_2.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -1,
+    1
+   ],
+   "volume_db": [
+    -4,
+    -3
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "cooldown_ms": 150,
+   "caption": "[crunch]"
+  },
+  "chomp_shark": {
+   "bus": "sfx",
+   "files": [
+    "sfx/chomp_shark_1.wav",
+    "sfx/chomp_shark_2.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -1,
+    1
+   ],
+   "volume_db": [
+    -2,
+    -1
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "cooldown_ms": 150,
+   "caption": "[shark bite]"
+  },
+  "chomp_hammer": {
+   "bus": "sfx",
+   "files": [
+    "sfx/chomp_hammer_1.wav",
+    "sfx/chomp_hammer_2.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -1,
+    1
+   ],
+   "volume_db": [
+    -1,
+    0
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "cooldown_ms": 150,
+   "caption": "[crushing bite]"
+  },
+  "chomp_you": {
+   "bus": "sfx",
+   "files": [
+    "sfx/chomp_you_1.wav",
+    "sfx/chomp_you_2.wav",
+    "sfx/chomp_you_3.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -1,
+    1
+   ],
+   "volume_db": [
+    -5,
+    -4
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "cooldown_ms": 150,
+   "caption": "[chomp]"
   }
  }
 }

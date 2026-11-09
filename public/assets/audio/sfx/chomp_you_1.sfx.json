@@ -1,0 +1,8 @@
+{
+ "tool": "assets_src/audio/make_sfx.py",
+ "sound": "chomp_you",
+ "variant": 1,
+ "seed": 1988,
+ "rate": 44100,
+ "seconds": 0.137
+}
