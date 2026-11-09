@@ -24,6 +24,18 @@ Tasks created (ROADMAP):
 ```
 
 ## Entries
+### 2026-11-09  Build 0.1.0 (feat/aquatic-v8, uncommitted)  Tester: self (BAMF69)  Duration: before playing v8
+Asks: in the aquatic stage you evolve only from the coast, even at form 4 earlier; a save and export to pick up later;
+the blood banner says "run and heal"; a diet line in the top right. Decisions: all built as v9 (ROADMAP Done).
+
+### 2026-11-09  Build 0.1.0 (main 4b5eb6e, aquatic Toy v7)  Tester: self (BAMF69)  Duration: a play session
+Approved: the Gardener proposal ("Yes, build it"): thickness becomes a real trait, the water acts on the lake now,
+every effect said on screen.
+Asks: the low-health shark banner says it smells blood; a chomp per fish; death goes black with the words, then fades
+in on the relative; a top message when you can move on; a bigger pickup for the river's gold part; form 4 in both
+stages unlocks the evolve to the next stage; calm background music, the shark music louder with more bass.
+Decisions: all built as v8 (ROADMAP Done). The aquatic evolve goes back to the title for now (no third stage yet).
+
 ### 2026-11-08  Build 0.1.0 (uncommitted, aquatic Toy v6)  Tester: self (BAMF69)  Duration: a play session
 Opinion (exact words): "dying seems too harsh when you're far along".
 Asks: river hits x2; 50-stamina wording; death costs half the food; an obvious full-speed effect; a shark banner and

@@ -70,5 +70,12 @@
  "cell.diet_now": "Tu es maintenant {diet}",
  "cell.part_refused": "Un {diet} n'a pas besoin de {part}",
  "cell.part_shed": "{part} se détache : un {diet} n'en a pas besoin",
- "cell.hunted": "Quelque chose de gros te chasse"
+ "cell.hunted": "Quelque chose de gros te chasse",
+ "menu.continue": "Continuer (étape aquatique)",
+ "menu.export": "Exporter la sauvegarde",
+ "menu.import": "Importer une sauvegarde",
+ "save.exported": "Sauvegarde téléchargée : gardez-la pour reprendre plus tard, ou importez-la sur un autre ordinateur",
+ "save.nothing": "Rien à exporter : jouez d'abord une étape",
+ "save.imported": "Sauvegarde importée : Continuer reprend là où elle s'était arrêtée",
+ "save.import_failed": "Import impossible : {why}"
 }

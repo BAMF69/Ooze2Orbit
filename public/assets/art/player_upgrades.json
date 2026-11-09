@@ -67,192 +67,276 @@
     },
     {
       "index": 9,
-      "pose": "speed",
-      "direction": "form1_t1",
+      "pose": "attack",
+      "direction": "form4_t1",
       "frames": 4,
       "first_frame": 36
     },
     {
       "index": 10,
-      "pose": "speed",
-      "direction": "form1_t2",
+      "pose": "attack",
+      "direction": "form4_t2",
       "frames": 4,
       "first_frame": 40
     },
     {
       "index": 11,
-      "pose": "speed",
-      "direction": "form1_t3",
+      "pose": "attack",
+      "direction": "form4_t3",
       "frames": 4,
       "first_frame": 44
     },
     {
       "index": 12,
       "pose": "speed",
-      "direction": "form2_t1",
+      "direction": "form1_t1",
       "frames": 4,
       "first_frame": 48
     },
     {
       "index": 13,
       "pose": "speed",
-      "direction": "form2_t2",
+      "direction": "form1_t2",
       "frames": 4,
       "first_frame": 52
     },
     {
       "index": 14,
       "pose": "speed",
-      "direction": "form2_t3",
+      "direction": "form1_t3",
       "frames": 4,
       "first_frame": 56
     },
     {
       "index": 15,
       "pose": "speed",
-      "direction": "form3_t1",
+      "direction": "form2_t1",
       "frames": 4,
       "first_frame": 60
     },
     {
       "index": 16,
       "pose": "speed",
-      "direction": "form3_t2",
+      "direction": "form2_t2",
       "frames": 4,
       "first_frame": 64
     },
     {
       "index": 17,
       "pose": "speed",
-      "direction": "form3_t3",
+      "direction": "form2_t3",
       "frames": 4,
       "first_frame": 68
     },
     {
       "index": 18,
-      "pose": "defense",
-      "direction": "form1_t1",
+      "pose": "speed",
+      "direction": "form3_t1",
       "frames": 4,
       "first_frame": 72
     },
     {
       "index": 19,
-      "pose": "defense",
-      "direction": "form1_t2",
+      "pose": "speed",
+      "direction": "form3_t2",
       "frames": 4,
       "first_frame": 76
     },
     {
       "index": 20,
-      "pose": "defense",
-      "direction": "form1_t3",
+      "pose": "speed",
+      "direction": "form3_t3",
       "frames": 4,
       "first_frame": 80
     },
     {
       "index": 21,
-      "pose": "defense",
-      "direction": "form2_t1",
+      "pose": "speed",
+      "direction": "form4_t1",
       "frames": 4,
       "first_frame": 84
     },
     {
       "index": 22,
-      "pose": "defense",
-      "direction": "form2_t2",
+      "pose": "speed",
+      "direction": "form4_t2",
       "frames": 4,
       "first_frame": 88
     },
     {
       "index": 23,
-      "pose": "defense",
-      "direction": "form2_t3",
+      "pose": "speed",
+      "direction": "form4_t3",
       "frames": 4,
       "first_frame": 92
     },
     {
       "index": 24,
       "pose": "defense",
-      "direction": "form3_t1",
+      "direction": "form1_t1",
       "frames": 4,
       "first_frame": 96
     },
     {
       "index": 25,
       "pose": "defense",
-      "direction": "form3_t2",
+      "direction": "form1_t2",
       "frames": 4,
       "first_frame": 100
     },
     {
       "index": 26,
       "pose": "defense",
-      "direction": "form3_t3",
+      "direction": "form1_t3",
       "frames": 4,
       "first_frame": 104
     },
     {
       "index": 27,
-      "pose": "mobility",
-      "direction": "form1_t1",
+      "pose": "defense",
+      "direction": "form2_t1",
       "frames": 4,
       "first_frame": 108
     },
     {
       "index": 28,
-      "pose": "mobility",
-      "direction": "form1_t2",
+      "pose": "defense",
+      "direction": "form2_t2",
       "frames": 4,
       "first_frame": 112
     },
     {
       "index": 29,
-      "pose": "mobility",
-      "direction": "form1_t3",
+      "pose": "defense",
+      "direction": "form2_t3",
       "frames": 4,
       "first_frame": 116
     },
     {
       "index": 30,
-      "pose": "mobility",
-      "direction": "form2_t1",
+      "pose": "defense",
+      "direction": "form3_t1",
       "frames": 4,
       "first_frame": 120
     },
     {
       "index": 31,
-      "pose": "mobility",
-      "direction": "form2_t2",
+      "pose": "defense",
+      "direction": "form3_t2",
       "frames": 4,
       "first_frame": 124
     },
     {
       "index": 32,
-      "pose": "mobility",
-      "direction": "form2_t3",
+      "pose": "defense",
+      "direction": "form3_t3",
       "frames": 4,
       "first_frame": 128
     },
     {
       "index": 33,
-      "pose": "mobility",
-      "direction": "form3_t1",
+      "pose": "defense",
+      "direction": "form4_t1",
       "frames": 4,
       "first_frame": 132
     },
     {
       "index": 34,
-      "pose": "mobility",
-      "direction": "form3_t2",
+      "pose": "defense",
+      "direction": "form4_t2",
       "frames": 4,
       "first_frame": 136
     },
     {
       "index": 35,
+      "pose": "defense",
+      "direction": "form4_t3",
+      "frames": 4,
+      "first_frame": 140
+    },
+    {
+      "index": 36,
+      "pose": "mobility",
+      "direction": "form1_t1",
+      "frames": 4,
+      "first_frame": 144
+    },
+    {
+      "index": 37,
+      "pose": "mobility",
+      "direction": "form1_t2",
+      "frames": 4,
+      "first_frame": 148
+    },
+    {
+      "index": 38,
+      "pose": "mobility",
+      "direction": "form1_t3",
+      "frames": 4,
+      "first_frame": 152
+    },
+    {
+      "index": 39,
+      "pose": "mobility",
+      "direction": "form2_t1",
+      "frames": 4,
+      "first_frame": 156
+    },
+    {
+      "index": 40,
+      "pose": "mobility",
+      "direction": "form2_t2",
+      "frames": 4,
+      "first_frame": 160
+    },
+    {
+      "index": 41,
+      "pose": "mobility",
+      "direction": "form2_t3",
+      "frames": 4,
+      "first_frame": 164
+    },
+    {
+      "index": 42,
+      "pose": "mobility",
+      "direction": "form3_t1",
+      "frames": 4,
+      "first_frame": 168
+    },
+    {
+      "index": 43,
+      "pose": "mobility",
+      "direction": "form3_t2",
+      "frames": 4,
+      "first_frame": 172
+    },
+    {
+      "index": 44,
       "pose": "mobility",
       "direction": "form3_t3",
       "frames": 4,
-      "first_frame": 140
+      "first_frame": 176
+    },
+    {
+      "index": 45,
+      "pose": "mobility",
+      "direction": "form4_t1",
+      "frames": 4,
+      "first_frame": 180
+    },
+    {
+      "index": 46,
+      "pose": "mobility",
+      "direction": "form4_t2",
+      "frames": 4,
+      "first_frame": 184
+    },
+    {
+      "index": 47,
+      "pose": "mobility",
+      "direction": "form4_t3",
+      "frames": 4,
+      "first_frame": 188
     }
   ],
   "image": "player_upgrades.png"

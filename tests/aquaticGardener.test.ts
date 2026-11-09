@@ -24,7 +24,8 @@ describe("the body your kin evolve", () => {
     expect(b.hp).toBeGreaterThan(1);
     expect(b.bite).toBeLessThan(1);
     expect(b.speed).toBeLessThan(1);
-    expect(describeBody(1)).toMatch(/\+40 % health/);
+    expect(describeBody(1)).toMatch(/40 % more health/);
+    expect(describeBody(1)).toMatch(/20 % slower/);
   });
   it("slender: faster and turns better, less health", () => {
     const b = bodyTraits(0);
@@ -67,5 +68,13 @@ describe("what the water does to the lake now", () => {
   it("stamina refills slower in cold water", () => {
     const c = { ...creatureFromLineage(null, "omnivore"), stamina: 10 };
     expect(stepStamina(c, "still", 1, waterEffects(tempMin).staminaRegen).stamina).toBeLessThan(stepStamina(c, "still", 1).stamina);
+  });
+});
+
+describe("form 4 (2026-11-09)", () => {
+  it("is the last form: four sizes, no fourth normal part slot, and the food to reach it", () => {
+    expect(AQ.forms.size.length).toBe(4);
+    expect(AQ.forms.foodToEvolve.length).toBe(3);
+    expect(AQ.forms.slots[3]).toBe(3);
   });
 });

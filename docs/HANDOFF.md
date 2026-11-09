@@ -3,8 +3,8 @@
 > Rewritten at the end of every session by `/end-session`. Read first by `/start-session`.
 > Keep under ~60 lines. It is a baton, not a diary.
 
-**Last updated:** 2026-11-08
-**Branch / commit:** main, 821f586 (PR #3 merged) + uncommitted aquatic Toy (this session)
+**Last updated:** 2026-11-09
+**Branch / commit:** feat/aquatic-v8 from main 4b5eb6e (PR #4 merged: aquatic Toy v1-v7), v8 uncommitted
 **Engine version:** see `docs/ENGINE.md`
 
 ## Where we are
@@ -15,7 +15,9 @@ Ooze2Orbit, live at https://bamf69.github.io/Ooze2Orbit/ (every push to main red
   (vertical swimming, dash, breach, stats to 10, points, forms, parts, five creature kinds); v3 2026-11-08: pond ->
   river 1 -> lake -> river 2 -> coast, the shark look, fish fight fish, E upgrades / U lens; v4: stamina (Shift, Q
   dash), unique slots, part icons, endurance muscle, rivers x2, real schools, admin panel (`), cell -> aquatic
-  evolve. Not yet played.
+  evolve; v5-v7 sharks, looks, cutscenes (PR #4); v8 2026-11-09: the Gardener's water matters (`aquatic/gardener.ts`),
+  form 4 in both stages unlocks the evolve, chomp per fish, black-screen death, move-on banner, calm music; v9: evolve only on
+  the coast, diet line, autosave + menu Continue / Export / Import (`?continue` resumes in smoke). Not yet played.
   Main menu "Aquatic stage (prototype)". Doc: `docs/stages/02-aquatic.md`; code: `src/game/AquaticScene.ts`, `src/game/aquatic/`.
 
 ## What changed last session

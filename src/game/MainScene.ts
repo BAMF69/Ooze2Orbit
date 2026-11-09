@@ -42,7 +42,7 @@ import { PLAYER_ID, ate, newBrain, think, type GulperBrain, type Seen } from "./
 import { bump, cellLineage, cellTemperament, gulperEvent, newCellRecord, recordDiet, type CellRecord } from "./cell/record";
 import {
   accel, addPart, bumpDamage, cellsWanted, changeDiet, drag, partAllowed, bumpFoodLoss, buyUpgrade, canEat, dropKinds, eat, eatFood, freshBase, knockbackTaken,
-  cellHitDamage, deathMeat, loseFood, nextSpool, spoolTime, thrustAt, maxSpeed, newCreature, pullRadius, spriteRow, upgradeTier, type Creature,
+  cellHitDamage, deathMeat, loseFood, nextSpool, slots, spoolTime, thrustAt, maxSpeed, newCreature, pullRadius, spriteRow, upgradeTier, type Creature,
 } from "./cell/rules";
 import { keepInside, knockApart, swim, toward, wanderDir, type Body } from "./cell/steer";
 import { UpgradePanel } from "./cell/upgradePanel";
@@ -345,7 +345,7 @@ export class MainScene extends Phaser.Scene {
     this.refreshPlayerLook();
     this.tweens.add({ targets: this.player.spr, scale: { from: from * 0.8, to: this.playerScale() }, duration: 450, ease: "Back.Out" });
     if (!shell.settings.access.reduce_motion) this.cameras.main.flash(TUNING.evolveFlashS * 1000, 255, 240, 200);
-    this.hud.toast(this.creature.form >= TUNING.maxForm ? "cell.evolved_last" : "cell.evolved", { form: this.creature.form, slots: this.creature.form });
+    this.hud.toast(this.creature.form >= TUNING.maxForm ? "cell.evolved_last" : "cell.evolved", { form: this.creature.form, slots: slots(this.creature) });
     Log.info(LINEAGE_LOG, `form ${this.creature.form}: ${describeTemperament(cellTemperament(this.creature, this.record))}`);
     if (this.autoplay) {
       if (this.creature.form >= TUNING.maxForm) this.saveLineage(); // no picker: the stage ends at once

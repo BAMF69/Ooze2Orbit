@@ -55,6 +55,8 @@ Engine-specific folder layout is documented in `docs/ENGINE.md`. Universal folde
 | Aquatic upgrade panel | E: five rows to level 10, the cell panel's colours | `src/game/aquatic/upgradePanel.ts` | smoke + by hand |
 | Stamina and unique parts | Pace (cruise / fast / still), drain and refill, ability costs; river parts in their own slots | `src/game/aquatic/creature.ts` | `tests/aquaticCreature.test.ts` |
 | Admin panel (dev) | ` key: temperaments, go to any map or river, form, points, invincible | `src/game/aquatic/adminPanel.ts` | smoke `?admin` |
+| The Gardener's lever | Body thickness -> health, bite damage, speed, turning; water temperature -> food, hunter and prey speed, hunter sight, stamina refill; the words for both | `src/game/aquatic/gardener.ts`, `AquaticScene.syncGardener` | `tests/aquaticGardener.test.ts` |
+| Run saves and save files | The aquatic run packed for slot `aquatic_run` and read back clamped; the export bundle (lineage + run) and its checks; the menu's Continue / Export / Import | `src/game/aquatic/runSave.ts`, `src/shell/saveFiles.ts`, `AquaticScene.saveRun/loadRun` | `tests/aquaticRunSave.test.ts`, smoke `?continue` |
 | Sharks | Roam / hunt / rest; breach or distance ends a hunt; relentless or merciful below half health | `src/game/aquatic/sharks.ts`, `AquaticScene.moveSharks` | `tests/aquaticSharks.test.ts` |
 | Body looks | Three temperament scores -> family and step -> swimmer atlas row; worn-part overlays | `creature.ts` lookScores/bodyLook, `aquatic_partlayers.py` | `tests/aquaticRiver.test.ts` |
 | Seabed | Rocks push you off, seaweed tangles you | `src/game/aquatic/seabed.ts`, `AquaticScene.seabed` | `tests/aquaticCreature.test.ts` |

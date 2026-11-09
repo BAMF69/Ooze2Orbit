@@ -5,13 +5,13 @@
 #           oval cell with a whipping flagellum behind it and a fringe of cilia, facing right (the game flips it).
 #           KEY FEATURES: a dark nucleus at the back, grainy cytoplasm, two small beady eye spots up front. The
 #           signature props are the parts it collects: chitin thorns (attack), slate armor plates on its back
-#           (defense), an olive oral groove with a ciliary fringe (diet). Three forms grow bigger, with more flagella.
+#           (defense), an olive oral groove with a ciliary fringe (diet). Four forms grow bigger, with more flagella.
 #           PALETTE: GDD "lit and moody, under a microscope": muted ochre body lit from the top-left with a pale
 #           membrane rim; slate-teal plates, bone-grey thorns, olive groove.
 # Purpose : The player's atlas for tools/art/pixel_sprite.py: one row per (form, parts) combination, so adding a
-#           part visibly changes the cell. 3 forms x 8 part combinations = 24 rows of 4 swim frames.
+#           part visibly changes the cell. 4 forms x 8 part combinations = 32 rows of 4 swim frames.
 # Usage   : python tools/art/pixel_sprite.py build assets_src/sprites/player_cell.py --out public/assets/art/player_cell --overwrite
-# Notes   : Row naming: pose = "form1".."form3", direction = "s0h0m0" (spikes, shell, mouth: 0 or 1). The game looks
+# Notes   : Row naming: pose = "form1".."form4", direction = "s0h0m0" (spikes, shell, mouth: 0 or 1). The game looks
 #           rows up by these names in player_cell.json (src/game/cell/atlas.ts). Drawn facing right; no MIRROR.
 #           No ground shadow: it swims (top-down). Lighting helpers: cellart.py (light from the top-left).
 #           v2 2026-11-07: redrawn from the "cute cartoon" v1 (big eyes, cheeks) to the lit microscope style.
@@ -39,19 +39,19 @@ PALETTE = {
 }
 RAMP = ["deep", "dark", "base", "light"]
 
-FORMS = (1, 2, 3)
+FORMS = (1, 2, 3, 4)  # form 4 added 2026-11-09: the last, it unlocks the evolve
 COMBOS = [f"s{s}h{h}m{m}" for s in (0, 1) for h in (0, 1) for m in (0, 1)]
 ROWS = [(f"form{f}", c) for f in FORMS for c in COMBOS]
 
-SIZE = {1: (9, 8), 2: (11, 9), 3: (12, 10)}   # body radius x, y per form
-FLAGELLA = {1: 1, 2: 2, 3: 3}
+SIZE = {1: (9, 8), 2: (11, 9), 3: (12, 10), 4: (13, 11)}   # body radius x, y per form
+FLAGELLA = {1: 1, 2: 2, 3: 3, 4: 4}
 PULSE = [0, 1, 0, -1]                           # x-radius squish while swimming
 CX, CY = 16, 16
 
 
 def flagella(s, form, rx, f):
     """Thin whipping flagella behind the cell, a sine wave that travels with the frame."""
-    ys = {1: [0], 2: [-2, 2], 3: [-3, 0, 3]}[FLAGELLA[form]]
+    ys = {1: [0], 2: [-2, 2], 3: [-3, 0, 3], 4: [-5, -2, 2, 5]}[FLAGELLA[form]]
     for i, dy in enumerate(ys):
         for k in range(1, 8):
             y = CY + dy + round(1.4 * math.sin(k * 0.9 + (f + i) * math.pi / 2))

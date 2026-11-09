@@ -81,7 +81,7 @@ export class CellHud {
     // part slots
     this.icons.forEach((s) => s.destroy());
     this.icons.length = 0;
-    for (let i = 0; i < TUNING.maxForm; i++) {
+    for (let i = 0; i < TUNING.maxSlots; i++) { // part slots (form 4 adds none)
       const sx = bx + i * (SLOT + 4), sy = by + BAR_H + 6;
       const open = i < n;
       this.panel.lineStyle(1, 0xffffff, open ? 0.8 : 0.2).strokeRect(sx, sy, SLOT, SLOT);

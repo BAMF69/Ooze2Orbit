@@ -102,10 +102,12 @@ export const AQ = {
     rammingSpeed: 50, // px/s toward a creature for a bump to count as your ram (else it bites you)
   },
   forms: {
-    foodToEvolve: [70, 120] as readonly number[], // food for form 2, form 3
-    size: [26, 34, 44] as readonly number[], // your world px tall per form
-    heaviness: [2.0, 2.5, 3.0] as readonly number[], // momentum per form with no mobility (cell stage rule)
-    slots: [1, 2, 3] as readonly number[], // part slots per form
+    // form 4 (2026-11-09 BAMF69 "add form 4 ... when unlocked, the player can evolve to the next stage"): the last;
+    // it grows you and unlocks the evolve. It adds no part slot (three normal parts, as before).
+    foodToEvolve: [70, 120, 180] as readonly number[], // food for form 2, 3, 4
+    size: [26, 34, 44, 54] as readonly number[], // your world px tall per form (its length is the number of forms)
+    heaviness: [2.0, 2.5, 3.0, 3.4] as readonly number[], // momentum per form with no mobility (cell stage rule)
+    slots: [1, 2, 3, 3] as readonly number[], // part slots per form
   },
   parts: {
     finsMobility: 3, // fins count as this many mobility levels
@@ -187,7 +189,10 @@ export const AQ = {
   },
 
   // ---- dying (stakes rise each stage, pillar 1): a relative carries on ----
-  death: { keepFoodShare: 0.5, losePart: true }, // half your food toward the next form is kept (2026-11-08: all was too harsh)
+  death: { keepFoodShare: 0.5, losePart: true, blackS: 1.6, fadeS: 0.9 }, // blackS/fadeS: the screen goes black with the words, then fades in (2026-11-09)
+  save: { everyS: 20 }, // autosave the run this often too (aquatic/runSave.ts, 2026-11-09)
+  riverPartReach: 3, // the river's gold part: pickup reach x its size (2026-11-09: "make the pickup hitbox bigger")
+  music: { calmLevel: 0.32, huntLevel: 1.0 }, // loop levels (x master x music): the hunt is louder than the calm (2026-11-09) // half your food toward the next form is kept (2026-11-08: all was too harsh)
 
   // ---- what the Gardener's lever does (2026-11-08: "why should the player care?"; aquatic/gardener.ts) ----
   gardener: {

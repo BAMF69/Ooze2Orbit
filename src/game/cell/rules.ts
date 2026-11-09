@@ -34,9 +34,9 @@ export function newCreature(diet: Diet = "omnivore"): Creature {
 
 export const has = (c: Creature, p: PartKind): boolean => c.parts.includes(p);
 
-/** Part slots: one per form. */
+/** Part slots: one per form, up to the three kinds of part (form 4 grows, it does not add a slot). */
 export function slots(c: Creature): number {
-  return c.form;
+  return Math.min(c.form, TUNING.maxSlots);
 }
 
 /** Food needed to evolve from the current form; Infinity when fully evolved. */

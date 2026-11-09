@@ -65,16 +65,18 @@ export function waterEffects(tempC: number): WaterEffects {
   };
 }
 
-const pct = (m: number) => `${m >= 1 ? "+" : "-"}${Math.round(Math.abs(m - 1) * 100)} %`;
+// Words, not signs: a lone "+" or "-" all but vanishes in the HUD's small pixel font (seen in a capture 2026-11-09).
+const pct = (m: number) => `${Math.round(Math.abs(m - 1) * 100)} %`;
+const more = (m: number, up: string, down: string) => `${pct(m)} ${m >= 1 ? up : down}`;
 
-/** "+24 % health, -12 % speed" for a body; "no edge either way" for a medium one. */
+/** "24 % more health, 12 % slower" for a body; "no edge either way" for a medium one. */
 export function describeBody(thickness: number): string {
   const b = bodyTraits(thickness);
   const parts: string[] = [];
-  if (Math.abs(b.hp - 1) >= 0.01) parts.push(`${pct(b.hp)} health`);
-  if (Math.abs(b.bite - 1) >= 0.01) parts.push(`${pct(b.bite)} bite damage`);
-  if (Math.abs(b.speed - 1) >= 0.01) parts.push(`${pct(b.speed)} speed`);
-  if (Math.abs(b.turn - 1) >= 0.01) parts.push(`${pct(b.turn)} turning`);
+  if (Math.abs(b.hp - 1) >= 0.01) parts.push(`${more(b.hp, "more", "less")} health`);
+  if (Math.abs(b.bite - 1) >= 0.01) parts.push(`${more(b.bite, "more", "less")} bite damage`);
+  if (Math.abs(b.speed - 1) >= 0.01) parts.push(more(b.speed, "faster", "slower"));
+  if (Math.abs(b.turn - 1) >= 0.01) parts.push(`turns ${more(b.turn, "faster", "slower")}`);
   return parts.length ? parts.join(", ") : "no edge either way";
 }
 
@@ -82,6 +84,6 @@ export function describeBody(thickness: number): string {
 export function describeWater(tempC: number): string {
   const w = waterEffects(tempC);
   if (Math.abs(w.food - 1) < 0.02 && Math.abs(w.hunterSpeed - 1) < 0.02) return "mild: a balanced lake";
-  if (w.food > 1) return `warm: food ${pct(w.food)}, hunters ${pct(w.hunterSpeed)} faster and keener`;
-  return `cold: food ${pct(w.food)}, hunters ${pct(w.hunterSpeed)} speed, stamina refills ${pct(w.staminaRegen)}`;
+  if (w.food > 1) return `warm: ${pct(w.food)} more food, hunters ${pct(w.hunterSpeed)} faster and keener`;
+  return `cold: ${pct(w.food)} less food, everyone ${pct(w.hunterSpeed)} slower, stamina refills ${pct(w.staminaRegen)} slower`;
 }
