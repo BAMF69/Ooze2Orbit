@@ -284,6 +284,9 @@ DEFAULT_BINDINGS = {
     "move_up": ["key:w", "pad:dpad_up"], "move_down": ["key:s", "pad:dpad_down"],
     "jump": ["key:space", "pad:south"], "attack": ["key:j", "pad:west"],
     "interact": ["key:e", "pad:north"], "pause": ["key:escape", "pad:start"],
+    "rise": ["key:r", "pad:r2"], "sink": ["key:f", "pad:l2"], "dash": ["key:q", "pad:r1"],
+    "pace": ["key:shift", "pad:l1"],
+    "lens": ["key:u", "pad:select"],
 }
 
 DEFAULT_SETTINGS = {

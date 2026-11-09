@@ -1,0 +1,49 @@
+{
+  "cell": 32,
+  "columns": 4,
+  "rows": [
+    {
+      "index": 0,
+      "pose": "on",
+      "direction": "fins",
+      "frames": 4,
+      "first_frame": 0
+    },
+    {
+      "index": 1,
+      "pose": "on",
+      "direction": "jaws",
+      "frames": 4,
+      "first_frame": 4
+    },
+    {
+      "index": 2,
+      "pose": "on",
+      "direction": "plates",
+      "frames": 4,
+      "first_frame": 8
+    },
+    {
+      "index": 3,
+      "pose": "on",
+      "direction": "gills",
+      "frames": 4,
+      "first_frame": 12
+    },
+    {
+      "index": 4,
+      "pose": "on",
+      "direction": "endurance",
+      "frames": 4,
+      "first_frame": 16
+    },
+    {
+      "index": 5,
+      "pose": "on",
+      "direction": "torrent",
+      "frames": 4,
+      "first_frame": 20
+    }
+  ],
+  "image": "aquatic_partlayers.png"
+}

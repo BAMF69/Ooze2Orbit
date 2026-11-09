@@ -13,6 +13,7 @@ import { shell } from "./shell/app";
 import * as Phaser from "phaser";
 import { BackdropScene } from "./game/BackdropScene";
 import { JuiceScene } from "./game/JuiceScene";
+import { AquaticScene } from "./game/AquaticScene";
 import { MainScene } from "./game/MainScene";
 
 export const game = new Phaser.Game({
@@ -24,7 +25,7 @@ export const game = new Phaser.Game({
   pixelArt: true,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   input: { keyboard: false, gamepad: false },
-  scene: [BackdropScene, MainScene, JuiceScene], // the first one starts on its own; the shell runs the others
+  scene: [BackdropScene, MainScene, AquaticScene, JuiceScene], // the first one starts on its own; the shell runs the others
   callbacks: { postBoot: (g) => shell.start(g) },
 });
 

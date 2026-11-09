@@ -1,0 +1,105 @@
+{
+  "cell": 32,
+  "columns": 4,
+  "rows": [
+    {
+      "index": 0,
+      "pose": "drift",
+      "direction": "algae",
+      "frames": 4,
+      "first_frame": 0
+    },
+    {
+      "index": 1,
+      "pose": "still",
+      "direction": "rock",
+      "frames": 4,
+      "first_frame": 4
+    },
+    {
+      "index": 2,
+      "pose": "sway",
+      "direction": "weed",
+      "frames": 4,
+      "first_frame": 8
+    },
+    {
+      "index": 3,
+      "pose": "drift",
+      "direction": "plankton",
+      "frames": 4,
+      "first_frame": 12
+    },
+    {
+      "index": 4,
+      "pose": "drift",
+      "direction": "meat",
+      "frames": 4,
+      "first_frame": 16
+    },
+    {
+      "index": 5,
+      "pose": "bob",
+      "direction": "fins",
+      "frames": 4,
+      "first_frame": 20
+    },
+    {
+      "index": 6,
+      "pose": "bob",
+      "direction": "jaws",
+      "frames": 4,
+      "first_frame": 24
+    },
+    {
+      "index": 7,
+      "pose": "bob",
+      "direction": "plates",
+      "frames": 4,
+      "first_frame": 28
+    },
+    {
+      "index": 8,
+      "pose": "bob",
+      "direction": "gills",
+      "frames": 4,
+      "first_frame": 32
+    },
+    {
+      "index": 9,
+      "pose": "drift",
+      "direction": "log",
+      "frames": 4,
+      "first_frame": 36
+    },
+    {
+      "index": 10,
+      "pose": "bob",
+      "direction": "endurance",
+      "frames": 4,
+      "first_frame": 40
+    },
+    {
+      "index": 11,
+      "pose": "bob",
+      "direction": "torrent",
+      "frames": 4,
+      "first_frame": 44
+    },
+    {
+      "index": 12,
+      "pose": "sway",
+      "direction": "bloom",
+      "frames": 4,
+      "first_frame": 48
+    },
+    {
+      "index": 13,
+      "pose": "drift",
+      "direction": "pod",
+      "frames": 4,
+      "first_frame": 52
+    }
+  ],
+  "image": "aquatic_props.png"
+}

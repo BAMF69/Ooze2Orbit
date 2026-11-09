@@ -183,6 +183,64 @@
    ],
    "max_voices": 2,
    "steal": "oldest"
+  },
+  "warn_behind": {
+   "bus": "sfx",
+   "files": [
+    "sfx/warn_behind.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    0
+   ],
+   "volume_db": [
+    -1,
+    -1
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "cooldown_ms": 900,
+   "caption": "[something behind you]"
+  },
+  "chomp": {
+   "bus": "sfx",
+   "files": [
+    "sfx/chomp_1.wav",
+    "sfx/chomp_2.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -1,
+    1
+   ],
+   "volume_db": [
+    -3,
+    -2
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "cooldown_ms": 200,
+   "caption": "[chomp]"
+  },
+  "twinkle": {
+   "bus": "sfx",
+   "files": [
+    "sfx/twinkle.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    0
+   ],
+   "volume_db": [
+    -4,
+    -4
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "cooldown_ms": 500,
+   "caption": "[twinkle]"
   }
  }
 }

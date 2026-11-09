@@ -53,8 +53,9 @@ Time per loop: about 15 to 30 seconds *(Claude's pick)*. The fun must be present
   its meat where it died. A cell killed by the pond drops only half its meat (`TUNING.cell.otherKillMeatMult`).
 
 ## Stage win and lose
-- **Stage end:** reach the last form (`TUNING.maxForm`). Today the stage stops there; the flood ending is in the
-  ROADMAP Parking lot.
+- **Stage end:** reach the last form (`TUNING.maxForm`) and pick its diet: the lineage is saved and a banner offers
+  the evolve; Enter starts the aquatic stage with that lineage (2026-11-08). The ` key (or `?finish`) ends the
+  stage at once, for testing. The flood cutscene is still in the ROADMAP.
 - **Lose:** none. Bumps and bites cost food. You are never popped, never lose a part to damage, and never lose a form
   you already reached (2026-11-08).
 - **Played on its own:** the cell stage always starts fresh, so it needs no default lineage.

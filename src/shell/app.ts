@@ -40,6 +40,8 @@ import "./shell.css";
 // ---- Tunables ----------------------------------------------------------------
 export { GAME_NAME, GAME_VERSION, SETTINGS_FILE };
 export const SAVE_SLOT = 1;
+/** The gameplay scenes the shell can run: the cell stage, the aquatic stage Toy, the juice demo. */
+export type GameKey = "main" | "aquatic" | "juice";
 const THEME_FILE = "theme_default.css"; // public/assets/ui/<this>, loaded after the built-in style when present
 const LOG_FLUSH_MS = 1000;
 const TOAST_MS = 3500;
@@ -119,7 +121,7 @@ export class Shell {
   settings: Settings;
   game: PhaserNS.Game | null = null;
   /** The running gameplay scene ("main" or "juice"), if any. */
-  scene: "main" | "juice" | null = null;
+  scene: GameKey | null = null;
   consentAsked = false;
   settingsTab = 0;
   plantedCrash = false;
@@ -399,14 +401,14 @@ export class Shell {
 
   // ---- gameplay --------------------------------------------------------------
   /** Loading screen, then the scene with its HUD screen. */
-  startGame(key: "main" | "juice"): void {
+  startGame(key: GameKey): void {
     if (key === "main") this.recordRun();
     this.telemetry.event("play_start", key);
     this.replace(screens.loading(this, key));
   }
 
   /** Called by the loading screen once the scene is up. */
-  enterGame(key: "main" | "juice"): void {
+  enterGame(key: GameKey): void {
     this.scene = key;
     this.game?.scene.sleep("backdrop");
     this.input.clearPresses();

@@ -36,6 +36,19 @@ civilization, space) is the plan. It is a prototype, so expect rough edges, and 
 
 ![A gulper prowling near a fully grown carnivore](docs/media/gulper.gif)
 
+## The aquatic stage (prototype)
+Pick **Aquatic stage (prototype)** on the main menu: swim from a pond to a lake to the coast, seen from behind your
+creature, from the seabed to the surface; each time you grow a form, breach in the river mouth's light and shoot a
+fast river run to the next water (with a part you can only find there). Eat algae and plankton for plant points, ram creatures (dash into them) for meat and their
+parts, spend points on five stats up to 10 (**E**), grow through three forms (the more aggressive, the more
+shark-like), and flee spinefish and deepmaws (a red
+edge and a low throb warn you when one is out of view). Press **U** to look down the lens as the Gardener: change
+the water's temperature, press **Enter** to let a generation pass, and watch your kin's bodies change.
+
+Keys: **W/S** swim, **A/D** turn, **R/F** up and down, **Shift** cruise / full speed (full speed drains stamina),
+**Q** dash, **Space** jump (breach at the surface), **E** upgrades, **U** the lens, **`** admin panel. Finishing the
+cell stage now leads straight into the aquatic stage.
+
 ## Controls
 | Action | Keyboard / mouse | Gamepad |
 |---|---|---|

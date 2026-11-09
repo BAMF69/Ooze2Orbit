@@ -1,0 +1,8 @@
+{
+ "tool": "assets_src/audio/make_sfx.py",
+ "sound": "warn_behind",
+ "variant": 1,
+ "seed": 2162,
+ "rate": 44100,
+ "seconds": 0.42
+}
