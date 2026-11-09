@@ -1,0 +1,217 @@
+{
+  "cell": 32,
+  "columns": 4,
+  "rows": [
+    {
+      "index": 0,
+      "pose": "swim",
+      "direction": "back0",
+      "frames": 4,
+      "first_frame": 0
+    },
+    {
+      "index": 1,
+      "pose": "swim",
+      "direction": "back1",
+      "frames": 4,
+      "first_frame": 4
+    },
+    {
+      "index": 2,
+      "pose": "swim",
+      "direction": "back2",
+      "frames": 4,
+      "first_frame": 8
+    },
+    {
+      "index": 3,
+      "pose": "swim",
+      "direction": "back3",
+      "frames": 4,
+      "first_frame": 12
+    },
+    {
+      "index": 4,
+      "pose": "swim",
+      "direction": "backc1",
+      "frames": 4,
+      "first_frame": 16
+    },
+    {
+      "index": 5,
+      "pose": "swim",
+      "direction": "backc2",
+      "frames": 4,
+      "first_frame": 20
+    },
+    {
+      "index": 6,
+      "pose": "swim",
+      "direction": "backc3",
+      "frames": 4,
+      "first_frame": 24
+    },
+    {
+      "index": 7,
+      "pose": "swim",
+      "direction": "backa1",
+      "frames": 4,
+      "first_frame": 28
+    },
+    {
+      "index": 8,
+      "pose": "swim",
+      "direction": "backa2",
+      "frames": 4,
+      "first_frame": 32
+    },
+    {
+      "index": 9,
+      "pose": "swim",
+      "direction": "backa3",
+      "frames": 4,
+      "first_frame": 36
+    },
+    {
+      "index": 10,
+      "pose": "swim",
+      "direction": "side0",
+      "frames": 4,
+      "first_frame": 40
+    },
+    {
+      "index": 11,
+      "pose": "swim",
+      "direction": "side1",
+      "frames": 4,
+      "first_frame": 44
+    },
+    {
+      "index": 12,
+      "pose": "swim",
+      "direction": "side2",
+      "frames": 4,
+      "first_frame": 48
+    },
+    {
+      "index": 13,
+      "pose": "swim",
+      "direction": "side3",
+      "frames": 4,
+      "first_frame": 52
+    },
+    {
+      "index": 14,
+      "pose": "swim",
+      "direction": "sidec1",
+      "frames": 4,
+      "first_frame": 56
+    },
+    {
+      "index": 15,
+      "pose": "swim",
+      "direction": "sidec2",
+      "frames": 4,
+      "first_frame": 60
+    },
+    {
+      "index": 16,
+      "pose": "swim",
+      "direction": "sidec3",
+      "frames": 4,
+      "first_frame": 64
+    },
+    {
+      "index": 17,
+      "pose": "swim",
+      "direction": "sidea1",
+      "frames": 4,
+      "first_frame": 68
+    },
+    {
+      "index": 18,
+      "pose": "swim",
+      "direction": "sidea2",
+      "frames": 4,
+      "first_frame": 72
+    },
+    {
+      "index": 19,
+      "pose": "swim",
+      "direction": "sidea3",
+      "frames": 4,
+      "first_frame": 76
+    },
+    {
+      "index": 20,
+      "pose": "swim",
+      "direction": "front0",
+      "frames": 4,
+      "first_frame": 80
+    },
+    {
+      "index": 21,
+      "pose": "swim",
+      "direction": "front1",
+      "frames": 4,
+      "first_frame": 84
+    },
+    {
+      "index": 22,
+      "pose": "swim",
+      "direction": "front2",
+      "frames": 4,
+      "first_frame": 88
+    },
+    {
+      "index": 23,
+      "pose": "swim",
+      "direction": "front3",
+      "frames": 4,
+      "first_frame": 92
+    },
+    {
+      "index": 24,
+      "pose": "swim",
+      "direction": "frontc1",
+      "frames": 4,
+      "first_frame": 96
+    },
+    {
+      "index": 25,
+      "pose": "swim",
+      "direction": "frontc2",
+      "frames": 4,
+      "first_frame": 100
+    },
+    {
+      "index": 26,
+      "pose": "swim",
+      "direction": "frontc3",
+      "frames": 4,
+      "first_frame": 104
+    },
+    {
+      "index": 27,
+      "pose": "swim",
+      "direction": "fronta1",
+      "frames": 4,
+      "first_frame": 108
+    },
+    {
+      "index": 28,
+      "pose": "swim",
+      "direction": "fronta2",
+      "frames": 4,
+      "first_frame": 112
+    },
+    {
+      "index": 29,
+      "pose": "swim",
+      "direction": "fronta3",
+      "frames": 4,
+      "first_frame": 116
+    }
+  ],
+  "image": "aquatic_swimmer.png"
+}

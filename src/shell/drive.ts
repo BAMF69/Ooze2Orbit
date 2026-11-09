@@ -32,7 +32,7 @@ import { PSEUDO_LOCALE } from "../core/i18n";
 import { Log } from "../core/log";
 import { settingsLoad } from "../core/settings";
 import { DATA_DIR_PARAM, dataPrefix } from "../core/textStore";
-import type { Shell } from "./app";
+import type { GameKey, Shell } from "./app";
 import { MAX_SLIDER_STEPS, MENU_TARGET, slideAction } from "./driveLogic";
 import { SETTINGS_FILE } from "./meta";
 import { TABS } from "./settingsScreen";
@@ -135,9 +135,9 @@ class Driver {
     if (read() !== want) throw new Error(`${id} did not reach ${String(want)} (is ${String(read())})`);
   }
 
-  async game(key: "main" | "juice"): Promise<void> {
+  async game(key: GameKey): Promise<void> {
     this.shell.startGame(key);
-    await this.screen(key === "main" ? "play" : "juice");
+    await this.screen(key === "juice" ? "juice" : "play");
     await frames(10);
   }
 
@@ -277,7 +277,8 @@ async function show(shell: Shell, d: Driver, what: string): Promise<void> {
 async function play(shell: Shell, d: Driver, seconds: number): Promise<void> {
   if (!(seconds > 0 && seconds <= 600)) throw new Error(`play:<seconds> needs 1 to 600 seconds, got "${seconds}"`);
   await d.toMenu();
-  await d.game("main");
+  // ?stage=aquatic plays the aquatic stage instead of the cell stage (dev.py smoke --query "stage=aquatic&autoplay")
+  await d.game(new URLSearchParams(location.search).get("stage") === "aquatic" ? "aquatic" : "main");
   const end = performance.now() + seconds * 1000;
   while (performance.now() < end) await frame();
   if (shell.scene) shell.game?.scene.pause(shell.scene); // a still frame for the screenshot

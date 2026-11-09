@@ -176,9 +176,45 @@ def choose(rng, j):
     return bubble(j(380), j(950), 0.07)
 
 
+def warn_behind(rng, j):
+    """Aquatic stage: something is behind you. A low double throb, like a heartbeat in deep water: distinct from
+    every pickup sound and low enough to cut through them (docs/stages/02-aquatic.md, the behind-you warning)."""
+    s = []
+    for k, at in enumerate((0.0, 0.2)):
+        beat = thud(70 - 8 * k, 38, 0.16, rng)
+        mix_into(s, beat, at, 1.0 - 0.25 * k)
+    n = int(0.42 * RATE)  # a faint low growl under both beats
+    growl, phase = [], 0.0
+    for i in range(n):
+        t = i / RATE
+        phase += 2 * math.pi * 55 / RATE
+        growl.append(math.sin(phase) * (0.5 + 0.5 * math.sin(2 * math.pi * 11 * t)) * math.exp(-t / 0.25))
+    return mix_into(s, lowpass(growl, 400), 0.0, 0.35)
+
+
+def chomp(rng, j):
+    """Aquatic stage: the deepmaw bites you. A wet snap: a sharp click of jaws, then a heavy squelch."""
+    s = [rng.uniform(-1, 1) * math.exp(-i / (RATE * 0.002)) for i in range(int(0.01 * RATE))]
+    mix_into(s, thud(j(120), j(60), 0.12, rng), 0.004, 0.9)
+    return mix_into(s, squelch(j(900), j(200), j(0.2), 5, rng, wobble_hz=26, wobble=0.5), 0.02, 0.8)
+
+
+def twinkle(rng, j):
+    """Aquatic river runs: the unique part comes into view. Bright rising chimes, a sparkle you notice over the water
+    (2026-11-08, BAMF69: "twinkle sound effect when it comes into view")."""
+    s = []
+    for k, f in enumerate((1320, 1760, 2093, 2637)):  # rising notes, each a soft bell (sine with a fast decay)
+        n = int(0.32 * RATE)
+        bell = [math.sin(2 * math.pi * f * (i / RATE)) * math.exp(-(i / RATE) / 0.11) * 0.8
+                + math.sin(2 * math.pi * f * 2.01 * (i / RATE)) * math.exp(-(i / RATE) / 0.05) * 0.2 for i in range(n)]
+        mix_into(s, bell, k * 0.07, 0.8 - k * 0.1)
+    return s
+
+
 SOUNDS = {
     "eat_algae": (3, eat_algae), "eat_meat": (3, eat_meat), "bump": (3, bump), "pop": (2, pop),
     "part": (1, part), "upgrade": (1, upgrade), "deny": (1, deny), "evolve": (1, evolve), "choose": (1, choose),
+    "warn_behind": (1, warn_behind), "chomp": (2, chomp), "twinkle": (1, twinkle),
 }
 
 
@@ -199,10 +235,48 @@ def render(name, variants, fn):
     print(f"[ OK ] {name}: {variants} file(s)")
 
 
+MUSIC_OUT = ROOT / "public" / "assets" / "audio" / "music"
+
+
+def hunt_loop():
+    """Aquatic stage: the ominous loop while a shark hunts you (2026-11-08). An original 8 s seamless loop: a deep
+    beating drone, a heavy heartbeat thump, and a slow swelling low tritone. Every part repeats a whole number of
+    times in 8 s, so the loop point is seamless. (It deliberately avoids the famous two-note shark-film motif.)"""
+    n = int(8.0 * RATE)
+    out = [0.0] * n
+    two_pi = 2 * math.pi
+    for i in range(n):
+        t = i / RATE
+        drone = 0.45 * math.sin(two_pi * 41.0 * t) + 0.35 * math.sin(two_pi * 43.5 * t) + 0.12 * math.sin(two_pi * 82.0 * t)
+        swell = 0.5 - 0.5 * math.cos(two_pi * t / 8.0)  # rises and falls once per loop
+        tritone = swell * (0.22 * math.sin(two_pi * 55.0 * t) + 0.18 * math.sin(two_pi * 77.75 * t))
+        beat = t % 0.8  # heartbeat: a thump, and a softer one after it
+        thump = math.sin(two_pi * 52 * beat) * math.exp(-beat / 0.06) + 0.6 * (math.sin(two_pi * 48 * (beat - 0.22)) * math.exp(-(beat - 0.22) / 0.05) if beat > 0.22 else 0)
+        out[i] = 0.55 * drone + tritone + 0.7 * thump
+    out = lowpass(out, 700)
+    peak = max(abs(v) for v in out) or 1
+    return [v * PEAK / peak for v in out]
+
+
+def render_music():
+    MUSIC_OUT.mkdir(parents=True, exist_ok=True)
+    samples = hunt_loop()
+    clipped = write_wav(MUSIC_OUT / "hunt.wav", samples, RATE)
+    if clipped:
+        raise SystemExit(f"[FAIL] hunt: {clipped} clipped samples")
+    (MUSIC_OUT / "hunt.sfx.json").write_text(json.dumps(
+        {"tool": "assets_src/audio/make_sfx.py", "sound": "hunt (loop)", "rate": RATE, "seconds": round(len(samples) / RATE, 3)}, indent=1) + "\n", encoding="utf-8")
+    print("[ OK ] music/hunt.wav: an 8 s loop")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Render Ooze2Orbit's organic sound effects.")
     ap.add_argument("--only", help="render only this family")
     a = ap.parse_args()
+    if a.only in (None, "hunt"):
+        render_music()
+    if a.only == "hunt":
+        return
     for name, (variants, fn) in SOUNDS.items():
         if not a.only or a.only == name:
             render(name, variants, fn)

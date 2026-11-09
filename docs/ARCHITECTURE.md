@@ -45,6 +45,25 @@ Engine-specific folder layout is documented in `docs/ENGINE.md`. Universal folde
 | Lineage and temperament | The lineage file every stage hands on, the cause log, temperament maths with the 50 % per-stage shift cap (no Phaser; shared by all stages) | `src/core/lineage.ts` | `tests/lineage.test.ts` |
 | Cell recording | Diet picks, rams, pops, bites, gulper escapes and lures; cell cause log and lineage, saved to slot `lineage` at the stage's end (log channel `lineage`) | `src/game/cell/record.ts`, `MainScene.saveLineage` | `tests/cellRecord.test.ts` |
 | Pond scene | Wires rules + movement to sprites; spawns, bumps, pickups | `src/game/MainScene.ts` | `dev.py smoke --drive play:N --query autoplay` |
+| **Aquatic stage (Toy)** | | | |
+| Behind view | Pseudo-3D: camera behind the avatar at its height, point projection with height, back/side/front view choice, hidden-threat edge incl. above/below (no Phaser) | `src/game/aquatic/view.ts` | `tests/aquatic.test.ts` |
+| Avatar physics | Turn-to-steer with the cell stage's momentum, rise and sink (seabed to surface), breach jump and underwater kick, dash | `src/game/aquatic/avatar.ts` | `tests/aquatic.test.ts` |
+| Aquatic creature | Five stats (max = cell max x 2) from the cell lineage, plant/meat points, forms, parts, health, damage, dying, the movement numbers | `src/game/aquatic/creature.ts` | `tests/aquaticCreature.test.ts` |
+| Critters | What darters, finrays, spinefish, shellbacks want (flee, chase, bite back, depth band), darter school targets; per-kind table `KINDS` | `src/game/aquatic/critters.ts`, `tuning.ts` | `tests/aquaticCreature.test.ts` |
+| Maps and river runs | `MAPS` (pond, lake, coast: size, depth, counts, toughness, palette) and `RIVERS`; the run generator (every row passable), river physics (current, strafe, jump) | `src/game/aquatic/tuning.ts`, `river.ts` | `tests/aquaticRiver.test.ts` |
+| Shark look | Aggression (lineage, attack, kills) -> 4 looks in the swimmer atlas | `creature.ts` aggression/sharkTier, `assets_src/sprites/aquatic_swimmer.py` | `tests/aquaticRiver.test.ts` |
+| Aquatic upgrade panel | E: five rows to level 10, the cell panel's colours | `src/game/aquatic/upgradePanel.ts` | smoke + by hand |
+| Stamina and unique parts | Pace (cruise / fast / still), drain and refill, ability costs; river parts in their own slots | `src/game/aquatic/creature.ts` | `tests/aquaticCreature.test.ts` |
+| Admin panel (dev) | ` key: temperaments, go to any map or river, form, points, invincible | `src/game/aquatic/adminPanel.ts` | smoke `?admin` |
+| Sharks | Roam / hunt / rest; breach or distance ends a hunt; relentless or merciful below half health | `src/game/aquatic/sharks.ts`, `AquaticScene.moveSharks` | `tests/aquaticSharks.test.ts` |
+| Body looks | Three temperament scores -> family and step -> swimmer atlas row; worn-part overlays | `creature.ts` lookScores/bodyLook, `aquatic_partlayers.py` | `tests/aquaticRiver.test.ts` |
+| Seabed | Rocks push you off, seaweed tangles you | `src/game/aquatic/seabed.ts`, `AquaticScene.seabed` | `tests/aquaticCreature.test.ts` |
+| Stage hand-over | The cell stage's end saves the lineage and offers the evolve; the shell starts the aquatic scene | `MainScene.evolveToAquatic`, `shell.startGame` | smoke `?autoplay&finish` |
+| Population | Kin thickness evolves with water temperature; every generation returns a truthful cause line (seeded) | `src/game/aquatic/population.ts` | `tests/aquatic.test.ts` |
+| Temperament reveal | Reads the cell lineage (save slot `lineage`) into rows with causes, or explains the default | `src/game/aquatic/reveal.ts` | `tests/aquatic.test.ts` |
+| Aquatic HUD | Status, toasts, the red behind-you edge cue + chevron, reveal panel, lens panel | `src/game/aquatic/hud.ts` | smoke screenshots |
+| Aquatic tuning | Every aquatic feel number (camera, avatar, prey, deepmaw, warning, lens, population) | `src/game/aquatic/tuning.ts` | via the tests above |
+| Lake scene | Wires it together; reuses the gulper mind (deepmaws), cell swim maths and SFX loader | `src/game/AquaticScene.ts` | `dev.py smoke --drive play:N --query "stage=aquatic&autoplay"` |
 
 ## Data flow and events
 Direct calls. MainScene owns all pond objects and asks the pure rules module what each event does (eat, addPart, bump). The Creature record is immutable: rules return a new one.

@@ -5,6 +5,7 @@
 //           (choosing your diet again each time). The parts you carry change how your cell looks.
 // Usage   : Registered in src/main.ts as "main"; the shell (src/shell/app.ts) starts, pauses and stops it.
 //           ?autoplay: a simple pilot steers and buys (for `dev.py smoke --drive play:N --query autoplay`);
+//           ?finish (or the ` key): finish the stage now and offer the evolve into the aquatic stage;
 //           add &diet=herbivore|carnivore|omnivore to pick its diet (default omnivore), the picker is skipped.
 //           ?debug: draws collision circles and logs channel "cell"; channel "lineage" logs the temperament at each
 //           evolution and the lineage written at the stage's end (save slot "lineage", docs/HANDOFF_CONTRACT.md).
@@ -72,6 +73,10 @@ export class MainScene extends Phaser.Scene {
   private creature: Creature = newCreature();
   private record: CellRecord = newCellRecord();
   private lineageSaved = false;
+  private evolveReady = false; // the stage is over: Enter evolves into the aquatic stage (BAMF69 2026-11-08)
+  private evolveT = 0;
+  private evolveBanner?: Phaser.GameObjects.Text;
+  private onDevKey = (e: KeyboardEvent) => { if (e.code === "Backquote" && shell.topId === "play") this.finishStageNow(); };
   private player!: Body & { spr: Phaser.GameObjects.Sprite };
   private spool = 0; // thrust build-up 0..1 while you hold a direction (rules.nextSpool)
   private upLayers!: Record<UpgradeStat, Phaser.GameObjects.Sprite>;
@@ -120,6 +125,11 @@ export class MainScene extends Phaser.Scene {
     this.creature = newCreature(askedDiet && DIETS.includes(askedDiet) ? askedDiet : "omnivore");
     this.record = newCellRecord();
     this.lineageSaved = false;
+    this.evolveReady = false;
+    this.evolveT = 0;
+    window.addEventListener("keydown", this.onDevKey); // ` : finish the cell stage now (a test trigger)
+    if (params.has("finish")) this.time.delayedCall(1500, () => this.finishStageNow()); // ?finish: the same, for smoke runs
+    this.events.once("shutdown", () => window.removeEventListener("keydown", this.onDevKey));
     if (this.autoplay) this.record = recordDiet(this.record, this.creature.diet); // no picker: the asked diet is the pick
     this.foods = [];
     this.orbs = [];
@@ -175,6 +185,10 @@ export class MainScene extends Phaser.Scene {
       return; // the pond waits while you choose a diet
     }
     if (playing) this.panelInput();
+    if (this.evolveReady) { // Enter (or 2 s of autoplay) evolves into the aquatic stage
+      this.evolveT += dt;
+      if (this.autoplay ? this.evolveT > 2 : playing && !this.panel.isOpen && shell.input.takePress("ui_accept")) { this.evolveToAquatic(); return; }
+    }
     this.movePlayer(dt);
     this.syncUpgradeLayers();
     this.mood.follow(this.player.x, this.player.y);
@@ -341,6 +355,22 @@ export class MainScene extends Phaser.Scene {
   }
 
   /** The stage's end (last form, last diet picked): build the lineage and save it once. A failed save must not end the run. */
+  /** ` (test trigger): finish the stage now: the last form, the lineage saved as it stands, the evolve offered. */
+  private finishStageNow(): void {
+    if (this.lineageSaved || this.picker.isOpen) return;
+    this.creature = { ...this.creature, form: TUNING.maxForm };
+    this.refreshPlayerLook();
+    Log.info(LOG, "DEV finish the cell stage now");
+    this.saveLineage();
+  }
+
+  /** The stage's end: on to the aquatic stage, which reads the lineage just saved. */
+  private evolveToAquatic(): void {
+    Log.info(LOG, "EVOLVE into the aquatic stage");
+    shell.stopGame();
+    shell.startGame("aquatic");
+  }
+
   private saveLineage(): void {
     if (this.lineageSaved) return;
     this.lineageSaved = true;
@@ -351,6 +381,11 @@ export class MainScene extends Phaser.Scene {
       const spec = shipSpecialty(home.temperament);
       Log.info(LINEAGE_LOG, `saved (slot ${LINEAGE_SLOT}): ${describeTemperament(home.temperament)}; leans ${spec.kind} (${spec.tech})`);
       for (const e of home.influence) Log.debug(LINEAGE_LOG, `  ${e.cause} ${JSON.stringify(e.effect)}`);
+      this.evolveReady = true;
+      this.evolveBanner ??= this.add.text(this.scale.width / 2, this.scale.height - 40, shell.i18n.t("cell.evolve_ready"),
+        { fontFamily: "monospace", fontSize: "12px", color: "#fff6c8", backgroundColor: "#000000a0", padding: { x: 8, y: 4 } })
+        .setOrigin(0.5, 1).setScrollFactor(0).setDepth(1200).setResolution(2);
+      this.sfx.play("evolve");
     } catch (err) {
       Log.error(LINEAGE_LOG, `could not save the lineage (slot ${LINEAGE_SLOT}): ${err instanceof Error ? err.message : String(err)}`);
     }

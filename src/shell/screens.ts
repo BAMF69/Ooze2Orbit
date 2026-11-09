@@ -10,7 +10,7 @@
 // Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
 // ---------------------------------------------------------------------------
 import { glyphName, glyphSet, promptBinding } from "../core/bindings";
-import type { Screen, Shell } from "./app";
+import type { GameKey, Screen, Shell } from "./app";
 import { GAME_VERSION } from "./meta";
 import { settingsScreen } from "./settingsScreen";
 import { Menu, buttonItem, el, glyph, tl, val } from "./ui";
@@ -102,6 +102,7 @@ export function menu(shell: Shell): Screen {
     const list = el("div", "list");
     const add = (key: string, fn: () => void) => list.append(m.add(buttonItem(shell.i18n, key, fn)).el);
     add("menu.play", () => shell.startGame("main"));
+    add("menu.aquatic", () => shell.startGame("aquatic")); // the aquatic stage Toy (docs/stages/02-aquatic.md)
     add("menu.settings", () => shell.push(settingsScreen(shell)));
     add("menu.credits", () => shell.push(creditsScreen(shell)));
     if (shell.debugBuild) add("menu.juice", () => shell.startGame("juice"));
@@ -142,7 +143,7 @@ export function creditsScreen(shell: Shell): Screen {
   });
 }
 
-export function loading(shell: Shell, key: "main" | "juice"): Screen {
+export function loading(shell: Shell, key: GameKey): Screen {
   let fill: HTMLElement | null = null;
   let pct: HTMLElement | null = null;
   let t = 0;
@@ -182,13 +183,13 @@ export function loading(shell: Shell, key: "main" | "juice"): Screen {
 }
 
 /** The HUD over a running scene: prompts with glyphs for the current device. */
-export function gameplay(shell: Shell, key: "main" | "juice"): Screen {
+export function gameplay(shell: Shell, key: GameKey): Screen {
   let lastSet = "";
-  const s = built(key === "main" ? "play" : "juice", "hud", (root) => {
+  const s = built(key === "juice" ? "juice" : "play", "hud", (root) => { // both stages are "play": scenes gate input on it
     const hud = el("div", "hudbar");
     const set = glyphSet(shell.settings.input.glyphs, shell.input.lastDevice);
     lastSet = set;
-    for (const action of key === "main" ? ["pause"] : HUD_ACTIONS) {
+    for (const action of key === "juice" ? HUD_ACTIONS : ["pause"]) {
       const pr = el("span", "prompt");
       pr.append(glyph(shell.i18n, glyphName(set, promptBinding(shell.settings.input.bindings, action, set))), tl(shell.i18n, `action.${action}`, ""));
       hud.append(pr);

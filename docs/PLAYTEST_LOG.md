@@ -24,6 +24,73 @@ Tasks created (ROADMAP):
 ```
 
 ## Entries
+### 2026-11-08  Build 0.1.0 (uncommitted, aquatic Toy v6)  Tester: self (BAMF69)  Duration: a play session
+Opinion (exact words): "dying seems too harsh when you're far along".
+Asks: river hits x2; 50-stamina wording; death costs half the food; an obvious full-speed effect; a shark banner and
+ominous music; a hammerhead for the large shark; a health bar; cutscenes for the river breaches.
+Question raised: "what exactly does water temperature do and why should the player care?" Answer: today it only
+drifts body thickness, which is cosmetic. Proposal for the Gardener given to BAMF69 (not built yet).
+Decisions: the asks built as v7.
+
+### 2026-11-08  Build 0.1.0 (uncommitted, aquatic Toy v5)  Tester: self (BAMF69)  Duration: a play session
+Observations: darters chased "relentlessly ... until death"; "the brown circles on the ground grow into the camera";
+"upgrade are slightly too cheap now"; "the river items appeared too early".
+Asks: darters break off before killing you; clickable admin options; dash and breach a flat 50 stamina; a medium
+shark in the lake, mediums and a large shark on the coast (rules per map); visual changes for parts and the other
+temperaments. Decisions: all built as v6 (see ROADMAP Done).
+
+### 2026-11-08  Build 0.1.0 (uncommitted, aquatic Toy v4)  Tester: self (BAMF69)  Duration: a play session
+Opinions (exact words): "i like the stamina bar"; "upgrade are too expensive"; "progression is too slow".
+Asks: slender, aggressive shark looks; admin invincible toggle; stamina tweaks (out of breath below 10, the minimum
+for full speed and the red bar, half drain, double cruise refill, auto cruise at 0); Space to rise in rivers; an
+unmissable river part; rocks bounce and seaweed slows (fewer in the pond); seabed textures per map; bigger rewards
+(a breakable large plant, medium and large meat); generation notes at the bottom.
+Decisions: all built as v5 (see ROADMAP Done).
+
+### 2026-11-08  Build 0.1.0 (uncommitted, aquatic Toy v3)  Tester: self (BAMF69)  Duration: a few minutes
+Question being tested: do the maps, rivers and parts work?
+Observations: "when i stopped moving the darter schools struggled to hit me and just swam in circles over my head";
+"the lateral line perk isn't very helpful"; "the ability to always swim full speed seems unrealistic".
+Asks: the cell stage evolving into the aquatic stage; an admin panel (temperament, jump between maps); part icons
+with explanations; unique parts in their own slots; stamina with two speeds (Shift), dash and breach costing half;
+a double-stamina part instead of the lateral line; rivers twice as long.
+Decisions: dash moved to Q (Shift is the pace toggle); schools now keep together and pursue in 3D; all built (v4).
+
+### 2026-11-08  Build 0.1.0 (uncommitted, aquatic Toy v2)  Tester: self (BAMF69)  Duration: a few minutes
+Question being tested: does v2 (vertical, abilities, stats, a fuller lake) work?
+Quotes (exact words):
+- "I'd like the aquatic section to feature 5 distinct "maps" correlating to each of the 3 forms with a minigame in
+  between. you start in a shallow pond (the current depth is perfect)..."
+- "the more aggressive your creature gets the more shark-like it becomes"
+- "i'm not seeing any parts from fights between other fish"
+- "lets also make each food pickup heal 1 hp and make health purchaseable with plant or meat or a combination"
+Pain points (ranked):
+1. No sense of progression or place: one lake for the whole stage.
+2. Parts come only from your own fights.
+Decisions / changes: three maps and two river runs (river-only parts), the shark look, fish fight fish, food heals,
+health from either points, E upgrades and U lens (see ROADMAP Done).
+
+### 2026-11-08  Build 0.1.0 (uncommitted, aquatic Toy v1)  Tester: self (BAMF69)  Duration: a few minutes
+Question being tested: does swimming from behind work, and is the lake fun?
+Quotes (exact words):
+- "I like the movement. the game feels empty though. I want it to become more complex and dangerous from the
+  previous stage. we need to carry over the meat and plant harvesting and the ability to grow and gain parts, I'd
+  like the stats max to double each phase so now health, defense, speed and mobility max at 10 and start with
+  whatever the cell had when it left the last stage. I'd like to add vertical movement - swimming from the seabed
+  to the surface and 2 active abilities - dash and jump"
+Delight moments:
+- The behind-view movement.
+Pain points (ranked):
+1. The lake feels empty: too few creatures, too little to do, not more dangerous than the pond.
+2. The cell stage's loop (plant and meat points, growing, parts) is missing.
+Decisions (BAMF69's answers):
+- Five stats max at 10 (the cell's 5, doubled each stage): attack, defense, speed, mobility, plus health; they
+  start at the cell's final upgrade levels. Points are spent in a panel (pillar 2 amended).
+- Controls: W/S swim, A/D turn, R/F rise and sink, Space jump, Shift dash, E the lens.
+- Jump = breach: near the surface it launches you out of the water; underwater a short upward kick.
+- Parts: all new aquatic parts (cell parts do not carry over as parts; they still count for temperament).
+Tasks created (ROADMAP): aquatic Toy v2 (vertical, abilities, stats, a fuller and deadlier lake).
+
 ### 2026-11-08  Build 0.1.0 (main a150fbf)  Tester: self (BAMF69)  Duration: several sessions
 Question being tested: is the cell-stage Toy done (someone wants to keep playing for 2 minutes)?
 Quotes (exact words):
