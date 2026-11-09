@@ -88,7 +88,7 @@ lineage has its own `schemaVersion` so it can also be exported as a plain file i
 | **Cell** | Nothing: always starts fresh | Creates species `home`; its `cell` block; diet; first influence entries | Not needed |
 | **Aquatic** | `home`: temperament, diet, `stages.cell` (final form, parts, upgrades: the starting body plan) | Its block; branches; `gardener.harshness` | A balanced omnivore cell, all temperaments low |
 | **Creature** | All species: temperament, diet, branches, aquatic body plan | Its block (levels cleared and how: fight, puzzle or stealth per obstacle; parts used); inherited traits from the most-used parts; branch extinctions; habitat (land, air, sea) per branch | One generated aquatic species (`home`) |
-| **Civilization** | All species: temperament, diet, habitat, `gardener.harshness` | Its block; culture; how the species sees the Gardener; whether it adopted T0&#124;▼&#124; tech | One generated land species (`home`) |
+| **Civilization** | All species: temperament (the highest picks the rivals), diet, habitat, inherited traits, `gardener.harshness` | Its block: regions taken by each method (conquest, trade, faith), the victory type (the method with the most regions), the technology heritage (most-used technology), whether it took T0&#124;▼&#124; tech; acts of god move `gardener.harshness` | Three generated creature-stage species |
 | **Space** | All species: temperament (ship specialty), diet (second layer), culture, T0&#124;▼&#124; tech flag | Fleet and campaign state; the two outer-garden species when the player first reaches out to them, seeded from `home`'s lineage; extinct species and their `generated` replacements | One generated spacefaring species (`home`) |
 
 ## The cell stage's block (built 2026-11-08)
