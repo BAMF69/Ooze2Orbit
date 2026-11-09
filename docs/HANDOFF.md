@@ -21,6 +21,9 @@ Ooze2Orbit, live at https://bamf69.github.io/Ooze2Orbit/ (every push to main red
   Main menu "Aquatic stage (prototype)". Doc: `docs/stages/02-aquatic.md`; code: `src/game/AquaticScene.ts`, `src/game/aquatic/`.
 
 ## What changed last session
+- 2026-11-09 (design only, branch `docs/civilization-stage`): the **civilization stage** is designed in
+  `docs/stages/04-civilization.md`: hex strategy as the ruler, conquest / trade / faith per region, acts of god,
+  technology replaces parts, rivals stand for the other temperaments.
 - 2026-11-09 (design only, branch `docs/creature-stage`): stage 3 is now the **Creature stage** (was Land/Air),
   designed in `docs/stages/03-creature.md`: world map = god mode, sidescroller levels = avatar mode, fight / puzzle /
   stealth per obstacle builds temperament, parts become traits when used most. Lineage stage id `land` -> `creature`.
