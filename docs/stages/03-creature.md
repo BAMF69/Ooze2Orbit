@@ -2,8 +2,8 @@
 
 > Stage design doc. Short beats complete. Game-wide rules (pillars, lore, win and lose, what carries between stages)
 > live in the spine, `docs/GDD.md`; this file covers only what is special to the creature stage.
-> **Not started.** Nothing here gets coded until the stages before it are fun (spine, "Out of scope"). When this
-> becomes the active stage, fill the rest from `docs/stages/_TEMPLATE.md` and keep what still holds.
+> **Active stage, Toy** (2026-11-09). Toy 1 is built; playtest pending. Play it: main menu "Creature stage
+> (prototype)". Code: `src/game/CreatureScene.ts`, `src/game/creature/`.
 > Renamed from "Land/Air" and redesigned 2026-11-09 (BAMF69). Items marked *(Claude's pick)* were chosen by Claude:
 > confirm them with BAMF69. Everything else was decided by BAMF69.
 
@@ -98,6 +98,32 @@ world map (god mode): look at the regions, reshape one (drain, raise, freeze, mo
 - 1 level of about 5 obstacles, each with a fight, puzzle and stealth answer.
 - 2 parts.
 - **Done means:** BAMF69 wants to replay the level a different way, and can say which temperament each run built.
+
+## Toy 1 as built (2026-11-09, Claude's picks unless noted)
+- **World map:** Tidepools (where the lineage came ashore), Fernwood (the level), the Ridge (opens when Fernwood is
+  cleared; not built). E drains or refills the lake and says what it changes in Fernwood; draining raises
+  `harshness` by 0.1, refilling lowers it by 0.05.
+- **Fernwood:** five obstacles. Barriers (the Bramble Wall, the Rockfall): smash the bramble plug (F), push the boulder into
+  the dip onto the plate to open the upper gate, or creep the root tunnel underneath (hold S). Guards (the Stalker's Run, the Ridge Path):
+  bite the stalker until it is beaten, drop the hanging log on it from the lever (E), or pass unseen (crouch in the
+  tall grass). The lake: bite the dead tree into a bridge, pull the lever for the rope bridge, or creep the root
+  ledge under the thorns; drained, a mud basin with a sleeping brute you can fight or tiptoe past instead.
+- **Readable stealth:** stalkers show a sight cone (pale, red when hunting); crouching halves its reach, camouflage
+  halves it again, crouching in tall grass hides you; the brute shows a wake meter that walking fills.
+- **Verdicts:** a foe's fate decides a guard (beaten = fight, trapped = puzzle, never noticed you = stealth, noticed
+  you but you escaped = "ran past", which builds nothing); a barrier counts the opening you went through.
+- **Parts:** claws (bite x2) and camouflage (sight x0.5); one at a time; lost when you fall back to a checkpoint.
+- **Stakes:** three hearts; out of hearts, or into the cold water, sends you back to the last checkpoint and costs the part.
+- **More levels and the boss (2026-11-09, BAMF69: "2 more levels like this and then a boss battle"):** Mirefen
+  (a swamp: a guard, two crossings, a barrier, a guard) and the Ridge (dusk mountains: barrier, guard, gorge,
+  barrier, guard), then the Old Horn's Den. The Old Horn roams; when it sees you it paws the ground, then charges until
+  a wall stuns it. Bite it while stunned (fight, double damage), drop the two hanging rocks on it from the levers
+  (puzzle), or ambush it from behind before it has seen you (stealth, triple). The way that did the most damage is
+  how you beat it. The map is a chain: Tidepools, Fernwood, Mirefen, the Ridge, the Den; each place opens only when the one before it
+  is beaten (padlocks on the rest). Beating the Old Horn offers the evolve into the civilization stage (not built
+  yet: back to the title). The aquatic stage's evolve leads here.
+- **End:** a summary of each obstacle and its way, the cause line, the temperament shift (+4 % per obstacle) and
+  the parts tally. Not yet: writing the lineage, stats, saving, inherited traits from parts, the air and sea branches.
 
 ## `T0|▼|` hint
 The lens flickers and sometimes a map change fails. A dead moon in the night sky is perfectly smooth. Perhaps a level

@@ -555,7 +555,7 @@ export class AquaticScene extends Phaser.Scene {
     this.sfx.loop("calm", "music/calm.wav", on.length === 0, AQ.music.calmLevel);
   }
 
-  /** Form 4 is the last; your lineage leaves the water only from the coast (2026-11-09), even if it got there earlier. */
+  /** Form 4 is the last; your lineage leaves the water (into the creature stage) only from the coast, even if it got there earlier. */
   private evolveReady(): boolean {
     return this.me.form >= AQ.forms.size.length && this.map.exitForm === null && !this.run;
   }
@@ -566,11 +566,11 @@ export class AquaticScene extends Phaser.Scene {
   }
 
   private evolveOut(): void {
-    Log.info(LOG, "EVOLVE out of the aquatic stage (next stage not built yet)");
+    Log.info(LOG, "EVOLVE into the creature stage");
     this.saveRun(true); // no Continue for a lineage that left the water
     this.allowSave = false;
-    shell.quitToTitle();
-    shell.toast("aq.next_stage_soon");
+    shell.stopGame();
+    shell.startGame("creature"); // stage 3 exists now (docs/stages/03-creature.md)
   }
 
   // ---- pick up where you left off (2026-11-09) ----------------------------------------------------------------

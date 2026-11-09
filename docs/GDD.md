@@ -33,15 +33,15 @@ the stage before), and hands its lineage to the next through `docs/HANDOFF_CONTR
 | # | Stage | Doc | Modes | Tier | Status |
 |---|---|---|---|---|---|
 | 1 | Cell | `docs/stages/01-cell.md` | Avatar | Toy done, **Vertical slice** next | Fun (BAMF69 2026-11-08); paused while the aquatic Toy is built |
-| 2 | Aquatic | `docs/stages/02-aquatic.md` | Avatar (behind view) + god | **Toy** | Toy doc written, not built (**active**) |
-| 3 | Creature (was Land/Air) | `docs/stages/03-creature.md` | Sidescroller levels (avatar) + world map (god) | none | Designed 2026-11-09, not started |
+| 2 | Aquatic | `docs/stages/02-aquatic.md` | Avatar (behind view) + god | Toy done, **Vertical slice** next | Toy v1-v9 played (BAMF69 2026-11-09: "this is great"); paused while the creature Toy is built |
+| 3 | Creature (was Land/Air) | `docs/stages/03-creature.md` | Sidescroller levels (avatar) + world map (god) | **Toy** | Toy 1 built 2026-11-09, playtest pending (**active**) |
 | 4 | Civilization | `docs/stages/04-civilization.md` | Avatar + god | none | Not started (outline) |
 | 5 | Space | `docs/stages/05-space.md` | Fleet (Endless Sky style) | none | Not started (outline) |
 
 **Active stage:** Aquatic (`docs/stages/02-aquatic.md`), since 2026-11-08. The cell stage left Toy the same day
 (BAMF69: "the cell stage is fun"); its next tier, Vertical slice, waits until the aquatic Toy answers its question.
 
-Current tier: **Toy** (the active stage, Aquatic; see its doc for what Toy means there)
+Current tier: **Toy** (the active stage, Creature; see its doc for what Toy means there)
 
 Claude scopes work by this line (SOP-08 "Tiers"). It always shows the **active stage's** tier. Tiers (Toy, Vertical
 slice, MVP / Release, Stretch) are kept **per stage**: each stage doc has its own "Scope tiers" table and "Done means".

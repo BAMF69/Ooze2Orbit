@@ -1,0 +1,42 @@
+{
+  "cell": 32,
+  "columns": 4,
+  "rows": [
+    {
+      "index": 0,
+      "pose": "idle",
+      "direction": "right",
+      "frames": 4,
+      "first_frame": 0
+    },
+    {
+      "index": 1,
+      "pose": "walk",
+      "direction": "right",
+      "frames": 4,
+      "first_frame": 4
+    },
+    {
+      "index": 2,
+      "pose": "jump",
+      "direction": "right",
+      "frames": 4,
+      "first_frame": 8
+    },
+    {
+      "index": 3,
+      "pose": "bite",
+      "direction": "right",
+      "frames": 4,
+      "first_frame": 12
+    },
+    {
+      "index": 4,
+      "pose": "crouch",
+      "direction": "right",
+      "frames": 4,
+      "first_frame": 16
+    }
+  ],
+  "image": "creature_walker.png"
+}
