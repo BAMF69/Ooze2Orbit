@@ -10,8 +10,8 @@ No install, no account. Keyboard or mouse; a gamepad works for swimming.
 
 ## What it is
 Ooze2Orbit is a top-down evolution game. You start as a single cell and build your creature from what you eat and
-what you beat. Right now it is a **toy**: the first stage (the cell stage) is playable, the rest (water, land,
-civilization, space) is the plan. It is a prototype, so expect rough edges, and tell us what you think.
+what you beat. Right now it is a **toy**: the first stage (the cell stage) is playable, the rest (aquatic,
+creature, civilization, space) is the plan. It is a prototype, so expect rough edges, and tell us what you think.
 
 - **Pick a diet.** Herbivores eat glowing algae, carnivores eat the meat other cells drop, omnivores eat both at half
   value. You choose at the start and can switch every time you evolve.

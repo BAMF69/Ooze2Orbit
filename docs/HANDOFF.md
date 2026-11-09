@@ -19,6 +19,9 @@ Ooze2Orbit, live at https://bamf69.github.io/Ooze2Orbit/ (every push to main red
   Main menu "Aquatic stage (prototype)". Doc: `docs/stages/02-aquatic.md`; code: `src/game/AquaticScene.ts`, `src/game/aquatic/`.
 
 ## What changed last session
+- 2026-11-09 (design only, branch `docs/creature-stage`): stage 3 is now the **Creature stage** (was Land/Air),
+  designed in `docs/stages/03-creature.md`: world map = god mode, sidescroller levels = avatar mode, fight / puzzle /
+  stealth per obstacle builds temperament, parts become traits when used most. Lineage stage id `land` -> `creature`.
 - Momentum, pond fights, harder tuning, upgrade panel colours (all in `docs/PLAYTEST_LOG.md`, PR #2, merged).
 - Design decisions (BAMF69), written into GDD, LORE, HANDOFF_CONTRACT and the stage docs:
   - No "getting popped": pillar 1 is now "stakes and difficulty rise with every stage; every danger readable".
