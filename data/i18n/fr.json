@@ -77,5 +77,7 @@
  "save.exported": "Sauvegarde téléchargée : gardez-la pour reprendre plus tard, ou importez-la sur un autre ordinateur",
  "save.nothing": "Rien à exporter : jouez d'abord une étape",
  "save.imported": "Sauvegarde importée : Continuer reprend là où elle s'était arrêtée",
- "save.import_failed": "Import impossible : {why}"
+ "save.import_failed": "Import impossible : {why}",
+ "menu.creature": "Étape créature (prototype)",
+ "cr.civ_soon": "Votre lignée s'élève vers la civilisation. L'étape civilisation n'est pas encore construite."
 }

@@ -24,6 +24,28 @@ Tasks created (ROADMAP):
 ```
 
 ## Entries
+### 2026-11-09  Build 0.1.0 (feat/creature-toy, uncommitted)  Tester: self (BAMF69)
+Asks: "dont let the player advance to a level on the world map if they haven't beaten the previous one"; "after
+beating the boss the player can advance to the 4th stage - civilization". Decisions: places unlock one way along the
+chain, locked ones show a padlock and the cursor stops before them; beating the Old Horn offers the evolve into the
+civilization stage (not built: back to the title with a note); the aquatic stage's evolve now leads into the creature
+stage, so the chain is cell -> aquatic -> creature -> civilization.
+
+### 2026-11-09  Build 0.1.0 (feat/creature-toy, uncommitted)  Tester: self (BAMF69)  Duration: a run after the fixes
+Opinion: "ya it works now". Ask: "generate 2 more levels like this and then a boss battle".
+Decisions: Mirefen and the Ridge (five obstacles each, from the same three pieces, their own look) and the Old Horn's
+Den (a boss beaten by fighting, puzzle or stealth: the way that did the most damage counts); the map is a chain of
+five places; draining the lake dries every crossing.
+
+### 2026-11-09  Build 0.1.0 (feat/creature-toy, uncommitted)  Tester: self (BAMF69)  Duration: a first look at creature Toy 1
+Observations: "the boulder rolls into the ground instead of staying on top of it as it rolls, its collision is wrong
+too"; "the 2nd boulder appears stuck in the ground but it is blocking the path through the broken brambles".
+Asks: bite on F; Shift to sprint.
+Decisions: F bites (it is the aquatic swim-down key, unused on land; J still works); the boulder turns around its
+centre and its box matches the drawn stone; each plate sits in a two-tile dip a boulder settles into and stays, so
+it no longer ends up jammed against the bramble plug, and you can step up onto it; the plate is now drawn; the root
+tunnel's entrance moved next to the wall; Shift sprints (165 px/s; louder to the brute).
+
 ### 2026-11-09  Build 0.1.0 (feat/aquatic-v8, uncommitted)  Tester: self (BAMF69)  Duration: before playing v8
 Asks: in the aquatic stage you evolve only from the coast, even at form 4 earlier; a save and export to pick up later;
 the blood banner says "run and heal"; a diet line in the top right. Decisions: all built as v9 (ROADMAP Done).

@@ -41,7 +41,7 @@ the stage before), and hands its lineage to the next through `docs/HANDOFF_CONTR
 **Active stage:** Aquatic (`docs/stages/02-aquatic.md`), since 2026-11-08. The cell stage left Toy the same day
 (BAMF69: "the cell stage is fun"); its next tier, Vertical slice, waits until the aquatic Toy answers its question.
 
-Current tier: **Toy** (the active stage, Aquatic; see its doc for what Toy means there)
+Current tier: **Toy** (the active stage, Creature; see its doc for what Toy means there)
 
 Claude scopes work by this line (SOP-08 "Tiers"). It always shows the **active stage's** tier. Tiers (Toy, Vertical
 slice, MVP / Release, Stretch) are kept **per stage**: each stage doc has its own "Scope tiers" table and "Done means".

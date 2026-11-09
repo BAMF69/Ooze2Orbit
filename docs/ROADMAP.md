@@ -4,12 +4,11 @@
 > Claude reads the **Now** section at session start.
 
 ## Now (max 3 items)
-Active stage: **Aquatic, Toy** (`docs/stages/02-aquatic.md`). Build in this order; each is playable on its own.
-- [ ] **Aquatic Toy 1: behind-view swim** (built 2026-11-08, playtest pending): one lake in pseudo-3D from behind your creature (cell movement and momentum reused), one predator, the behind-you warning (red edge cue + sound) | Done when: BAMF69 keeps swimming for 2 minutes and can say what attacked them | Timebox: 2 sessions
-- [ ] **Aquatic Toy 2: temperament reveal** (built 2026-11-08, playtest pending): the stage opens by showing the cell lineage's temperament and its causes (default lineage when there is no save) | Done when: BAMF69 recognizes their cell's choices in it | Timebox: 1 session
-- [ ] **Aquatic Toy 3: one lever, one trait** (built 2026-11-08, playtest pending): god mode (hard cut to top-down) sets water temperature; a small population breeds and one trait drifts, each change named on screen | Done when: BAMF69 can say why the trait changed | Timebox: 2 sessions
+Active stage: **Creature, Toy** (`docs/stages/03-creature.md`).
+- [ ] **Creature Toy 1: three ways through Fernwood** (built 2026-11-09, playtest pending): a world map (god mode: drain or refill the lake) and one sidescroller level of five obstacles, each passable by fighting, a puzzle or stealth, with claws and camouflage parts and a summary of which temperament each run built | Done when: BAMF69 wants to replay the level a different way and can say which temperament each run built | Timebox: 2 sessions
 
 ## Next
+- [ ] **Aquatic stage: vertical slice** (Toy done 2026-11-09) and **write the aquatic lineage** for the creature stage to read
 - [ ] **Cell stage: vertical slice** (Toy done 2026-11-08): fill `docs/VERTICAL_SLICE.md`; music, saves, first-time teaching, polish | Done when: the slice brief's "Done when" holds
 - [ ] **Cell stage ending: the pond floods** (from the parking lot): the bridge into the aquatic stage and its temperament reveal | Done when: finishing the cell stage leads into the aquatic stage
 

@@ -4,7 +4,7 @@
 > Keep under ~60 lines. It is a baton, not a diary.
 
 **Last updated:** 2026-11-09
-**Branch / commit:** feat/aquatic-v8 from main 4b5eb6e (PR #4 merged: aquatic Toy v1-v7), v8 uncommitted
+**Branch / commit:** feat/creature-toy from main 69fe812 (PR #6 merged: aquatic v8-v9), creature Toy 1 uncommitted
 **Engine version:** see `docs/ENGINE.md`
 
 ## Where we are
@@ -19,6 +19,11 @@ Ooze2Orbit, live at https://bamf69.github.io/Ooze2Orbit/ (every push to main red
   form 4 in both stages unlocks the evolve, chomp per fish, black-screen death, move-on banner, calm music; v9: evolve only on
   the coast, diet line, autosave + menu Continue / Export / Import (`?continue` resumes in smoke). Not yet played.
   Main menu "Aquatic stage (prototype)". Doc: `docs/stages/02-aquatic.md`; code: `src/game/AquaticScene.ts`, `src/game/aquatic/`.
+
+- **Creature stage:** the **active stage, Toy** (2026-11-09). Toy 1 built: world map (drain the lake) + Fernwood, five
+  obstacles each passable by fight, puzzle or stealth; then Mirefen, the Ridge and the Old Horn's Den (boss).
+  BAMF69 played Fernwood ("ya it works now"). URL `&level=mirefen|ridge|den`. Menu "Creature stage (prototype)"; URL
+  `?stage=creature`, `&level` straight into Fernwood, `&drained`, `&autoplay`. Doc: `docs/stages/03-creature.md`.
 
 ## What changed last session
 - 2026-11-09 (design only, branch `docs/civilization-stage`): the **civilization stage** is designed in

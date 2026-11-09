@@ -242,7 +242,7 @@
  "aq.cut_pond": "The Pond",
  "aq.shark_blood": "THE SHARK SMELLS BLOOD: run and heal",
  "aq.next_map": "Move on: swim to the river mouth, breach in its light",
- "aq.evolve_ready": "Ready to leave the water. Enter: evolve",
+ "aq.evolve_ready": "Ready to leave the water. Enter: evolve into the creature stage",
  "aq.next_stage_soon": "Your lineage left the water. The next stage is not built yet.",
  "aq.evolved_last": "Final form {n}! Your lineage is ready to leave the water",
  "aq.body_now": "Your body now: {what}.",
@@ -258,5 +258,7 @@
  "save.nothing": "Nothing to export yet: play a stage first",
  "save.imported": "Save file imported: Continue picks up where it left off",
  "save.import_failed": "Could not import: {why}",
- "aq.welcome_back": "Welcome back: your lineage carries on at form {form}"
+ "aq.welcome_back": "Welcome back: your lineage carries on at form {form}",
+ "menu.creature": "Creature stage (prototype)",
+ "cr.civ_soon": "Your lineage rises toward civilization. The civilization stage is not built yet."
 }

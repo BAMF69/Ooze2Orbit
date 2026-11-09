@@ -105,6 +105,7 @@ export function menu(shell: Shell): Screen {
     if (hasRun(shell)) add("menu.continue", () => shell.continueAquatic()); // 2026-11-09: pick up where you left off
     add("menu.play", () => shell.startGame("main"));
     add("menu.aquatic", () => shell.startGame("aquatic")); // the aquatic stage Toy (docs/stages/02-aquatic.md)
+    add("menu.creature", () => shell.startGame("creature")); // the creature stage Toy 1 (docs/stages/03-creature.md)
     add("menu.export", () => exportSaves(shell));
     add("menu.import", () => importSaves(shell, () => shell.reset(menu(shell))));
     add("menu.settings", () => shell.push(settingsScreen(shell)));

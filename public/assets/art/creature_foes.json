@@ -1,0 +1,49 @@
+{
+  "cell": 32,
+  "columns": 4,
+  "rows": [
+    {
+      "index": 0,
+      "pose": "stalker",
+      "direction": "walk",
+      "frames": 4,
+      "first_frame": 0
+    },
+    {
+      "index": 1,
+      "pose": "stalker",
+      "direction": "alert",
+      "frames": 4,
+      "first_frame": 4
+    },
+    {
+      "index": 2,
+      "pose": "stalker",
+      "direction": "down",
+      "frames": 4,
+      "first_frame": 8
+    },
+    {
+      "index": 3,
+      "pose": "brute",
+      "direction": "sleep",
+      "frames": 4,
+      "first_frame": 12
+    },
+    {
+      "index": 4,
+      "pose": "brute",
+      "direction": "walk",
+      "frames": 4,
+      "first_frame": 16
+    },
+    {
+      "index": 5,
+      "pose": "brute",
+      "direction": "down",
+      "frames": 4,
+      "first_frame": 20
+    }
+  ],
+  "image": "creature_foes.png"
+}
