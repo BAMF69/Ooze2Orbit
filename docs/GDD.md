@@ -33,15 +33,15 @@ the stage before), and hands its lineage to the next through `docs/HANDOFF_CONTR
 | # | Stage | Doc | Modes | Tier | Status |
 |---|---|---|---|---|---|
 | 1 | Cell | `docs/stages/01-cell.md` | Avatar | Toy done, **Vertical slice** next | Fun (BAMF69 2026-11-08); paused while the aquatic Toy is built |
-| 2 | Aquatic | `docs/stages/02-aquatic.md` | Avatar (behind view) + god | **Toy** | Toy doc written, not built (**active**) |
-| 3 | Creature (was Land/Air) | `docs/stages/03-creature.md` | Sidescroller levels (avatar) + world map (god) | none | Designed 2026-11-09, not started |
-| 4 | Civilization | `docs/stages/04-civilization.md` | Ruler of a turn-based hex strategy game (avatar) + acts of god | none | Designed 2026-11-09, not started |
+| 2 | Aquatic | `docs/stages/02-aquatic.md` | Avatar (behind view) + god | Toy done, **Vertical slice** next | Toy v1-v9 played (BAMF69 2026-11-09: "this is great"); paused |
+| 3 | Creature (was Land/Air) | `docs/stages/03-creature.md` | Sidescroller levels (avatar) + world map (god) | Toy done, **Vertical slice** next | Toy 1 built and played 2026-11-09 (three levels and the Old Horn; PR #8); paused |
+| 4 | Civilization | `docs/stages/04-civilization.md` | Ruler of a turn-based hex strategy game (avatar) + acts of god | **Toy** | Toy 1 being built 2026-11-09 (**active**) |
 | 5 | Space | `docs/stages/05-space.md` | Captain of an Endless Sky style fleet (avatar) + seeding the outer gardens (god) | none | Designed 2026-11-09, not started |
 
-**Active stage:** Aquatic (`docs/stages/02-aquatic.md`), since 2026-11-08. The cell stage left Toy the same day
-(BAMF69: "the cell stage is fun"); its next tier, Vertical slice, waits until the aquatic Toy answers its question.
+**Active stage:** Civilization (`docs/stages/04-civilization.md`), since 2026-11-09 (BAMF69: "start on stage 4"). The cell,
+aquatic and creature stages each left Toy after BAMF69 played them; their vertical slices wait.
 
-Current tier: **Toy** (the active stage, Creature; see its doc for what Toy means there)
+Current tier: **Toy** (the active stage, Civilization; see its doc for what Toy means there)
 
 Claude scopes work by this line (SOP-08 "Tiers"). It always shows the **active stage's** tier. Tiers (Toy, Vertical
 slice, MVP / Release, Stretch) are kept **per stage**: each stage doc has its own "Scope tiers" table and "Done means".

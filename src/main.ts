@@ -15,6 +15,7 @@ import { BackdropScene } from "./game/BackdropScene";
 import { JuiceScene } from "./game/JuiceScene";
 import { AquaticScene } from "./game/AquaticScene";
 import { CreatureScene } from "./game/CreatureScene";
+import { CivScene } from "./game/CivScene";
 import { MainScene } from "./game/MainScene";
 
 export const game = new Phaser.Game({
@@ -26,7 +27,7 @@ export const game = new Phaser.Game({
   pixelArt: true,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   input: { keyboard: false, gamepad: false },
-  scene: [BackdropScene, MainScene, AquaticScene, CreatureScene, JuiceScene], // the first one starts on its own; the shell runs the others
+  scene: [BackdropScene, MainScene, AquaticScene, CreatureScene, CivScene, JuiceScene], // the first one starts on its own; the shell runs the others
   callbacks: { postBoot: (g) => shell.start(g) },
 });
 

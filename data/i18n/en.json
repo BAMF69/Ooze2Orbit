@@ -260,5 +260,7 @@
  "save.import_failed": "Could not import: {why}",
  "aq.welcome_back": "Welcome back: your lineage carries on at form {form}",
  "menu.creature": "Creature stage (prototype)",
- "cr.civ_soon": "Your lineage rises toward civilization. The civilization stage is not built yet."
+ "cr.civ_soon": "Your lineage rises toward civilization. The civilization stage is not built yet.",
+ "menu.civ": "Civilization stage (prototype)",
+ "civ.space_soon": "Your species looks to the stars. The space stage is not built yet."
 }

@@ -223,3 +223,12 @@ describe("temperament reveal (Toy 2)", () => {
     expect(r.problems.length).toBeGreaterThan(0);
   });
 });
+
+describe("the same opening for the later stages (BAMF69 2026-11-09)", () => {
+  it("each stage words its title and leaning; the default lineage says so", () => {
+    const creature = revealFrom(null, 3, "creature"), civ = revealFrom(null, 3, "civ");
+    expect(creature.leaning).toMatch(/land will decide/);
+    expect(civ.leaning).toMatch(/your people will decide/);
+    expect(revealFrom(null).leaning).not.toMatch(/land/);
+  });
+});

@@ -126,3 +126,29 @@ export function lineageProblems(v: unknown): string[] {
   else for (const s of l.species) if (!Array.isArray(s?.influence)) p.push(`species ${String(s?.id)} has no influence log`);
   return p;
 }
+
+// ---- writing a later stage into the lineage (BAMF69 2026-11-09: every stage's decisions shape the lineage) ----
+export interface StageCause { cause: string; effect: Partial<Temperament> }
+
+/** A lineage to start from when there is none (or it is unreadable): one default species, no causes. */
+export function defaultLineage(): Lineage {
+  const home: Species = {
+    id: "home", name: "", world: "home", origin: "default", status: "alive", diet: "omnivore", branches: [],
+    stages: {}, influence: [], temperament: zeroTemperament(),
+  };
+  return { schemaVersion: LINEAGE_SCHEMA, lastStage: "cell", gardener: { harshness: 0 }, species: [home] };
+}
+
+/**
+ * Write one stage's result into the lineage: its block, its causes (replacing any it wrote before, so replaying a
+ * stage does not count twice), the temperament they add up to (with the shift cap), lastStage, and the Gardener's
+ * harshness (a value to set, 0..1, or undefined to keep it). Pure: returns a new lineage; a bad `prev` starts fresh.
+ */
+export function writeStage(prev: unknown, stage: StageId, causes: readonly StageCause[], block: Record<string, unknown>, harshness?: number): Lineage {
+  const base: Lineage = lineageProblems(prev).length ? defaultLineage() : (JSON.parse(JSON.stringify(prev)) as Lineage);
+  const home = base.species[0];
+  const influence = [...home.influence.filter((e) => e.stage !== stage), ...causes.filter((c) => Object.values(c.effect).some((v) => (v ?? 0) !== 0)).map((c) => ({ stage, cause: c.cause, effect: c.effect }))];
+  const species: Species = { ...home, influence, stages: { ...home.stages, [stage]: block }, temperament: temperamentOf(influence) };
+  const h = harshness === undefined ? base.gardener.harshness : clamp(harshness, 0, 1);
+  return { ...base, lastStage: stage, gardener: { ...base.gardener, harshness: h }, species: [species, ...base.species.slice(1)] };
+}

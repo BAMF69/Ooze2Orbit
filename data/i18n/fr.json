@@ -79,5 +79,7 @@
  "save.imported": "Sauvegarde importée : Continuer reprend là où elle s'était arrêtée",
  "save.import_failed": "Import impossible : {why}",
  "menu.creature": "Étape créature (prototype)",
- "cr.civ_soon": "Votre lignée s'élève vers la civilisation. L'étape civilisation n'est pas encore construite."
+ "cr.civ_soon": "Votre lignée s'élève vers la civilisation. L'étape civilisation n'est pas encore construite.",
+ "menu.civ": "Étape civilisation (prototype)",
+ "civ.space_soon": "Votre espèce regarde vers les étoiles. L'étape spatiale n'est pas encore construite."
 }

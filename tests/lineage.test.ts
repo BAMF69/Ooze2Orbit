@@ -85,3 +85,24 @@ describe("lineage shape check", () => {
     ]);
   });
 });
+
+describe("writing a later stage (BAMF69 2026-11-09)", async () => {
+  const { writeStage, defaultLineage, temperamentOf: tOf } = await import("../src/core/lineage");
+  it("adds the stage's causes and block, sets lastStage and harshness; replaying replaces them", () => {
+    const start = defaultLineage();
+    let l = writeStage(start, "aquatic", [{ cause: "Hunted 20 creatures", effect: { aggressive: 0.2 } }, { cause: "nothing", effect: {} }], { kills: 20 }, 0.3);
+    expect(l.lastStage).toBe("aquatic");
+    expect(l.gardener.harshness).toBe(0.3);
+    expect(l.species[0].influence).toHaveLength(1); // a cause with no effect is dropped
+    expect(l.species[0].stages.aquatic).toEqual({ kills: 20 });
+    l = writeStage(l, "aquatic", [{ cause: "Hunted 5 creatures", effect: { aggressive: 0.05 } }], { kills: 5 });
+    expect(l.species[0].influence.map((e) => e.cause)).toEqual(["Hunted 5 creatures"]);
+    expect(l.gardener.harshness).toBe(0.3); // kept when not given
+    expect(start.species[0].influence).toHaveLength(0); // pure
+  });
+  it("a bad lineage starts fresh; the shift cap still applies", () => {
+    const l = writeStage("garbage", "creature", [{ cause: "Fought everything", effect: { aggressive: 2 } }], {});
+    expect(l.species[0].origin).toBe("default");
+    expect(tOf(l.species[0].influence).aggressive).toBeLessThanOrEqual(1);
+  });
+});
