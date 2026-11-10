@@ -1,7 +1,7 @@
 # Ooze2Orbit: Game Design Document (the spine)
 
 > Living document. Short beats complete. Update with `/gdd-sync` when reality diverges from this page.
-> Last reviewed: 2026-11-08
+> Last reviewed: 2026-11-09
 > Written from the kit's start-up interview with BAMF69. Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69.
 > **This file is the spine:** what holds for the whole game. Each stage plays like its own small game with its own
 > loop, controls, art scale and tiers, so each has its own design doc in `docs/stages/` (split 2026-11-08, BAMF69).
@@ -35,13 +35,14 @@ the stage before), and hands its lineage to the next through `docs/HANDOFF_CONTR
 | 1 | Cell | `docs/stages/01-cell.md` | Avatar | Toy done, **Vertical slice** next | Fun (BAMF69 2026-11-08); paused while the aquatic Toy is built |
 | 2 | Aquatic | `docs/stages/02-aquatic.md` | Avatar (behind view) + god | Toy done, **Vertical slice** next | Toy v1-v9 played (BAMF69 2026-11-09: "this is great"); paused |
 | 3 | Creature (was Land/Air) | `docs/stages/03-creature.md` | Sidescroller levels (avatar) + world map (god) | Toy done, **Vertical slice** next | Toy 1 built and played 2026-11-09 (three levels and the Old Horn; PR #8); paused |
-| 4 | Civilization | `docs/stages/04-civilization.md` | Ruler of a turn-based hex strategy game (avatar) + acts of god | **Toy** | Toy 1 being built 2026-11-09 (**active**) |
-| 5 | Space | `docs/stages/05-space.md` | Captain of an Endless Sky style fleet (avatar) + seeding the outer gardens (god) | none | Designed 2026-11-09, not started |
+| 4 | Civilization | `docs/stages/04-civilization.md` | Ruler of a turn-based hex strategy game (avatar) + acts of god | **Toy** | Toy 1 built 2026-11-09 (PR #10), playtest pending; paused |
+| 5 | Space | `docs/stages/05-space.md` | Captain of an Endless Sky style fleet (avatar) + seeding the outer gardens (god) | **Toy** | Toy 1 built 2026-11-09 (**active**), playtest pending |
 
-**Active stage:** Civilization (`docs/stages/04-civilization.md`), since 2026-11-09 (BAMF69: "start on stage 4"). The cell,
-aquatic and creature stages each left Toy after BAMF69 played them; their vertical slices wait.
+**Active stage:** Space (`docs/stages/05-space.md`), since 2026-11-09 (BAMF69: "building stage 5, the space stage,
+starting at the Toy tier"). The cell, aquatic and creature stages each left Toy after BAMF69 played them; their
+vertical slices wait. The civilization Toy is built and waits for its playtest.
 
-Current tier: **Toy** (the active stage, Civilization; see its doc for what Toy means there)
+Current tier: **Toy** (the active stage, Space; see its doc for what Toy means there)
 
 Claude scopes work by this line (SOP-08 "Tiers"). It always shows the **active stage's** tier. Tiers (Toy, Vertical
 slice, MVP / Release, Stretch) are kept **per stage**: each stage doc has its own "Scope tiers" table and "Done means".
@@ -109,7 +110,6 @@ Each stage doc adds its own palette, scale and camera. Across all stages:
 | The behind view hides danger | Breaks "every danger is readable" (pillar 1) | Aquatic Toy: the behind-you warning (red cue + sound); can BAMF69 say what hit them? |
 
 ## Out of scope (explicit)
-- Building stages 3 to 5 until the aquatic stage is fun (their docs may be outlined; nothing gets coded)
 - The two outer gardens before the space stage (BAMF69 2026-11-08: they are seeded only when the player chooses to
   interact with them, which for now happens in the space stage)
 - Online play, including the connected mode where other players' species fill your universe (`docs/LORE.md`; parking lot until solo works)

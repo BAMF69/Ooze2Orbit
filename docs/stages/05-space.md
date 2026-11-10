@@ -2,8 +2,8 @@
 
 > Stage design doc. Short beats complete. Game-wide rules (pillars, lore, win and lose, what carries between stages)
 > live in the spine, `docs/GDD.md`; this file covers only what is special to the space stage.
-> **Not started.** Nothing here gets coded until the stages before it are fun (spine, "Out of scope"). When this
-> becomes the active stage, fill the rest from `docs/stages/_TEMPLATE.md` and keep what still holds.
+> **Active stage, Toy** (2026-11-09). Toy 1 is built: see "Toy 1 as built" below. The rest of this file is the full
+> design the later tiers grow into.
 > Designed 2026-11-09 (BAMF69), on top of the 2026-11-08 decisions marked *(approved)*. Items marked *(Claude's pick)*
 > were chosen by Claude: confirm them with BAMF69.
 
@@ -129,6 +129,83 @@ on a planet: buy, sell, refit ships, take a mission -> jump across the star map 
 - 2 hulls and a handful of parts from 2 species.
 - A `T0|▼|` patrol that adapts after each fight, with the readout.
 - **Done means:** BAMF69 refits the ship because `T0|▼|` adapted, and wants another fight.
+
+## Toy 1 as built *(2026-11-09, Claude's picks unless marked; code in `src/game/SpaceScene.ts`, `src/game/space/`)*
+Review before building found these gaps in the design above; the Toy answers each the cheapest way:
+
+| Gap | The Toy's answer (numbers in `space/tuning.ts`) |
+|---|---|
+| How `T0|▼|` adapts | After every battle (won, lost or broken off) it learns each **weapon family** (spines, lances, spores) by its share of the damage you dealt, and each **defence family** (plating, membranes) by its share of your defences. A family you did not use fades. Never past 75 % |
+| What "learned" does | A learned weapon family does that much less damage to `T0|▼|`; a learned defence family adds that much less hull or shield |
+| Hybrid technology | A ship with weapons and defences from both makers is learned 40 % slower |
+| Economy | Destroyed ships drop salvage. Parts cost salvage and **refund in full**, so changing your build is never punished |
+| Stakes with one ship | Losing the flagship: the escape pod reaches Hearth without the battle's salvage and a fifth of what was banked. No game over |
+| The civilization hand-in | Victory type: conquest = an extra Spine Launcher, trade = more salvage, faith = a Tide Membrane. The first machine built is the technology heritage (one more part). `tookT0Tech` (when a later civ stage writes it) starts every family at 25 %. Harshness marks up the ally's prices |
+| Pillar 2 (see your influence) | Your strongest temperament makes Hearth-grown parts 25 % better in its specialty (cautious = defences, aggressive = weapons, adaptable = engines); the ally, a species of a temperament you are not, gets the same in its own |
+
+- **World:** Hearth (home, planet, hangar) - the Driftfield (Shards) - the Lattice (a Lattice and escorts). Patrols grow
+  with your wins (since Toy 3b the Driftfield resets to its easiest on every arrival). Jumping away from a fight breaks it off.
+- **Ship:** two hulls (Seedpod, Carapace), eight parts: Spine Launcher, Shell Plating, Fin Drive, Sun Gland (Hearth);
+  Light Lance, Spore Bloom, Tide Membrane, Burn Drive (the Tidewrights). Space and power must balance.
+- **`T0|▼|`'s ships** hunt like gulpers: close in, strike a burst, pause side-on (dimmed: your opening), give up a long
+  chase and rest. Off-screen ships show as red arrows on the screen's edge.
+- **End of the Toy:** five patrols destroyed. Writes `stages.space` and one cause per way of winning (a ship built
+  around weapons leans aggressive, defences cautious, engines adaptable) into the lineage.
+- **Cut for the Toy:** fleets and orders, fuel, upkeep, heat, missions and trade, ruins and `T0|▼|` salvage, the outer
+  gardens and god mode, engine-family adaptation, the final assault.
+- **Nothing from Endless Sky is in the Toy** (no code, data or art): same kind of mechanics only, so ADR 0001's credit
+  rules have nothing to cover yet.
+- **Watch in the playtest:** rotating three weapons in turn keeps every family low (learn 35 %, fade 15 % per battle).
+  If that makes refitting a chore instead of a choice, slow the fade or let `T0|▼|` learn the rotation.
+
+## Toy 2: fleet, turrets, slots *(2026-11-10, asked for by BAMF69 before playing Toy 1)*
+- **Slots replace the space number** (BAMF69: "see what slots you have open"). Each hull has gun, turret, defence,
+  engine and power slots; a part takes one slot of its type. Power still has to balance. Seedpod 2/1/2/2/2,
+  Carapace 4/2/4/2/3.
+- **The hangar is icons, not text** (BAMF69, after Endless Sky's ship panel; our own layout and art): the ship drawn
+  large with every slot around it, joined by lines; a palette of part and ship icons for what this world sells.
+  Click an icon to buy, click a slot to empty it; pointing at an icon says what it is and why it cannot be bought.
+- **Weapons that fire on their own:** Needle Turret (Hearth) and Lance Turret (Tidewright) track and fire in any
+  direction; Seeker Spore (Tidewright) launches on its own and homes. Guns still need the pilot.
+- **A second friendly world, Tidereach** (the Tidewrights). Each world sells only its own species' parts and ships,
+  so the other world is worth the jump; any world buys any part back at full price.
+- **Allied ships:** recruit up to three escorts (Spineling at Hearth; Skiff and Warden at Tidereach). They fly and
+  fight on their own, keep station behind you when it is quiet, and are **lost for good** when destroyed (pillar 1).
+  `T0|▼|` goes for the nearest of you, sends one more Shard per escort, and learns the escorts' weapons too.
+- **Still cut:** fleet orders, upkeep and fuel, capturing ships, a third species (so one new world, not several).
+- **Watch in the playtest:** a Spineling's spines keep `T0|▼|` learning spines even after you drop them yourself.
+  That may read as unfair or as an interesting cost of that escort.
+
+## Toy 3: jumps, waves, thrusters, the Mothership *(2026-11-10, BAMF69's notes after playing)*
+BAMF69: "jumping between stars feels clumsy and unsatisfying"; "the space stage isn't complete after just 5 wins".
+- **Jumping without the map:** `[` and `]` jump to the previous / next system along the map. Every jump is a
+  **wormhole** (rings, a spiral, streaking stars; a plain fade with reduce motion on). On the star map, click a
+  system to pick it and Enter or a second click jumps there, through every system on the way; a patrol on the way
+  stops the trip.
+- **Waves:** a hostile system sends its next patrol 12 s after the last one fell (countdown on screen), so you can
+  fight on without jumping. Each wave is a battle: `T0|▼|` adapts after each one.
+- **E lands from anywhere in a friendly system:** too far from the planet, the autopilot flies you there and lands
+  (any flight key cancels it).
+- **Thrusters:** S is now reverse thrust (55 % of the main engine), Z and C strafe (50 %), X brakes.
+- **The ending** (replaces "five wins"): win **three waves in a row at the Lattice without leaving** and `T0|▼|`'s
+  **Mothership** arrives (heavy, slow, launches Shards). Destroying it wins the stage and writes the lineage; the
+  player keeps playing afterwards (patrols and Motherships keep coming). Leaving the Lattice, breaking off or
+  losing the ship resets the streak.
+- **Watch in the playtest:** the Mothership's numbers are untested by hand (the autoplay pilot in a starter Seedpod
+  dies to it in seconds, as it should); three waves in a row means two rounds of adaptation without a refit, which is
+  the point but may be too much.
+
+## Toy 3b: the Driftfield eases, a sci-fi sound set *(2026-11-10, BAMF69)*
+- **The Driftfield starts at its easiest on every arrival:** two Shards, whatever your wins or fleet. Each wave you win
+  there makes the next one a Shard bigger (`SPACE.patrol.driftStep`, up to `shardsMax`); jumping away and back, or
+  losing your ship, resets it (`Campaign.visitWins`, reset in `travel()`). The star map says "easiest on every
+  arrival", and "wave N: it grows while you stay" while you are there. The Lattice keeps its scaling with wins and fleet.
+- **Its own sounds** (`assets_src/audio/space_sfx.py`, rendered by `make_sfx.py --only space`; events `sp_*` in
+  `data/audio_events.json`): spines clack, lances zap, spores launch with a whoosh, turrets pip; T0 hits ring
+  crystalline; your shield shimmers, your hull crunches; ships explode; the Mothership arrives with a swelling drone
+  and dies in rolling blasts; the wormhole sweeps up and snaps; engines spool up to launch and down to land; the hangar
+  chimes, falls or buzzes; an escort lost sounds a falling alarm; a klaxon warns 3 s before a wave
+  (`SPACE.wave.warnS`). The cell stage's sounds are unchanged; levels follow the same sound settings.
 
 ## Open questions
 | Question | Why it matters |

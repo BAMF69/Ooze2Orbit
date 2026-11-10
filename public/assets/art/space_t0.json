@@ -1,0 +1,28 @@
+{
+  "cell": 32,
+  "columns": 4,
+  "rows": [
+    {
+      "index": 0,
+      "pose": "shard",
+      "direction": "up",
+      "frames": 4,
+      "first_frame": 0
+    },
+    {
+      "index": 1,
+      "pose": "lattice",
+      "direction": "up",
+      "frames": 4,
+      "first_frame": 4
+    },
+    {
+      "index": 2,
+      "pose": "mothership",
+      "direction": "up",
+      "frames": 4,
+      "first_frame": 8
+    }
+  ],
+  "image": "space_t0.png"
+}

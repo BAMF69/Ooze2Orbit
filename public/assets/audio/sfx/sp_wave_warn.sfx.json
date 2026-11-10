@@ -1,0 +1,8 @@
+{
+ "tool": "assets_src/audio/make_sfx.py",
+ "sound": "sp_wave_warn",
+ "variant": 1,
+ "seed": 2301,
+ "rate": 44100,
+ "seconds": 1.06
+}

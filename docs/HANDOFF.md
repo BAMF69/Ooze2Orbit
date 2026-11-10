@@ -3,8 +3,8 @@
 > Rewritten at the end of every session by `/end-session`. Read first by `/start-session`.
 > Keep under ~60 lines. It is a baton, not a diary.
 
-**Last updated:** 2026-11-09
-**Branch / commit:** feat/creature-toy from main 69fe812 (PR #6 merged: aquatic v8-v9), creature Toy 1 uncommitted
+**Last updated:** 2026-11-10
+**Branch / commit:** feat/space-toy from main 02b1342 (PR #10 merged: civilization Toy 1); space Toy 1 in its PR
 **Engine version:** see `docs/ENGINE.md`
 
 ## Where we are
@@ -25,7 +25,15 @@ Ooze2Orbit, live at https://bamf69.github.io/Ooze2Orbit/ (every push to main red
   BAMF69 played Fernwood ("ya it works now"). URL `&level=mirefen|ridge|den`. Menu "Creature stage (prototype)"; URL
   `?stage=creature`, `&level` straight into Fernwood, `&drained`, `&autoplay`. Doc: `docs/stages/03-creature.md`.
 
-- **Civilization stage:** the **active stage, Toy** (2026-11-09). Toy 1 built: a 9-region hex planet, conquest / trade /
+- **Space stage:** the **active stage, Toy** (2026-11-09). Toy 1 built: hangar (two hulls, eight parts, two makers),
+  three systems, real-time combat, T0|▼| adapts after every battle with a readout, five wins to finish, lineage
+  written. Toy 2 (2026-11-10): slots and an icon hangar, turrets and homing missiles, Tidereach (the allies' world),
+  recruited escorts that fly themselves. Toy 3 (2026-11-10, after BAMF69 played): wormhole jumps (`[` `]`, clickable
+  map), waves on a countdown, auto-land, reverse and side thrusters, the ending is the Mothership (three wins in a row
+  at the Lattice). `&world=tidereach` starts at the allies' world, `&boss` at the Lattice with the Mothership. Menu "Space stage (prototype)"; URL `?stage=space`, `&autoplay` (`&hold` stays in
+  the hangar). Doc: `docs/stages/05-space.md` ("Toy 1 as built"). Winning the civilization stage leads into it.
+
+- **Civilization stage:** Toy (2026-11-09, merged PR #10). Toy 1 built: a 9-region hex planet, conquest / trade /
   faith, machines, meteor and terraform, one rival. Not yet played. Menu "Civilization stage (prototype)"; URL
   `?stage=civ`, `&rival=aggressive|adaptable`, `&autoplay`. Doc: `docs/stages/04-civilization.md`.
 
@@ -49,10 +57,11 @@ Ooze2Orbit, live at https://bamf69.github.io/Ooze2Orbit/ (every push to main red
     side-by-side demo); predators behind you get a red edge cue plus a warning sound.
 
 ## Current task
-- ROADMAP Now: BAMF69 playtests the aquatic Toy (behind-view swim, reveal, lens).
+- ROADMAP Now: BAMF69 playtests the space Toy 1 (does T0|▼| adapting make you refit, and want another fight?).
 
 ## Next step (specific, first action)
-- Ask for BAMF69's notes on aquatic Toy v2; `/playtest-report`, then fix the top note first. Pilots for checking:
+- Ask for BAMF69's notes on the space Toy; `/playtest-report`, then fix the top note first. Feel numbers:
+  `src/game/space/tuning.ts` (flight, parts, T0|▼| ships, learn and fade rates). Aquatic pilots for checking:
   `?pilot=fight|breach|still`; starts: `?map=lake|ocean`, `?river=1|2`; `?look=0|1..3|c1..c3|a1..a3`, `?parts=fins,jaws`,
   `?admin`, `?swarm`;
   cell stage: `?finish` (or `) ends it and evolves. Feel numbers:
@@ -77,10 +86,11 @@ python tools/dev.py check
 python tools/dev.py test
 python tools/dev.py smoke --gpu --timeout 90 --drive play:60 --query "autoplay&diet=carnivore" --screenshot captures/progress/x.png
 python tools/dev.py smoke --gpu --timeout 90 --drive play:20 --query "stage=aquatic&autoplay&threat" --screenshot captures/progress/x.png
+python tools/dev.py smoke --gpu --timeout 120 --drive play:75 --query "stage=space&autoplay&debug"   # the pilot; no end marker
 ```
 
 ## Context a fresh Claude needs
 - Cell feel numbers: `src/game/cell/tuning.ts`; rules (pure, tested): `src/game/cell/rules.ts`; scene: `src/game/MainScene.ts`.
 - The lineage (temperament with causes) is saved to save slot `lineage` at the cell stage's end (`src/game/cell/record.ts`).
-- Work goes on `feat/` branches with a PR (SOP-05); BAMF69 merges. No `gh` CLI here: PRs are made in the browser pane.
+- Work goes on `feat/` branches with a PR (SOP-05); BAMF69 merges. `gh` is installed and signed in: open PRs with it.
 - Inspired by Spore's stages: same kind of mechanics only, never its names, creatures, art, music or look.

@@ -41,7 +41,7 @@ import "./shell.css";
 export { GAME_NAME, GAME_VERSION, SETTINGS_FILE };
 export const SAVE_SLOT = 1;
 /** The gameplay scenes the shell can run: the cell stage, the aquatic stage Toy, the juice demo. */
-export type GameKey = "main" | "aquatic" | "creature" | "civ" | "juice";
+export type GameKey = "main" | "aquatic" | "creature" | "civ" | "space" | "juice";
 const THEME_FILE = "theme_default.css"; // public/assets/ui/<this>, loaded after the built-in style when present
 const LOG_FLUSH_MS = 1000;
 const TOAST_MS = 3500;
