@@ -24,6 +24,9 @@ Tasks created (ROADMAP):
 ```
 
 ## Entries
+### 2026-11-09  Build 0.1.0 (feat/civ-toy, uncommitted)  Tester: self (BAMF69)
+Opinion: "that worked well" (civilization Toy 1). Ask: the aquatic stage's opening screen (the lineage's temperament and what shaped it) on the creature and civilization stages too. Built.
+
 ### 2026-11-09  Build 0.1.0 (feat/creature-toy, uncommitted)  Tester: self (BAMF69)
 Asks: "dont let the player advance to a level on the world map if they haven't beaten the previous one"; "after
 beating the boss the player can advance to the 4th stage - civilization". Decisions: places unlock one way along the

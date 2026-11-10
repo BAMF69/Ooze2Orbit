@@ -25,6 +25,10 @@ Ooze2Orbit, live at https://bamf69.github.io/Ooze2Orbit/ (every push to main red
   BAMF69 played Fernwood ("ya it works now"). URL `&level=mirefen|ridge|den`. Menu "Creature stage (prototype)"; URL
   `?stage=creature`, `&level` straight into Fernwood, `&drained`, `&autoplay`. Doc: `docs/stages/03-creature.md`.
 
+- **Civilization stage:** the **active stage, Toy** (2026-11-09). Toy 1 built: a 9-region hex planet, conquest / trade /
+  faith, machines, meteor and terraform, one rival. Not yet played. Menu "Civilization stage (prototype)"; URL
+  `?stage=civ`, `&rival=aggressive|adaptable`, `&autoplay`. Doc: `docs/stages/04-civilization.md`.
+
 ## What changed last session
 - 2026-11-09 (design only, branch `docs/civilization-stage`): the **civilization stage** is designed in
   `docs/stages/04-civilization.md`: hex strategy as the ruler, conquest / trade / faith per region, acts of god,
@@ -60,7 +64,7 @@ Ooze2Orbit, live at https://bamf69.github.io/Ooze2Orbit/ (every push to main red
 - 26 kit LFS pointer stubs are untracked: `smoke --shaders` cannot compare (TROUBLESHOOTING).
 - Autoplay ignores E, so the upgrade panel cannot be captured in an autoplay run.
 - Aquatic: no collisions with rocks (you swim through them; near things fade); the lens cause lines and reveal text
-  are English-only (generated strings, not i18n yet); the aquatic stage does not write the lineage back yet.
+  are English-only (generated strings, not i18n yet); every stage now writes its decisions into the lineage (2026-11-09).
 - `Ooze2Orbit Game Direction.pdf` (untracked, BAMF69's) predates these decisions: it still lists "getting popped".
 
 ## Commands that matter right now

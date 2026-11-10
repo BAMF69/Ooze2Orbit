@@ -24,6 +24,10 @@ import { Log } from "../core/log";
 import { shell } from "../shell/app";
 import { animKey, animSpecs, type AtlasLayout } from "./cell/atlas";
 import { cellSfx, type CellSfx } from "./cell/sfx";
+import { revealFrom } from "./aquatic/reveal";
+import { writeStage } from "../core/lineage";
+import { creatureRecord, type LevelResult } from "./creature/record";
+import { LineagePanel } from "./lineagePanel";
 import { drawBackdrop, drawCone, drawTiles, drawWorldMap } from "./creature/draw";
 import { biteDamage, bossStep, hurtBoss, newBossMind, type BossMind } from "./creature/boss";
 import { GROUND, Tile, buildLevel, inRect, newLevelState, solidAt, tileAt, tileKey, type Level, type LevelId, type LevelState, type Obstacle, type Way } from "./creature/level";
@@ -77,7 +81,8 @@ HINT.boss = "Three ways: bite it while it is stunned from charging a wall (F)  |
 const WAY_WORD: Record<Verdict, string> = { fight: "fought through", puzzle: "solved it", stealth: "sneaked past", rushed: "ran past" };
 
 export class CreatureScene extends Phaser.Scene {
-  private mode: "map" | "level" | "summary" = "map";
+  private mode: "reveal" | "map" | "level" | "summary" = "map";
+  private lineage!: LineagePanel; // the opening screen: your lineage's temperament and what shaped it
   private autoplay = false;
   private pushPilot = false; // ?pilot=push: the smoke pilot pushes boulders (checks the dip and the plate)
   private world!: WorldMap;
@@ -113,6 +118,8 @@ export class CreatureScene extends Phaser.Scene {
   private brambleHp: Record<string, number> = {};
   private treeHp: Record<string, number> = {}; // bites left per dead tree
   private levelId: LevelId = "fernwood";
+  private results: Record<string, LevelResult> = {}; // each cleared level's last result (written into the lineage at the end)
+  private partsUsed: Record<string, number> = {};
   private levelObjs: Phaser.GameObjects.GameObject[] = [];
   private tileG!: Phaser.GameObjects.Graphics;
   private grassG!: Phaser.GameObjects.Graphics;
@@ -159,8 +166,20 @@ export class CreatureScene extends Phaser.Scene {
     this.panel = text(80, 40, 12).setWordWrapWidth(480);
     const ask = params.get("level"); // ?level or ?level=mirefen|ridge|den: straight into a level
     const id: LevelId = ask === "mirefen" || ask === "ridge" || ask === "den" ? ask : "fernwood";
+    this.lineage = new LineagePanel(this);
     if (params.has("level") || this.autoplay) this.startLevel(id);
-    else this.showMap();
+    else this.openReveal();
+  }
+
+  /** The stage opens on your lineage (BAMF69 2026-11-09), as the aquatic stage does; Enter or E goes on to the map. */
+  private openReveal(): void {
+    let saved: unknown = null;
+    try { saved = shell.saves.load("lineage").envelope?.data ?? null; } catch (err) { Log.warn(LOG, `could not read the lineage: ${String(err)}`); }
+    const r = revealFrom(saved, 3, "creature");
+    if (r.problems.length) Log.warn(LOG, `lineage not used (${r.problems.join("; ")})`);
+    this.mode = "reveal";
+    this.lineage.show(r, "Enter or E: come ashore");
+    Log.info(LOG, `REVEAL ${r.fromSave ? "from save" : "default"}: ${r.rows.map((x) => `${x.kind} ${x.pct} %`).join(", ")}`);
   }
 
   private makeAnims(key: Atlas): void {
@@ -770,6 +789,10 @@ export class CreatureScene extends Phaser.Scene {
     for (const o of this.lv.obstacles) if (this.run.obstacles[o.id].verdict === null) this.run = passExit(this.run, o.id);
     const s = summary(this.run, this.lv.name);
     this.world = clearLevel(this.world, this.levelId);
+    const bossV = this.run.obstacles.oldhorn?.verdict;
+    const bossWord: Record<Verdict, string> = { fight: "fighting", puzzle: "puzzles", stealth: "stealth", rushed: "luck" };
+    this.results[this.levelId] = { counts: s.counts, boss: !!this.run.obstacles.oldhorn, cause: bossV ? `Beat the Old Horn mostly by ${bossWord[bossV]}` : s.cause };
+    for (const [p, n] of Object.entries(this.run.parts)) this.partsUsed[p] = (this.partsUsed[p] ?? 0) + n;
     const bossRun = this.run.obstacles.oldhorn;
     const rows = this.lv.obstacles.map((o) => {
       const v = this.run.obstacles[o.id].verdict!;
@@ -794,11 +817,26 @@ export class CreatureScene extends Phaser.Scene {
     Log.info(LOG, `FINISH ${s.cause}; shift ${shift}; ${s.partsLine ?? "no parts"}`);
   }
 
-  /** The Old Horn is beaten: the lineage goes on to the civilization stage (not built yet: back to the title). */
+  /** The Old Horn is beaten: the lineage goes on to the civilization stage. */
   private evolveToCiv(): void {
-    Log.info(LOG, "EVOLVE into the civilization stage (not built yet)");
-    shell.quitToTitle();
-    shell.toast("cr.civ_soon");
+    Log.info(LOG, "EVOLVE into the civilization stage");
+    this.writeLineage();
+    shell.stopGame();
+    shell.startGame("civ"); // stage 4 (docs/stages/04-civilization.md)
+  }
+
+  /** The Old Horn is beaten: how you cleared each level goes into the lineage the next stages read (creature/record.ts). */
+  private writeLineage(): void {
+    try {
+      const prev = shell.saves.load("lineage").envelope?.data ?? null;
+      const prevH = (prev as { gardener?: { harshness?: number } } | null)?.gardener?.harshness ?? 0;
+      const r = creatureRecord(this.results, this.partsUsed, prevH, this.world.harshness);
+      const next = writeStage(prev, "creature", r.causes, r.block, r.harshness);
+      shell.saves.save("lineage", next as unknown as Parameters<typeof shell.saves.save>[1]);
+      Log.info(LOG, `LINEAGE written (creature): ${r.causes.map((c) => c.cause).join("; ")}; traits ${r.traits.join(", ") || "none"}`);
+    } catch (err) {
+      Log.error(LOG, `could not write the lineage: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 
   // ---- autoplay (smoke) -----------------------------------------------------------------------------------
@@ -830,7 +868,9 @@ export class CreatureScene extends Phaser.Scene {
     this.t += dt;
     this.sfx.update(shell.settings.audio);
     if (this.toastLeft > 0 && (this.toastLeft -= dt) <= 0) this.toastT.setVisible(false);
-    if (this.mode === "map") this.mapFrame(playing);
+    if (this.mode === "reveal") {
+      if (playing && (shell.input.takePress("ui_accept") || shell.input.takePress("interact") || shell.input.takePress("jump"))) { this.lineage.hide(); this.showMap(); }
+    } else if (this.mode === "map") this.mapFrame(playing);
     else if (this.mode === "level") this.levelFrame(dt, playing);
     else if (playing && (shell.input.takePress("ui_accept") || shell.input.takePress("jump"))) {
       if (this.levelId === "den") this.evolveToCiv(); // the boss is beaten: on to stage 4 (BAMF69 2026-11-09)

@@ -35,7 +35,8 @@ import { Log } from "../core/log";
 import { effectiveShake } from "../core/settings";
 import { shell } from "../shell/app";
 import { animKey, animSpecs, firstFrame, type AtlasLayout } from "./cell/atlas";
-import type { TemperamentKind } from "../core/lineage";
+import { writeStage, type TemperamentKind } from "../core/lineage";
+import { aquaticRecord } from "./aquatic/record";
 import { AdminPanel, type Destination } from "./aquatic/adminPanel";
 import { PLAYER_ID, ate, newBrain, think, type GulperBrain, type Seen } from "./cell/predator";
 import { cellSfx, type CellSfx } from "./cell/sfx";
@@ -199,6 +200,8 @@ export class AquaticScene extends Phaser.Scene {
   private allowSave = false; // autosave the run (off for autoplay and debug starts, so tests never touch your save)
   private saveIn = 0;
   private breaches = 0; // breaches this stage: they make the body more streamlined (adaptable)
+  private startUps: Record<AqStat, number> = { attack: 0, speed: 0, defense: 0, mobility: 0, health: 0 }; // the cell stage's levels
+  private temps: number[] = []; // the water at each generation (how harsh the Gardener was)
   private sharks: Shark[] = [];
   private partLayers: Partial<Record<AqPart, Phaser.GameObjects.Sprite>> = {};
   private partsLayout!: AtlasLayout;
@@ -483,6 +486,8 @@ export class AquaticScene extends Phaser.Scene {
     if (reveal.problems.length) Log.warn(LOG, `lineage not used (${reveal.problems.join("; ")}): starting from the default`);
     const cell = reveal.fromSave ? (saved as { species: { stages?: { cell?: unknown } }[] }).species[0]?.stages?.cell ?? null : null;
     this.me = creatureFromLineage(cell, reveal.diet); // the stats start where the cell stage left them
+    this.startUps = { ...this.me.ups };
+    this.temps = [];
     for (const r of reveal.rows) this.temper[r.kind] = r.pct / 100;
     this.updateLook(false);
     Log.info(LOG, `REVEAL ${reveal.fromSave ? "from save" : "default"}: ${reveal.rows.map((r) => `${r.kind} ${r.pct} %`).join(", ")}; diet ${this.me.diet}; look ${this.look}`);
@@ -567,10 +572,26 @@ export class AquaticScene extends Phaser.Scene {
 
   private evolveOut(): void {
     Log.info(LOG, "EVOLVE into the creature stage");
+    this.writeLineage();
     this.saveRun(true); // no Continue for a lineage that left the water
     this.allowSave = false;
     shell.stopGame();
     shell.startGame("creature"); // stage 3 exists now (docs/stages/03-creature.md)
+  }
+
+  /** Leaving the water: what you did here goes into the lineage the next stages read (aquatic/record.ts). */
+  private writeLineage(): void {
+    try {
+      const prev = shell.saves.load(LINEAGE_SLOT).envelope?.data ?? null;
+      const prevH = (prev as { gardener?: { harshness?: number } } | null)?.gardener?.harshness ?? 0;
+      const upsGained = Object.fromEntries(AQ_STATS.map((s) => [s, Math.max(0, this.me.ups[s] - this.startUps[s])])) as Record<AqStat, number>;
+      const r = aquaticRecord({ kills: this.kills, breaches: this.breaches, deaths: this.deaths, upsGained, temps: this.temps, form: this.me.form, parts: [...this.me.parts, ...this.me.uniques], diet: this.me.diet }, prevH);
+      const next = writeStage(prev, "aquatic", r.causes, r.block, r.harshness);
+      shell.saves.save(LINEAGE_SLOT, next as unknown as Parameters<typeof shell.saves.save>[1]);
+      Log.info(LOG, `LINEAGE written (aquatic): ${r.causes.map((c) => c.cause).join("; ") || "no causes"}; harshness ${r.harshness.toFixed(2)}`);
+    } catch (err) {
+      Log.error(LOG, `could not write the lineage: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 
   // ---- pick up where you left off (2026-11-09) ----------------------------------------------------------------
@@ -616,6 +637,7 @@ export class AquaticScene extends Phaser.Scene {
     this.kin.forEach((k, i) => (k.thickness = this.pop.thickness[i] ?? k.thickness));
     this.thickness = g.after;
     this.causes.push(g.cause);
+    this.temps.push(this.tempC);
     this.genLeft = AQ.population.generationS;
     this.sfx.play("evolve");
     Log.info(LOG, `GENERATION ${this.pop.generation}: ${g.cause}`);

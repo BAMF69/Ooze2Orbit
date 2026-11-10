@@ -2,8 +2,8 @@
 
 > Stage design doc. Short beats complete. Game-wide rules (pillars, lore, win and lose, what carries between stages)
 > live in the spine, `docs/GDD.md`; this file covers only what is special to the civilization stage.
-> **Not started.** Nothing here gets coded until the stages before it are fun (spine, "Out of scope"). When this
-> becomes the active stage, fill the rest from `docs/stages/_TEMPLATE.md` and keep what still holds.
+> **Active stage, Toy** (2026-11-09). Toy 1 is built; playtest pending. Play it: main menu "Civilization stage
+> (prototype)", or beat the Old Horn. Code: `src/game/CivScene.ts`, `src/game/civ/rules.ts`.
 > Designed 2026-11-09 (BAMF69). Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69.
 > Everything else was decided by BAMF69.
 
@@ -139,6 +139,22 @@ A 30 to 60 minute game. A full Civilization-sized game would be bigger than all 
 - 2 acts of god (meteor, terraform) and 2 machines.
 - **Done means:** BAMF69 wants to play a second game a different way, and can say which victory they were heading for
   from the tally.
+
+## Toy 1 as built (2026-11-09, Claude's picks)
+- **Planet:** 9 regions: your capital Hearthhold, the rival's seat (Ironmaw if it is aggressive, Brassport if it trades)
+  and 7 free regions, each with a fixed yield (materials, goods or faith), a defense, a price and a belief threshold.
+- **Three ways:** an army (3 materials, strength 2, +1 with a siege engine) takes a region if stronger than its
+  defense, else wears it down; a trade route (2 goods) adds 1 dependence a turn (+1 with trade ships), then a buy-out
+  (goods) takes it; missionaries (2 faith) add 1 belief a turn (+1 with a temple) until it converts. Belief needed
+  grows with the Gardener's harshness. Regions someone holds cost 2 more to buy or convert. Reinforce adds 1 defense.
+- **Acts of god (favor: +1 a turn, +1 per region taken by faith):** meteor (6) knocks 2 off a region's defense and
+  scatters a rival army marching there, harshness +10 %; terraform (4) gives one of your regions +1 yield, -5 %.
+- **The rival:** aggressive (announces an army a turn before it strikes, builds a siege engine) unless your lineage
+  leans aggressive, then a trader (routes, buy-outs, trade ships). Your capital never falls.
+- **On screen:** the tally and "Heading for: ... victory", every blocked action says why, news after each turn.
+- **End:** all nine regions yours: the victory (most regions by one method; a tie goes to your strongest
+  temperament), the tally, the temperament shift (+3 % per region), harshness, the cause lines. Enter: on to space
+  (not built yet: back to the title). Not yet: saving, writing the lineage, the `T0|▼|` probe and the Maker cult, food.
 
 ## Open questions
 | Question | Why it matters |

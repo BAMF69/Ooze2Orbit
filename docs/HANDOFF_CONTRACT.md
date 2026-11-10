@@ -91,6 +91,16 @@ lineage has its own `schemaVersion` so it can also be exported as a plain file i
 | **Civilization** | All species: temperament (the highest picks the rivals), diet, habitat, inherited traits, `gardener.harshness` | Its block: regions taken by each method (conquest, trade, faith), the victory type (the method with the most regions), the technology heritage (most-used technology), whether it took T0&#124;▼&#124; tech; acts of god move `gardener.harshness` | Three generated creature-stage species |
 | **Space** | All species: temperament (ship specialty), diet (second layer), culture, T0&#124;▼&#124; tech flag | Fleet and campaign state; the two outer-garden species when the player first reaches out to them, seeded from `home`'s lineage; extinct species and their `generated` replacements | One generated spacefaring species (`home`) |
 
+## The later stages' blocks (built 2026-11-09)
+Each is written by `writeStage()` in `src/core/lineage.ts` when the stage ends; replaying a stage replaces its causes.
+- `stages.aquatic`: form, parts, diet, kills, breaches, deaths, generations, upsGained. Causes: hunting (aggressive),
+  breaching (adaptable), relatives lost (cautious), each upgrade's lean. Harshness rises with how far the water was
+  pushed from mild (`src/game/aquatic/record.ts`).
+- `stages.creature`: levels (ways per level), traits (parts used 3+ times), partsUsed. Causes: each level's cause line,
+  leaning by the obstacles passed each way; the boss counts triple. Harshness adds the world map's (`creature/record.ts`).
+- `stages.civ`: victory, tally, turns, rival, machines, acts. Causes: one per region taken; harshness is the game's
+  (`src/game/civ/rules.ts` civRecord).
+
 ## The cell stage's block (built 2026-11-08)
 Written by `cellBlock()` in `src/game/cell/record.ts` when the stage ends (the last form reached and its diet picked).
 
