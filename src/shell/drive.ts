@@ -278,8 +278,8 @@ async function play(shell: Shell, d: Driver, seconds: number): Promise<void> {
   if (!(seconds > 0 && seconds <= 600)) throw new Error(`play:<seconds> needs 1 to 600 seconds, got "${seconds}"`);
   await d.toMenu();
   // ?stage=aquatic plays the aquatic stage instead of the cell stage (dev.py smoke --query "stage=aquatic&autoplay")
-  const stage = new URLSearchParams(location.search).get("stage"); // ?stage=aquatic | creature | civ
-  await d.game(stage === "aquatic" ? "aquatic" : stage === "creature" ? "creature" : stage === "civ" ? "civ" : "main");
+  const stage = new URLSearchParams(location.search).get("stage"); // ?stage=aquatic | creature | civ | space
+  await d.game(stage === "aquatic" ? "aquatic" : stage === "creature" ? "creature" : stage === "civ" ? "civ" : stage === "space" ? "space" : "main");
   const end = performance.now() + seconds * 1000;
   while (performance.now() < end) await frame();
   if (shell.scene) shell.game?.scene.pause(shell.scene); // a still frame for the screenshot

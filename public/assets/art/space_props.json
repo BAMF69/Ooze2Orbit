@@ -1,0 +1,14 @@
+{
+  "cell": 32,
+  "columns": 4,
+  "rows": [
+    {
+      "index": 0,
+      "pose": "hearth",
+      "direction": "up",
+      "frames": 4,
+      "first_frame": 0
+    }
+  ],
+  "image": "space_props.png"
+}

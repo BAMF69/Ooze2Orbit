@@ -4,7 +4,7 @@
 //           the cell stage recorded, with the causes behind each one (BAMF69 2026-11-08: hidden in the cell stage,
 //           revealed at the transition). With no cell-stage save it explains the default lineage instead.
 // Usage   : const r = revealFrom(saved);  r.title, r.rows[i] = { kind, pct, causes: [...] }, r.leaning
-//           revealFrom(saved, 3, "creature" | "civ"): the same, worded for the stage it opens (shared/lineagePanel.ts)
+//           revealFrom(saved, 3, "creature" | "civ" | "space"): the same, worded for the stage it opens (shared/lineagePanel.ts)
 // Notes   : Pure. Tested in tests/aquaticReveal.test.ts. Reads the lineage per docs/HANDOFF_CONTRACT.md; a lineage
 //           that fails lineageProblems() is reported (problems) and the default is shown, never a crash.
 // Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
@@ -32,11 +32,12 @@ export interface Reveal {
 const WORD: Record<TemperamentKind, string> = { cautious: "Cautious", aggressive: "Aggressive", adaptable: "Adaptable" };
 
 /** How each stage words its opening (BAMF69 2026-11-09: the creature and civilization stages open with it too). */
-export type RevealStage = "aquatic" | "creature" | "civ";
+export type RevealStage = "aquatic" | "creature" | "civ" | "space";
 const STAGE_WORDS: Record<RevealStage, { title: string; test: string; none: string }> = {
   aquatic: { title: "Your lineage, as the pond shaped it", test: "The water will test that.", none: "the water will decide." },
   creature: { title: "Your lineage comes ashore", test: "The land will test that.", none: "the land will decide." },
   civ: { title: "Your lineage, the makers of a people", test: "Your people will carry it to their rivals.", none: "your people will decide." },
+  space: { title: "Your lineage, among the stars", test: "Its ships will carry it against T0|▼|.", none: "the stars will decide." },
 };
 
 /** Build the reveal from whatever the save slot held (undefined/null = no save), worded for the stage it opens. */

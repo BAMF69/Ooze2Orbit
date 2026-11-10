@@ -4,7 +4,8 @@
 > Claude reads the **Now** section at session start.
 
 ## Now (max 3 items)
-Active stage: **Civilization, Toy** (`docs/stages/04-civilization.md`).
+Active stage: **Space, Toy** (`docs/stages/05-space.md`).
+- [ ] **Space Toy 1: refit because T0|▼| adapted** (built 2026-11-09, playtest pending): three systems, a hangar with two hulls and eight parts from two makers, real-time combat against patrols that hunt like gulpers, T0|▼| learning what you used after every battle with a readout, five wins to finish | Done when: BAMF69 refits the ship because T0|▼| adapted, and wants another fight | Timebox: 2 sessions
 - [ ] **Civilization Toy 1: three ways to win a planet** (built 2026-11-09, playtest pending): a 9-region hex planet, fixed yields, conquest / trade / faith per region, three machines, meteor and terraform, one rival for a temperament you are not (its armies announced a turn ahead), a live tally and the victory named by the method that took most | Done when: BAMF69 wants to play a second game a different way and can say which victory they were heading for from the tally | Timebox: 2 sessions
 
 ## Next

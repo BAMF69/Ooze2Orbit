@@ -100,6 +100,10 @@ Each is written by `writeStage()` in `src/core/lineage.ts` when the stage ends; 
   leaning by the obstacles passed each way; the boss counts triple. Harshness adds the world map's (`creature/record.ts`).
 - `stages.civ`: victory, tally, turns, rival, machines, acts. Causes: one per region taken; harshness is the game's
   (`src/game/civ/rules.ts` civRecord).
+- `stages.space` (Toy 1): battles, wins, losses, refits, hull, parts, hybrid, salvage, t0Learned (per family), ally.
+  Causes: one per way of winning (wins in a ship built around weapons lean aggressive, defences cautious, engines
+  adaptable). Reads from `stages.civ`: `victory`, `machines[0]` (the technology heritage) and, when a later
+  civilization stage writes it, `tookT0Tech` (`src/game/space/campaign.ts` startCampaign, spaceRecord).
 
 ## The cell stage's block (built 2026-11-08)
 Written by `cellBlock()` in `src/game/cell/record.ts` when the stage ends (the last form reached and its diet picked).

@@ -7,8 +7,8 @@
 //           URL: ?stage=civ; &rival=aggressive|adaptable; &autoplay plays itself (smoke); &debug logs.
 //           Controls: click a region (or Left/Right), click an action (or keys 1-9), Enter ends the turn.
 // Notes   : PROTOTYPE (Toy 1). The rules are pure and tested in src/game/civ/rules.ts; this file draws the board,
-//           the panel and the pieces (assets/art/civ_pieces) and turns input into actions. Not yet: saving, writing
-//           the lineage, the T0|▼| probe, more acts, food.
+//           the panel and the pieces (assets/art/civ_pieces) and turns input into actions. Victory writes the
+//           lineage and leads into the space stage. Not yet: saving, the T0|▼| probe, more acts, food.
 // Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
 // ---------------------------------------------------------------------------
 import * as Phaser from "phaser";
@@ -326,10 +326,10 @@ export class CivScene extends Phaser.Scene {
     this.sfx.update(shell.settings.audio);
     if (this.toastLeft > 0 && (this.toastLeft -= dt) <= 0) this.toastT.setVisible(false);
     if (this.done) {
-      if (playing && shell.input.takePress("ui_accept")) { // on to space: not built yet
-        Log.info(LOG, "EVOLVE into the space stage (not built yet)");
-        shell.quitToTitle();
-        shell.toast("civ.space_soon");
+      if (playing && shell.input.takePress("ui_accept")) { // on to the stars (docs/stages/05-space.md)
+        Log.info(LOG, "EVOLVE into the space stage");
+        shell.stopGame();
+        shell.startGame("space");
       }
       return;
     }

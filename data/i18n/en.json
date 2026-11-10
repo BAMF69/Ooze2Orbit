@@ -262,5 +262,6 @@
  "menu.creature": "Creature stage (prototype)",
  "cr.civ_soon": "Your lineage rises toward civilization. The civilization stage is not built yet.",
  "menu.civ": "Civilization stage (prototype)",
- "civ.space_soon": "Your species looks to the stars. The space stage is not built yet."
+ "menu.space": "Space stage (prototype)",
+ "space.toy_done": "The patrols are broken. The space stage Toy is complete."
 }
