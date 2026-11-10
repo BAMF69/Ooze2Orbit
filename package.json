@@ -2,6 +2,7 @@
   "name": "ooze2orbit",
   "private": true,
   "version": "0.1.0",
+  "license": "GPL-3.0-or-later",
   "type": "module",
   "description": "Ooze2Orbit: a browser game (Phaser 4, TypeScript, Vite). Use python tools/dev.py for every command.",
   "engines": {

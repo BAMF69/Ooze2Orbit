@@ -56,7 +56,8 @@ three at once; confirm.)*
 - **Two outer gardens** are seeded only when the player **chooses to interact with them** (BAMF69 2026-11-08). For
   now that happens in the **space stage**: until then the game follows the home world alone. When the player first
   reaches out to an outer garden, the Gardener seeds it from the home lineage and its evolution catches up in the
-  simulation *(Claude's pick for the catch-up; confirm when the space stage is designed)*.
+  simulation *(Claude's pick for the catch-up; the space stage doc proposes the captain finds candidate worlds and the
+  player picks two; confirm)*.
 - Each world's environment pushes its species toward a role. Example set *(Claude's pick)*:
 
 | World | Environment | Likely role in the fleet |
@@ -82,8 +83,11 @@ The cell stage ends with the first reveal: something enormous outside the slide 
 floods, and the aquatic stage begins. *(Claude's pick.)*
 
 ## The space stage: the fleet
-Reference: **Endless Sky** for the structure (top-down 2D ships, a star map, trade, missions, outfitting a fleet).
-Same kind of mechanics only: nothing taken from Endless Sky's names, story, art or ships. A top-down 2D fleet game also
+Reference: **Endless Sky** for its fleet management, ship customization and space combat, plus the star map, jumps and
+landing on planets (BAMF69 2026-11-09; full design in `docs/stages/05-space.md`). The captain jumps between systems and
+lands on planets to collect parts and ships, and refits the fleet to fight `T0|▼|`'s forces. Ooze2Orbit is GPL-3.0-or-later like
+Endless Sky (BAMF69 2026-11-09), so its code, data and some art may be adapted with credit; the names, story and
+factions stay Ooze2Orbit's own (`docs/adr/0001-gpl-license-and-endless-sky.md`). A top-down 2D fleet game also
 fits the current engine (Phaser 4, 2D).
 
 - **Find the others.** The three species start in different regions of space and do not know each other. First contact
