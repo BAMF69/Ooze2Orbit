@@ -12,10 +12,16 @@
   refit your fleet, and fight `T0|▼|`'s forces, which learn from every battle.
 - **Reference game:** Endless Sky, for its **fleet management, ship customization and space combat** (BAMF69
   2026-11-09), and its star map, jumps between systems and landing on planets.
-  - **Mechanics only.** Endless Sky's source code is GPL v3 and its art is under various Creative Commons licenses.
-    Copying its code would force Ooze2Orbit to be released under the GPL, and copying its art needs its licenses
-    followed. So nothing is copied: no code, data files, ship or outfit stats, names, story, art or sounds. Everything
-    is written and drawn fresh for this game.
+  - **Copying is allowed** (BAMF69 2026-11-09). Ooze2Orbit is GPL-3.0-or-later, the same license as Endless Sky's code
+    (`docs/adr/0001-gpl-license-and-endless-sky.md`), so its code, data and tuning can be adapted when this stage is
+    built:
+    - **Code:** translated from C++ to TypeScript. Each adapted file says so in its header (the Endless Sky source
+      file, "Endless Sky contributors", GPL-3.0-or-later).
+    - **Data** (ship and outfit stats, formulas): adapted as a starting point, then retuned for this game.
+    - **Art and sounds:** file by file only. Check each one's license in Endless Sky's `copyright` file, log it with
+      its credit in `docs/ASSET_LOG.md` (`/asset-intake`), and use it only if it fits the lit, moody, organic look.
+    - **Names, story and factions:** stay Ooze2Orbit's own *(Claude's pick)*: the Gardener, `T0|▼|` and the three
+      species, not Endless Sky's universe, so the game stays its own.
 - **Modes:**
   - **Avatar mode = the captain** *(BAMF69 2026-11-09)*. The character flies the flagship in real-time top-down
     combat, jumps between systems and lands on planets.

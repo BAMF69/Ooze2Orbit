@@ -26,6 +26,8 @@ Ooze2Orbit, live at https://bamf69.github.io/Ooze2Orbit/ (every push to main red
   `?stage=creature`, `&level` straight into Fernwood, `&drained`, `&autoplay`. Doc: `docs/stages/03-creature.md`.
 
 ## What changed last session
+- 2026-11-09 (branch `docs/space-stage`): the game is now **GPL-3.0-or-later** (`LICENSE`, ADR 0001) so the space stage
+  can adapt Endless Sky's code (credit in file headers), data and art (per file, in ASSET_LOG). Build waits for its turn.
 - 2026-11-09 (design only, branch `docs/space-stage`): the **space stage** is designed in `docs/stages/05-space.md`:
   Endless Sky style fleet, ship fitting and combat; jump and land for parts and ships; T0 adapts with a readout.
 - 2026-11-09 (design only, branch `docs/civilization-stage`): the **civilization stage** is designed in
