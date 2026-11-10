@@ -1,0 +1,84 @@
+{
+  "cell": 32,
+  "columns": 2,
+  "rows": [
+    {
+      "index": 0,
+      "pose": "spine",
+      "direction": "up",
+      "frames": 2,
+      "first_frame": 0
+    },
+    {
+      "index": 1,
+      "pose": "needle",
+      "direction": "up",
+      "frames": 2,
+      "first_frame": 2
+    },
+    {
+      "index": 2,
+      "pose": "lance",
+      "direction": "up",
+      "frames": 2,
+      "first_frame": 4
+    },
+    {
+      "index": 3,
+      "pose": "lanceturret",
+      "direction": "up",
+      "frames": 2,
+      "first_frame": 6
+    },
+    {
+      "index": 4,
+      "pose": "spore",
+      "direction": "up",
+      "frames": 2,
+      "first_frame": 8
+    },
+    {
+      "index": 5,
+      "pose": "seeker",
+      "direction": "up",
+      "frames": 2,
+      "first_frame": 10
+    },
+    {
+      "index": 6,
+      "pose": "plating",
+      "direction": "up",
+      "frames": 2,
+      "first_frame": 12
+    },
+    {
+      "index": 7,
+      "pose": "membrane",
+      "direction": "up",
+      "frames": 2,
+      "first_frame": 14
+    },
+    {
+      "index": 8,
+      "pose": "fin",
+      "direction": "up",
+      "frames": 2,
+      "first_frame": 16
+    },
+    {
+      "index": 9,
+      "pose": "burn",
+      "direction": "up",
+      "frames": 2,
+      "first_frame": 18
+    },
+    {
+      "index": 10,
+      "pose": "gland",
+      "direction": "up",
+      "frames": 2,
+      "first_frame": 20
+    }
+  ],
+  "image": "space_parts.png"
+}

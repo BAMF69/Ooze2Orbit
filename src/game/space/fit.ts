@@ -1,7 +1,8 @@
 // ---------------------------------------------------------------------------
 // fit.ts (space)
-// Purpose : Ship fitting as pure rules (docs/stages/05-space.md, "Ship customization"): a hull has limited space,
-//           parts use or make power, and the fitted ship's numbers follow from its parts, from who grew them (a
+// Purpose : Ship fitting as pure rules (docs/stages/05-space.md, "Ship customization"): a hull has slots (guns,
+//           turrets, defences, engines, power; BAMF69 2026-11-10), a part takes one slot of its type and uses or
+//           makes power, and the fitted ship's numbers follow from its parts, from who grew them (a
 //           maker's strongest temperament makes its shields, weapons or engines 25 % better) and from what T0|▼|
 //           has learned (a learned defence family protects less).
 // Usage   : const p = fitProblems(fit);  const st = shipStats(fit, makers, learned);  isHybrid(fit)
@@ -16,6 +17,9 @@ export type HullId = keyof typeof SPACE.hulls;
 export type PartId = keyof typeof SPACE.parts;
 export type Maker = "home" | "ally";
 export type Kind = "weapon" | "defence" | "engine" | "power";
+export type SlotType = "gun" | "turret" | "defence" | "engine" | "power";
+export const SLOT_TYPES: readonly SlotType[] = ["gun", "turret", "defence", "engine", "power"];
+export type Mount = "gun" | "turret" | "missile"; // forward when you fire; tracks and fires on its own; launches and homes
 export type WeaponFamily = "kinetic" | "beam" | "spore";
 export type DefenceFamily = "plating" | "membrane";
 export type Family = WeaponFamily | DefenceFamily;
@@ -23,21 +27,21 @@ export const WEAPON_FAMILIES: readonly WeaponFamily[] = ["kinetic", "beam", "spo
 export const DEFENCE_FAMILIES: readonly DefenceFamily[] = ["plating", "membrane"];
 export const FAMILIES: readonly Family[] = [...WEAPON_FAMILIES, ...DEFENCE_FAMILIES];
 export const PART_IDS = Object.keys(SPACE.parts) as PartId[];
-export const HULL_IDS = Object.keys(SPACE.hulls) as HullId[];
+export const HULL_IDS = (Object.keys(SPACE.hulls) as HullId[]).filter((h) => !SPACE.hulls[h].escortOnly); // the ones you can fly
 export type Learned = Record<Family, number>; // 0..cap: how well T0|▼| knows each family
 
 /** One part's numbers with every optional field present (0 when it does not apply). */
 export interface PartSpec {
-  name: string; kind: Kind; maker: Maker; family: Family | null; space: number; power: number; cost: number;
-  damage: number; every: number; speed: number; range: number; hull: number; shield: number; regen: number; thrust: number; turn: number;
+  name: string; kind: Kind; slot: SlotType; mount: Mount | null; maker: Maker; family: Family | null; space: number; power: number; cost: number;
+  homing: number; damage: number; every: number; speed: number; range: number; hull: number; shield: number; regen: number; thrust: number; turn: number;
 }
-const BLANK = { family: null, damage: 0, every: 0, speed: 0, range: 0, hull: 0, shield: 0, regen: 0, thrust: 0, turn: 0 };
+const BLANK = { family: null, mount: null, homing: 0, damage: 0, every: 0, speed: 0, range: 0, hull: 0, shield: 0, regen: 0, thrust: 0, turn: 0 };
 export const part = (id: PartId): PartSpec => ({ ...BLANK, ...(SPACE.parts[id] as Partial<PartSpec>) }) as PartSpec;
 
 export interface Fit { hull: HullId; parts: PartId[] }
 export type Makers = Record<Maker, TemperamentKind>; // each maker's strongest temperament
 
-export interface WeaponStat { id: PartId; family: WeaponFamily; damage: number; every: number; speed: number; range: number }
+export interface WeaponStat { id: PartId; family: WeaponFamily; mount: Mount; homing: number; damage: number; every: number; speed: number; range: number }
 export interface ShipStats {
   hull: number; shield: number; regen: number; accel: number; topSpeed: number; turn: number; mass: number; radius: number;
   weapons: WeaponStat[];
@@ -48,11 +52,16 @@ export const spaceUsed = (f: Fit): number => f.parts.reduce((n, id) => n + part(
 export const powerOf = (f: Fit): number => SPACE.flight.basePower + f.parts.reduce((n, id) => n + part(id).power, 0);
 export const countOf = (f: Fit, id: PartId): number => f.parts.filter((p) => p === id).length;
 
+export const slotsOf = (hull: HullId): Record<SlotType, number> => SPACE.hulls[hull].slots;
+export const slotsUsed = (f: Fit, t: SlotType): number => f.parts.filter((id) => part(id).slot === t).length;
+export const freeSlots = (f: Fit, t: SlotType): number => slotsOf(f.hull)[t] - slotsUsed(f, t);
+/** The parts in one type of slot, in the order they were fitted (the hangar draws them slot by slot). */
+export const partsIn = (f: Fit, t: SlotType): PartId[] => f.parts.filter((id) => part(id).slot === t);
+
 /** Why this ship cannot launch, in the player's words (empty: it can). */
 export function fitProblems(f: Fit): string[] {
   const p: string[] = [];
-  const over = spaceUsed(f) - SPACE.hulls[f.hull].space;
-  if (over > 0) p.push(`${over} space too many`);
+  for (const t of SLOT_TYPES) { const over = -freeSlots(f, t); if (over > 0) p.push(`${over} ${t} slot${over === 1 ? "" : "s"} too few`); }
   if (powerOf(f) < 0) p.push(`${-powerOf(f)} power short`);
   if (!f.parts.some((id) => part(id).kind === "engine")) p.push("no engine");
   if (!f.parts.some((id) => part(id).kind === "weapon")) p.push("no weapon");
@@ -75,7 +84,7 @@ export function shipStats(f: Fit, makers: Makers, learned: Learned): ShipStats {
       const keep = 1 - learned[p.family as DefenceFamily];
       hull += p.hull * b * keep; shield += p.shield * b * keep; regen += p.regen * b * keep;
     } else if (p.kind === "engine") { thrust += p.thrust * b; turn += p.turn * b; }
-    else if (p.kind === "weapon") weapons.push({ id, family: p.family as WeaponFamily, damage: p.damage * b, every: p.every, speed: p.speed, range: p.range });
+    else if (p.kind === "weapon") weapons.push({ id, family: p.family as WeaponFamily, mount: p.mount ?? "gun", homing: p.homing, damage: p.damage * b, every: p.every, speed: p.speed, range: p.range });
   }
   const mass = h.mass + SPACE.flight.massPerSpace * spaceUsed(f);
   const accel = thrust / mass;

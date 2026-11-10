@@ -3,7 +3,7 @@
 > Rewritten at the end of every session by `/end-session`. Read first by `/start-session`.
 > Keep under ~60 lines. It is a baton, not a diary.
 
-**Last updated:** 2026-11-09
+**Last updated:** 2026-11-10
 **Branch / commit:** feat/space-toy from main 02b1342 (PR #10 merged: civilization Toy 1); space Toy 1 in its PR
 **Engine version:** see `docs/ENGINE.md`
 
@@ -27,7 +27,10 @@ Ooze2Orbit, live at https://bamf69.github.io/Ooze2Orbit/ (every push to main red
 
 - **Space stage:** the **active stage, Toy** (2026-11-09). Toy 1 built: hangar (two hulls, eight parts, two makers),
   three systems, real-time combat, T0|▼| adapts after every battle with a readout, five wins to finish, lineage
-  written. Not yet played by BAMF69. Menu "Space stage (prototype)"; URL `?stage=space`, `&autoplay` (`&hold` stays in
+  written. Toy 2 (2026-11-10): slots and an icon hangar, turrets and homing missiles, Tidereach (the allies' world),
+  recruited escorts that fly themselves. Toy 3 (2026-11-10, after BAMF69 played): wormhole jumps (`[` `]`, clickable
+  map), waves on a countdown, auto-land, reverse and side thrusters, the ending is the Mothership (three wins in a row
+  at the Lattice). `&world=tidereach` starts at the allies' world, `&boss` at the Lattice with the Mothership. Menu "Space stage (prototype)"; URL `?stage=space`, `&autoplay` (`&hold` stays in
   the hangar). Doc: `docs/stages/05-space.md` ("Toy 1 as built"). Winning the civilization stage leads into it.
 
 - **Civilization stage:** Toy (2026-11-09, merged PR #10). Toy 1 built: a 9-region hex planet, conquest / trade /
@@ -83,7 +86,7 @@ python tools/dev.py check
 python tools/dev.py test
 python tools/dev.py smoke --gpu --timeout 90 --drive play:60 --query "autoplay&diet=carnivore" --screenshot captures/progress/x.png
 python tools/dev.py smoke --gpu --timeout 90 --drive play:20 --query "stage=aquatic&autoplay&threat" --screenshot captures/progress/x.png
-python tools/dev.py smoke --gpu --timeout 150 --drive play:90 --query "stage=space&autoplay" --until TOY_COMPLETE
+python tools/dev.py smoke --gpu --timeout 120 --drive play:75 --query "stage=space&autoplay&debug"   # the pilot; no end marker
 ```
 
 ## Context a fresh Claude needs

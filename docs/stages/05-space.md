@@ -158,6 +158,43 @@ Review before building found these gaps in the design above; the Toy answers eac
 - **Watch in the playtest:** rotating three weapons in turn keeps every family low (learn 35 %, fade 15 % per battle).
   If that makes refitting a chore instead of a choice, slow the fade or let `T0|▼|` learn the rotation.
 
+## Toy 2: fleet, turrets, slots *(2026-11-10, asked for by BAMF69 before playing Toy 1)*
+- **Slots replace the space number** (BAMF69: "see what slots you have open"). Each hull has gun, turret, defence,
+  engine and power slots; a part takes one slot of its type. Power still has to balance. Seedpod 2/1/2/2/2,
+  Carapace 4/2/4/2/3.
+- **The hangar is icons, not text** (BAMF69, after Endless Sky's ship panel; our own layout and art): the ship drawn
+  large with every slot around it, joined by lines; a palette of part and ship icons for what this world sells.
+  Click an icon to buy, click a slot to empty it; pointing at an icon says what it is and why it cannot be bought.
+- **Weapons that fire on their own:** Needle Turret (Hearth) and Lance Turret (Tidewright) track and fire in any
+  direction; Seeker Spore (Tidewright) launches on its own and homes. Guns still need the pilot.
+- **A second friendly world, Tidereach** (the Tidewrights). Each world sells only its own species' parts and ships,
+  so the other world is worth the jump; any world buys any part back at full price.
+- **Allied ships:** recruit up to three escorts (Spineling at Hearth; Skiff and Warden at Tidereach). They fly and
+  fight on their own, keep station behind you when it is quiet, and are **lost for good** when destroyed (pillar 1).
+  `T0|▼|` goes for the nearest of you, sends one more Shard per escort, and learns the escorts' weapons too.
+- **Still cut:** fleet orders, upkeep and fuel, capturing ships, a third species (so one new world, not several).
+- **Watch in the playtest:** a Spineling's spines keep `T0|▼|` learning spines even after you drop them yourself.
+  That may read as unfair or as an interesting cost of that escort.
+
+## Toy 3: jumps, waves, thrusters, the Mothership *(2026-11-10, BAMF69's notes after playing)*
+BAMF69: "jumping between stars feels clumsy and unsatisfying"; "the space stage isn't complete after just 5 wins".
+- **Jumping without the map:** `[` and `]` jump to the previous / next system along the map. Every jump is a
+  **wormhole** (rings, a spiral, streaking stars; a plain fade with reduce motion on). On the star map, click a
+  system to pick it and Enter or a second click jumps there, through every system on the way; a patrol on the way
+  stops the trip.
+- **Waves:** a hostile system sends its next patrol 12 s after the last one fell (countdown on screen), so you can
+  fight on without jumping. Each wave is a battle: `T0|▼|` adapts after each one.
+- **E lands from anywhere in a friendly system:** too far from the planet, the autopilot flies you there and lands
+  (any flight key cancels it).
+- **Thrusters:** S is now reverse thrust (55 % of the main engine), Z and C strafe (50 %), X brakes.
+- **The ending** (replaces "five wins"): win **three waves in a row at the Lattice without leaving** and `T0|▼|`'s
+  **Mothership** arrives (heavy, slow, launches Shards). Destroying it wins the stage and writes the lineage; the
+  player keeps playing afterwards (patrols and Motherships keep coming). Leaving the Lattice, breaking off or
+  losing the ship resets the streak.
+- **Watch in the playtest:** the Mothership's numbers are untested by hand (the autoplay pilot in a starter Seedpod
+  dies to it in seconds, as it should); three waves in a row means two rounds of adaptation without a refit, which is
+  the point but may be too much.
+
 ## Open questions
 | Question | Why it matters |
 |---|---|

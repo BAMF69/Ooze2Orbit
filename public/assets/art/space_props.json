@@ -8,6 +8,13 @@
       "direction": "up",
       "frames": 4,
       "first_frame": 0
+    },
+    {
+      "index": 1,
+      "pose": "tidereach",
+      "direction": "up",
+      "frames": 4,
+      "first_frame": 4
     }
   ],
   "image": "space_props.png"

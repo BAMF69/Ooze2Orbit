@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # ---------------------------------------------------------------------------
 # space_t0.py
-# Brief   : WHO: the two ships of T0|▼| (docs/stages/05-space.md, docs/LORE.md), seen from above, nose up. Perfect
+# Brief   : WHO: the ships of T0|▼| (docs/stages/05-space.md, docs/LORE.md), seen from above, nose up. Perfect
 #           geometry, flawless symmetry, nothing grown: the opposite of everything alive (GDD art direction).
 #           SHARD: a hard isosceles triangle, a bright seam down the middle, a single red point at its heart.
 #           LATTICE: a regular hexagon of plates around a lattice of straight struts, a red core that pulses.
+#           MOTHERSHIP: the boss. A wide, flawless delta filling the cell, plated in three bands, with the ▼ of
+#           its name cut dark into its centre and three red cores along the seam. Drawn three times its size.
 #           PALETTE: cold steel blues and white edges, one red light: read straight lines as danger.
 # Purpose : Atlas (32 px): one row per ship, 4 frames (the core pulses). The game rotates the sprite.
 # Usage   : python tools/art/pixel_sprite.py build assets_src/sprites/space_t0.py --out public/assets/art/space_t0 --overwrite --preview-scale 0
@@ -22,7 +24,7 @@ from pixel_sprite import Sprite  # noqa: E402
 CELL = 32
 FRAMES = 4
 SHADOW = False
-ROWS = [("shard", "up"), ("lattice", "up")]
+ROWS = [("shard", "up"), ("lattice", "up"), ("mothership", "up")]
 
 PALETTE = {
     "deep": (30, 38, 58), "dark": (58, 74, 104), "base": (96, 122, 160), "light": (160, 190, 220), "edge": (232, 244, 255),
@@ -41,7 +43,25 @@ def core(s, x, y, f, big):
 def draw(pose, direction, frame):
     s = Sprite(PALETTE, CELL)
     f = frame % 4
-    if pose == "shard":
+    if pose == "mothership":
+        poly(s, [(16, 1), (31, 29), (1, 29)], "base")          # the delta
+        poly(s, [(16, 1), (16, 29), (1, 29)], "light")         # its lit left face
+        for y in (11, 19, 26):                                 # three plate bands
+            for x in range(1, 31):
+                if s.px.get((x, y)) is not None:
+                    s.dot(x, y, "dark")
+        poly(s, [(9, 14), (23, 14), (16, 26)], "deep")         # the ▼ cut into it
+        for i in range(7):                                     # the ▼'s bright edge
+            s.dot(9 + i, 14 + i * 2 if 14 + i * 2 < 27 else 26, "edge"); s.dot(23 - i, 14 + i * 2 if 14 + i * 2 < 27 else 26, "edge")
+        for x in range(9, 24):
+            s.dot(x, 14, "edge")
+        for y in range(2, 13):                                 # the seam
+            s.dot(16, y, "edge")
+        for x in range(2, 31):
+            s.dot(x, 29, "deep")
+        core(s, 16, 18, f, 2)
+        core(s, 9, 24, (f + 1) % 4, 1); core(s, 23, 24, (f + 2) % 4, 1)
+    elif pose == "shard":
         poly(s, [(16, 3), (26, 27), (6, 27)], "base")
         poly(s, [(16, 3), (16, 27), (6, 27)], "light")     # the lit left face
         poly(s, [(16, 12), (21, 25), (11, 25)], "dark")     # an inner, smaller triangle
