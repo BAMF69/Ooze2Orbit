@@ -1,0 +1,8 @@
+{
+ "tool": "assets_src/audio/make_sfx.py",
+ "sound": "sp_mother_arrive",
+ "variant": 1,
+ "seed": 2730,
+ "rate": 44100,
+ "seconds": 2.6
+}

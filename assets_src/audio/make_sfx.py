@@ -283,6 +283,9 @@ SOUNDS = {
     "chomp_darter": (2, chomp_darter), "chomp_spinefish": (2, chomp_spinefish), "chomp_shellback": (2, chomp_shellback),
     "chomp_shark": (2, chomp_shark), "chomp_hammer": (2, chomp_hammer), "chomp_you": (3, chomp_you),
 }
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from space_sfx import SPACE_SOUNDS  # noqa: E402  the space stage's sci-fi set (2026-11-10)
+SOUNDS.update(SPACE_SOUNDS)
 
 
 def render(name, variants, fn):
@@ -384,7 +387,7 @@ def main():
     if a.only in ("music", "hunt", "calm"):
         return
     for name, (variants, fn) in SOUNDS.items():
-        if not a.only or a.only == name:
+        if not a.only or a.only == name or (a.only == "space" and name in SPACE_SOUNDS):
             render(name, variants, fn)
 
 

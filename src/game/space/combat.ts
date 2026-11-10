@@ -13,7 +13,7 @@
 //           Numbers: SPACE in tuning.ts. Tested in tests/space.test.ts.
 // Authored: Written with Claude (Fable 5.2, claude-fable-5-2)
 // ---------------------------------------------------------------------------
-import type { HullId, Learned, ShipStats, WeaponFamily } from "./fit";
+import type { HullId, Learned, ShipStats, WeaponFamily, WeaponStat } from "./fit";
 import { SPACE } from "./tuning";
 
 export type T0Kind = keyof typeof SPACE.t0;
@@ -29,7 +29,8 @@ export interface Controls { turn: number; thrust: number; strafe: number; brake:
 export const IDLE: Controls = { turn: 0, thrust: 0, strafe: 0, brake: true, fire: false };
 export interface EscortSpec { stats: ShipStats; hullId: HullId }
 export type BattleEvent =
-  | { kind: "fire" } | { kind: "hit"; x: number; y: number; resisted: number } | { kind: "kill"; x: number; y: number; foe: T0Kind }
+  | { kind: "fire"; family: WeaponStat["family"]; mount: WeaponStat["mount"] } // your flagship fired (each family sounds its own)
+  | { kind: "hit"; x: number; y: number; resisted: number } | { kind: "kill"; x: number; y: number; foe: T0Kind }
   | { kind: "hurt"; shield: boolean } | { kind: "allylost"; escort: number; x: number; y: number } | { kind: "giveup"; id: number }
   | { kind: "spawn"; id: number } | { kind: "won" } | { kind: "lost" };
 
@@ -136,7 +137,7 @@ function stepShip(b: Battle, s: Ship, c: Controls, dt: number, ev: BattleEvent[]
       b.shots.push(shotFrom(s, Math.atan2(near.y + near.vy * lead - s.y, near.x + near.vx * lead - s.x), w.speed, w.range, w.damage, w.family));
     } else b.shots.push(shotFrom(s, s.a, w.speed, w.range * 1.5, w.damage, w.family, w.homing, near.id)); // a missile: out the nose, then it homes
     s.cool[i] = w.every;
-    if (s === b.you) ev.push({ kind: "fire" });
+    if (s === b.you) ev.push({ kind: "fire", family: w.family, mount: w.mount });
   });
 }
 

@@ -362,6 +362,368 @@
    "steal": "oldest",
    "cooldown_ms": 150,
    "caption": "[chomp]"
+  },
+  "sp_fire_kinetic": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_fire_kinetic_1.wav",
+    "sfx/sp_fire_kinetic_2.wav",
+    "sfx/sp_fire_kinetic_3.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -0.5,
+    0.5
+   ],
+   "volume_db": [
+    -14,
+    -13
+   ],
+   "max_voices": 2,
+   "steal": "oldest",
+   "caption": "[spine fire]",
+   "cooldown_ms": 60
+  },
+  "sp_fire_beam": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_fire_beam_1.wav",
+    "sfx/sp_fire_beam_2.wav",
+    "sfx/sp_fire_beam_3.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -0.5,
+    0.5
+   ],
+   "volume_db": [
+    -13,
+    -12
+   ],
+   "max_voices": 2,
+   "steal": "oldest",
+   "caption": "[lance zap]",
+   "cooldown_ms": 70
+  },
+  "sp_fire_spore": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_fire_spore_1.wav",
+    "sfx/sp_fire_spore_2.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -0.5,
+    0.5
+   ],
+   "volume_db": [
+    -10,
+    -9
+   ],
+   "max_voices": 2,
+   "steal": "oldest",
+   "caption": "[missile launch]",
+   "cooldown_ms": 120
+  },
+  "sp_turret": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_turret_1.wav",
+    "sfx/sp_turret_2.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -0.5,
+    0.5
+   ],
+   "volume_db": [
+    -17,
+    -16
+   ],
+   "max_voices": 2,
+   "steal": "oldest",
+   "caption": "[turret fire]",
+   "cooldown_ms": 80
+  },
+  "sp_hit_t0": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_hit_t0_1.wav",
+    "sfx/sp_hit_t0_2.wav",
+    "sfx/sp_hit_t0_3.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -0.5,
+    0.5
+   ],
+   "volume_db": [
+    -10,
+    -9
+   ],
+   "max_voices": 3,
+   "steal": "oldest",
+   "caption": "[hit on T0]",
+   "cooldown_ms": 50
+  },
+  "sp_hit_shield": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_hit_shield_1.wav",
+    "sfx/sp_hit_shield_2.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -0.5,
+    0.5
+   ],
+   "volume_db": [
+    -7,
+    -6
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "caption": "[shield hit]",
+   "cooldown_ms": 120
+  },
+  "sp_hit_hull": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_hit_hull_1.wav",
+    "sfx/sp_hit_hull_2.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -0.5,
+    0.5
+   ],
+   "volume_db": [
+    -5,
+    -4
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "caption": "[hull hit]",
+   "cooldown_ms": 120
+  },
+  "sp_explode": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_explode_1.wav",
+    "sfx/sp_explode_2.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    -0.5,
+    0.5
+   ],
+   "volume_db": [
+    -4,
+    -3
+   ],
+   "max_voices": 3,
+   "steal": "oldest",
+   "caption": "[explosion]"
+  },
+  "sp_mother_arrive": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_mother_arrive.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    0
+   ],
+   "volume_db": [
+    0,
+    0
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "caption": "[the Mothership arrives]"
+  },
+  "sp_mother_die": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_mother_die.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    0
+   ],
+   "volume_db": [
+    0,
+    0
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "caption": "[the Mothership explodes]"
+  },
+  "sp_jump": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_jump.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    0
+   ],
+   "volume_db": [
+    -3,
+    -3
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "caption": "[wormhole jump]"
+  },
+  "sp_land": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_land.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    0
+   ],
+   "volume_db": [
+    -5,
+    -5
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "caption": "[landing]"
+  },
+  "sp_launch": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_launch.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    0
+   ],
+   "volume_db": [
+    -5,
+    -5
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "caption": "[launch]"
+  },
+  "sp_buy": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_buy.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    0
+   ],
+   "volume_db": [
+    -6,
+    -6
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "caption": "[installed]"
+  },
+  "sp_remove": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_remove.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    0
+   ],
+   "volume_db": [
+    -7,
+    -7
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "caption": "[removed]"
+  },
+  "sp_deny": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_deny.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    0
+   ],
+   "volume_db": [
+    -6,
+    -6
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "caption": "[denied]",
+   "cooldown_ms": 150
+  },
+  "sp_escort_lost": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_escort_lost.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    0
+   ],
+   "volume_db": [
+    -2,
+    -2
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "caption": "[escort lost]"
+  },
+  "sp_wave_warn": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_wave_warn.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    0
+   ],
+   "volume_db": [
+    -4,
+    -4
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "caption": "[wave incoming]",
+   "cooldown_ms": 1500
+  },
+  "sp_choose": {
+   "bus": "sfx",
+   "files": [
+    "sfx/sp_choose.wav"
+   ],
+   "pick": "random_no_repeat",
+   "pitch_semitones": [
+    0,
+    0
+   ],
+   "volume_db": [
+    -10,
+    -10
+   ],
+   "max_voices": 1,
+   "steal": "oldest",
+   "caption": "[click]"
   }
  }
 }

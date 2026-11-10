@@ -49,6 +49,7 @@ export interface Campaign {
   system: SystemId;
   battles: number; wins: number; losses: number; refits: number; escortsLost: number;
   latticeStreak: number; // wins in a row at the Lattice without leaving: at SPACE.boss.streak the Mothership comes
+  visitWins: number; // waves won since arriving in this system (the Driftfield starts easy on every arrival)
   bossDown: boolean; // the Mothership has been destroyed at least once: the stage is won (you can keep playing)
   bosses: number;
   flownFit: string; // the fit at the last launch, to count refits
@@ -84,7 +85,7 @@ export function startCampaign(o: { temper: Record<TemperamentKind, number>; civ?
   const fit: Fit = { hull: "seedpod", parts };
   const harshness = Math.max(0, Math.min(1, o.harshness ?? 0));
   if (harshness > 0.3) start.push("The allies resent a harsh Gardener: their parts and ships cost more");
-  return { credits, fit, fleet: [], learned, makers: { home: primary, ally: allyFor(primary) }, harshness, system: "hearth", battles: 0, wins: 0, losses: 0, refits: 0, escortsLost: 0, latticeStreak: 0, bossDown: false, bosses: 0, flownFit: fitKey(fit), leans: { cautious: 0, aggressive: 0, adaptable: 0 }, start };
+  return { credits, fit, fleet: [], learned, makers: { home: primary, ally: allyFor(primary) }, harshness, system: "hearth", battles: 0, wins: 0, losses: 0, refits: 0, escortsLost: 0, latticeStreak: 0, visitWins: 0, bossDown: false, bosses: 0, flownFit: fitKey(fit), leans: { cautious: 0, aggressive: 0, adaptable: 0 }, start };
 }
 
 /** The ally's goods cost more the harsher the Gardener was. */
@@ -136,11 +137,17 @@ export function launch(c: Campaign): Campaign {
   return key === c.flownFit ? c : { ...c, refits: c.refits + 1, flownFit: key };
 }
 
-/** The T0|▼| patrol waiting in a system: it grows with your wins and with the fleet you bring (stakes rise). */
-export function patrolFor(system: SystemId, wins: number, fleet = 0): T0Kind[] {
+/**
+ * The T0|▼| patrol waiting in a system. The Lattice grows with your wins and with the fleet you bring (stakes rise).
+ * The Driftfield starts at its easiest on every arrival (BAMF69 2026-11-10), whatever your wins or fleet, and grows one
+ * step per wave won since you arrived (visitWins); jumping away and back resets it.
+ */
+export function patrolFor(system: SystemId, wins: number, fleet = 0, visitWins = 0): T0Kind[] {
   if (worldOf(system)) return [];
   const P = SPACE.patrol;
-  const shards = Math.min(P.shardsMax, P.shardsBase + Math.floor(wins / P.shardsPerWins)) + fleet * SPACE.fleet.patrolPerEscort;
+  const shards = system === "driftfield"
+    ? Math.min(P.shardsMax, P.shardsBase + visitWins * P.driftStep)
+    : Math.min(P.shardsMax, P.shardsBase + Math.floor(wins / P.shardsPerWins)) + fleet * SPACE.fleet.patrolPerEscort;
   const out: T0Kind[] = system === "lattice" ? ["lattice"] : [];
   while (out.length < shards) out.push("shard");
   return out;
@@ -150,12 +157,18 @@ export function patrolFor(system: SystemId, wins: number, fleet = 0): T0Kind[] {
 export const bossDue = (c: Campaign): boolean => c.system === "lattice" && c.latticeStreak >= SPACE.boss.streak;
 /** What T0|▼| sends next in the system you are in: the usual patrol, or the Mothership and its escort. */
 export function nextWave(c: Campaign): T0Kind[] {
-  if (!bossDue(c)) return patrolFor(c.system, c.wins, c.fleet.length);
+  if (!bossDue(c)) return patrolFor(c.system, c.wins, c.fleet.length, c.visitWins);
   return ["mothership", ...Array.from({ length: SPACE.boss.escort }, (): T0Kind => "shard")];
 }
 
-/** Jump to another system. Leaving the Lattice breaks the streak: the three wins must be in a row, without leaving. */
-export const travel = (c: Campaign, to: SystemId): Campaign => ({ ...c, system: to, latticeStreak: to === "lattice" && c.system === "lattice" ? c.latticeStreak : 0 });
+/**
+ * Jump to another system. Leaving the Lattice breaks the streak: the three wins must be in a row, without leaving.
+ * Arriving anywhere new starts its count of waves won over (the Driftfield is easy again).
+ */
+export const travel = (c: Campaign, to: SystemId): Campaign => {
+  const stay = to === c.system;
+  return { ...c, system: to, latticeStreak: to === "lattice" && c.system === "lattice" ? c.latticeStreak : 0, visitWins: stay ? c.visitWins : 0 };
+};
 
 /** The systems to jump through from one to another, in order (not counting the start); empty when already there. */
 export function routeTo(from: SystemId, to: SystemId): SystemId[] {
@@ -197,13 +210,13 @@ export function afterBattle(c: Campaign, outcome: Outcome, dealt: Readonly<Recor
   const notes: string[] = [];
   if (outcome === "lost") {
     const lost = Math.floor(c.credits * SPACE.economy.podLoss);
-    next = { ...next, losses: c.losses + 1, credits: c.credits - lost, system: "hearth", latticeStreak: 0 };
+    next = { ...next, losses: c.losses + 1, credits: c.credits - lost, system: "hearth", latticeStreak: 0, visitWins: 0 };
     notes.push(`Ship lost. The escape pod reached Hearth without ${salvage + lost} salvage.`);
   } else {
     next = { ...next, credits: c.credits + salvage };
     if (outcome === "won") {
       const k = builtAround(c.fit);
-      next = { ...next, wins: c.wins + 1, leans: k ? { ...c.leans, [LEAN[k]]: c.leans[LEAN[k]] + 1 } : c.leans };
+      next = { ...next, wins: c.wins + 1, visitWins: c.visitWins + 1, leans: k ? { ...c.leans, [LEAN[k]]: c.leans[LEAN[k]] + 1 } : c.leans };
       if (boss) {
         next = { ...next, bossDown: true, bosses: c.bosses + 1, latticeStreak: 0 };
         notes.push(`${T0}'s Mothership is destroyed: +${salvage} salvage`);

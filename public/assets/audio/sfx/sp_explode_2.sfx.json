@@ -1,0 +1,8 @@
+{
+ "tool": "assets_src/audio/make_sfx.py",
+ "sound": "sp_explode",
+ "variant": 2,
+ "seed": 3093,
+ "rate": 44100,
+ "seconds": 0.761
+}

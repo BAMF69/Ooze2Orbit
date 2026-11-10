@@ -144,7 +144,7 @@ Review before building found these gaps in the design above; the Toy answers eac
 | Pillar 2 (see your influence) | Your strongest temperament makes Hearth-grown parts 25 % better in its specialty (cautious = defences, aggressive = weapons, adaptable = engines); the ally, a species of a temperament you are not, gets the same in its own |
 
 - **World:** Hearth (home, planet, hangar) - the Driftfield (Shards) - the Lattice (a Lattice and escorts). Patrols grow
-  with your wins. Jumping away from a fight breaks it off.
+  with your wins (since Toy 3b the Driftfield resets to its easiest on every arrival). Jumping away from a fight breaks it off.
 - **Ship:** two hulls (Seedpod, Carapace), eight parts: Spine Launcher, Shell Plating, Fin Drive, Sun Gland (Hearth);
   Light Lance, Spore Bloom, Tide Membrane, Burn Drive (the Tidewrights). Space and power must balance.
 - **`T0|▼|`'s ships** hunt like gulpers: close in, strike a burst, pause side-on (dimmed: your opening), give up a long
@@ -194,6 +194,18 @@ BAMF69: "jumping between stars feels clumsy and unsatisfying"; "the space stage 
 - **Watch in the playtest:** the Mothership's numbers are untested by hand (the autoplay pilot in a starter Seedpod
   dies to it in seconds, as it should); three waves in a row means two rounds of adaptation without a refit, which is
   the point but may be too much.
+
+## Toy 3b: the Driftfield eases, a sci-fi sound set *(2026-11-10, BAMF69)*
+- **The Driftfield starts at its easiest on every arrival:** two Shards, whatever your wins or fleet. Each wave you win
+  there makes the next one a Shard bigger (`SPACE.patrol.driftStep`, up to `shardsMax`); jumping away and back, or
+  losing your ship, resets it (`Campaign.visitWins`, reset in `travel()`). The star map says "easiest on every
+  arrival", and "wave N: it grows while you stay" while you are there. The Lattice keeps its scaling with wins and fleet.
+- **Its own sounds** (`assets_src/audio/space_sfx.py`, rendered by `make_sfx.py --only space`; events `sp_*` in
+  `data/audio_events.json`): spines clack, lances zap, spores launch with a whoosh, turrets pip; T0 hits ring
+  crystalline; your shield shimmers, your hull crunches; ships explode; the Mothership arrives with a swelling drone
+  and dies in rolling blasts; the wormhole sweeps up and snaps; engines spool up to launch and down to land; the hangar
+  chimes, falls or buzzes; an escort lost sounds a falling alarm; a klaxon warns 3 s before a wave
+  (`SPACE.wave.warnS`). The cell stage's sounds are unchanged; levels follow the same sound settings.
 
 ## Open questions
 | Question | Why it matters |

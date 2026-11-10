@@ -1,0 +1,8 @@
+{
+ "tool": "assets_src/audio/make_sfx.py",
+ "sound": "sp_fire_beam",
+ "variant": 2,
+ "seed": 3262,
+ "rate": 44100,
+ "seconds": 0.17
+}

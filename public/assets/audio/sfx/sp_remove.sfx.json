@@ -1,0 +1,8 @@
+{
+ "tool": "assets_src/audio/make_sfx.py",
+ "sound": "sp_remove",
+ "variant": 1,
+ "seed": 1985,
+ "rate": 44100,
+ "seconds": 0.18
+}

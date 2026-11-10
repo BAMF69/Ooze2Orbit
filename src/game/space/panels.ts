@@ -185,11 +185,12 @@ export function drawMap(p: Pen, c: Campaign, sel: SystemId): void {
   for (const id of route) { const to = starSystem(id); g.lineStyle(2, 0x80f0ff, 0.9).lineBetween(from.x, from.y, to.x, to.y); from = to; } // the jumps you would make
   for (const s of SYSTEMS) {
     const here = s.id === c.system;
-    const patrol = here ? nextWave(c) : patrolFor(s.id, c.wins, c.fleet.length);
+    const patrol = here ? nextWave(c) : patrolFor(s.id, c.wins, c.fleet.length); // elsewhere: what waits on arrival (the Driftfield: its easiest)
     g.fillStyle(s.world ? (s.world.maker === "home" ? 0xe0b060 : 0x60c0c0) : 0xd06050, 1).fillCircle(s.x, s.y, here ? 8 : 6);
     if (s.id === sel) g.lineStyle(2, 0xffffff, 1).strokeCircle(s.x, s.y, 13);
     p.text(s.x, s.y + 16, `${s.name}${here ? " (you)" : ""}`, 10, "#ffffff", 0.5);
-    const streak = s.id === "lattice" && here && c.latticeStreak ? `, streak ${c.latticeStreak}/${SPACE.boss.streak}` : "";
+    const drift = s.id === "driftfield" ? (here ? (c.visitWins ? `, wave ${c.visitWins + 1}: it grows while you stay` : ", easiest on arrival") : " (easiest on every arrival)") : "";
+    const streak = (s.id === "lattice" && here && c.latticeStreak ? `, streak ${c.latticeStreak}/${SPACE.boss.streak}` : "") + drift;
     p.text(s.x, s.y + 29, patrol.length ? `${T0}: ${patrol.length > 3 ? `${patrol.length} ships` : patrol.map((k) => SPACE.t0[k].name).join(", ")}${streak}` : s.blurb, 10, patrol.length ? "#ff9080" : "#a0e0c0", 0.5).setWordWrapWidth(150).setAlign("center");
   }
   const hops = route.length > 1 ? ` (${route.length} jumps)` : "";

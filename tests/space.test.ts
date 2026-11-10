@@ -220,9 +220,21 @@ describe("the campaign", () => {
     expect(patrolFor("tidereach", 9, 3)).toEqual([]);
     expect(patrolFor("driftfield", 0)).toEqual(["shard", "shard"]);
     expect(patrolFor("lattice", 0)).toEqual(["lattice", "shard"]);
-    expect(patrolFor("driftfield", 4)).toHaveLength(4); // stakes rise with your wins
-    expect(patrolFor("driftfield", 99)).toHaveLength(SPACE.patrol.shardsMax);
-    expect(patrolFor("driftfield", 0, 2)).toHaveLength(4); // and with the fleet you bring
+    expect(patrolFor("lattice", 4)).toHaveLength(4); // the Lattice: stakes rise with your wins
+    expect(patrolFor("lattice", 99)).toHaveLength(SPACE.patrol.shardsMax);
+    expect(patrolFor("lattice", 0, 2)).toHaveLength(4); // and with the fleet you bring
+  });
+  it("the Driftfield is at its easiest on every arrival, grows while you stay, and resets when you leave (BAMF69 2026-11-10)", () => {
+    expect(patrolFor("driftfield", 99, 4)).toEqual(["shard", "shard"]); // whatever your wins or fleet
+    let c = { ...fresh(), wins: 12, fleet: ["skiff", "skiff"] as Campaign["fleet"] };
+    c = travel(c, "driftfield");
+    expect(nextWave(c)).toEqual(["shard", "shard"]);
+    c = afterBattle(c, "won", none, 0).c;
+    expect(nextWave(c)).toHaveLength(SPACE.patrol.shardsBase + SPACE.patrol.driftStep); // one step per wave won there
+    c = afterBattle(c, "won", none, 0).c;
+    expect(nextWave(c)).toHaveLength(SPACE.patrol.shardsBase + 2 * SPACE.patrol.driftStep);
+    expect(nextWave(travel(travel(c, "tidereach"), "driftfield"))).toEqual(["shard", "shard"]); // away and back: easy again
+    expect(afterBattle(c, "lost", none, 0).c.visitWins).toBe(0); // a lost ship wakes up at Hearth
   });
   it("each world sells its own species' parts and ships", () => {
     expect(partsSoldAt("hearth")).toEqual(["spine", "needle", "plating", "fin", "gland"]);
@@ -422,5 +434,27 @@ describe("waves and the Mothership", () => {
 describe("the opening screen", () => {
   it("words the lineage for the space stage", () => {
     expect(revealFrom(null, 3, "space").leaning).toMatch(/the stars will decide/);
+  });
+});
+
+describe("the space stage's own sounds (BAMF69 2026-11-10)", async () => {
+  const fs = await import("node:fs");
+  const events = (JSON.parse(fs.readFileSync("data/audio_events.json", "utf-8")) as { events: Record<string, { files: string[] }> }).events;
+  it("firing says which weapon family and mount fired, so each can sound its own", () => {
+    const b = newBattle(stats(starter), ["shard"], noLearning());
+    const ev = [];
+    for (let i = 0; i < 120; i++) ev.push(...step(b, { ...IDLE, fire: true }, 1 / 60));
+    const fire = ev.find((e) => e.kind === "fire");
+    expect(fire).toMatchObject({ kind: "fire" });
+    expect(["kinetic", "beam", "spore"]).toContain((fire as { family: string }).family);
+  });
+  it("every sound the space scene plays is a real event with its files on disk", () => {
+    const scene = fs.readFileSync("src/game/SpaceScene.ts", "utf-8");
+    const names = [...new Set([...scene.matchAll(/"(sp_[a-z0-9_]+)"/g)].map((m) => m[1]))];
+    expect(names.length).toBeGreaterThanOrEqual(15);
+    for (const n of names) {
+      expect(events[n], n).toBeDefined();
+      for (const f of events[n].files) expect(fs.existsSync(`public/assets/audio/${f}`), f).toBe(true);
+    }
   });
 });

@@ -37,6 +37,7 @@ import { MAP_PICK, drawEnd, drawHangar, drawMap, drawReadout, hangarItems, hullA
 import { SPACE } from "./space/tuning";
 
 const LOG = "space";
+const FIRE_SOUND: Record<string, string> = { kinetic: "sp_fire_kinetic", beam: "sp_fire_beam", spore: "sp_fire_spore" }; // by weapon family
 const W = 640, H = 360, CX = W / 2, CY = H / 2;
 const ATLASES = ["space_ships", "space_allies", "space_t0", "space_props", "space_parts"] as const;
 const SHOT_COL = { kinetic: 0xe8dcc0, beam: 0x80f0e0, spore: 0xa0e060 } as const;
@@ -192,7 +193,7 @@ export class SpaceScene extends Phaser.Scene {
   private hangar(a: HangarAct): void {
     if (a.kind === "launch") { this.launch(); return; }
     const d = a.kind === "hull" ? swapHull(this.c) : a.kind === "add" ? install(this.c, a.part) : a.kind === "recruit" ? recruit(this.c, a.escort) : uninstall(this.c, a.part);
-    this.sfx.play(d.ok ? (a.kind === "recruit" ? "evolve" : "upgrade") : "deny");
+    this.sfx.play(!d.ok ? "sp_deny" : a.kind === "remove" ? "sp_remove" : "sp_buy"); // the space stage's own sci-fi set (assets_src/audio/space_sfx.py)
     this.toast(d.ok ? d.why : `Cannot: ${d.why}`, 2);
     if (d.ok && a.kind === "recruit") Log.info(LOG, `RECRUIT ${a.escort}: fleet ${d.c.fleet.join(",")}`);
     this.c = d.c;
@@ -201,18 +202,18 @@ export class SpaceScene extends Phaser.Scene {
 
   private launch(): void {
     const problems = fitProblems(this.c.fit);
-    if (problems.length) { this.sfx.play("deny"); this.toast(`Cannot launch: ${problems.join(", ")}`, 3); return; }
+    if (problems.length) { this.sfx.play("sp_deny"); this.toast(`Cannot launch: ${problems.join(", ")}`, 3); return; }
     const before = this.c.refits;
     this.c = launch(this.c);
     if (this.c.refits > before) Log.info(LOG, `REFIT ${this.c.refits}: ${this.c.fit.hull} ${this.c.fit.parts.join(",")}`);
     this.b = this.battleHere(1, { x: 0, y: 110 });
     this.setMode("flight");
-    this.sfx.play("evolve");
+    this.sfx.play("sp_launch");
     this.toast(`In orbit over ${worldOf(this.c.system)?.name ?? "nothing"}.  ] next system   U: star map`, 4);
   }
 
   private land(): void {
-    this.sfx.play("part");
+    this.sfx.play("sp_land");
     this.sel = 0;
     this.setMode("hangar");
     Log.info(LOG, `LAND ${this.c.system}`);
@@ -223,7 +224,7 @@ export class SpaceScene extends Phaser.Scene {
   private jumpBeside(dir: 1 | -1): void {
     const to = neighbour(this.c.system, dir);
     if (to) this.startJump(to);
-    else { this.sfx.play("deny"); this.toast(dir > 0 ? "No system further out: the Lattice is the last" : "No system further back: this is home", 2); }
+    else { this.sfx.play("sp_deny"); this.toast(dir > 0 ? "No system further out: the Lattice is the last" : "No system further back: this is home", 2); }
   }
 
   /** Jump to any system: through each system on the way, one wormhole per hop. A patrol on the way stops the trip. */
@@ -238,7 +239,7 @@ export class SpaceScene extends Phaser.Scene {
     this.jumped = false;
     this.autoLand = false;
     this.setMode("jump");
-    this.sfx.play("evolve");
+    this.sfx.play("sp_jump");
     this.toastT.setVisible(false);
   }
 
@@ -295,7 +296,7 @@ export class SpaceScene extends Phaser.Scene {
     Log.info(LOG, `BATTLE ${outcome} (${this.c.wins} wins, ${this.c.losses} lost, streak ${this.c.latticeStreak}): ${r.notes.join("; ")}`);
     if (outcome === "lost") {
       this.cameras.main.shake(400, 0.015);
-      this.sfx.play("pop");
+      this.sfx.play("sp_explode");
       this.route = [];
       this.b = this.battleHere(1, { x: 0, y: 110 });
       this.sel = 0;
@@ -319,7 +320,7 @@ export class SpaceScene extends Phaser.Scene {
     const wave = nextWave(this.c);
     reinforce(this.b, wave, this.c.learned);
     this.waveLeft = 0;
-    this.sfx.play(this.bossWave ? "pop" : "bump");
+    this.sfx.play(this.bossWave ? "sp_mother_arrive" : "sp_wave_warn");
     if (this.bossWave) this.cameras.main.shake(500, 0.01);
     this.toast(this.bossWave ? `${T0}'s Mothership arrives` : `Another ${T0} patrol arrives (${wave.length} ships)`, 4);
     Log.info(LOG, `WAVE ${this.c.system}: ${wave.join(",")}`);
@@ -331,7 +332,7 @@ export class SpaceScene extends Phaser.Scene {
     this.victoryShown = true;
     this.setMode("end");
     this.toastT.setVisible(false);
-    this.sfx.play("evolve");
+    this.sfx.play("sp_buy");
     try {
       const prev = shell.saves.load("lineage").envelope?.data ?? null;
       shell.saves.save("lineage", writeStage(prev, "space", r.causes, r.block) as unknown as Parameters<typeof shell.saves.save>[1]);
@@ -365,7 +366,7 @@ export class SpaceScene extends Phaser.Scene {
     if (!s || s.id === this.c.system) return;
     if (s.id === this.mapSel) { this.startJump(s.id); return; }
     this.mapSel = s.id;
-    this.sfx.play("choose");
+    this.sfx.play("sp_choose");
     this.dirty = true;
   }
 
@@ -414,7 +415,7 @@ export class SpaceScene extends Phaser.Scene {
   /** E: land if you are over the planet; otherwise the autopilot flies you there (BAMF69 2026-11-10). */
   private pressLand(): void {
     const world = worldOf(this.c.system);
-    if (!world) { this.sfx.play("deny"); this.toast("No friendly world in this system", 2); return; }
+    if (!world) { this.sfx.play("sp_deny"); this.toast("No friendly world in this system", 2); return; }
     if (this.nearPlanet()) { this.land(); return; }
     this.autoLand = true;
     this.toast(`Autopilot: landing on ${world.name}  (any flight key cancels)`, 3);
@@ -430,15 +431,22 @@ export class SpaceScene extends Phaser.Scene {
   // ---- flying -----------------------------------------------------------------------------------------------
   private fly(c: Controls, dt: number): void {
     for (const e of step(this.b, c, dt)) {
-      if (e.kind === "kill") { this.sfx.play("pop"); this.cameras.main.shake(e.foe === "mothership" ? 600 : 120, e.foe === "mothership" ? 0.02 : 0.006); }
-      else if (e.kind === "hurt") { this.sfx.play("bump"); this.cameras.main.shake(90, e.shield ? 0.002 : 0.006); }
-      else if (e.kind === "allylost") { this.sfx.play("pop"); this.cameras.main.shake(200, 0.008); this.toast(`Your ${SPACE.escorts[this.c.fleet[e.escort]]?.name ?? "escort"} is destroyed`, 3); }
+      if (e.kind === "fire") this.sfx.play(e.mount === "turret" ? "sp_turret" : FIRE_SOUND[e.family]);
+      else if (e.kind === "hit") this.sfx.play("sp_hit_t0");
+      else if (e.kind === "kill") { this.sfx.play(e.foe === "mothership" ? "sp_mother_die" : "sp_explode"); this.cameras.main.shake(e.foe === "mothership" ? 600 : 120, e.foe === "mothership" ? 0.02 : 0.006); }
+      else if (e.kind === "hurt") { this.sfx.play(e.shield ? "sp_hit_shield" : "sp_hit_hull"); this.cameras.main.shake(90, e.shield ? 0.002 : 0.006); }
+      else if (e.kind === "allylost") { this.sfx.play("sp_escort_lost"); this.cameras.main.shake(200, 0.008); this.toast(`Your ${SPACE.escorts[this.c.fleet[e.escort]]?.name ?? "escort"} is destroyed`, 3); }
       else if (e.kind === "spawn") this.toast("The Mothership launches a Shard", 2);
       else if (e.kind === "won") this.endBattle("won");
       else if (e.kind === "lost") this.endBattle("lost");
       else if (e.kind === "giveup") Log.debug(LOG, `T0 ship ${e.id} gives up the chase`);
     }
-    if (this.mode === "flight" && this.waveLeft > 0 && (this.waveLeft -= dt) <= 0) this.sendWave();
+    if (this.mode === "flight" && this.waveLeft > 0) {
+      const before = this.waveLeft;
+      this.waveLeft -= dt;
+      if (before > SPACE.wave.warnS && this.waveLeft <= SPACE.wave.warnS && !bossDue(this.c)) this.sfx.play("sp_wave_warn"); // the klaxon: a wave is coming
+      if (this.waveLeft <= 0) this.sendWave();
+    }
   }
 
   private bar(x: number, y: number, r: number, f: number, col: number): void {

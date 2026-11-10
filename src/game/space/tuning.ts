@@ -62,9 +62,10 @@ export const SPACE = {
     mothership: { name: "Mothership", hull: 900, radius: 34, accel: 34, turn: 0.55, damage: 22, every: 0.45, shotSpeed: 280, range: 400, burst: 6, pause: 2.6, chase: 30, rest: 3, salvage: 700 },
   },
   boss: { streak: 3, escort: 2, spawnEvery: 9, spawnMax: 4 }, // win this many waves in a row at the Lattice to summon it
-  wave: { secs: 12 }, // a hostile system sends its next patrol this long after the last one fell (BAMF69 2026-11-10)
+  wave: { secs: 12, warnS: 3 }, // a hostile system sends its next patrol this long after the last one fell; the klaxon sounds warnS before (2026-11-10)
   jump: { secs: 1.5 }, // the wormhole: half going in, half coming out
-  patrol: { shardsBase: 2, shardsPerWins: 2, shardsMax: 5, spawnDist: 520 }, // one more Shard every 2 wins
+  // the Lattice: one more Shard every 2 wins; the Driftfield: two Shards on every arrival, driftStep more per wave won there
+  patrol: { shardsBase: 2, shardsPerWins: 2, shardsMax: 5, spawnDist: 520, driftStep: 1 },
   adapt: {
     learn: 0.35, // a weapon family that dealt all your damage is learned this much per battle
     defLearn: 0.25, // a defence family that was your whole defence
