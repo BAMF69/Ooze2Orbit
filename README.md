@@ -100,5 +100,13 @@ skills live in `.claude/skills/`, subagents in `.claude/agents/`. Start with `/s
 `/end-session`.
 
 ## Credits
-Art, sound and code are this project's own (made in code; provenance in `docs/ASSET_LOG.md`). Engine: Phaser 4 (MIT).
-Inspired by the stage-by-stage idea of evolution games; everything here is Ooze2Orbit's own.
+Art, sound and code are this project's own (made in code; provenance in `docs/ASSET_LOG.md`). Engine: Phaser 4 (MIT). Built from the
+Claude Code Game Kit (MIT, Copyright (c) 2026 er2oneousbit; notice in `docs/licenses/`).
+Inspired by the stage-by-stage idea of evolution games; everything here is Ooze2Orbit's own. The space stage (not built
+yet) may adapt code, data and some art from [Endless Sky](https://github.com/endless-sky/endless-sky) (GPL-3.0-or-later);
+anything adapted is credited where it is used and in `docs/ASSET_LOG.md`.
+
+## License
+Copyright (C) 2026 BAMF69. Ooze2Orbit is free software: you can redistribute it and/or modify it under the terms of the
+GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your
+option) any later version. See [LICENSE](LICENSE). Why this license: `docs/adr/0001-gpl-license-and-endless-sky.md`.
