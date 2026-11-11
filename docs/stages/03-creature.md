@@ -16,6 +16,19 @@
     abilities, backtracking to places you could not reach before.
   - **Rogue Legacy** (BAMF69 2026-11-10): runs that end in death, with each new run played as an heir carrying
     inherited traits.
+  - **Everything is Crab** (BAMF69 2026-11-10), an animal-evolution roguelite in a living ecosystem. What we borrow:
+    - **Climate events that change a biome's rules,** as the Gardener's levers (each still helps aggressive or
+      cautious play: the Gardener rule).
+    - **A living ecosystem:** other creatures have their own goals and evolve during the stage, so the world is not
+      static.
+    - **Visible evolution:** every change shows on the creature's body (pillar 2).
+    - **Bosses that evolve between runs,** a small-scale echo of `T0|▼|` adapting.
+    - **Readable play styles** (its trickster, predator and nomad builds map onto cautious, aggressive and adaptable).
+    - **Two limits** (BAMF69 2026-11-10): the stage stays a **side-view metroidvania**, not a top-down arena; and traits
+      come from **inheritance across generations**, not from picking evolutions off a menu mid-run (pillar 2, and the
+      playtester's point that picking parts is not evolution). It is a close neighbor (another Spore-inspired
+      evolution roguelite), so Ooze2Orbit keeps its own identity: the Gardener, lineages that last across generations,
+      and Metroid-style gates.
   - Donkey Kong Country's lit, moody side-view look *(kept from the 2026-11-09 design)*.
   - Still being decided by BAMF69: how much (if anything) to take from Bardbarian. Not taken: Terraria's digging and
     world-building, and anything tower defense, which belongs to the civilization stage.
