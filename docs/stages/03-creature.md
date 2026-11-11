@@ -1,138 +1,122 @@
 # Stage 3: Creature
 
-> Stage design doc. Short beats complete. Game-wide rules (pillars, lore, win and lose, what carries between stages)
-> live in the spine, `docs/GDD.md`; this file covers only what is special to the creature stage.
-> **Active stage, Toy** (2026-11-09). Toy 1 is built; playtest pending. Play it: main menu "Creature stage
-> (prototype)". Code: `src/game/CreatureScene.ts`, `src/game/creature/`.
-> Renamed from "Land/Air" and redesigned 2026-11-09 (BAMF69). Items marked *(Claude's pick)* were chosen by Claude:
-> confirm them with BAMF69. Everything else was decided by BAMF69.
+> Stage design doc. Short beats complete. Game-wide rules (pillars, the Gardener rule, lore, win and lose, what
+> carries between stages) live in the spine, `docs/GDD.md`; this file covers only what is special to the creature
+> stage.
+> **Redesigned 2026-11-10 (BAMF69): a roguelike metroidvania.** The 2026-11-09 design (a world map plus sidescroller
+> levels) was built as Toy 1 (PR #8) and is replaced; Toy 1 stays in the game until Toy 2 exists, then is removed
+> (BAMF69 2026-11-10). Its full design and build notes are in this file's git history.
+> Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69. Everything else was decided by BAMF69.
 
 ## Identity
-- **Pitch:** Life leaves the water. Look down at a world map and reshape it as the Gardener, then drop into each level
-  as your creature: a 16-bit sidescroller you can fight, puzzle or sneak your way through.
-- **Reference games for this stage (mechanics and era style only):**
-  - Super Mario World: the top-down world map and level selector, with paths that open as you play.
-  - Donkey Kong Country: the sidescroller's atmosphere, lit and moody, dark jungles, silhouettes. Chosen over
-    Super Mario's bright cartoon look, which would clash with the game-wide "lit and moody" direction and the
-    2026-11-07 decision against a childish look *(Claude's pick, agreed 2026-11-09)*.
-  - Kirby and Mega Man: picking up new abilities in a level.
-  - Stealth games and immersive sims: one level with several ways through it.
-  - Nothing beyond that: no Nintendo or other names, characters, art, music or level designs.
-- **Modes** *(agreed 2026-11-09)*:
-  - **God mode = the world map.** The Gardener looks down the lens at a top-down map and reshapes it: drain a lake,
-    raise a mountain, start an ice age, move a predator's range. Changes alter the levels and open or close paths on
-    the map.
-  - **Avatar mode = the levels.** Each level is a sidescroller played as one creature.
+- **Pitch:** Life leaves the water. Explore one big side-view world whose areas open only when your lineage has the
+  right stat or ability. Each run is one creature's life; when it dies, one of its offspring carries on.
+- **Reference games (mechanics only):**
+  - **Super Metroid, the main inspiration** (BAMF69 2026-11-10): one connected world, areas gated by stats and
+    abilities, backtracking to places you could not reach before.
+  - **Rogue Legacy** (BAMF69 2026-11-10): runs that end in death, with each new run played as an heir carrying
+    inherited traits.
+  - Donkey Kong Country's lit, moody side-view look *(kept from the 2026-11-09 design)*.
+  - Still being decided by BAMF69: how much (if anything) to take from Bardbarian. Not taken: Terraria's digging and
+    world-building, and anything tower defense, which belongs to the civilization stage.
+- **Modes:**
+  - **Avatar mode = the run.** Play one creature through the world, side-on.
+  - **God mode = the Gardener between runs** *(Claude's pick)*. Between one generation and the next, the Gardener
+    changes the environment, and every change helps either aggressive or cautious play (the Gardener rule, below).
 - **Receives:** the aquatic stage's lineage (`docs/HANDOFF_CONTRACT.md`): temperament, diet, the aquatic body plan.
-- **Hands on:** the `creature` block, branches, `gardener.harshness`, and the temperament after this stage (moved at
-  most 50 % from where the aquatic stage left it).
+- **Hands on:** the `creature` block, the lineage's abilities, `gardener.harshness`, the temperament after this stage
+  (moved at most 50 % from where the aquatic stage left it), and **the hero** for the civilization stage (BAMF69
+  2026-11-10: your creature stays playable there).
 - **Played on its own:** starts from a default or generated aquatic lineage.
 
 ## How the pillars apply here
-1. **Tense but fair (stakes rise):** harder than the aquatic stage. Falling into a pit or losing a fight sends you
-   back to the last checkpoint, and you lose the part you were carrying *(agreed 2026-11-09)*. Branches of the species
-   can die out on the map. No game over for the Gardener.
+1. **Tense but fair (stakes rise):** a run ends when the creature dies, and that run's progress is lost. The lineage
+   is not: the next run starts as an offspring. No game over for the Gardener ("a branch can be lost; the garden
+   cannot").
 2. **You shape your creature, directly and indirectly:**
-   - Directly: how you clear each level, the parts you use, and the avatar's stats (bought with points, maximum 20
-     this stage, following the spine's doubling rule).
-   - Indirectly: god mode on the map changes the environment, and the species' traits evolve from it as a
-     simulation.
-3. **Small world, growing bigger:** a coastline, then a continent.
+   - Directly: how you play each run, and the avatar's stats (points, maximum 20 this stage, by the spine's doubling
+     rule).
+   - Indirectly: the Gardener's changes between runs, and which offspring you choose to carry on.
+3. **Small world, growing bigger:** a coastline that opens, area by area, into a continent.
 
-## The three ways through a level *(agreed 2026-11-09)*
-Every level can be played three ways, and each way builds one temperament:
+## Runs are generations *(Claude's pick for how, built on BAMF69's roguelike)*
+This is where the playtester's point (picking up parts is not evolution) gets its full answer: the stage runs on
+inheritance, variation and selection.
+- **One run is one creature's life.** It explores, feeds, fights or hides, and eventually dies.
+- **At death, it leaves offspring.** You see a few of them, each with a small random difference (a stat nudged, a
+  trait varied), and pick one to play next, like an heir in Rogue Legacy and like the cell stage's planned division
+  (`docs/stages/01-cell.md`, "Division").
+- **What the creature did in its life makes related traits more likely in its offspring** (the Baldwin effect: a
+  lineage that keeps using its claws is selected for claws that come easily). This replaces the 2026-11-09 rule that
+  the most-used parts are simply inherited, which was Lamarckian.
+- **Every inherited change names its cause** ("Your last three generations fought their way through the Thorn
+  Caves: claws are now inherited"), as pillar 2 asks.
 
-| How you clear it | Temperament it builds | Ship tech it leads to (space stage) |
+## Gates: stats and abilities open the world *(BAMF69 2026-11-10)*
+- Parts of the world can only be reached once the lineage has certain stats or abilities. Examples *(Claude's picks)*:
+  strength to break a rock wall, a climbing claw for cliffs, gills or lungs for a flooded cave, thick fur for the
+  snowline, a leaping tail for gaps.
+- **Abilities arrive through evolution, not pickups:** they are traits the lineage gains across generations, so
+  opening a new area is an evolution milestone.
+- **The map remembers** *(Claude's pick)*: areas you have opened stay open for later generations, as in Super Metroid,
+  so each run goes further.
+- Each gate should have more than one key where it can *(Claude's pick)*: a cliff can be climbed (claws), leapt (tail)
+  or reached through a cave (gills), so different lineages open the world in different orders.
+
+## Temperament in a run *(Claude's pick, carried over from Toy 1 where it fits)*
+- Rooms and guardians can still be passed three ways, as in Toy 1: **fight** (aggressive), **sneak past**
+  (cautious), or **solve** with the environment (adaptable). Toy 1's readable stealth (sight cones, crouching, wake
+  meters) and its verdicts carry over.
+- Diet ties in (spine): carnivores lean aggressive, herbivores cautious, omnivores sit in between.
+- Every run writes its cause lines; the 50 % per-stage cap applies.
+
+## The Gardener's levers *(the Gardener rule, BAMF69 2026-11-10; levers are Claude's picks)*
+Between runs, the Gardener picks one change. Each clearly helps one side; adaptable players switch as they need.
+
+| Lever | Helps | Why |
 |---|---|---|
-| Fighting | Aggressive | Weapons |
-| Solving puzzles | Adaptable | Engines |
-| Stealth | Cautious | Shields |
+| Drought | Aggressive | Animals crowd at the waterholes: more to hunt |
+| Flood | Cautious | Predators' dens drown; more places to hide and graze |
+| Ice age | Cautious | Fewer, slower predators; thick fur pays off |
+| Warm bloom | Aggressive | Prey multiplies; carnivores eat well |
 
-**One level, three ways through.** Levels are not built three times. Each obstacle has three answers, for example
-smash the gate, work the counterweight, or sneak through the root tunnel. The player can mix styles within a level.
-
-Each obstacle records how it was passed. At the end of a level, one line goes into the cause log, for example
-"Cleared the Riverbank: 4 of 5 obstacles by stealth" *(Claude's pick for the wording)*. The 50 % per-stage cap applies.
-
-## Parts: temporary powers that become traits *(agreed 2026-11-09)*
-- Parts are picked up in a level, like Kirby or Mega Man abilities: claws, camouflage, a grabbing tongue, horns
-  *(examples, Claude's pick)*.
-- A part lasts for the level. You lose it if you fall back to a checkpoint.
-- Each part suits one style (claws for fighting, camouflage for stealth, a grabbing tongue for puzzles) but can be
-  used creatively.
-- **The parts you use most become inherited traits** for the species, through the rule that the avatar's behavior
-  shapes its lineage. This keeps pickups fun while species evolution stays a simulation (pillar 2). Each inherited
-  trait names its cause ("Your creatures used claws in 6 levels: claws are now inherited").
+Without the matching lever, the world stays hostile to your style and runs are hard. Changes can also open or close
+gates (a flood fills a cave for gill-breathers; a drought drains it for walkers) *(Claude's pick)*.
 
 ## Core loop (first draft, Claude's pick)
 ```
-world map (god mode): look at the regions, reshape one (drain, raise, freeze, move predators)
--> the population evolves from the change; the map says why a trait moved
--> pick a level on the map -> play it as your creature (avatar mode): fight, solve or sneak past each obstacle,
-   pick up parts -> clear it: a cause line, points for stats -> new paths open on the map -> back to the map
+choose an offspring -> explore: feed, fight / sneak / solve, reach new gates -> die (or reach a goal)
+-> offspring vary; the Gardener picks a lever -> choose the next offspring -> further into the world
 ```
 
 | Scale | What the player does | Why they keep going |
 |---|---|---|
-| Every ~30 seconds | Passes one obstacle, fighting, solving or sneaking | Their own way through |
-| Every ~5 minutes | Clears a level | New paths on the map, a trait drifting |
-| Whole stage | Steers the species across the continent | The body plan and temperament it hands to civilization |
-
-## World map ideas *(Claude's pick, to discuss)*
-- **Branches as regions:** the land, air and sea branches each live in their own regions of the map. A branch's
-  levels play differently: fliers glide and flap, climbers grip walls, swimmers dive.
-- **Reshaping the map changes levels:** a drained lake turns a swimming level into a mudflat; an ice age freezes a
-  river into a bridge. A level's version depends on the map.
-- **Gentle vs. harsh tracking starts here:** how violent the Gardener's map changes are (`gardener.harshness`),
-  which matters in the civilization and space stages.
+| Every ~30 seconds | Gets past a room or a creature | Their own way through |
+| Every run (~5 to 10 min) | Lives one life, dies | The next offspring is stronger in some way |
+| Whole stage | Opens the continent gate by gate | The body plan, temperament and hero it hands on |
 
 ## Look and camera
-- **Levels:** a 16-bit sidescroller, side view, with Donkey Kong Country-style atmosphere: lit and moody, deep
-  backgrounds, silhouettes, one lens step further out than the aquatic stage.
-- **World map:** top-down, the Gardener's lens.
-- This stage replaces the aquatic stage's behind view: avatar mode is side-on here.
-- **Engine:** Phaser 4 fits (arcade physics and tilemaps suit a platformer). No new engine.
+- Side view, lit and moody (Donkey Kong Country atmosphere); deep backgrounds, silhouettes.
+- Engine: Phaser 4 fits (arcade physics and tilemaps suit a side-view game). No new engine.
 
-## Toy proposal *(Claude's pick, for when this becomes the active stage)*
-- A tiny map with 3 level nodes and 1 god-mode change (drain a lake) that changes one level.
-- 1 level of about 5 obstacles, each with a fight, puzzle and stealth answer.
-- 2 parts.
-- **Done means:** BAMF69 wants to replay the level a different way, and can say which temperament each run built.
-
-## Toy 1 as built (2026-11-09, Claude's picks unless noted)
-- **World map:** Tidepools (where the lineage came ashore), Fernwood (the level), the Ridge (opens when Fernwood is
-  cleared; not built). E drains or refills the lake and says what it changes in Fernwood; draining raises
-  `harshness` by 0.1, refilling lowers it by 0.05.
-- **Fernwood:** five obstacles. Barriers (the Bramble Wall, the Rockfall): smash the bramble plug (F), push the boulder into
-  the dip onto the plate to open the upper gate, or creep the root tunnel underneath (hold S). Guards (the Stalker's Run, the Ridge Path):
-  bite the stalker until it is beaten, drop the hanging log on it from the lever (E), or pass unseen (crouch in the
-  tall grass). The lake: bite the dead tree into a bridge, pull the lever for the rope bridge, or creep the root
-  ledge under the thorns; drained, a mud basin with a sleeping brute you can fight or tiptoe past instead.
-- **Readable stealth:** stalkers show a sight cone (pale, red when hunting); crouching halves its reach, camouflage
-  halves it again, crouching in tall grass hides you; the brute shows a wake meter that walking fills.
-- **Verdicts:** a foe's fate decides a guard (beaten = fight, trapped = puzzle, never noticed you = stealth, noticed
-  you but you escaped = "ran past", which builds nothing); a barrier counts the opening you went through.
-- **Parts:** claws (bite x2) and camouflage (sight x0.5); one at a time; lost when you fall back to a checkpoint.
-- **Stakes:** three hearts; out of hearts, or into the cold water, sends you back to the last checkpoint and costs the part.
-- **More levels and the boss (2026-11-09, BAMF69: "2 more levels like this and then a boss battle"):** Mirefen
-  (a swamp: a guard, two crossings, a barrier, a guard) and the Ridge (dusk mountains: barrier, guard, gorge,
-  barrier, guard), then the Old Horn's Den. The Old Horn roams; when it sees you it paws the ground, then charges until
-  a wall stuns it. Bite it while stunned (fight, double damage), drop the two hanging rocks on it from the levers
-  (puzzle), or ambush it from behind before it has seen you (stealth, triple). The way that did the most damage is
-  how you beat it. The map is a chain: Tidepools, Fernwood, Mirefen, the Ridge, the Den; each place opens only when the one before it
-  is beaten (padlocks on the rest). Beating the Old Horn offers the evolve into the civilization stage (not built
-  yet: back to the title). The aquatic stage's evolve leads here.
-- **End:** a summary of each obstacle and its way, the cause line, the temperament shift (+4 % per obstacle) and
-  the parts tally. Not yet: writing the lineage, stats, saving, inherited traits from parts, the air and sea branches.
+## Toy 2 proposal *(Claude's pick)*
+- A small world of about 6 rooms with 2 gates (one stat, one ability).
+- A run ends at death; pick from 3 offspring; one inherited ability that opens a gate after a few runs.
+- 2 Gardener levers, one per side.
+- **Done means:** BAMF69 starts another run right away to get further, and can say why the new offspring is
+  different.
+- When it works, Toy 1 (`src/game/CreatureScene.ts`, `src/game/creature/`) is removed (BAMF69 2026-11-10).
 
 ## `T0|▼|` hint
-The lens flickers and sometimes a map change fails. A dead moon in the night sky is perfectly smooth. Perhaps a level
-with perfectly geometric ruins that nothing alive goes near *(Claude's pick)*.
+The lens flickers and sometimes a Gardener change fails. A dead moon in the night sky is perfectly smooth. Perhaps a
+room of perfectly geometric ruins that nothing alive goes near *(Claude's pick)*. On the machine path these are moments
+in `T0|▼|`'s life (`docs/LORE.md`, "The flip").
 
 ## Open questions
 | Question | Why it matters |
 |---|---|
-| How many levels and regions in the full stage? | Content cost: levels are the expensive part |
-| How do flying and swimming branches play in a sidescroller? | Each needs its own movement and level rules |
-| Can a branch die out because of how levels went, or only from map changes? | Decides how much a level's result matters |
-| What do points buy here, and are stats shared across branches? | Pillar 2's direct stat choice, at maximum 20 |
+| What, if anything, comes from Bardbarian? | BAMF69 is still deciding |
+| Hand-built world or partly generated each run? | Super Metroid is hand-built; roguelikes usually generate. Decides content cost |
+| What ends the stage: a final gate, a boss, a number of generations? | The stage's goal |
+| How does the hero for the civilization stage get chosen? (The last creature? The best?) | What carries into the tower defense |
+| Do the air and sea branches still exist here, or is it one lineage? | Scope |

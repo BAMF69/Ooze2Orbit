@@ -102,7 +102,7 @@
 ## What the civilization stage hands in *(from `docs/stages/04-civilization.md`)*
 | From civilization | Effect in space |
 |---|---|
-| Victory type | The starting position: a war fleet (conquest), a trade network and more ships (economic), or strong defenses and loyal allies (faith) |
+| Victory type | The starting position. Redesigned civ (2026-11-10): enemy base destroyed (aggressive) gives a stronger war fleet; out-earned (cautious) gives more ships and stronger defenses. The built Toy still reads the old conquest / trade / faith types: update it when civilization Toy 2 is built |
 | Technology heritage | The species' first ship parts |
 | Took `T0|▼|` tech? | A faster start, but `T0|▼|` begins partly adapted |
 | `gardener.harshness` | Whether the species welcomes or resents the Gardener when it learns the truth |
