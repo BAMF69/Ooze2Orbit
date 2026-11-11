@@ -22,7 +22,7 @@
    fast. You are never popped (BAMF69 2026-11-08: "I like how it plays currently"). This is the lowest-stakes stage;
    later stages raise them. Every danger is readable before it hits. Rules out game overs, ending the run,
    timers, and losing a form you already evolved into.
-2. **You shape your creature (directly):** your diet (herbivore, carnivore, omnivore), the upgrades you buy (algae
+2. **You shape your creature** *(pillar 2 rewritten 2026-11-10: the upgrade panel below is replaced by division, see "Division"; the built Toy still has it)*: your diet (herbivore, carnivore, omnivore), the upgrades you buy (algae
    earns plant points for defense and mobility; meat earns meat points for attack and speed), and the parts you pick up
    from beaten creatures (spikes, shell, filter mouth) make the creature yours. Rules out evolutions picked for the
    player. This is the only stage where traits are chosen directly; from the aquatic stage on, evolution is a simulation.
@@ -52,7 +52,11 @@ Time per loop: about 15 to 30 seconds *(Claude's pick)*. The fun must be present
 - **Every death drops loot:** whatever kills a cell (you, another cell, a gulper swallowing it), it drops its part and
   its meat where it died. A cell killed by the pond drops only half its meat (`TUNING.cell.otherKillMeatMult`).
 
-## Division: evolving for real *(proposed 2026-11-10, BAMF69; not built, parking lot)*
+## Division: evolving for real *(proposed 2026-11-10, BAMF69; confirmed the same day as how pillar 2 works in every stage; not built yet)*
+**"Choose your favorite daughter"** (BAMF69 2026-11-10): division **replaces the upgrade panel and its plant and meat
+points**. What you did since the last division (what you ate, what you fought, what you fled) makes some changes more
+likely in the daughters *(Claude's pick)*; you pick the one to keep. The cell stage is the first test of the new pillar 2
+(`docs/GDD.md`): if choosing daughters is fun here, the later stages follow.
 Why: a playtester pointed out that picking up parts is not evolution. Division adds the missing pieces (variation,
 inheritance, selection) to the cell stage. It works for the machine path too: there it is `T0|▼|` copying itself with
 errors (`docs/LORE.md`, "The flip").

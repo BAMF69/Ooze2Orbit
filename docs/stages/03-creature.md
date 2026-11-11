@@ -47,8 +47,9 @@
    is not: the next run starts as an offspring. No game over for the Gardener ("a branch can be lost; the garden
    cannot").
 2. **You shape your creature, directly and indirectly:**
-   - Directly: how you play each run, and the avatar's stats (points, maximum 20 this stage, by the spine's doubling
-     rule).
+   - Directly: how you play each run, which shapes the offspring's likely traits, and which offspring you keep
+     (pillar 2, rewritten 2026-11-10; stats cap at 20 this stage, by the spine's doubling rule, reached through
+     selection, never points).
    - Indirectly: the Gardener's changes between runs, and which offspring you choose to carry on.
 3. **Small world, growing bigger:** a coastline that opens, area by area, into a continent.
 
