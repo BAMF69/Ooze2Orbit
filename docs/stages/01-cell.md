@@ -52,6 +52,23 @@ Time per loop: about 15 to 30 seconds *(Claude's pick)*. The fun must be present
 - **Every death drops loot:** whatever kills a cell (you, another cell, a gulper swallowing it), it drops its part and
   its meat where it died. A cell killed by the pond drops only half its meat (`TUNING.cell.otherKillMeatMult`).
 
+## Division: evolving for real *(proposed 2026-11-10, BAMF69; not built, parking lot)*
+Why: a playtester pointed out that picking up parts is not evolution. Division adds the missing pieces (variation,
+inheritance, selection) to the cell stage. It works for the machine path too: there it is `T0|▼|` copying itself with
+errors (`docs/LORE.md`, "The flip").
+- **When the food meter fills, your cell divides** into a few daughters, each a slightly changed copy of you. *(Claude's
+  picks:)* three daughters; each gets one random change (a part swapped for a variant, a stat nudged up or down, a body
+  shape shift); the screen shows each change before you choose.
+- **You pick one daughter to keep playing** (BAMF69).
+- **The others stay in the pond as rivals** (BAMF69): same diet, after the same food. You have to out-compete them.
+  *(Claude's picks:)* you see how the variants you passed up do; a sibling that fills its meter first divides too, so
+  its line can spread through the pond. That is pressure, not a loss: no game over (pillar 1).
+- **Real science behind the parts:** bacteria do take up genetic material from dead cells nearby (transformation, a
+  kind of horizontal gene transfer), and mitochondria began as swallowed cells. Absorbing a dead cell's part can be
+  framed that way in the game's text *(Claude's pick)*.
+- **Open:** does the diet picker stay at each division? Does picking a daughter record temperament (choosing the spiky
+  one leans aggressive)? How many siblings before the pond is too crowded? Does it replace the form count or sit on top?
+
 ## Stage win and lose
 - **Stage end:** reach the last form (`TUNING.maxForm`) and pick its diet: the lineage is saved and a banner offers
   the evolve; Enter starts the aquatic stage with that lineage (2026-11-08). The ` key (or `?finish`) ends the

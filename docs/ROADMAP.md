@@ -27,6 +27,8 @@ Active stage: **Space, Toy** (`docs/stages/05-space.md`).
 - Cell stage: a rare hexagonal fleck in the pond background that gulpers avoid (first `T0|▼|` hint, art only; `docs/LORE.md`)
 - Space stage: temperament readout (cautious = shields, aggressive = weapons, adaptable = engines)
 - Space stage: seed the two outer gardens when the player chooses to interact with them (BAMF69 2026-11-08)
+- Title screen: choose organism or machine; machine stays locked (and never names `T0|▼|`) until the Mothership falls (BAMF69 2026-11-10; `docs/LORE.md` "The flip")
+- Cell stage: division with sibling rivals replaces the plain evolve (BAMF69 2026-11-10; `docs/stages/01-cell.md` "Division")
 - Connected mode: other players' or AI-generated species fill the universe (needs online play; after solo works)
 
 ## Milestones

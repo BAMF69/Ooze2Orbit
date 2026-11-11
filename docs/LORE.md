@@ -145,6 +145,42 @@ the alliance came together. *(Ending variants: to decide.)*
 Approved by BAMF69 2026-11-08 and written into `docs/GDD.md` (pillars 1 and 2). The pillar 1 change takes effect after
 the cell stage.
 
+## The flip: organism or machine *(BAMF69 2026-11-10; not built)*
+The title screen will offer two paths: **organism** (the story above) and **machine**. The machine path is playing as
+`T0|▼|`. Rules (BAMF69 2026-11-10):
+- **Both choices are shown from the first launch, but the machine path does not say it is `T0|▼|`.** It is just
+  "machine" until it is unlocked, so the reveal is kept.
+- **The machine path unlocks when the player destroys `T0|▼|`'s Mothership** (the space stage's win,
+  `docs/stages/05-space.md`). Until then it shows as locked.
+- **Only the organic story is built for now.** Every lore and story decision should leave the machine path possible.
+
+### Why it works
+The machine path turns the game's core idea (evolved beats designed) into a character arc. `T0|▼|` starts as a
+designer: it grows by picking up parts and bolting them on, the most honest version of the parts mechanic. It keeps
+losing to evolved life, so it has to learn to evolve: copying itself with errors and letting the fittest copy win
+(the same division mechanic as the cell stage, `docs/stages/01-cell.md`). *(Claude's pick:)* its look can follow the
+arc, from flawless hexagons toward something irregular, patched and handmade (a steampunk direction BAMF69 raised).
+
+### Guardrails for story decisions now *(Claude's pick, agreed in principle 2026-11-10)*
+- **`T0|▼|` needs a motive you could play.** It believes it is saving life (from suffering, from dying out) through
+  perfect design: convinced, not cartoon evil.
+- **Every `T0|▼|` hint is a moment in its life.** The hexagonal fleck in the pond, the meteor fragment and stillness
+  zone, the crashed probe, the dead smooth moon: write each as something `T0|▼|` did, so its path can start from them.
+  *(Claude's pick:)* the machine path begins as the pond's hexagonal fleck.
+- **The two paths mirror each other and meet in space.** On the organic path `T0|▼|` adapts to your tech; on the
+  machine path the organic alliance is the enemy you cannot predict.
+- **Keep "the Gardeners built `T0|▼|`" true.** When it is revealed (open question below) can still change.
+- **Keep shared systems neutral.** Diet as a resource type, parts as data, and a planned `kind` (`organic` or
+  `machine`) on each species in the lineage (`docs/HANDOFF_CONTRACT.md`; add it with a schema bump when the machine
+  path is built, not before).
+
+### Open for the machine path
+| Question | Why it matters |
+|---|---|
+| Who does T0&#124;▼&#124; fight by the end of its path? (Candidates: its own copies that refuse to evolve; the Gardeners) | Decides whether the path is worth building |
+| What replaces the Gardener's god mode? | Pillar 2's indirect shaping belongs to the Gardener |
+| Does the "first friend" habit become a mechanic (befriend a species to read its parts)? | A strong hook that fits the name joke |
+
 ## Open questions
 | Question | Why it matters |
 |---|---|
