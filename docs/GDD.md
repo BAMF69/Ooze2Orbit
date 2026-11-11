@@ -112,4 +112,6 @@ Each stage doc adds its own palette, scale and camera. Across all stages:
 ## Out of scope (explicit)
 - The two outer gardens before the space stage (BAMF69 2026-11-08: they are seeded only when the player chooses to
   interact with them, which for now happens in the space stage)
+- The machine path (playing as `T0|▼|`, unlocked by destroying its Mothership; BAMF69 2026-11-10): planned, not built.
+  Story decisions must keep it possible (`docs/LORE.md`, "The flip")
 - Online play, including the connected mode where other players' species fill your universe (`docs/LORE.md`; parking lot until solo works)
