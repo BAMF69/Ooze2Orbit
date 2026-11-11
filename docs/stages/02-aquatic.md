@@ -112,6 +112,9 @@ dorsal fin; grey countershading and teeth; a shark (slate grey, crescent tail, g
 Each step up is announced (pillar 2). Numbers: `AQ.shark`.
 
 ## Your creature (v2, BAMF69 2026-11-08)
+> **Changing (pillar 2 rewritten 2026-11-10):** stats will no longer be bought with points in the upgrade panel. What
+> your creature does shapes its offspring's likely traits, and you choose which offspring to keep (`docs/GDD.md`). The
+> built Toy below still uses points until this stage is next worked on.
 - **Stats:** attack, speed, defense, mobility and health, max 10 (the cell stage's 5, doubled each stage). They
   start at the cell stage's final levels (health is new, from 0). Plant points buy defense, mobility; meat points
   buy attack, speed (the cell stage's split); health takes either, or a mix (v3). Bought in the upgrade panel (E,

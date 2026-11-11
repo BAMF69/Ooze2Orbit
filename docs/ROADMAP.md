@@ -6,9 +6,11 @@
 ## Now (max 3 items)
 Active stage: **Space, Toy** (`docs/stages/05-space.md`).
 - [ ] **Space Toy 1: refit because T0|▼| adapted** (built 2026-11-09, playtest pending): three systems, a hangar with two hulls and eight parts from two makers, real-time combat against patrols that hunt like gulpers, T0|▼| learning what you used after every battle with a readout, five wins to finish. **Toy 2 (2026-11-10):** slots and an icon hangar, turrets and homing missiles, a second friendly world (Tidereach), recruited escorts that fly themselves. **Toy 3 (2026-11-10):** wormhole jumps with next / previous keys and a clickable map, enemy waves on a countdown, auto-land, reverse and side thrusters, the ending is now three wins in a row at the Lattice then the Mothership | Done when: BAMF69 refits the ship because T0|▼| adapted, and wants another fight | Timebox: 2 sessions
-- [ ] **Civilization Toy 1: three ways to win a planet** (built 2026-11-09, playtest pending): a 9-region hex planet, fixed yields, conquest / trade / faith per region, three machines, meteor and terraform, one rival for a temperament you are not (its armies announced a turn ahead), a live tally and the victory named by the method that took most | Done when: BAMF69 wants to play a second game a different way and can say which victory they were heading for from the tally | Timebox: 2 sessions
 
 ## Next
+- [ ] **Cell stage: "choose your favorite daughter"** (BAMF69 2026-11-10, the first test of the rewritten pillar 2): division replaces the upgrade panel and its points; daughters vary, weighted by what you did; the others stay as rivals (`docs/stages/01-cell.md` "Division") | Done when: BAMF69 enjoys choosing daughters more than buying upgrades, or we learn why not
+- [ ] **Creature Toy 2: roguelike metroidvania** (redesigned 2026-11-10, `docs/stages/03-creature.md`): runs as generations, offspring with varied traits, stat and ability gates, two Gardener levers | Done when: BAMF69 starts another run right away and can say why the new offspring differs; then remove Toy 1
+- [ ] **Civilization Toy 2: tower wars battler** (redesigned 2026-11-10, `docs/stages/04-civilization.md`): builders, gatherers, sends vs. defenses, base kill or 5x income, maze and hero for adaptable | Done when: BAMF69 wants a rematch to try the other win; then remove Toy 1 and update the space stage's civ hand-in
 - [ ] **Aquatic stage: vertical slice** (Toy done 2026-11-09) and **write the aquatic lineage** for the creature stage to read
 - [ ] **Cell stage: vertical slice** (Toy done 2026-11-08): fill `docs/VERTICAL_SLICE.md`; music, saves, first-time teaching, polish | Done when: the slice brief's "Done when" holds
 - [ ] **Cell stage ending: the pond floods** (from the parking lot): the bridge into the aquatic stage and its temperament reveal | Done when: finishing the cell stage leads into the aquatic stage
@@ -28,7 +30,6 @@ Active stage: **Space, Toy** (`docs/stages/05-space.md`).
 - Space stage: temperament readout (cautious = shields, aggressive = weapons, adaptable = engines)
 - Space stage: seed the two outer gardens when the player chooses to interact with them (BAMF69 2026-11-08)
 - Title screen: choose organism or machine; machine stays locked (and never names `T0|▼|`) until the Mothership falls (BAMF69 2026-11-10; `docs/LORE.md` "The flip")
-- Cell stage: division with sibling rivals replaces the plain evolve (BAMF69 2026-11-10; `docs/stages/01-cell.md` "Division")
 - Connected mode: other players' or AI-generated species fill the universe (needs online play; after solo works)
 
 ## Milestones
@@ -43,6 +44,8 @@ detail.
 | M4 Release candidate (v1.0.0-rc.N, then v1.0.0) | `/release-check` green | |
 
 ## Done (recent, newest first)
+- 2026-11-10: Design: **pillar 2 rewritten** (BAMF69): actions shape which variations offspring carry, you choose which to keep; no stat buying in any stage; bodies evolve, tools are built. Humor: quirky, deadpan (after Everything is Crab)
+- 2026-11-10: Design: the **Gardener rule** (every Gardener decision clearly helps aggressive or cautious play; without it the game is hard; adaptable uses them moment to moment) in the GDD; **creature stage redesigned as a roguelike metroidvania** (Super Metroid, Rogue Legacy; runs as generations, the Baldwin effect replaces Lamarckian parts); **civilization stage redesigned as a tower wars battler** (sends vs. defenses, base kill or 5x income, maze and hero for adaptable, your creature as the hero). Toys 1 of both stay until their Toy 2 exists
 - 2026-11-10: Space Toy 3b: the Driftfield resets to two Shards on every arrival and grows one Shard per wave won while you stay (`Campaign.visitWins`); the space stage has its own sci-fi sound set made in code (`assets_src/audio/space_sfx.py`, 19 sounds), the cell stage's sounds unchanged
 - 2026-11-09: Every stage writes its decisions into the lineage (`core/lineage.ts` writeStage: replaces that stage's causes, applies the shift cap): aquatic on leaving the water (hunting, breaching, relatives lost, upgrades; extreme water raises harshness; `aquatic/record.ts`), creature when the Old Horn falls (each level's cause line, the boss counts triple, parts used 3+ times become inherited traits, the map's harshness; `creature/record.ts`), civilization on victory (a cause per region, the victory type; `civ/rules.ts` civRecord). The next stage's opening screen shows them, and the civ rival now follows your real temperament
 - 2026-11-09: The creature and civilization stages open with the lineage screen (temperament bars and the decisions behind them), shared in `src/game/lineagePanel.ts`; the reveal is worded per stage. It shows what the lineage save holds: today only the cell stage's choices (the aquatic and creature stages do not write theirs yet)

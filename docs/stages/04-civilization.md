@@ -1,165 +1,127 @@
 # Stage 4: Civilization
 
-> Stage design doc. Short beats complete. Game-wide rules (pillars, lore, win and lose, what carries between stages)
-> live in the spine, `docs/GDD.md`; this file covers only what is special to the civilization stage.
-> **Active stage, Toy** (2026-11-09). Toy 1 is built; playtest pending. Play it: main menu "Civilization stage
-> (prototype)", or beat the Old Horn. Code: `src/game/CivScene.ts`, `src/game/civ/rules.ts`.
-> Designed 2026-11-09 (BAMF69). Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69.
-> Everything else was decided by BAMF69.
+> Stage design doc. Short beats complete. Game-wide rules (pillars, the Gardener rule, lore, win and lose, what
+> carries between stages) live in the spine, `docs/GDD.md`; this file covers only what is special to the
+> civilization stage.
+> **Redesigned 2026-11-10 (BAMF69): an RTS tower defense battler.** The 2026-11-09 design (a hex strategy game with
+> conquest, trade and faith) was built as Toy 1 (PR #10) and is replaced; Toy 1 stays in the game until Toy 2 exists,
+> then is removed (BAMF69 2026-11-10). Its full design and build notes are in this file's git history.
+> Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69. Everything else was decided by BAMF69.
 
 ## Identity
-- **Pitch:** Your creatures build a civilization and notice the god above them. Play a compact turn-based strategy
-  game on a hex map as the ruler, call down the Gardener's technology as acts of god, and unite the planet by
-  conquest, trade or faith.
-- **Reference games for this stage (mechanics only):**
-  - Settlers of Catan: a small hex map where tiles produce resources, trading, quick readable turns.
-  - Sid Meier's Civilization and other 4X games: explore, expand, and win by one of several paths. Kept light: no
-    long tech trees, no hundreds of turns, no huge maps.
-  - Warlock 2: The Exiled: a ruler calling down powerful spells on the map, here acts of god.
-  - Nothing beyond the mechanics: no names, factions, art, music or rules text from any of them.
-- **Modes** *(agreed 2026-11-09)*:
-  - **Avatar mode = the ruler.** The Gardener lives inside the ruler and plays the strategy game directly. The ruler
-    may also be a hero piece on the map *(Claude's pick)*.
-  - **God mode = acts of god, called down by the ruler.** Meteor strikes, terraforming and more, like spells. To the
-    creatures they are miracles; in truth they are the Gardener's space technology, aimed through the lens
-    *(BAMF69 2026-11-09)*.
-- **Receives:** the creature stage's lineage (`docs/HANDOFF_CONTRACT.md`): temperament, diet, habitat, inherited
-  traits, `gardener.harshness`.
-- **Hands on:** the `civ` block (victory type, technology heritage, whether the species took `T0|▼|` tech), and the
-  temperament after this stage (moved at most 50 % from where the creature stage left it).
-- **Played on its own:** starts from a default or generated creature-stage lineage.
+- **Pitch:** Your species builds a civilization. Train builders and gatherers, gather resources, then spend them on
+  monsters that run the enemy's gauntlet or on defenses that hold against their waves, with your own creature on the
+  field as the hero.
+- **Reference games (mechanics only):** "tower wars" games, the genre from Warcraft 3 custom maps such as Line Tower
+  Wars and Legion TD: each side builds a maze of defenses and sends monsters through the other side's maze, and
+  sending raises your income *(Claude's pick for naming the genre; BAMF69's design)*. No names, art or units from
+  any of them.
+- **Modes:**
+  - **Avatar mode = the hero** (BAMF69 2026-11-10): your creature from the creature stage stays playable, fighting on
+    the battlefield. How well you use it counts toward adaptable.
+  - **The RTS layer:** the player also commands the economy (train builders and gatherers, build, send) *(Claude's
+    pick: the hero moves directly, the economy runs from buttons and clicks)*.
+  - **God mode = the Gardener's levers** (the Gardener rule, below). The 2026-11-09 acts of god (meteor summoning,
+    terraforming) can stay as powers the hero or ruler calls down *(Claude's pick)*.
+- **Receives:** the creature stage's lineage (`docs/HANDOFF_CONTRACT.md`): temperament, diet, abilities, the hero,
+  `gardener.harshness`.
+- **Hands on:** the `civ` block (which victory, what was built and sent most, whether the species took `T0|▼|` tech)
+  and the temperament after this stage (moved at most 50 % from where the creature stage left it).
+- **Played on its own:** starts from a default or generated creature-stage lineage and hero.
 
 ## How the pillars apply here
-1. **Tense but fair (stakes rise):** whole cities can be lost to rivals, and branches of the species can die out.
-   Every threat is readable on the map before it hits (armies on the move, trade dependencies, spreading faith).
-   No game over for the Gardener (see open questions for what happens at the edge).
-2. **You shape your creature, directly and indirectly:** directly as the ruler (what you build, research and how you
-   take regions); indirectly through acts of god and the technology the species keeps (below).
-3. **Small world, growing bigger:** the first time the whole planet is the map.
+1. **Tense but fair (stakes rise):** enemy waves come for your base, and every wave shows what is coming before it
+   arrives *(Claude's pick: a wave preview)*. No game over for the Gardener (see open questions for a fallen base).
+2. **You shape your creature, directly and indirectly:** directly through the hero and every spending choice;
+   indirectly through the Gardener's levers.
+3. **Small world, growing bigger:** a battlefield on the scale of a region of the planet.
 
-## Three victories, one planet *(agreed 2026-11-09)*
-Victory means **every region on the planet is yours**. Each region can be taken by any of three methods, and the
-player can mix them (hybrid play is allowed).
+## The battle *(BAMF69 2026-11-10)*
+- **Builders and gatherers:** train them; gatherers bring in resources, builders put up defenses.
+- **Spend resources one of two ways:**
+  - **Summon monsters** that run the enemy's gauntlet and hit their base. This raises your income and builds
+    **aggressive** temperament.
+  - **Build defenses** against the enemy's waves. Kills pay out, so **defense turns into income** (BAMF69 2026-11-10),
+    and it builds **cautious** temperament.
+- **Adaptable** is measured by **maze length and hero use** (BAMF69 2026-11-10): a long, clever maze that makes enemy
+  waves walk further, and a hero that is in the fight.
 
-| Victory | Temperament | How you take a region | Leads to (space stage) |
-|---|---|---|---|
-| **Conquest** | Aggressive | Armies capture it | Weapons |
-| **Economic supremacy** | Adaptable | Trade makes it depend on you, then you buy it out | Engines |
-| **Faith** | Cautious | It converts to the Watcher (the Gardener) and shelters under your protection | Shields |
+## Winning *(BAMF69 2026-11-10)*
 
-**The faith path is defensive by design:** spread belief, offer shelter, and hold your holy sites. Neighbors join
-because life under your walls is safe. How readily people believe in the Watcher follows `gardener.harshness`: a
-gentle Gardener is easy to love, a harsh one is feared.
-
-### Telling which victory it was *(agreed 2026-11-09; the method is Claude's pick)*
-Hybrid play must still name the player's primary temperament:
-- **The victory is named by the method that took the most regions** (conquest, economic or faith victory). A tie goes
-  to the method matching the species' highest temperament.
-- **A live tally is always on screen** (regions taken by each method), so the player sees which victory they are
-  heading for and can steer it (pillar 2).
-- Every region taken writes one cause line ("Took the Salt Coast by trade"), and the 50 % per-stage cap applies.
-- The victory type is saved in the lineage and shapes how the space stage begins (below).
-
-## Resources: fixed yields you improve *(agreed 2026-11-09)*
-- Each hex tile produces a **fixed, visible yield** every turn (food, materials, trade goods, faith *(examples,
-  Claude's pick)*). No dice: the player always knows what is coming, which keeps pillar 1's "fair".
-- Yields are **improved** by buildings, machinery and technology.
-- Trading between civilizations works like Catan's: swap what you have for what you need. Trade is also how the
-  economic victory makes regions depend on you.
-
-## Technology and machinery replace parts *(agreed 2026-11-09)*
-Earlier stages collected body parts; here the species **discovers and creates technology and machinery**:
-- **Discovered:** found by exploring ruins, gained by trade, or captured.
-- **Created:** researched and built.
-- Each machine suits one path (siege engines for conquest, trade ships for economy, temples or great walls for faith)
-  but can be used creatively.
-- **The technology used most becomes the species' technology heritage** for the space stage, the same rule as the
-  creature stage's parts becoming inherited traits *(Claude's pick for the carry-over)*.
-- **The `T0|▼|` probe:** a probe crashes on the planet. Taking its technology speeds the species up but makes it
-  easier for `T0|▼|` to read in the space stage. A faction that adopts it starts a **cult of the Maker**, `T0|▼|`'s
-  first real foothold.
-
-## Acts of god *(agreed 2026-11-09)*
-Like spells in Warlock 2, the ruler calls down the Gardener's space technology. Examples *(Claude's pick beyond meteor
-summoning and terraforming)*:
-
-| Act | What it does | Leans toward |
+| Win | How | Temperament |
 |---|---|---|
-| Meteor summoning | Strikes a region: damages armies and cities | Aggressive; raises `gardener.harshness` |
-| Terraforming | Reshapes tiles to raise their yields | Adaptable |
-| Sanctuary | Shields a region from attack for a few turns | Cautious |
-| Sign in the sky | A miracle over a city that wins converts | Cautious (faith) |
+| **Destroy the enemy base** | Your monsters break through their maze and bring the base down | Aggressive |
+| **Out-earn them** | Your income reaches about **5 times** the opponent's (to tune) | Cautious |
 
-- Acts cost a resource the ruler builds up (favor, from the people's belief *(Claude's pick)*) and recharge, so they
-  stay powerful but rare.
-- Destructive acts raise `gardener.harshness`; gentle ones lower it. That changes how the planet's people, and later
-  the species, see the Gardener.
-- Each act writes a cause line, like everything else that moves temperament.
+- Adaptable players can take either win, using the Gardener's levers moment to moment (spine, the Gardener rule).
+- The win reached names the victory. A tally of spending (sends vs. defenses) plus maze length and hero use stays on
+  screen, so the player sees which temperament they are building *(Claude's pick for the tally)*.
+- The "5 times" threshold is a starting point to tune in playtests.
 
-## Rivals *(agreed 2026-11-09)*
-- The rivals are **newly generated civilizations that stand for the temperaments the player is not primarily.** A
-  mostly cautious species faces an aggressive rival (trying to conquer) and an adaptable rival (trying to buy the
-  planet).
-- The player's primary temperament is read from the lineage at the start of the stage (the highest of the three).
-- Rivals play to win their own way, so each game puts the player's style against the other two.
-- If the `T0|▼|` probe's technology is taken by anyone, the cult of the Maker can appear as an extra faction.
+## The Gardener's levers *(the Gardener rule, BAMF69 2026-11-10; levers are Claude's picks)*
+
+| Lever | Helps | Why |
+|---|---|---|
+| Rich ore veins | Aggressive | More materials for monster sends |
+| Rocky ground | Cautious | Walls and towers cost less |
+| Fertile valley | Cautious | Gatherers bring in more: income grows |
+| Restless wilds | Aggressive | Wild beasts can be tamed into extra sends |
+
+Without the matching lever, your style is underfunded and the battle is hard.
+
+## Technology and machinery *(kept from 2026-11-09, applied to the new design; Claude's pick for how)*
+- New tower and monster types are discovered or researched: technology and machinery replace body parts.
+- **The kinds you use most become the species' technology heritage** for the space stage (defenses lean toward
+  shields, monster sends toward weapons, a maze-and-hero style toward engines).
+- **The `T0|▼|` probe** can still crash here: its technology is powerful but makes the species easier for `T0|▼|` to
+  read later. On the machine path this is a moment in `T0|▼|`'s life (`docs/LORE.md`, "The flip").
+
+## Rivals and faith
+- **The opponent stands for a temperament you are not** *(kept from 2026-11-09)*: a mostly cautious player faces an
+  aggressive civilization that sends hard, and so on.
+- **Faith stays if it suits the story** (BAMF69 2026-11-10). *(Claude's pick:)* keep it as story and flavor, not a
+  third way to win: the Watcher's believers on your side, and a cult of the Maker that appears if anyone takes the
+  probe's technology, perhaps as a special enemy send.
 
 ## Core loop (first draft, Claude's pick)
 ```
-a turn: collect your tiles' fixed yields -> build, research, improve tiles -> move armies, traders, missionaries
--> trade with rivals -> maybe call down an act of god -> rivals take their turns -> the tally updates
+gatherers bring in resources -> spend: train builders and gatherers, build defenses (lengthen the maze), or summon
+monsters -> waves cross both mazes; the hero fights -> kills and hits pay income -> repeat until a base falls or
+one income dwarfs the other
 ```
 
 | Scale | What the player does | Why they keep going |
 |---|---|---|
-| Every turn (under a minute) | Spends yields, moves pieces | A region closer to taken |
-| Every ~10 minutes | Takes a region; discovers a technology | The tally shifts; new options |
-| Whole stage (30 to 60 min) | Unites the planet | The victory type and technology the species carries into space |
-
-## Size *(Claude's pick)*
-About 15 to 25 hex regions, the player plus 2 rivals (one per other temperament), plus the Maker cult if it appears.
-A 30 to 60 minute game. A full Civilization-sized game would be bigger than all other stages together.
-
-## Look and camera
-- A top-down hex map of the whole planet: the lens at its widest yet, still lit and moody.
-- Acts of god are the most spectacular effects in the game so far: the Gardener's technology seen from the ground.
-- Engine: Phaser 4 fits (a turn-based hex board). No new engine.
+| Every ~30 seconds | Places a tower, sends a monster, moves the hero | A wave held or a hit landed |
+| Every wave (~1 to 2 min) | Reads the next wave, adjusts the maze and sends | Income climbing |
+| Whole stage | Wins the battle(s) one way or the other | The victory and technology the species carries into space |
 
 ## What it hands to the space stage *(Claude's pick, to confirm)*
 | From this stage | Shapes the space stage |
 |---|---|
-| Victory type | How the species enters space: a war fleet (conquest), a trade network and more ships (economic), or strong defenses and loyal allies (faith) |
-| Technology heritage | The species' first ship technologies |
-| Took `T0|▼|` tech? | Faster start, but `T0|▼|` reads the species more easily |
+| Victory type | Base destroyed: a stronger war fleet. Out-earned: more ships and stronger defenses |
+| Technology heritage | The species' first ship parts |
+| Took `T0|▼|` tech? | A faster start, but `T0|▼|` begins partly adapted |
 | `gardener.harshness` | Whether the species welcomes or resents the Gardener when it learns the truth |
 
-## Toy proposal *(Claude's pick, for when this becomes the active stage)*
-- A small map of about 7 hexes, the player and 1 rival.
-- One way to take a region per temperament, kept simple.
-- 2 acts of god (meteor, terraform) and 2 machines.
-- **Done means:** BAMF69 wants to play a second game a different way, and can say which victory they were heading for
-  from the tally.
+The space stage (built) reads the old victory types (conquest, trade, faith); it needs updating when Toy 2 is built.
 
-## Toy 1 as built (2026-11-09, Claude's picks)
-- **Planet:** 9 regions: your capital Hearthhold, the rival's seat (Ironmaw if it is aggressive, Brassport if it trades)
-  and 7 free regions, each with a fixed yield (materials, goods or faith), a defense, a price and a belief threshold.
-- **Three ways:** an army (3 materials, strength 2, +1 with a siege engine) takes a region if stronger than its
-  defense, else wears it down; a trade route (2 goods) adds 1 dependence a turn (+1 with trade ships), then a buy-out
-  (goods) takes it; missionaries (2 faith) add 1 belief a turn (+1 with a temple) until it converts. Belief needed
-  grows with the Gardener's harshness. Regions someone holds cost 2 more to buy or convert. Reinforce adds 1 defense.
-- **Acts of god (favor: +1 a turn, +1 per region taken by faith):** meteor (6) knocks 2 off a region's defense and
-  scatters a rival army marching there, harshness +10 %; terraform (4) gives one of your regions +1 yield, -5 %.
-- **The rival:** aggressive (announces an army a turn before it strikes, builds a siege engine) unless your lineage
-  leans aggressive, then a trader (routes, buy-outs, trade ships). Your capital never falls.
-- **On screen:** the tally and "Heading for: ... victory", every blocked action says why, news after each turn.
-- **End:** all nine regions yours: the victory (most regions by one method; a tie goes to your strongest
-  temperament), the tally, the temperament shift (+3 % per region), harshness, the cause lines. Enter: on to space
-  (not built yet: back to the title). Not yet: saving, writing the lineage, the `T0|▼|` probe and the Maker cult, food.
+## Look and camera
+- Top-down battlefield, lit and moody; your hero is the creature from the creature stage.
+- Engine: Phaser 4 fits (top-down units, towers and paths). No new engine.
+
+## Toy 2 proposal *(Claude's pick)*
+- One 1v1 battlefield: your maze on one side, the opponent's on the other.
+- Two resources, one builder and one gatherer type, three tower types, three monster sends, the hero with one ability.
+- Two Gardener levers, one per side. Both wins working, with the 5x income threshold.
+- **Done means:** BAMF69 wants another match to try the other win, and can say which temperament the tally showed.
+- When it works, Toy 1 (`src/game/CivScene.ts`, `src/game/civ/`) is removed (BAMF69 2026-11-10).
 
 ## Open questions
 | Question | Why it matters |
 |---|---|
-| What happens if rivals take all but one of your regions? *(Claude's pick: the capital cannot fall, so there is no elimination)* | Pillar 1: no game over for the Gardener |
-| Which resources, exactly? | Sets the economy; fewer is easier to read |
-| How do the creature stage's branches show up here? | Their habitat (land, air, sea) could become regions or bonuses |
-| How many acts of god, and how are new ones unlocked? | Warlock 2 style spell research vs. a fixed set |
+| One battle, or a short campaign of battles across the planet? | The stage's length and goal |
+| What happens if your base falls? *(Claude's pick: you lose that battle with a setback and fight again)* | Pillar 1: no game over for the Gardener |
+| Which resources, exactly? | Fewer is easier to read |
+| Can the hero die in battle, and what does it cost? | Hero use is part of adaptable |
+| 1v1, or you against two rivals (one per other temperament)? | Scope and balance |

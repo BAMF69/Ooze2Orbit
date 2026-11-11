@@ -14,8 +14,9 @@
 - **Genre:** Evolution adventure; five stages, each a small game of its own
 - **Perspective:** 2D. Top-down in the cell stage and in god mode; in the aquatic stage, avatar mode is a
   **pseudo-3D view from behind the creature** (approved by BAMF69 2026-11-08), still drawn in 2D Phaser; in the
-  creature stage, avatar mode is a **16-bit sidescroller** and god mode a top-down world map (BAMF69 2026-11-09)
-- **Reference games (2 to 3) and what you borrow from each:** Spore for the stage-by-stage evolution (cell, aquatic, creature, civilization, space); Stardew Valley for the readable top-down pixel art; Endless Sky for the space stage (fleet management, ship customization, space combat, a star map with jumps between systems, landing on planets; BAMF69 2026-11-09). The game is GPL-3.0-or-later like Endless Sky (BAMF69 2026-11-09, `docs/adr/0001-gpl-license-and-endless-sky.md`), so the space stage may adapt Endless Sky's code, data and, file by file with credit, its art. For the creature stage (BAMF69 2026-11-09): Super Mario World for the world map and level selector, Donkey Kong Country for the lit, moody sidescroller look, Kirby and Mega Man for picking up abilities in a level. For the civilization stage (BAMF69 2026-11-09): Settlers of Catan for the small hex map with tile yields and trading, Sid Meier's Civilization and other 4X games for the explore-expand-win structure (kept light), Warlock 2: The Exiled for a ruler calling down spells (here, acts of god). Same kind of mechanics and era style only: no names, characters, creatures, ships, story, art, music, level designs or look from any of them; everything here is this game's own.
+  creature stage, avatar mode is a **side-view roguelike metroidvania** (BAMF69 2026-11-10); the civilization stage is
+  a top-down **tower wars battler** (BAMF69 2026-11-10)
+- **Reference games (2 to 3) and what you borrow from each:** Spore for the stage-by-stage evolution (cell, aquatic, creature, civilization, space); Stardew Valley for the readable top-down pixel art; Endless Sky for the space stage (fleet management, ship customization, space combat, a star map with jumps between systems, landing on planets; BAMF69 2026-11-09). The game is GPL-3.0-or-later like Endless Sky (BAMF69 2026-11-09, `docs/adr/0001-gpl-license-and-endless-sky.md`), so the space stage may adapt Endless Sky's code, data and, file by file with credit, its art. For the creature stage (BAMF69 2026-11-10): **Super Metroid** first, for a world whose areas open only once you have the right stat or ability; Rogue Legacy for runs where each new run is an heir with inherited traits; Everything is Crab for climate events, a living ecosystem, visible evolution and bosses that evolve (not its top-down view or mid-run menu picks); Donkey Kong Country's lit, moody side-view look *(kept from the 2026-11-09 design)*. For the civilization stage (BAMF69 2026-11-10): "tower wars" games (Line Tower Wars, Legion TD) for an RTS tower defense where you send monsters through the enemy's maze and build a maze against theirs. Same kind of mechanics and era style only: no names, characters, creatures, ships, story, art, music, level designs or look from any of them; everything here is this game's own.
 - **The twist:** You are not only the creature. You are the Gardener looking down the lens (the top-down view), shaping the environment so life evolves on its own, because the enemy, a rogue AI, can counter anything designed but not what evolved. Less creature editor, more shaping the world that shapes the creature.
 
 ## Pillars (3 max)
@@ -23,7 +24,11 @@ Pillars decide arguments, in every stage. If a feature does not serve one, it go
 how each pillar applies there.
 1. **Tense but fair** *(rewritten 2026-11-07 after the first playtest: "too cozy"; 2026-11-08, BAMF69: no "getting popped", stakes rise each stage)*: other creatures can hurt you and setbacks cost something real (in the cell stage, food knocked out of you). **Stakes and difficulty rise with every stage.** Every danger is readable before it hits, including danger the camera cannot see (a predator behind you gets a red cue and a warning sound). Rules out game overs, ending the run, timers, and losing a form you already evolved into.
    **After the cell stage** *(approved by BAMF69 2026-11-08; see `docs/LORE.md`)*: creatures and branches of a species can be hurt, pushed back and die out, and a spacefaring species can die out (a new one is generated to replace it). The Gardener (the player) cannot lose: there is no game over. A branch can be lost; the garden cannot.
-2. **You shape your creature, directly and indirectly** *(rewritten 2026-11-08, approved by BAMF69; see `docs/LORE.md`)*: directly through the avatar (what it eats, fights and does), indirectly through the world you make as the Gardener (what is there to eat, what hunts it, what the climate demands). From the aquatic stage on, the **species'** evolution is a simulation the player steers, not an editor, and the player must always see how their influence shaped the creature's traits. **Amended 2026-11-08 (BAMF69):** the avatar's own stats (attack, defense, speed, mobility, health) stay a direct choice in every stage, bought with the plant and meat points it earns, and their maximum doubles each stage (5 in the cell stage, 10 in the aquatic stage). Rules out picking the species' traits from a menu after the cell stage. (Cell stage specifics: `docs/stages/01-cell.md`.)
+2. **You shape your creature through what it does and which offspring you keep** *(rewritten 2026-11-10, BAMF69: option 3 of three considered; earlier versions in git history)*: **what your creature does in its life decides which variations its offspring are likely to carry, and you choose which offspring to keep playing** ("choose your favorite daughter"). You never buy a stat or a trait from a menu, but you are always choosing. Indirectly, the Gardener shapes the world that decides which traits pay off (the Gardener rule). The player must always see how their actions and choices shaped each trait (the cause log). **The same in every stage.**
+   - **Bodies evolve, tools are built** (BAMF69 2026-11-10): the creature's own body and stats (cell, aquatic and creature stages, and the hero after them) change only this way. Towers, machines and ship parts (civilization and space) are chosen and built directly: by then the species designs things, and `T0|▼|` counters designs, which is why the space stage makes you keep refitting.
+   - **Actions raise the odds, with diminishing returns** *(Claude's pick)*: biting more makes a strong-jawed offspring more likely, never certain, so grinding one action does not pay.
+   - **Stat caps still double each stage** (5 in the cell stage, 10 in the aquatic stage, 20 in the creature stage; from 2026-11-08), reached through selection instead of points.
+   - **Built Toys still use points and upgrade panels** (cell, aquatic): they change when each stage is next worked on; the cell stage's division (`docs/stages/01-cell.md`) is the first test.
 3. **Small world, growing bigger** *(Claude's pick)*: each stage plays in a bigger world than the last. Rules out a huge map at the start.
 
 ## Stages
@@ -34,8 +39,8 @@ the stage before), and hands its lineage to the next through `docs/HANDOFF_CONTR
 |---|---|---|---|---|---|
 | 1 | Cell | `docs/stages/01-cell.md` | Avatar | Toy done, **Vertical slice** next | Fun (BAMF69 2026-11-08); paused while the aquatic Toy is built |
 | 2 | Aquatic | `docs/stages/02-aquatic.md` | Avatar (behind view) + god | Toy done, **Vertical slice** next | Toy v1-v9 played (BAMF69 2026-11-09: "this is great"); paused |
-| 3 | Creature (was Land/Air) | `docs/stages/03-creature.md` | Sidescroller levels (avatar) + world map (god) | Toy done, **Vertical slice** next | Toy 1 built and played 2026-11-09 (three levels and the Old Horn; PR #8); paused |
-| 4 | Civilization | `docs/stages/04-civilization.md` | Ruler of a turn-based hex strategy game (avatar) + acts of god | **Toy** | Toy 1 built 2026-11-09 (PR #10), playtest pending; paused |
+| 3 | Creature (was Land/Air) | `docs/stages/03-creature.md` | Roguelike metroidvania: each run a generation (avatar) + the Gardener between runs (god) | **Toy** (redesigned) | Redesigned 2026-11-10: Toy 1 (sidescroller levels, PR #8) is replaced by a roguelike Toy 2, not built yet |
+| 4 | Civilization | `docs/stages/04-civilization.md` | Tower wars RTS: builders, gatherers, sends and defenses, your creature as the hero (avatar) + the Gardener's levers (god) | **Toy** (redesigned) | Redesigned 2026-11-10: Toy 1 (hex strategy, PR #10) is replaced by a tower wars Toy 2, not built yet |
 | 5 | Space | `docs/stages/05-space.md` | Captain of an Endless Sky style fleet (avatar) + seeding the outer gardens (god) | **Toy** | Toy 1 built 2026-11-09 (**active**), playtest pending |
 
 **Active stage:** Space (`docs/stages/05-space.md`), since 2026-11-09 (BAMF69: "building stage 5, the space stage,
@@ -53,11 +58,26 @@ new stage means making it the active stage here (and at Toy, it gets a full doc 
 | Mode | In the lore | What the player does |
 |---|---|---|
 | **God mode** | The Gardener looking down the lens | Shapes the environment (food, temperature, currents, terrain, climate, predators, events). The simulation evolves the creatures |
-| **Avatar mode** | The Gardener living inside one creature | Plays one individual directly: seen from behind (pseudo-3D) in the aquatic stage, side-on in the creature stage's sidescroller levels. What the avatar does, the lineage leans toward |
+| **Avatar mode** | The Gardener living inside one creature | Plays one individual directly: seen from behind (pseudo-3D) in the aquatic stage, side-on in the creature stage's roguelike, as the hero on the civilization stage's battlefield. What the avatar does, the lineage leans toward |
 
 Switching is a smooth camera move: the overhead lens swings down behind the creature, like a microscope's focus knob
 *(Claude's pick: keeps every stage 2D)*. Avatar mode's behind view is approved (BAMF69 2026-11-08); god mode stays top-down. The space stage
 replaces both with fleet play. Details per stage in each stage doc; the why in `docs/LORE.md`.
+
+## The Gardener rule *(BAMF69 2026-11-10)*
+**Every decision the Gardener makes has a clear benefit for either the aggressive (carnivore) player or the cautious
+(herbivore) player. Without that benefit, the game is difficult.** God mode is never optional decoration: a player who
+ignores it, or picks against their own style, finds the stage hard.
+- **Adaptable (omnivore) players** use the Gardener's benefits as they see fit, moment to moment: they can switch which
+  side a lever favors as the situation changes.
+- **Every stage doc lists its levers** and which side each one helps. A lever that helps nobody, or both sides equally,
+  breaks this rule.
+- Examples *(Claude's picks)*: aquatic, warm water brings more prey fish (aggressive) and cold water more algae and
+  fewer predators (cautious); creature, a drought crowds animals at the waterholes (aggressive) and a flood drowns the
+  predators' dens (cautious); civilization, rich ore pays for monster sends (aggressive) and rocky ground makes walls
+  cheap (cautious).
+- **Diet and temperament are strongly linked** (BAMF69 2026-11-10): carnivores lean aggressive, herbivores lean
+  cautious, and omnivores are the gray area in the middle, where adaptable play lives.
 
 ## Whole-game loop
 | Scale | What the player does | Why they keep going |
@@ -90,6 +110,10 @@ Each stage doc adds its own palette, scale and camera. Across all stages:
 - Lit and moody, like a nature documentary, at every scale: the microscope at the start, the lens pulling back each stage.
 - Organic vs. geometric: everything alive is irregular and organic; `T0|▼|` and its traces are perfect geometry (hexagons, lattices, flawless symmetry). Players should learn to read straight lines as danger.
 - Light from the top-left. Food and other things the player needs stay the brightest things on screen.
+- **Humor: quirky and tongue-in-cheek, delivered deadpan** (BAMF69 2026-11-10, after Everything is Crab): dry wit in
+  the words (the offspring choice is "choose your favorite daughter", cause lines, creature names, the Gardener's
+  notes), like a nature documentary narrator keeping a straight face. The picture stays lit and moody, which keeps the
+  humor from turning childish (the 2026-11-07 "less childish" decision) *(Claude's pick for how the two fit)*.
 - Art source: code-drawn (`tools/art/pixel_sprite.py`) + free packs (Kenney and others, each license checked; `/asset-intake`).
 - Sound source: made in code (the cell stage's organic synth, `assets_src/audio/make_sfx.py`, which writes WAVs with Wavesmith's `wavfile.py`) + free packs (`/asset-intake`).
 - Fill the style fragments in `BRIEFS.md` from this section and the active stage's doc.

@@ -38,6 +38,10 @@ Ooze2Orbit, live at https://bamf69.github.io/Ooze2Orbit/ (every push to main red
   `?stage=civ`, `&rival=aggressive|adaptable`, `&autoplay`. Doc: `docs/stages/04-civilization.md`.
 
 ## What changed last session
+- 2026-11-10 (design, same branch): **pillar 2 rewritten**: no stat buying anywhere; actions shape offspring, you pick
+  one ("choose your favorite daughter"); bodies evolve, tools are built. First test: cell division (ROADMAP Next).
+- 2026-11-10 (design only, branch `docs/roguelike-and-tower-wars`): the **Gardener rule** (GDD); creature stage is now a
+  **roguelike metroidvania**, civilization a **tower wars battler** (both docs rewritten; Toys 1 stay until Toys 2 exist).
 - 2026-11-09 (branch `docs/space-stage`): the game is now **GPL-3.0-or-later** (`LICENSE`, ADR 0001) so the space stage
   can adapt Endless Sky's code (credit in file headers), data and art (per file, in ASSET_LOG). Build waits for its turn.
 - 2026-11-09 (design only, branch `docs/space-stage`): the **space stage** is designed in `docs/stages/05-space.md`:
