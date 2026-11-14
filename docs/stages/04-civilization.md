@@ -9,9 +9,61 @@
 > Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69. Everything else was decided by BAMF69.
 
 ## Identity
+### Live command dock and Farmers — 2026-11-14
+User revised the earlier pause-menu preference: Builder, Summons, Workers/terrain and Hero orders
+now open as compact nonmodal panels above the 1/2/3 controls. No veil or battle pause; construction,
+waves, movement, payday clocks and automatic patrol continue. Details and explicit shell/rotation
+pause retain their existing freeze behavior. The role buttons stay usable while a submenu is open.
+
+Worker choices now include **Farmer: 35 ore, +6 food per 8-second payday**, capped at 20 farmers.
+Farmers start at zero and do not add recurring ore income or directly advance economic victory.
+Gatherers retain +1.5 recurring ore income and +3 food per payday. These are initial tunable values
+in warsTuning. A missing farmer count is treated as zero; no lineage/save-schema change is needed.
+
+The dock scrolls horizontally on small screens. Short landscape uses one control row; portrait
+uses two. Draw and pointer conversion share a layout fitted above the dock, so menus never cover
+either maze. Controller menu navigation remains available; choosing a tower clears the confirming
+input before returning to placement. Manual gameplay intents wait during controller menu navigation,
+while patrol and battle simulation continue.
+
+Validation: 476 unit tests; wrapper type/shader and production civilization smoke; browser pointer
+and emulated touch tests for live clocks/patrol, hire/payday output, nonoverlapping grid/menu/control
+bounds at 1280x720, 375x812 and 812x375, sends, construction, Details freeze, rematch and space cleanup.
+Visuals inspected in all three sizes. Physical-device checks remain pending.
+
+## Civilization controls and patrol — 2026-11-13
+- **1 Hero, 2 Builder, 3 Summons** select the three control roles. Matching native buttons stay
+  visible on touch; the selected role is highlighted and exposed with aria-pressed.
+- Hero: WASD / left stick / D-pad move, J/F bite, Space pulse. Tap/click an open cell for an
+  obstacle-aware move order. Touch has native Bite and Pulse buttons with pulse cooldown.
+- Builder: choose Thorn, Seed mortar or Mist spire in the live command dock, then tap/click your maze.
+  WASD / stick / D-pad step an independent build cursor; E / north or south confirms placement.
+  Attack / west reopens tower choices. Construction still uses the shared builder workforce;
+  this is a control role, not a new individually simulated builder unit.
+- Summons: live menu sends Reedrunner, Shellback and Briar brood. Repeated sends can be
+  purchased while choosing; Close hides the panel; battle continues throughout. Worker training and terrain remain under
+  Builder (also accessible through Workers / terrain). Costs and resource rules are unchanged.
+- Existing Q / right shoulder cycles the three roles forward; U / select cycles backward.
+  In Hero, E / north opens Hero orders, including the patrol toggle for controller-only play.
+  Number shortcuts are stage-local; shared action rebinding and other stages are unchanged.
+- **Patrol: OFF/ON** is always available in the battle dock. Opt-in patrol walks between maze
+  ends, prioritizes reachable attackers nearest the base, bites in range and pulses groups of two
+  or more. It respects towers unless inherited climbing allows crossing, and retains ordinary
+  speed, damage, cooldowns, wound costs, recovery and hero-hit/kill heritage credit.
+- Selecting Builder or Summons leaves patrol enabled. Manual Hero movement, a valid move order,
+  bite or pulse turns patrol off. Selecting Hero alone does not interrupt patrol. New matches
+  start in manual Hero mode. Details, shell pause and rotation hold all battle/patrol clocks; command menus run live.
+- World drawing and pointer placement still share warsLayout. Two-row scoped controls reserve
+  additional board space; sprites scale with the tiles for short landscape. No assets/dependencies,
+  save schema, creature hero contract or space technology contract changed.
+- Validation: 474 unit tests, wrapper type/shader check and civilization GPU production smoke;
+  browser desktop keyboard, simulated controller actions and real emulated touch taps for roles,
+  placement, sends, menu/Details freeze, patrol/manual takeover, rematch and space cleanup.
+  Portrait/landscape visuals inspected; physical iPhone/Android/Xbox/PlayStation checks remain.
+
 ### Shared display rollout — 2026-11-13
 User reports liking all stages. Maze grids now stack in portrait and share one draw/hit transform.
-Native command panels pause the battle while choosing; Details also pauses. Tower selection closes
+Native command panels now run live in the compact dock; Details pauses (revised 2026-11-14). Tower selection closes
 the panel immediately, then placement resumes the existing build rules. Fullscreen, safe margins and
 rotation pause/resume are shared. Grid mechanics, costs and win rules stay unchanged. Emulation
 checks cover real pointer placement; physical-device/controller expansion remains separate.

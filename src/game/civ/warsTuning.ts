@@ -3,10 +3,11 @@ export const WAR = {
   cols: 11, rows: 7, entry: { x: 0, y: 3 }, exit: { x: 10, y: 3 },
   tick: 8, wave: 24, firstWave: 30, baseHp: 40, startOre: 120, startFood: 45,
   baseIncome: 8, rivalIncome: 8, incomeRatio: 5, gatherIncome: 1.5, gatherFood: 3,
-  gatherCost: 35, builderCost: 40, maxWorkers: 20, buildSeconds: 4,
+  gatherCost: 35, builderCost: 40, farmerCost: 35, farmerFood: 6, maxWorkers: 20, buildSeconds: 4,
   killOre: 5, killIncome: 0.6, oreMult: 1.6, rockyDiscount: 0.65,
   heroSpeed: 2.4, heroRange: 1.7, heroDamage: 4, heroCooldown: 0.6,
   heroHp: 12, heroRespawn: 10, heroRecovery: 2, abilityRange: 2.8, abilityCooldown: 9,
+  heroArrival: 0.025, heroArrivalStep: 0.05, patrolRangeFactor: 0.8, patrolPulseTargets: 2,
   unitLimit: 100, rivalGrowth: 0.15, rivalBuildEvery: 3,
 };
 export const TOWERS = {
