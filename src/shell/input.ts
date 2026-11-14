@@ -16,6 +16,7 @@
 // Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
 // ---------------------------------------------------------------------------
 import type { Bindings } from "../core/bindings";
+import { ControlIntent, CONTROL, type ControlScheme } from "../core/controlScheme";
 
 // ---- Tunables ----------------------------------------------------------------
 const CAPTURE_TIMEOUT_MS = 6000; // a rebind prompt gives up after this
@@ -65,6 +66,8 @@ export function padDevice(id: string): Device {
 }
 
 export class ShellInput {
+  readonly intent = new ControlIntent(typeof matchMedia !== "undefined" && matchMedia("(pointer: coarse)").matches);
+  private virtual = new Map<string, Set<string>>();
   lastDevice: Device = "keyboard";
   /** Called once per new press with the binding and the actions it maps to (maybe none). */
   onPress: (binding: string, actions: string[]) => void = () => {};
@@ -77,32 +80,57 @@ export class ShellInput {
   private captureCb: ((binding: string | null) => void) | null = null;
   private captureTimer = 0;
 
-  constructor(private readonly bindings: () => Bindings, private readonly deadzone: () => number) {}
+  constructor(private readonly bindings: () => Bindings, private readonly deadzone: () => number, private preference: () => string = () => "auto") {}
+  get scheme(): ControlScheme { return this.intent.resolve(this.preference()); }
+  get promptDevice(): string { return this.scheme === "keyboard" ? "keyboard" : this.scheme === "touch" ? "touch" : this.lastDevice.startsWith("pad_") ? this.lastDevice : "pad_other"; }
+  use(scheme: ControlScheme, deliberate = true): void { this.intent.observe(scheme, performance.now(), deliberate); }
+  /** Independent sources prevent a touch release from cancelling a held keyboard or controller action. */
+  hold(source: string, actions: readonly string[]): void {
+    const old = this.virtual.get(source) ?? new Set<string>();
+    for (const action of actions) if (!old.has(action)) this.presses.set(action, Math.min((this.presses.get(action) ?? 0) + 1, MAX_QUEUED));
+    this.virtual.set(source, new Set(actions));
+  }
+  releaseVirtual(source: string): void { this.virtual.delete(source); }
 
   attach(target: Window): void {
     target.addEventListener("keydown", (e) => {
       if (e.repeat) return;
       this.lastDevice = "keyboard";
+      this.use("keyboard");
       this.onRawKey(e.code);
       const binding = "key:" + keyName(e.code);
       if (this.captureCb || this.actionsFor(binding).length) e.preventDefault(); // no page scroll on arrows/space
       this.press(binding);
     });
     target.addEventListener("keyup", (e) => this.release("key:" + keyName(e.code)));
-    target.addEventListener("mousemove", () => (this.lastDevice = "mouse"));
-    target.addEventListener("mousedown", () => (this.lastDevice = "mouse"));
-    target.addEventListener("blur", () => this.down.clear()); // keys released while away never send keyup
+    let touch: { id: number; x: number; y: number } | null = null;
+    target.addEventListener("pointerdown", e => {
+      if (e.pointerType === "touch") { touch = { id: e.pointerId, x: e.clientX, y: e.clientY }; this.use("touch", false); }
+      else { this.lastDevice = "mouse"; this.use("keyboard"); }
+    });
+    target.addEventListener("pointermove", e => { if (touch?.id === e.pointerId && Math.hypot(e.clientX - touch.x, e.clientY - touch.y) >= CONTROL.dragIntent) { this.use("touch"); touch = null; } });
+    target.addEventListener("pointerup", e => { if (touch?.id === e.pointerId) touch = null; });
+    target.addEventListener("pointercancel", () => { touch = null; this.clearHeld(); });
+    target.addEventListener("blur", () => this.clearHeld());
+    target.document.addEventListener("visibilitychange", () => { if (target.document.hidden) this.clearHeld(); });
   }
 
   /** Actions that a binding triggers, in binding-table order. */
   actionsFor(binding: string): string[] {
     const b = this.bindings();
-    return Object.keys(b).filter((a) => b[a].includes(binding));
+    const explicit = Object.keys(b).filter((a) => b[a].includes(binding));
+    if (explicit.length) return explicit;
+    const stick: Record<string, string[]> = {
+      "pad_axis:leftx-": ["ui_left", "move_left"], "pad_axis:leftx+": ["ui_right", "move_right"],
+      "pad_axis:lefty-": ["ui_up", "move_up"], "pad_axis:lefty+": ["ui_down", "move_down"],
+    };
+    return stick[binding] ?? [];
   }
 
   isDown(action: string): boolean {
     const list = this.bindings()[action] ?? [];
-    return list.some((b) => b !== "" && this.down.has(b));
+    return list.some((b) => b !== "" && this.down.has(b)) || [...this.virtual.values()].some(a => a.has(action)) ||
+      [...this.down].some(b => b.startsWith("pad_axis:left") && this.actionsFor(b).includes(action));
   }
 
   /** True once per press of action since the last take (for gameplay polling). */
@@ -117,6 +145,8 @@ export class ShellInput {
   clearPresses(): void {
     this.presses.clear();
   }
+  /** Modal/display transitions must also forget held directions; no stale thrust after rotation. */
+  clearHeld(): void { this.down.clear(); this.virtual.clear(); this.presses.clear(); }
 
   /** The next press of any key or button goes to cb instead of the game; Escape or a timeout cancel (null). */
   capture(cb: (binding: string | null) => void): void {
@@ -154,11 +184,12 @@ export class ShellInput {
         if (v < -dz) now.set(`pad_axis:${axis}-`, true);
         if (v > dz) now.set(`pad_axis:${axis}+`, true);
       });
-      if ([...now.keys()].some((k) => !this.padPrev.get(k))) this.lastDevice = padDevice(pad.id);
+      if ([...now.keys()].some((k) => !this.padPrev.get(k))) { this.lastDevice = padDevice(pad.id); this.use("controller"); }
     }
     for (const b of now.keys()) if (!this.padPrev.get(b)) this.press(b);
     for (const b of this.padPrev.keys()) if (!now.has(b)) this.release(b);
     this.padPrev = now;
+    if (![...pads].some(p => p?.connected)) this.intent.disconnected();
   }
 
   private press(binding: string): void {

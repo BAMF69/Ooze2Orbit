@@ -8,7 +8,7 @@
 //           const ev = gulperEvent(before, after) ; if (ev) rec = bump(rec, ev === "escape" ? "gulperEscapes" : "gulpersLured")
 //           const lineage = cellLineage(creature, rec)        // at the stage's end; save it, hand it on
 // Notes   : No Phaser import (Vitest runs it). Pure functions: every call returns a new record.
-//           How much each cause counts lives in TUNING.temperament. The cell stage sets temperament freely (0 to 1);
+//           How much each cause counts lives in TUNING.temperament. Cell evidence is normalized into shares totaling 1;
 //           the per-stage shift cap starts with the aquatic stage (src/core/lineage.ts).
 //           "Popped" here means pond cells the player popped. The player getting popped is not built yet
 //           (ROADMAP "Getting popped"); add a timesPopped count when it is.
@@ -18,6 +18,7 @@ import {
   LINEAGE_SCHEMA, temperamentOf, type Influence, type Lineage, type Species, type Temperament, type TemperamentKind,
 } from "../../core/lineage";
 import { PLAYER_ID, type GulperBrain } from "./predator";
+import type { Perk } from "./perks";
 import type { Creature } from "./rules";
 import { TUNING, UPGRADE_STATS, type Diet, type UpgradeStat } from "./tuning";
 
@@ -25,12 +26,13 @@ export const BEHAVIORS = ["cellsRammed", "cellsPopped", "timesBitten", "gulperEs
 export type Behavior = (typeof BEHAVIORS)[number];
 
 export interface CellRecord {
+  readonly selections: readonly { form: number; diet?: Diet; stat: UpgradeStat; gain: number; perk?: Perk; cause: string; evidence?: Readonly<Record<string, number>> }[];
   readonly dietHistory: readonly Diet[]; // the diet picked at the start and at each evolution, in order
   readonly behavior: Readonly<Record<Behavior, number>>;
 }
 
 export function newCellRecord(): CellRecord {
-  return { dietHistory: [], behavior: Object.fromEntries(BEHAVIORS.map((b) => [b, 0])) as Record<Behavior, number> };
+  return { selections: [], dietHistory: [], behavior: Object.fromEntries(BEHAVIORS.map((b) => [b, 0])) as Record<Behavior, number> };
 }
 
 export function recordDiet(r: CellRecord, d: Diet): CellRecord {
@@ -64,9 +66,11 @@ export function cellInfluence(c: Creature, r: CellRecord): Influence[] {
   const plural = (n: number, one: string, many = one + "s") => `${n} ${n === 1 ? one : many}`;
 
   for (const stat of UPGRADE_STATS) {
-    const lvl = c.ups[stat];
+    const inheritedBonus = r.selections.filter(p => p.stat === stat).reduce((sum, p) => sum + p.gain, 0);
+    const lvl = Math.max(0, c.ups[stat] - inheritedBonus);
     add(UPGRADE_TEMPERAMENT[stat], lvl * w.perUpgradeLevel[stat], `Your ancestor grew its ${stat} to level ${lvl}`);
   }
+  for (const pick of r.selections) add(UPGRADE_TEMPERAMENT[pick.stat], pick.gain * w.perUpgradeLevel[pick.stat], `You kept a daughter with ${pick.stat} +${pick.gain}. ${pick.cause}`);
   if (c.parts.includes("spikes")) add("aggressive", w.spikesKept, "Your ancestor kept its spikes");
   if (c.parts.includes("shell")) add("cautious", w.shellKept, "Your ancestor kept its shell");
 
@@ -87,6 +91,8 @@ export function cellInfluence(c: Creature, r: CellRecord): Influence[] {
 /** The cell stage's own block in the lineage (contract: "The cell stage's block"). */
 export function cellBlock(c: Creature, r: CellRecord): Record<string, unknown> {
   return {
+    selections: r.selections.map(s => ({ ...s })),
+    ...(c.perks ? { perks: { ...c.perks } } : {}),
     finalForm: c.form,
     diet: c.diet,
     dietHistory: [...r.dietHistory],

@@ -3,7 +3,7 @@
 // Purpose : Entry point. Creates the Phaser game with the project's scenes and hands it to the shell
 //           (title, menus, settings, pause, subtitles: src/shell/).
 // Usage   : Loaded by index.html (<script type="module" src="/src/main.ts">).
-// Notes   : 640x360 logical size, scaled to fit the window with pixel-art filtering.
+// Notes   : 640x360 baseline; shell viewport adapts each stage to safe bounds. Pixel-art filtering retained.
 //           The shell is imported first: its crash hook (crash file + Log.error, which `dev.py smoke` fails
 //           on) is in place before anything else runs. Phaser's keyboard and gamepad plugins are off because
 //           the shell's input layer (src/shell/input.ts) reads both for menus and scenes alike.
@@ -14,8 +14,8 @@ import * as Phaser from "phaser";
 import { BackdropScene } from "./game/BackdropScene";
 import { JuiceScene } from "./game/JuiceScene";
 import { AquaticScene } from "./game/AquaticScene";
-import { CreatureScene } from "./game/CreatureScene";
-import { CivScene } from "./game/CivScene";
+import { CreatureScene } from "./game/CreatureGenerationScene";
+import { CivScene } from "./game/CivWarsScene";
 import { SpaceScene } from "./game/SpaceScene";
 import { MainScene } from "./game/MainScene";
 

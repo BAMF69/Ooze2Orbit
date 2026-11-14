@@ -38,7 +38,7 @@ describe("the aquatic run as a save", () => {
     expect(r.me.diet).toBe("omnivore");
     expect(r.me.parts).toEqual(["jaws"]);
     expect(r.me.uniques).toEqual(["torrent"]);
-    expect(r.me.ups.attack).toBe(10);
+    expect(r.me.ups.attack).toBe(17); // valid inherited + aquatic daughter levels
     expect(r.pop.thickness.length).toBeGreaterThan(0);
   });
   it("refuses a run from a newer build", () => {

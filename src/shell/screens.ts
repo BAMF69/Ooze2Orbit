@@ -13,6 +13,9 @@ import { glyphName, glyphSet, promptBinding } from "../core/bindings";
 import type { GameKey, Screen, Shell } from "./app";
 import { GAME_VERSION } from "./meta";
 import { settingsScreen } from "./settingsScreen";
+import { navigateNative } from "./nativeNavigation";
+import { landing, gameLogo } from "./landing";
+import { uiIcon, type UiIcon } from "../game/uiIcons";
 import { exportSaves, hasRun, importSaves } from "./saveFiles";
 import { Menu, buttonItem, el, glyph, tl, val } from "./ui";
 
@@ -57,11 +60,8 @@ export function boot(shell: Shell): Screen {
 
 export function title(shell: Shell): Screen {
   const s = built("title", "", (root) => {
-    const col = el("div", "");
-    col.style.textAlign = "center";
-    col.append(tl(shell.i18n, "game.title", "bigtitle", {}, "div"), tl(shell.i18n, "title.press", "press blink", {}, "div"));
-    root.append(col, tl(shell.i18n, "version", "corner", { v: GAME_VERSION }, "div"));
-    root.addEventListener("click", () => shell.topId === "title" && shell.replace(menu(shell)));
+    landing(root, shell, () => { if (shell.topId === "title") shell.replace(menu(shell)); });
+    root.append(tl(shell.i18n, "version", "corner", { v: GAME_VERSION }, "div"));
   }, {
     onAnyPress: () => {
       shell.replace(menu(shell));
@@ -98,23 +98,29 @@ export function consent(shell: Shell): Screen {
 
 export function menu(shell: Shell): Screen {
   return built("menu", "dim", (root, m) => {
+    root.classList.add("game-menu");
     const p = panel("narrow");
-    p.append(tl(shell.i18n, "game.title", "heading", {}, "div"));
+    p.append(gameLogo(shell));
     const list = el("div", "list");
+    const stages = el("div", "stage-select-grid"); m.horizontal = true;
     const add = (key: string, fn: () => void) => list.append(m.add(buttonItem(shell.i18n, key, fn)).el);
     if (hasRun(shell)) add("menu.continue", () => shell.continueAquatic()); // 2026-11-09: pick up where you left off
-    add("menu.play", () => shell.startGame("main"));
-    add("menu.aquatic", () => shell.startGame("aquatic")); // the aquatic stage Toy (docs/stages/02-aquatic.md)
-    add("menu.creature", () => shell.startGame("creature")); // the creature stage Toy 1 (docs/stages/03-creature.md)
-    add("menu.civ", () => shell.startGame("civ")); // the civilization stage Toy 1 (docs/stages/04-civilization.md)
-    add("menu.space", () => shell.startGame("space")); // the space stage Toy 1 (docs/stages/05-space.md)
+    for (const [id, game, label, icon] of [
+      ["menu.play", "main", "cell", "cell"], ["menu.aquatic", "aquatic", "aquatic", "aquatic"],
+      ["menu.creature", "creature", "creature", "creature"], ["menu.civ", "civ", "civilization", "civ"],
+      ["menu.space", "space", "space", "space"],
+    ] as const) {
+      const item = buttonItem(shell.i18n, `landing.${label}`, () => shell.startGame(game), id);
+      item.el.classList.add("stage-select-card"); item.el.dataset.stage = game;
+      item.el.prepend(uiIcon(icon as UiIcon)); stages.append(m.add(item).el);
+    }
     add("menu.export", () => exportSaves(shell));
     add("menu.import", () => importSaves(shell, () => shell.reset(menu(shell))));
     add("menu.settings", () => shell.push(settingsScreen(shell)));
     add("menu.credits", () => shell.push(creditsScreen(shell)));
     if (shell.debugBuild) add("menu.juice", () => shell.startGame("juice"));
     add("menu.quit", () => shell.quit());
-    p.append(list);
+    p.append(stages, list);
     if (shell.drive === "pseudo-plant") {
       const planted = tl(shell.i18n, "menu.settings", "label", {}, "div"); // a label far too small for its text
       planted.dataset.id = "drive.planted_label";
@@ -192,9 +198,10 @@ export function loading(shell: Shell, key: GameKey): Screen {
 /** The HUD over a running scene: prompts with glyphs for the current device. */
 export function gameplay(shell: Shell, key: GameKey): Screen {
   let lastSet = "";
+  let updateFullscreen = () => {};
   const s = built(key === "juice" ? "juice" : "play", "hud", (root) => { // both stages are "play": scenes gate input on it
     const hud = el("div", "hudbar");
-    const set = glyphSet(shell.settings.input.glyphs, shell.input.lastDevice);
+    const set = glyphSet(shell.settings.input.glyphs, shell.input.promptDevice);
     lastSet = set;
     for (const action of key === "juice" ? HUD_ACTIONS : ["pause"]) {
       const pr = el("span", "prompt");
@@ -202,18 +209,44 @@ export function gameplay(shell: Shell, key: GameKey): Screen {
       hud.append(pr);
     }
     root.append(hud);
+    if (key !== "juice") {
+      hud.classList.add("cell-toolbar");
+      hud.replaceChildren();
+      const pauseButton = el("button", "display-control"); pauseButton.textContent = shell.i18n.t("action.pause");
+      pauseButton.dataset.tr = "action.pause";
+      pauseButton.onclick = () => { pauseButton.blur(); shell.pauseGame(); };
+      const full = el("button", "display-control");
+      const update = () => { full.dataset.tr = document.fullscreenElement ? "display.exit_fullscreen" : "display.fullscreen"; full.textContent = shell.i18n.t(full.dataset.tr); };
+      updateFullscreen = update;
+      update(); full.disabled = !document.fullscreenEnabled;
+      full.onclick = (event) => { shell.settings.display.mode = document.fullscreenElement ? "windowed" : "fullscreen"; shell.applyDisplayMode(); if (event.detail > 0) full.blur(); };
+      full.onpointerenter = update; full.onfocus = update;
+      hud.append(pauseButton, full);
+    }
   }, {
     gameplay: true,
     onAction: (a) => {
+      if (shell.input.scheme === "controller" && ["ui_up", "ui_down", "ui_left", "ui_right", "ui_accept"].includes(a)) {
+        if (navigateNative(a, () => shell.input.clearPresses())) return true;
+      }
+      const focused = document.activeElement;
+      if (key !== "juice" && (a === "ui_accept" || a === "jump") && focused instanceof HTMLElement &&
+        focused.matches("button, summary") && focused.getClientRects().length > 0 && getComputedStyle(focused).visibility !== "hidden" && !focused.closest("[hidden], [inert]") && focused.closest(".cell-ui-layer, .cell-toolbar, .stage-ui-layer")) {
+        shell.input.clearPresses(); focused.click(); return true;
+      }
       if (a !== "pause") return false;
       shell.pauseGame();
       return true;
     },
     tick: () => {
       // prompts follow the last device used (keyboard <-> gamepad)
-      if (glyphSet(shell.settings.input.glyphs, shell.input.lastDevice) !== lastSet) shell.rerender();
+      if (glyphSet(shell.settings.input.glyphs, shell.input.promptDevice) !== lastSet) shell.rerender();
     },
   });
+  if (key !== "juice") {
+    const changed = () => updateFullscreen(); document.addEventListener("fullscreenchange", changed);
+    s.leave = () => document.removeEventListener("fullscreenchange", changed);
+  }
   return s;
 }
 
@@ -221,6 +254,9 @@ export function pause(shell: Shell): Screen {
   return built("pause", "dim", (root, m) => {
     const p = panel("narrow");
     p.append(tl(shell.i18n, "pause.title", "heading", {}, "div"));
+    if (shell.displayPause) p.append(el("p", "display-pause-note"));
+    const note = p.querySelector(".display-pause-note");
+    if (note instanceof HTMLElement) { note.dataset.tr = "display.rotated"; note.textContent = shell.i18n.t("display.rotated"); }
     const list = el("div", "list");
     list.append(
       m.add(buttonItem(shell.i18n, "pause.resume", () => shell.resumeGame())).el,

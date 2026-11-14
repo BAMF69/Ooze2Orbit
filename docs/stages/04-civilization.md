@@ -9,6 +9,37 @@
 > Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69. Everything else was decided by BAMF69.
 
 ## Identity
+### Shared display rollout — 2026-11-13
+User reports liking all stages. Maze grids now stack in portrait and share one draw/hit transform.
+Native command panels pause the battle while choosing; Details also pauses. Tower selection closes
+the panel immediately, then placement resumes the existing build rules. Fullscreen, safe margins and
+rotation pause/resume are shared. Grid mechanics, costs and win rules stay unchanged. Emulation
+checks cover real pointer placement; physical-device/controller expansion remains separate.
+
+### First playable Toy 2 — 2026-11-13 (Codex prototype picks; playtest pending)
+- One battlefield with two 11x7 mazes. Ore builds/trains, ore plus food buys sends. Gatherers raise
+  income and supply food every 8s; builders share construction work. New defenses block paths while
+  being built; placement cannot seal a route or trap an existing creature.
+- Three defenses: Thorn (single target), Seed mortar (splash), Mist spire (slow). Three sends:
+  Reedrunner (fast), Shellback (armored), Briar brood (three fragile bodies). Sends raise income;
+  defending kills pay ore and permanently increase income. Prices/stats live in `civ/warsTuning.ts`.
+- Inherited hero strength increases attack; vitality increases HP; claws cross built defenses.
+  WASD move, J/F bite, Space pulse. Hero wounds cause 10s recovery and 5 ore medical cost.
+- Click a tower command then your grid to place it. Q/U cycle commands, E executes the selected
+  command at the hero's cell. Other buttons immediately train/send/switch the Gardener lever.
+  Uses shared shell actions (gamepad bindings); final prompts/touch controls remain future work.
+- Rich ore gives +60% ore each payday (aggressive); rocky ground discounts defenses by 35% (cautious).
+  The economic victory compares nominal recurring income, excluding the ore multiplier.
+- Rival choice opposes the inherited leaning: cautious/balanced faces larger raider waves;
+  aggressive faces a warden with another defense. Preview shows next wave type/count/time.
+- Destroy the rival base or reach 5x its income. Falling base ends only the match; E rematches.
+  Successful result offers Enter into space. No mid-match saving in this first test.
+- Live tally: spending on sends/defenses, longest maze and hero hits. Victory cause log credits each.
+  Technology heritage records most-used tower/send types. Space accepts both new and legacy wins.
+- Original city/worker/creature atlases reused with type tints; no new assets or dependencies.
+  Full worker command AI, research, probe/faith story, campaign and richer unit art are later work.
+  Old Toy 1 stays unregistered until this replacement proves fun in playtest.
+
 - **Pitch:** Your species builds a civilization. Train builders and gatherers, gather resources, then spend them on
   monsters that run the enemy's gauntlet or on defenses that hold against their waves, with your own creature on the
   field as the hero.

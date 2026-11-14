@@ -30,10 +30,36 @@ export const UPGRADE_PAID_WITH: Readonly<Record<UpgradeStat, FoodKind>> = {
 export const DROPS: Readonly<Record<CellKind, PartKind | null>> = { prickle: "spikes", snail: "shell", sipper: "mouth", gulper: null };
 
 export const TUNING = {
+  // PROTOTYPE: selection and rival limits (your pick, 2026-11-12).
+  division: {
+    daughters: 3, statGain: 2, evidenceCap: 8, evidenceWeight: 0.5,
+    maxRivals: 6, rivalSpread: 90, rivalSpeedMult: 0.65,
+    cardWidth: 180, cardHeight: 260, cardGap: 12, previewScale: 1.5,
+  },
+  // Mitosis presentation (your pick, 2026-11-12): swell, separate, settle, dock into cards.
+  mitosis: {
+    growS: 0.4, splitS: 0.8, settleS: 0.3, dockS: 0.4, reducedS: 0.18,
+    bodyScale: 2.5, swell: 0.3, stretch: 0.6, squeeze: 0.25,
+    separation: 140, arcHeight: 24, previewOffsetY: 42,
+    dimAlpha: 0.6, menuDimAlpha: 0.8, depth: 1250,
+    membraneColor: 0xbba65d, bridgeAlpha: 0.65, bridgeWidth: 32, bridgeHeight: 40, bridgeMinHeight: 3,
+    captionBottom: 55, captionSize: 14,
+  },
+  // Daughter-only rewards (your pick, 2026-11-12). Repeated picks improve a perk to rank 3.
+  perks: {
+    maxRank: 3, foodSenseRadius: 90, foodSensePullSpeed: 160,
+    softLandingLossMult: 0.75,
+    jetDurationS: 0.4, jetSpeedMult: 2.4, jetCooldownS: 5,
+    jetCooldownReductionS: 1, jetMinCooldownS: 3, jetTint: 0x9be9ff,
+  },
+  // Extra daughter levels retain useful, diminishing defensive/handling effects (your pick, 2026-11-12).
+  overcap: { handlingPerLevel: 0.1, knockbackMult: 0.8, foodLossMult: 0.85 },
   // ---- the world ----
   world: { width: 1280, height: 720 },
-  algaeCount: 28, // the pond keeps this many algae, regrowing eaten ones
-  algaeRegrowS: 2.5, // seconds between regrowths while below the count
+  // BAMF69 2026-11-12: restore pre-increase food for Form 1; later forms keep the richer pond.
+  form1Food: { algaeCount: 28, algaeRegrowS: 2.5, meatFood: 2 },
+  algaeCount: 42, // the pond keeps this many algae, regrowing eaten ones
+  algaeRegrowS: 2.5 / 1.5, // seconds between regrowths while below the count
 
   // ---- the player ----
   player: {
@@ -62,7 +88,7 @@ export const TUNING = {
     carnivore: { algae: 0, meat: 1 },
     omnivore: { algae: 0.5, meat: 0.5 },
   } as Readonly<Record<Diet, Readonly<Record<FoodKind, number>>>>,
-  meatFood: 2, // one meat chunk, before the diet multiplier (rarer than algae, so worth more)
+  meatFood: 3, // one meat chunk, before the diet multiplier (rarer than algae, so worth more)
   meatChunksOnPop: 3,
   meatLifeS: 15, // meat from a popped cell lasts this long before it sinks
   cantEatToastS: 4, // "can't eat that" reminder at most this often
@@ -173,11 +199,10 @@ export const TUNING = {
   evolveFlashS: 0.5,
 
   // ---- temperament: how the cell stage feeds the lineage (docs/HANDOFF_CONTRACT.md; src/game/cell/record.ts) ----
-  // Each cause earns points toward one temperament; `full` points = 100 %. First draft (Claude's pick 2026-11-08):
-  // a creature that maxes attack (5), keeps the spikes (2) and picks carnivore at all 3 choices (3) is 100 %
-  // aggressive with no fighting at all; behavior adds on top, capped so grinding one action cannot do it alone.
+  // Relative evidence weights, normalized together into 100% (BAMF69 2026-11-13).
+  // Behavior caps bound its weight against other evidence; `full` preserves the old log pressure scale.
   temperament: {
-    full: 10, // points that make one temperament 100 %
+    full: 10, // evidence unit scale; no longer an independent percentage ceiling
     perUpgradeLevel: { attack: 1, defense: 1, speed: 0.5, mobility: 0.5 }, // attack: aggressive, defense: cautious, speed + mobility: adaptable
     spikesKept: 2, // aggressive: the part you finish the stage with
     shellKept: 2, // cautious

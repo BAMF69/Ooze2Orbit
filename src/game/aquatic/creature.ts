@@ -18,7 +18,14 @@ import { AQ, AQ_PAID_WITH, AQ_PARTS, AQ_STATS, UNIQUE_PARTS, type AqPart, type A
 export type Diet = "herbivore" | "carnivore" | "omnivore";
 export type FoodKind = "algae" | "meat";
 
+export interface AqSelection {
+  form: number; diet: Diet; stat: AqStat; gain: number; cause: string; bonusPart?: AqPart;
+}
+
 export interface AqCreature {
+  selections?: AqSelection[];
+  growthEvidence?: { algae: number; meat: number };
+  divisionSeed?: number; // while a grown form is waiting for a daughter choice (autosave/Continue)
   form: number; // 1..3
   food: number; // toward the next form
   diet: Diet;
@@ -53,7 +60,12 @@ export function maxLevel(): number {
 /** What the inherited body does (thick: health and toughness; slender: speed and turning). */
 const body = (c: AqCreature) => bodyTraits(c.thickness ?? 0.5);
 
-const clampLevel = (v: unknown) => Math.max(0, Math.min(maxLevel(), Math.floor(Number(v) || 0)));
+// Preserve valid cell daughter bonuses even if they exceed this stage's purchase cap.
+const inheritedCellMax = CELL.upgradeCost.length + (CELL.maxForm - 1) * CELL.division.statGain;
+/** Largest valid saved level after this stage's three daughter rewards. */
+export const maxSavedLevel = (stat: AqStat): number => Math.max(maxLevel(), stat === "health" ? 0 : inheritedCellMax) +
+  (AQ.forms.size.length - 1) * AQ.division.statGain;
+const clampLevel = (v: unknown, cap = maxLevel()) => Math.max(0, Math.min(cap, Math.floor(Number(v) || 0)));
 
 /**
  * Start from the cell stage's block in the lineage (its final upgrade levels; health is new and starts at 0).
@@ -61,7 +73,7 @@ const clampLevel = (v: unknown) => Math.max(0, Math.min(maxLevel(), Math.floor(N
  */
 export function creatureFromLineage(cellBlock: unknown, diet: string): AqCreature {
   const ups = ((cellBlock as { upgrades?: Record<string, unknown> } | null)?.upgrades ?? {}) as Record<string, unknown>;
-  const levels = Object.fromEntries(AQ_STATS.map((s) => [s, clampLevel(ups[s])])) as Record<AqStat, number>;
+  const levels = Object.fromEntries(AQ_STATS.map((s) => [s, clampLevel(ups[s], s === "health" ? maxLevel() : Math.max(maxLevel(), inheritedCellMax))])) as Record<AqStat, number>;
   const c: AqCreature = {
     form: 1, food: 0, diet: DIETS.includes(diet as Diet) ? (diet as Diet) : "omnivore",
     points: { algae: 0, meat: 0 }, ups: levels, parts: [], uniques: [], hp: 0, stamina: 0,
@@ -105,7 +117,9 @@ export function mobility(c: AqCreature): number {
 
 /** The cell stage's momentum rule: bigger forms are heavier; mobility takes it back toward 1 (full = snappiest). */
 export function heaviness(c: AqCreature): number {
-  return 1 + (AQ.forms.heaviness[c.form - 1] - 1) * (1 - mobility(c) / maxLevel());
+  const over = Math.max(0, c.ups.mobility - maxLevel());
+  return (1 + (AQ.forms.heaviness[c.form - 1] - 1) * (1 - mobility(c) / maxLevel())) /
+    (1 + over * AQ.division.extraHandlingPerLevel);
 }
 
 export function movement(c: AqCreature): Movement {
@@ -140,7 +154,8 @@ export function eatFood(c: AqCreature, kind: FoodKind, base: number): { creature
   const gained = base * dietShare(c, kind);
   if (gained <= 0) return { creature: c, eaten: false, evolved: false, gained: 0 };
   let next: AqCreature = {
-    ...c, food: c.food + gained, points: { ...c.points, [kind]: c.points[kind] + gained },
+    ...c, growthEvidence: { algae: c.growthEvidence?.algae ?? 0, meat: c.growthEvidence?.meat ?? 0,
+      [kind]: (c.growthEvidence?.[kind] ?? 0) + gained }, food: c.food + gained, points: { ...c.points, [kind]: c.points[kind] + gained },
     hp: Math.min(maxHp(c), c.hp + AQ.food.heal), // every food pickup heals a little
   };
   const need = foodToEvolve(next);

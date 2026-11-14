@@ -1,4 +1,28 @@
 # Playtest Log
+## 2026-11-13 — All-stage display rollout
+User says they like how all stages play and explicitly requested the cell display changes in aquatic,
+creature, civilization and space. Implemented shared fullscreen/safe bounds/rotation handling plus
+stage-specific responsive views and native panels. Internal checks: 459 tests and production smoke
+for all four; browser matrix exercised portrait/landscape, real pointer construction/purchases,
+daughter/heir choices, command pause, rotation freezes, held-input reset and cleanup. Phone checks
+are emulated; physical Safari/Android and expanded controller testing remain pending.
+
+## 2026-11-13 — Temperament share revision
+User approved the cell desktop layout, then reported 100% cautious plus 100% aggressive in one run.
+Root cause: independent score ceilings allowed totals over 100. User requested competing shares.
+Implemented normalized evidence, bounded later-stage redistribution and integer totals of 100.
+Existing caches recalculate without replaying. Validation: 452 tests, 800 signed-transition cases,
+production smoke and a real browser legacy-save reveal of 50/50/0. Further balance feedback pending.
+
+
+## 2026-11-13 — Civilization Toy 2 internal verification (not user approval)
+- Ordinary-resource deterministic strategies: defense plus hero reached economic supremacy at 160s,
+  income 59.6 vs 11.9; assault plus hero destroyed the rival base at 143s. Both retained 40 base HP.
+- Browser exercised actual mouse construction/sends, keyboard movement, pulse, construction timing,
+  pause freeze, inherited strength/vitality/claws, win recording, rematch and Enter into space.
+- A shared gamepad pulse/accept press correctly stops at the result screen.
+- 441 unit tests, type/shader checks, original sprite floor checks and production GPU smoke pass.
+- Screens and moving-wave frame burst inspected. Human fun/balance assessment remains pending.
 
 > One entry per session. Newest on top. Use `/playtest-report` to add entries and turn them into tasks.
 > Playtest = anyone who is not you playing, or you playing with a specific question.
@@ -24,6 +48,55 @@ Tasks created (ROADMAP):
 ```
 
 ## Entries
+### 2026-11-13  Aquatic ecology and future production direction  Tester: pending BAMF69
+Requested: unchosen sisters compete for shared resources, bump/bite the player, reproduce/grow,
+and remain on their pond/lake/coast map. Implemented persistent map-local families with inherited
+bodies, food seeking, attack windups, player counterplay/loot and bounded reproduction.
+Your picks: population budgets, NPC level ceiling, timings, inactive habitats freeze, river offspring
+belong to departure habitat. 424 tests, shader and live ecology/Continue scenarios pass.
+BAMF69 also confirmed future HD visuals, fullscreen, full controller support and mobile play after
+prototypes are fun. Recorded in GDD/ROADMAP; keep next prototypes compatible, no art overhaul yet.
+
+
+### 2026-11-13  Aquatic form choices  Tester: pending BAMF69
+BAMF69: "I like the cell stage"; requested split + daughter choice when aquatic forms advance.
+Implemented three diet/bonus offers after a shared split presentation using actual aquatic bodies.
+Inherited stats/parts/river parts/currency, food-weighted +2 levels beyond purchase caps, optional part
+bonuses, history and pending-choice Continue. Existing pickups, leveling and river/map rules retained.
+Your picks: no new aquatic exclusive-perk set or sibling AI in this pass. All 412 tests, shader check,
+recorded aquatic smoke and interactive form/river/Continue checks pass. Awaiting playtest.
+
+
+### 2026-11-13  Division presentation  Tester: pending BAMF69
+Requested: growth/multiplying mitosis animation showing three daughters splitting before the choice menu.
+Implemented using existing bodies and stat layers, with membrane bridges and preview docking.
+Your picks: 1.9s full sequence; 0.18s reduced-motion fade. Awaiting visual/feel feedback.
+
+
+### 2026-11-12  Daughter rewards  Tester: BAMF69
+Confirmed: form/daughter stat bonuses may exceed the normal 5/5 purchase cap.
+Changed: full +2 rewards at any existing level; normal purchases still stop at 5. Menu marks bonus
+levels as 5+N. Handling and defensive effects remain valid beyond 5; aquatic preserves cell inheritance.
+
+
+### 2026-11-12  Hybrid progression follow-up  Tester: BAMF69
+Quote: "this is much more fun". Requests: return Form 1 food to earlier values; cannot keep playing at Form 4.
+Changed: Form 1 food back to 28 algae, 2.5s regrowth, meat food 2; later forms keep the 50% increase.
+Removed the final-form simulation freeze. Movement, purchases, food, pickups and perks continue; Enter
+only leaves when upgrades are closed. The latest body is saved again before aquatic startup.
+Growth thresholds and maximum form remain unchanged. Awaiting confirmation of food feel.
+
+
+### 2026-11-12  Cell division prototype  Tester: BAMF69
+Quote: "the gameplay feels shallow and boring without the part pickups and active stat leveling. I like the daughters".
+Approved: restore pickups and active purchases; daughters inherit progress and add bonus levels/parts plus exclusive perks.
+Implementation picks awaiting playtest: Food Sense, Jet Burst, Soft Landing, inherited ranks up to 3; paired to herbivore/carnivore/omnivore offers. No new art, audio or dependencies.
+
+
+### 2026-11-12  Cell division prototype  Tester: BAMF69
+Quote: "food is too scarce". Confirmed: 50% more food and a different diet for each daughter.
+Changed: algae 28 -> 42, replenishment rate x1.5, meat food per chunk 2 -> 3. Each division offers herbivore, carnivore and omnivore with visible diet labels, compatible parts and recorded diet choices. Awaiting another playtest.
+
 ### 2026-11-09  Build 0.1.0 (feat/civ-toy, uncommitted)  Tester: self (BAMF69)
 Opinion: "that worked well" (civilization Toy 1). Ask: the aquatic stage's opening screen (the lineage's temperament and what shaped it) on the creature and civilization stages too. Built.
 

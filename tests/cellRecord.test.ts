@@ -57,7 +57,8 @@ describe("temperament from the cell stage", () => {
     r = bump(r, "gulperEscapes", 4);
     const c = creature({ diet: "herbivore", parts: ["shell", "mouth"], ups: { attack: 0, speed: 0, defense: 4, mobility: 1 } });
     const t = cellTemperament(c, r);
-    expect(t.cautious).toBeCloseTo((4 + TUNING.temperament.shellKept + 4 * TUNING.temperament.escape) / TUNING.temperament.full);
+    const cautious = 4 + TUNING.temperament.shellKept + 4 * TUNING.temperament.escape;
+    expect(t.cautious).toBeCloseTo(cautious / (cautious + TUNING.temperament.perUpgradeLevel.mobility));
     expect(shipSpecialty(t).tech).toBe("shields");
   });
 
@@ -67,9 +68,10 @@ describe("temperament from the cell stage", () => {
     expect(shipSpecialty(t).tech).toBe("engines");
   });
 
-  it("caps behavior so grinding one action cannot max a temperament alone", () => {
-    const t = cellTemperament(creature(), bump(newCellRecord(), "cellsRammed", 1000));
-    expect(t.aggressive).toBeCloseTo(TUNING.temperament.ramMax / TUNING.temperament.full);
+  it("caps behavior evidence so extra grinding stops changing the mix", () => {
+    const t = cellTemperament(creature(), bump(diets("omnivore"), "cellsRammed", 1000));
+    expect(t).toEqual(cellTemperament(creature(), bump(diets("omnivore"), "cellsRammed", 100)));
+    expect(t.aggressive).toBeLessThan(1); expect(t.adaptable).toBeGreaterThan(0);
   });
 
   it("every cause log entry says why, and nothing is logged for causes that did not happen", () => {
@@ -98,7 +100,7 @@ describe("the lineage handed to the aquatic stage", () => {
     const home = l.species[0];
     expect(home).toMatchObject({ id: "home", world: "home", origin: "played", status: "alive", diet: "carnivore" });
     expect(home.stages.cell).toEqual({
-      finalForm: 3, diet: "carnivore", dietHistory: ["omnivore", "carnivore", "carnivore"], parts: ["spikes", "shell"],
+      selections: [], finalForm: 3, diet: "carnivore", dietHistory: ["omnivore", "carnivore", "carnivore"], parts: ["spikes", "shell"],
       upgrades: { attack: 3, speed: 1, defense: 2, mobility: 0 },
       behavior: { cellsRammed: 0, cellsPopped: 0, timesBitten: 0, gulperEscapes: 2, gulpersLured: 0 },
     });

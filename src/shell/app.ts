@@ -36,6 +36,7 @@ import { SubtitleBar } from "./subtitles";
 import { GAME_NAME, GAME_SLUG, GAME_VERSION, SETTINGS_FILE } from "./meta";
 import { el, hasUiFile, tl } from "./ui";
 import "./shell.css";
+import { DisplayViewport } from "./viewport";
 
 // ---- Tunables ----------------------------------------------------------------
 export { GAME_NAME, GAME_VERSION, SETTINGS_FILE };
@@ -122,6 +123,8 @@ export class Shell {
   game: PhaserNS.Game | null = null;
   /** The running gameplay scene ("main" or "juice"), if any. */
   scene: GameKey | null = null;
+  viewport!: DisplayViewport;
+  displayPause = false;
   private continueAsked = false; // menu "Continue": the next aquatic start resumes the saved run
 
   /** Start the aquatic stage from the saved run. */
@@ -172,7 +175,7 @@ export class Shell {
       queueMicrotask(() => this.toast("toast.repaired", { n: problems.length }));
     }
 
-    this.input = new ShellInput(() => this.settings.input.bindings, () => this.settings.input.deadzone);
+    this.input = new ShellInput(() => this.settings.input.bindings, () => this.settings.input.deadzone, () => this.settings.input.scheme);
     this.input.onPress = (binding, actions) => this.route(binding, actions);
     this.input.onRawKey = (code) => {
       if (code === "F8" && this.debugBuild) this.bugReport();
@@ -202,6 +205,12 @@ export class Shell {
   // ---- lifecycle -------------------------------------------------------------
   start(game: PhaserNS.Game): void {
     this.game = game;
+    this.viewport = new DisplayViewport(() => this.game, () => {
+      if (!this.scene) return;
+      this.displayPause = true; this.input.clearHeld();
+      if (this.top?.gameplay) this.pauseGame();
+      else this.game?.scene.pause(this.scene);
+    });
     this.input.attach(window);
     window.addEventListener("blur", () => this.focusLost());
     document.addEventListener("visibilitychange", () => document.hidden && this.focusLost());
@@ -223,6 +232,7 @@ export class Shell {
     const dt = this.lastT ? Math.min((t - this.lastT) / 1000, MAX_DT) : 0;
     this.lastT = t;
     this.input.poll();
+    document.body.dataset.controls = this.input.scheme;
     this.subtitles.update(dt);
     this.top?.tick?.(dt);
     if (t - this.lastFlush > LOG_FLUSH_MS) {
@@ -416,6 +426,8 @@ export class Shell {
   // ---- gameplay --------------------------------------------------------------
   /** Loading screen, then the scene with its HUD screen. */
   startGame(key: GameKey): void {
+    if (this.scene) this.stopGame(); // One live stage and one set of native display panels at a time.
+    this.viewport.activate(key === "juice" ? null : key);
     if (key === "main") this.recordRun();
     this.telemetry.event("play_start", key);
     this.replace(screens.loading(this, key));
@@ -432,14 +444,16 @@ export class Shell {
   pauseGame(): void {
     if (!this.scene || !this.game || this.topId === "pause") return;
     this.game.scene.pause(this.scene);
+    this.input.clearHeld();
     this.push(screens.pause(this));
   }
 
   resumeGame(): void {
     if (!this.scene || !this.game) return;
+    if (document.hidden || this.topId !== "pause") return;
     if (this.topId === "pause") this.back();
     this.game.scene.resume(this.scene);
-    this.input.clearPresses();
+    this.input.clearHeld(); this.displayPause = false;
   }
 
   quitToTitle(): void {
@@ -455,6 +469,8 @@ export class Shell {
       Log.debug("core", `scene stop failed (after a crash): ${String(err)}`);
     }
     this.scene = null;
+    this.displayPause = false;
+    this.viewport?.activate(false);
     this.subtitles.clear();
   }
 

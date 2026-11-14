@@ -27,21 +27,48 @@ Engine-specific folder layout is documented in `docs/ENGINE.md`. Universal folde
 | `.claude/` | Claude Code settings, skills, subagents |
 
 ## Key systems
+All-stage display adapters (ADR 0005): `core/viewport.ts` selects stage-specific camera sizes;
+`shell/viewport.ts` owns safe bounds and rotation notification. `game/stageUi.ts` owns native
+status, dialogs, command buttons and atlas icons. Aquatic adapts its HUD and cell-style cards;
+creature follows the avatar in a bounded room; `civ/layout.ts` shares maze draw/hit transforms;
+space centers projected flight and exposes native shop/map commands. Shell stops the previous
+scene before switching, so native panel lifecycles cannot outlive their stage.
+
+Temperament shares: `core/lineage.ts` normalizes cell evidence and limits later-stage moves while
+keeping a unit total. `temperamentPercentages` assigns integer rounding remainders. SaveStore
+rebuilds the lineage slot's derived caches from original logs on read/write; no schema change.
+`temperamentShares.test.ts` covers the mixed-build regression, rounding, signed shifts and old saves.
+
+Display foundations (ADR 0004): `core/viewport.ts` is engine-free layout math; `shell/viewport.ts`
+applies safe bounds and cell-only camera sizing. Cell UI uses native CSS-pixel panels via
+`cell/responsiveUi.ts`, with original sprite-atlas previews. Shell owns rotation pause/resume;
+scene shutdown removes panels/listeners. The remaining stage adapters now extend this foundation (ADR 0005).
+
+Civilization Toy 2 registers `CivWarsScene` as `civ`. `civ/wars.ts` owns grid routes, placement validation,
+construction, economy, deterministic rivals, combat and recording; `warsTuning.ts` owns balance data.
+The scene handles shell actions and original sprites. `civWars.test.ts` covers routes, resources,
+combat, victories and new/legacy space handoffs. See ADR 0003. Old CivScene remains unregistered.
+
+Creature Toy 2 registers `CreatureGenerationScene` as `creature`. Engine-free `creature/generations.ts`
+owns inheritance, climate, room graph and defensive checkpoint parsing; existing `creature/physics.ts`
+owns movement. `creatureGenerations.test.ts` covers inherited gates, behavioral bonuses and export.
+The old Toy 1 scene remains unregistered pending the replacement's playtest; no shared systems were removed.
+
 | System | Responsibility | Entry point | Tests |
 |---|---|---|---|
 | Cell rules | Diet, eating, points, upgrades, growth, evolution, part slots, bump outcomes (no Phaser) | `src/game/cell/rules.ts` | `tests/cellRules.test.ts` |
 | Cell tuning | Every feel number for the cell stage | `src/game/cell/tuning.ts` | via rules tests |
 | Pond movement | Swim physics, wander, knockback, autoplay pilot maths (no Phaser) | `src/game/cell/steer.ts` | `tests/cellSteer.test.ts` |
 | Atlas lookup | Sprite rows by name from pixel_sprite.py JSON | `src/game/cell/atlas.ts` | `tests/cellSteer.test.ts` |
-| Cell HUD | Form, food meter, part slots, diet, points, toasts | `src/game/cell/hud.ts` | smoke screenshot |
-| Upgrade panel | E panel: 4 upgrades, levels, costs; pond keeps moving | `src/game/cell/upgradePanel.ts` | smoke + by hand |
-| Diet picker | 3 diet cards at start and each evolution; pauses the pond | `src/game/cell/dietPicker.ts` | by hand |
+| Cell HUD | Responsive native form/food/diet/points status, expandable parts/perks and upgrade button, independent of camera pixels | `src/game/cell/hud.ts` | phone/tablet browser scenarios |
+| Cell division | Behavior-weighted bonus stats, compatible parts, unspent currency and perk inheritance; paused previews; unchosen siblings compete for food | `src/game/cell/division.ts`, `divisionPicker.ts`, `MainScene` | `tests/cellDivision.test.ts`, browser interaction checks |
+| Diet picker | 3 diet cards at start only; pauses the pond | `src/game/cell/dietPicker.ts` | by hand |
 | Upgrade looks | Overlay layers (fin, paddles, membrane, mandibles) synced to the body's frame | `MainScene.syncUpgradeLayers`, `assets_src/sprites/player_upgrades.py` | `upgradeTier` in `tests/cellRules.test.ts` |
 | Pond mood | Dark falloff, top-left light wash, lamp pool (gradient images under the HUD, not a camera shader) | `src/game/cell/mood.ts` | smoke screenshot |
 | Sound effects | Clips from data/audio_events.json through the kit AudioPlayer; one shared AudioContext | `src/game/cell/sfx.ts` | smoke (SFX_READY) |
 | Pond organisms | Per-kind table (hp, speed, size, chase, bite, meat, count per form) incl. the gulper predator; refill toward `cellsWanted` | `TUNING.cell.kinds`, `MainScene` (spawnCell, moveCells, bumps, refill) | `tests/cellRules.test.ts` (predators, ramming) |
 | Gulper mind | FSM: wander / hunt (you or prey; prey preferred at equal distance; sticky) / sated after eating / tired after chasing you | `src/game/cell/predator.ts`, `MainScene.thinkGulper`, `gulps` | `tests/cellPredator.test.ts` |
-| Autoplay pilot | What the ?autoplay pilot swims at and buys | `src/game/cell/pilot.ts` | `tests/cellPilot.test.ts` |
+| Autoplay pilot | What the ?autoplay pilot swims at; scene auto-selects daughters | `src/game/cell/pilot.ts` | `tests/cellPilot.test.ts` |
 | Lineage and temperament | The lineage file every stage hands on, the cause log, temperament maths with the 50 % per-stage shift cap (no Phaser; shared by all stages) | `src/core/lineage.ts` | `tests/lineage.test.ts` |
 | Cell recording | Diet picks, rams, pops, bites, gulper escapes and lures; cell cause log and lineage, saved to slot `lineage` at the stage's end (log channel `lineage`) | `src/game/cell/record.ts`, `MainScene.saveLineage` | `tests/cellRecord.test.ts` |
 | Pond scene | Wires rules + movement to sprites; spawns, bumps, pickups | `src/game/MainScene.ts` | `dev.py smoke --drive play:N --query autoplay` |
@@ -97,3 +124,26 @@ Set these early (`SOP-10`), measure before optimizing, update the last column wh
 
 ## Open questions
 - 
+
+Cell active building (2026-11-12): `MainScene` reconnects `UpgradePanel`, corpse part orbs and existing pure purchase/pickup rules. `cell/perks.ts` owns division-only perk ranks, food attraction, defensive multiplier and the Jet Burst cooldown state. `tuning.ts` owns all effect numbers. Upgrades close during selection, purchased progress carries through it, and Form 4 remains playable and the latest body is saved again immediately before aquatic starts.
+
+Mitosis presentation (BAMF69 requested 2026-11-12, completed 2026-11-13): filling the food meter
+first swells the parent, separates three actual daughter bodies with membrane bridges, then docks
+them into their card previews before enabling the choice menu. `cell/mitosis.ts` owns rendering and
+the scene-controlled clock; `TUNING.mitosis` owns timing/layout. Pond simulation and selection input
+wait during the sequence. Pausing stops its clock. Reduced motion uses a short fade. Shutdown
+destroys presentation objects; confirming a daughter restores the live player body. No new assets or dependencies.
+
+Aquatic form division (2026-11-13): `aquatic/division.ts` generates deterministic food-weighted
+inherited offers, and `aquatic/divisionPicker.ts` supplies actual aquatic body/part previews to the
+shared `cell/mitosis.ts` choreography. `AquaticScene` gates world updates, upgrades, admin, river
+progress and input until confirmation. Pending `me.divisionSeed`, `growthEvidence` and confirmed
+`selections` survive the defensive run-save parser. `aquatic/record.ts` subtracts selected bonus levels
+from purchased-level causes to avoid counting them twice. AQ tuning owns all new numeric parameters.
+
+Aquatic sisters (2026-11-13): `aquatic/sisters.ts` separates perception/decision, steering, shared-food
+consumption, telegraphed contacts and bounded autonomous reproduction. Data-only colony members have
+permanent map IDs. `aquatic/sisterView.ts` projects inherited bodies and parts through the same camera
+as other fish, owns labels/growth cues, and drops only visuals on map transitions. `AquaticScene` adapts
+real item removals, player hits, ram kills/loot and warnings. `runSave.ts` shares its defensive creature
+reader and persists the entire colony. Paused selections, lens/river modes and inactive maps never tick it.

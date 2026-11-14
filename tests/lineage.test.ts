@@ -7,7 +7,7 @@
 // ---------------------------------------------------------------------------
 import { describe, expect, it } from "vitest";
 import {
-  STAGE_SHIFT_CAP, lineageProblems, shipSpecialty, stageRange, stageTemperament, temperamentOf, zeroTemperament,
+  STAGE_SHIFT_CAP, lineageProblems, shipSpecialty, stageRange, stageTemperament, temperamentOf, balancedTemperament,
   type Influence, type StageId, type Temperament,
 } from "../src/core/lineage";
 
@@ -28,18 +28,18 @@ describe("the per-stage shift cap", () => {
   });
 
   it("caps upward moves the same way", () => {
-    const log = [cause("cell", { cautious: 0.1 }), cause("aquatic", { cautious: 0.9 })];
+    const log = [cause("cell", { cautious: 0.1, aggressive: 0.9 }), cause("aquatic", { cautious: 9 })];
     expect(temperamentOf(log).cautious).toBeCloseTo(0.6);
   });
 
-  it("lets the cell stage set any value from 0 to 1, clamped", () => {
+  it("normalizes cell evidence, with balanced fallback for no positive evidence", () => {
     expect(stageTemperament(null, [cause("cell", { adaptable: 0.7 }), cause("cell", { adaptable: 0.9 })]).adaptable).toBe(1);
-    expect(stageTemperament(null, [cause("cell", { adaptable: -0.4 })]).adaptable).toBe(0);
+    expect(stageTemperament(null, [cause("cell", { adaptable: -0.4 })])).toEqual(balancedTemperament());
   });
 
   it("adds up several causes in one stage before capping", () => {
-    const log = [cause("cell", { aggressive: 0.2 }), cause("aquatic", { aggressive: 0.2 }), cause("aquatic", { aggressive: 0.2 })];
-    expect(temperamentOf(log).aggressive).toBeCloseTo(0.6);
+    const log = [cause("cell", { aggressive: 0.2, cautious: 0.8 }), cause("aquatic", { aggressive: 0.2 }), cause("aquatic", { aggressive: 0.2 })];
+    expect(temperamentOf(log).aggressive).toBeCloseTo(3 / 7);
   });
 
   it("leaves temperament alone through a stage with no causes", () => {
@@ -47,16 +47,16 @@ describe("the per-stage shift cap", () => {
     expect(temperamentOf(log).aggressive).toBe(0.5); // the creature stage can still only move it 50 %
   });
 
-  it("treats each temperament on its own", () => {
+  it("makes temperaments compete for a single 100% total", () => {
     const t = temperamentOf([cause("cell", { aggressive: 1, cautious: 0.8 })]);
-    expect(t).toEqual({ cautious: 0.8, aggressive: 1, adaptable: 0 });
+    expect(t.cautious).toBeCloseTo(4 / 9); expect(t.aggressive).toBeCloseTo(5 / 9); expect(t.adaptable).toBe(0);
   });
 
   it("reports the range the next stage may reach", () => {
-    const r = stageRange({ cautious: 0.2, aggressive: 1, adaptable: 0.5 });
+    const r = stageRange({ cautious: 0.2, aggressive: 0.8, adaptable: 0 });
     expect(r.cautious).toEqual({ min: 0, max: 0.7 });
-    expect(r.aggressive).toEqual({ min: 0.5, max: 1 });
-    expect(r.adaptable).toEqual({ min: 0, max: 1 });
+    expect(r.aggressive.min).toBeCloseTo(0.3); expect(r.aggressive.max).toBe(1);
+    expect(r.adaptable).toEqual({ min: 0, max: 0.5 });
   });
 
   it("is order-safe: entries are grouped by stage, not by position in the log", () => {
@@ -72,8 +72,8 @@ describe("ship specialty", () => {
     expect(shipSpecialty({ cautious: 0.1, aggressive: 0.2, adaptable: 0.9 }).tech).toBe("engines");
   });
 
-  it("an empty log is all zeros", () => {
-    expect(temperamentOf([])).toEqual(zeroTemperament());
+  it("an empty log is balanced", () => {
+    expect(temperamentOf([])).toEqual(balancedTemperament());
   });
 });
 

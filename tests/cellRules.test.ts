@@ -7,12 +7,53 @@
 import { describe, expect, it } from "vitest";
 import {
   accel, addPart, cellHitDamage, deathMeat, nextSpool, spoolTime, thrustAt, cellsWanted, heaviness, changeDiet, bumpDamage, drag, bumpFoodLoss, buyUpgrade, canEat, dropKinds, eat, eatFood, evolveNeed, foodValue,
-  knockbackTaken, loseFood, upgradeTier, maxSpeed, newCreature, pullRadius, setDiet, slots, spriteRow, upgradeCost, type Creature,
+  knockbackTaken, loseFood, upgradeTier, maxSpeed, newCreature, pullRadius, setDiet, slots, spriteRow, upgradeCost, pondFood, freshBase, type Creature,
 } from "../src/game/cell/rules";
 import { TUNING, type Diet } from "../src/game/cell/tuning";
 
 const at = (form: number, food = 0, parts: Creature["parts"] = [], diet: Diet = "herbivore"): Creature =>
   ({ ...newCreature(diet), form, food, parts });
+
+describe("food by form", () => {
+  it("restores the original opening supply and keeps later forms richer", () => {
+    expect(pondFood(1)).toEqual({ algaeCount: 28, algaeRegrowS: 2.5, meatFood: 2 });
+    for (const form of [2, 3, 4]) {
+      expect(pondFood(form).algaeCount).toBe(42);
+      expect(pondFood(form).algaeRegrowS).toBeCloseTo(2.5 / 1.5);
+      expect(freshBase("meat", form)).toBe(3);
+    }
+    expect(freshBase("meat", 1)).toBe(2);
+    expect(freshBase("algae", 1)).toBe(freshBase("algae", 4));
+  });
+  it("continues earning points and buying levels in the final form without evolving past it", () => {
+    const c = { ...newCreature("herbivore"), form: 4, points: { algae: 5, meat: 0 } };
+    const fed = eatFood(c, "algae", 1, true);
+    expect(fed.evolved).toBe(false);
+    expect(fed.creature.form).toBe(4);
+    expect(fed.creature.points.algae).toBe(6);
+    const purchase = buyUpgrade(fed.creature, "defense");
+    expect(purchase.ok).toBe(true);
+    if (purchase.ok) expect(purchase.creature.ups.defense).toBe(1);
+  });
+});
+
+describe("daughter stat levels above five", () => {
+  it("makes each extra stat effective and keeps movement and damage finite", () => {
+    const base = { ...newCreature(), form: 4, food: 100, ups: { attack: 5, speed: 5, defense: 5, mobility: 5 } };
+    const bonus = { ...base, ups: { attack: 7, speed: 7, defense: 7, mobility: 7 } };
+    expect(bumpDamage(bonus)).toBeGreaterThan(bumpDamage(base));
+    expect(maxSpeed(bonus)).toBeGreaterThan(maxSpeed(base));
+    expect(accel(bonus)).toBeGreaterThan(accel(base));
+    expect(knockbackTaken(bonus)).toBeLessThan(knockbackTaken(base));
+    expect(bumpFoodLoss(bonus, "gulper")).toBeLessThan(bumpFoodLoss(base, "gulper"));
+    const max = { ...bonus, ups: { attack: 11, speed: 11, defense: 11, mobility: 11 } };
+    expect(heaviness(max)).toBeGreaterThan(0);
+    expect(spoolTime(max)).toBe(0);
+    expect(Number.isFinite(accel(max))).toBe(true);
+    expect(Number.isFinite(drag(max))).toBe(true);
+    expect(bumpFoodLoss(max, "gulper")).toBeGreaterThan(0);
+  });
+});
 
 describe("growth and evolution", () => {
   it("starts as form 1 with nothing", () => {

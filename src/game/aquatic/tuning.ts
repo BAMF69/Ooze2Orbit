@@ -61,6 +61,28 @@ export const KINDS: Readonly<Record<AqKind, KindTuning>> = {
 };
 
 export const AQ = {
+  // Map-bound sisters and descendants (your picks, 2026-11-13; awaiting playtest).
+  sisters: {
+    maxPerMap: 24, founderReserve: 6, broodSize: 3, statCap: 17,
+    birthSpread: 95, birthGraceS: 3, speedMult: 0.65, arriveRate: 3, steeringRate: 5,
+    huntRange: 260, foodPreference: 0.65, senseRange: 900,
+    eatBonus: 8, radiusMult: 0.4, adultFood: 180,
+    attackWindupS: 0.65, attackCooldownS: 2, contactCooldownS: 0.65,
+    biteDamageMult: 0.35, bumpDamage: 3, knockback: 130, provokeS: 5,
+    separationRate: 1.5, boundaryBounce: 0.5, deathMeat: 3, labelRange: 420, labelSize: 9,
+    labelColor: "#a8e8da", windupTint: 0xffb15c, hitTint: 0xff8b7a,
+    birthGrowS: 0.7, growthS: 0.5, birthStartScale: 0.6, growthSwell: 0.12,
+  },
+  // Daughter choice at food-driven form growth (your picks, 2026-11-13).
+  division: { statGain: 2, extraHandlingPerLevel: 0.1, evidenceCap: 8, evidenceWeight: 0.5,
+    cardWidth: 180, cardHeight: 260, cardGap: 12, previewScale: 1.5, previewY: 42 },
+  mitosis: {
+    growS: 0.4, splitS: 0.8, settleS: 0.3, dockS: 0.4, reducedS: 0.18,
+    bodyScale: 2.5, swell: 0.3, stretch: 0.6, squeeze: 0.25, separation: 140, arcHeight: 24,
+    previewOffsetY: 42, dimAlpha: 0.6, menuDimAlpha: 0.8, depth: 4000,
+    membraneColor: 0x83b7a3, bridgeAlpha: 0.65, bridgeWidth: 32, bridgeHeight: 40, bridgeMinHeight: 3,
+    captionBottom: 55, captionSize: 14,
+  },
   // ---- the lake (pillar 3: about four times the pond's area, and now deep: seabed to surface) ----
   world: { width: 1800, height: 1800 }, // 3.5x the pond's area (was 2400: "feels empty")
   water: {
