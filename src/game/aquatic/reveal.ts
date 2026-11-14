@@ -10,7 +10,7 @@
 // Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
 // ---------------------------------------------------------------------------
 import {
-  TEMPERAMENTS, lineageProblems, shipSpecialty, temperamentOf, zeroTemperament,
+  TEMPERAMENTS, lineageProblems, shipSpecialty, temperamentOf, balancedTemperament, temperamentPercentages,
   type Lineage, type TemperamentKind,
 } from "../../core/lineage";
 
@@ -47,9 +47,10 @@ export function revealFrom(saved: unknown, maxCauses = 3, stage: RevealStage = "
   if (problems.length) return defaultReveal(problems, stage);
   const home = (saved as Lineage).species[0];
   const t = temperamentOf(home.influence);
+  const percentages = temperamentPercentages(t);
   const rows = TEMPERAMENTS.map((kind) => ({
     kind,
-    pct: Math.round(t[kind] * 100),
+    pct: percentages[kind],
     causes: home.influence
       .filter((e) => (e.effect[kind] ?? 0) > 0)
       .sort((a, b) => (b.effect[kind] ?? 0) - (a.effect[kind] ?? 0))
@@ -57,23 +58,27 @@ export function revealFrom(saved: unknown, maxCauses = 3, stage: RevealStage = "
       .map((e) => e.cause),
   }));
   const top = shipSpecialty(t).kind;
-  const any = rows.some((r) => r.pct > 0);
+  const any = Math.max(...Object.values(t)) - Math.min(...Object.values(t)) > 1e-9;
+  const leaders = TEMPERAMENTS.filter(k => Math.abs(t[k] - t[top]) < 1e-9);
   return {
     fromSave: true,
     title: STAGE_WORDS[stage].title,
     rows,
-    leaning: any ? `Most of all ${WORD[top].toLowerCase()}. ${STAGE_WORDS[stage].test}` : `No strong leaning yet: ${STAGE_WORDS[stage].none}`,
+    leaning: !any ? `No strong leaning yet: ${STAGE_WORDS[stage].none}` : leaders.length > 1 ?
+      `Equally ${leaders.map(k => WORD[k].toLowerCase()).join(" and ")}. ${STAGE_WORDS[stage].test}` : `Most of all ${WORD[top].toLowerCase()}. ${STAGE_WORDS[stage].test}`,
     problems: [],
-    diet: home.diet,
+    // Older aquatic saves recorded the daughter's diet only in their stage block.
+    diet: stage !== "aquatic" && ["herbivore", "carnivore", "omnivore"].includes(String(home.stages.aquatic?.diet))
+      ? String(home.stages.aquatic!.diet) : home.diet,
   };
 }
 
 function defaultReveal(problems: string[], stage: RevealStage): Reveal {
-  const t = zeroTemperament();
+  const t = temperamentPercentages(balancedTemperament());
   return {
     fromSave: false,
     title: "A new lineage (no cell-stage save found)",
-    rows: TEMPERAMENTS.map((kind) => ({ kind, pct: Math.round(t[kind] * 100), causes: [] })),
+    rows: TEMPERAMENTS.map((kind) => ({ kind, pct: t[kind], causes: [] })),
     leaning: `Finish the cell stage to bring your own creature here. For now: a balanced omnivore, no leaning${stage === "aquatic" ? "" : `, and ${STAGE_WORDS[stage].none}`}`,
     problems,
     diet: "omnivore",

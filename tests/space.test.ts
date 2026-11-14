@@ -330,7 +330,7 @@ describe("the campaign", () => {
     expect(r.block).toMatchObject({ wins: 5, hull: "seedpod", hybrid: false, ally: "aggressive", fleet: [], bossDown: false });
     const lineage = writeStage(null, "space", r.causes, r.block);
     expect(lineage.lastStage).toBe("space");
-    expect(temperamentOf(lineage.species[0].influence).aggressive).toBeCloseTo(5 * SPACE.temperPerWin);
+    expect(temperamentOf(lineage.species[0].influence).aggressive).toBeCloseTo((1 / 3 + 5 * SPACE.temperPerWin) / (1 + 5 * SPACE.temperPerWin));
   });
 });
 

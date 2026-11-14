@@ -49,7 +49,7 @@ describe("the whole chain", () => {
     const r = revealFrom(l, 3, "civ");
     const aggressive = r.rows.find((x) => x.kind === "aggressive")!;
     expect(aggressive.causes).toEqual(expect.arrayContaining(["Hunted 25 creatures in the water", "Beat the Old Horn mostly by fighting"]));
-    expect(temperamentOf(l.species[0].influence).aggressive).toBeGreaterThan(0.3);
-    expect(r.leaning).toMatch(/aggressive/);
+    expect(temperamentOf(l.species[0].influence).aggressive).toBeGreaterThan(0.2);
+    expect(r.leaning).toMatch(/adaptable/); // The purely adaptable ancestor still leads; hunting now takes a share from it.
   });
 });

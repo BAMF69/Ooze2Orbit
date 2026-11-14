@@ -1,37 +1,21 @@
 // ---------------------------------------------------------------------------
 // MainScene.ts
-// Purpose : The cell stage toy: pick a diet, swim a pond, eat algae or meat, bump other cells until they pop
-//           (they drop meat and the part they wear), spend plant and meat points on upgrades, and evolve twice
-//           (choosing your diet again each time). The parts you carry change how your cell looks.
-// Usage   : Registered in src/main.ts as "main"; the shell (src/shell/app.ts) starts, pauses and stops it.
-//           ?autoplay: a simple pilot steers and buys (for `dev.py smoke --drive play:N --query autoplay`);
-//           ?finish (or the ` key): finish the stage now and offer the evolve into the aquatic stage;
-//           add &diet=herbivore|carnivore|omnivore to pick its diet (default omnivore), the picker is skipped.
-//           ?debug: draws collision circles and logs channel "cell"; channel "lineage" logs the temperament at each
-//           evolution and the lineage written at the stage's end (save slot "lineage", docs/HANDOFF_CONTRACT.md).
-// Notes   : PROTOTYPE (toy tier). Rules live in src/game/cell/rules.ts, numbers in cell/tuning.ts, movement maths
-//           in cell/steer.ts, the pilot in cell/pilot.ts, UI in cell/hud.ts, upgradePanel.ts, dietPicker.ts. This
-//           file wires them to sprites. No physics engine: a few dozen circles, checked by distance each frame.
-//           No game over (pillar 1, tense but fair): a bump moves food out of your meter into the water nearby.
-//           Controls: WASD/arrows swim; E toggles upgrades (the pond keeps moving; while it is open the arrows
-//           and Enter drive the panel and only WASD swims); the diet picker pauses the pond.
-//
-// Pseudocode:
-//   create : pond backdrop -> animations from the atlas layouts -> player -> algae, pond cells -> camera follow
-//            -> HUD, upgrade panel, diet picker (shown at once unless autoplay)
-//   update : dt -> diet picker open? read its input, stop -> panel input -> steer player (keys or pilot) -> swim
-//            -> mouth pulls algae -> eat edible food (points from fresh food) -> pick up parts -> pond cells
-//            wander (prickles chase) -> bumps (damage the cell, knock food out of you, push apart) -> popped cells
-//            drop meat + their part -> food sinks after a while -> regrow algae, respawn cells -> HUD, panel
-//   record : diet picks, rams, pops, bites, gulper escapes and lures go into a CellRecord (cell/record.ts); at the
-//            last form the lineage is built from it and saved once
-// Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
+// Purpose : Cell pond: swim, feed, fight, collect parts, buy levels and choose inherited daughter bonuses.
+// Usage   : Main menu cell stage; ?autoplay pilots; ?division opens a test division;
+//           ?finish or ` saves the current body and offers the aquatic transition.
+// Notes   : PROTOTYPE: division tuning and scope are in docs/stages/01-cell.md.
+// Pseudocode: choose initial diet -> swim/eat/fight and collect evidence -> growth
+//           earns purchase points and parts -> growth triggers three perk-bearing daughters -> unchosen bodies seek
+//           food as rivals -> selected body carries on -> final selection saves lineage.
+// Authored: Written with Claude (Opus 5.5, claude-opus-5-5); division with Codex (GPT-6)
 // ---------------------------------------------------------------------------
 import * as Phaser from "phaser";
 import { describeTemperament, shipSpecialty } from "../core/lineage";
 import { Log } from "../core/log";
 import { effectiveShake } from "../core/settings";
 import { shell } from "../shell/app";
+import { TouchControls } from "../shell/touchControls";
+import { CELL_ART, CELL_SHEETS, prepareCellArt, CellIllustrations } from "./cell/illustrated";
 import { animKey, animSpecs, firstFrame, type AtlasLayout } from "./cell/atlas";
 import { DietPicker } from "./cell/dietPicker";
 import { CellHud } from "./cell/hud";
@@ -39,15 +23,21 @@ import { PondMood } from "./cell/mood";
 import { cellSfx, type CellSfx } from "./cell/sfx";
 import { pilotBuy, pilotTarget } from "./cell/pilot";
 import { PLAYER_ID, ate, newBrain, think, type GulperBrain, type Seen } from "./cell/predator";
-import { bump, cellLineage, cellTemperament, gulperEvent, newCellRecord, recordDiet, type CellRecord } from "./cell/record";
+import { bump, cellLineage, gulperEvent, newCellRecord, recordDiet, type CellRecord } from "./cell/record";
 import {
-  accel, addPart, bumpDamage, cellsWanted, changeDiet, drag, partAllowed, bumpFoodLoss, buyUpgrade, canEat, dropKinds, eat, eatFood, freshBase, knockbackTaken,
-  cellHitDamage, deathMeat, loseFood, nextSpool, slots, spoolTime, thrustAt, maxSpeed, newCreature, pullRadius, spriteRow, upgradeTier, type Creature,
+  accel, addPart, partAllowed, buyUpgrade, eat, bumpDamage, cellsWanted, changeDiet, drag, bumpFoodLoss, canEat, dropKinds, eatFood, freshBase, pondFood, knockbackTaken,
+  cellHitDamage, deathMeat, loseFood, nextSpool, spoolTime, thrustAt, maxSpeed, newCreature, pullRadius, spriteRow, upgradeTier, type Creature,
 } from "./cell/rules";
 import { keepInside, knockApart, swim, toward, wanderDir, type Body } from "./cell/steer";
+import { daughters, newEvidence, type Daughter, type Evidence } from "./cell/division";
 import { UpgradePanel } from "./cell/upgradePanel";
+import { foodSenseRadius, tickJet, perkLevel, type JetState } from "./cell/perks";
+import { Mitosis } from "./cell/mitosis";
+import { DivisionPicker } from "./cell/divisionPicker";
+import { LifeSequence } from "./lifeSequence";
+import { dietFrame } from "./cell/illustrated";
 import {
-  CELL_KINDS, DIETS, DROPS, TUNING, UPGRADE_PAID_WITH, UPGRADE_STATS, type CellKind, type Diet, type FoodKind, type PartKind,
+  CELL_KINDS, DIETS, DROPS, TUNING, UPGRADE_PAID_WITH, UPGRADE_STATS, type PartKind, type CellKind, type Diet, type FoodKind,
   type UpgradeStat,
 } from "./cell/tuning";
 
@@ -75,20 +65,28 @@ export class MainScene extends Phaser.Scene {
   private lineageSaved = false;
   private evolveReady = false; // the stage is over: Enter evolves into the aquatic stage (BAMF69 2026-11-08)
   private evolveT = 0;
-  private evolveBanner?: Phaser.GameObjects.Text;
   private onDevKey = (e: KeyboardEvent) => { if (e.code === "Backquote" && shell.topId === "play") this.finishStageNow(); };
   private player!: Body & { spr: Phaser.GameObjects.Sprite };
   private spool = 0; // thrust build-up 0..1 while you hold a direction (rules.nextSpool)
   private upLayers!: Record<UpgradeStat, Phaser.GameObjects.Sprite>;
   private upsLayout!: AtlasLayout;
-  private foods: Food[] = [];
   private orbs: Orb[] = [];
+  private panel!: UpgradePanel;
+  private jet: JetState = { remaining: 0, cooldown: 0 };
+  private foods: Food[] = [];
   private cells: PondCell[] = [];
   private hud!: CellHud;
   private mood!: PondMood;
   private sfx!: CellSfx;
-  private panel!: UpgradePanel;
+  private division!: DivisionPicker;
+  private mitosis!: Mitosis;
+  private get choosing(): boolean { return this.mitosis.isPlaying || this.division.isOpen || !!this.birth?.isPlaying; }
+  private birth!: LifeSequence;
+  private offers: Daughter[] = [];
+  private evidence: Evidence = newEvidence();
+  private rivals: (Body & { creature: Creature; spr: Phaser.GameObjects.Sprite; layers: Phaser.GameObjects.Sprite[] })[] = [];
   private picker!: DietPicker;
+  private touch!: TouchControls;
   private rng!: Phaser.Math.RandomDataGenerator;
   private propsLayout!: AtlasLayout;
   private regrowIn = 0;
@@ -104,6 +102,8 @@ export class MainScene extends Phaser.Scene {
   }
 
   preload(): void {
+    for (const sheet of CELL_SHEETS) this.load.image(sheet.source, `assets/art/${sheet.file}`);
+    this.load.image("pondIllustrated", "assets/art/pond_illustrated_v1.png");
     for (const [key, file] of [["player", "player_cell"], ["pond", "pond_cells"], ["props", "pond_props"]]) {
       this.load.spritesheet(key, `assets/art/${file}.png`, { frameWidth: 32, frameHeight: 32 });
       this.load.json(`${key}_layout`, `assets/art/${file}.json`);
@@ -124,15 +124,19 @@ export class MainScene extends Phaser.Scene {
     this.rng = new Phaser.Math.RandomDataGenerator(["amber-pond"]); // same pond every run: repeatable captures
     this.creature = newCreature(askedDiet && DIETS.includes(askedDiet) ? askedDiet : "omnivore");
     this.record = newCellRecord();
+    this.evidence = newEvidence();
+    this.offers = [];
+    this.rivals = [];
     this.lineageSaved = false;
     this.evolveReady = false;
     this.evolveT = 0;
     window.addEventListener("keydown", this.onDevKey); // ` : finish the cell stage now (a test trigger)
     if (params.has("finish")) this.time.delayedCall(1500, () => this.finishStageNow()); // ?finish: the same, for smoke runs
     this.events.once("shutdown", () => window.removeEventListener("keydown", this.onDevKey));
-    if (this.autoplay) this.record = recordDiet(this.record, this.creature.diet); // no picker: the asked diet is the pick
+    if (this.autoplay || askedDiet && DIETS.includes(askedDiet)) this.record = recordDiet(this.record, this.creature.diet); // no picker: the asked diet is the pick
     this.foods = [];
     this.orbs = [];
+    this.jet = { remaining: 0, cooldown: 0 };
     this.cells = [];
     this.respawnIn = {};
     this.huntWarnCd = 0;
@@ -150,26 +154,60 @@ export class MainScene extends Phaser.Scene {
     this.upLayers = Object.fromEntries(UPGRADE_STATS.map((s) =>
       [s, this.add.sprite(width / 2, height / 2, "ups").setDepth(UP_DEPTH[s]).setVisible(false)])) as Record<UpgradeStat, Phaser.GameObjects.Sprite>;
     this.refreshPlayerLook();
+    prepareCellArt(this);
+    new CellIllustrations(this, () => [
+      { ...this.player, creature: this.creature }, ...this.rivals,
+      ...this.cells.map(c => ({ ...c, texture: "cellFauna", frame: CELL_KINDS.indexOf(c.kind), size: TUNING.cell.kinds[c.kind].radius * CELL_ART.faunaRadiusScale / TUNING.cell.kinds[c.kind].scale, forward: c.kind === "snail" ? -Math.PI / 2 : 0 })),
+      ...this.foods.map(f => ({ ...f, texture: "cellProps", frame: f.kind === "algae" ? 0 : 1, size: f.kind === "algae" ? CELL_ART.algaeSize : CELL_ART.meatSize, swims: false })),
+      ...this.orbs.map(o => ({ ...o, texture: "cellProps", frame: 2 + ["spikes", "shell", "mouth"].indexOf(o.part), size: CELL_ART.pickupSize, swims: false })),
+    ], () => shell.topId === "play" && !this.picker.isOpen && !this.choosing, () => shell.settings.access.reduce_motion, () => shell.settings.access.game_speed);
 
-    for (let i = 0; i < TUNING.algaeCount; i++) this.spawnAlgae();
+    for (let i = 0; i < pondFood(this.creature.form).algaeCount; i++) this.spawnAlgae();
     for (const kind of CELL_KINDS) for (let i = 0; i < cellsWanted(kind, this.creature.form); i++) this.spawnCell(kind);
 
     const cam = this.cameras.main;
     cam.setBounds(0, 0, width, height);
+    cam.setZoom(Math.max(1, this.scale.width / width, this.scale.height / height));
     cam.startFollow(this.player.spr, true, 0.12, 0.12);
 
     this.mood = new PondMood(this);
     this.sfx = cellSfx();
-    this.hud = new CellHud(this, shell.i18n, (p) => firstFrame(this.propsLayout, "prop", p));
-    this.panel = new UpgradePanel(this, shell.i18n, (stat) => this.tryBuy(stat));
+    this.hud = new CellHud(this, shell.i18n, (p) => firstFrame(this.propsLayout, "prop", p), () => {
+      if (shell.topId === "play" && !this.picker.isOpen && !this.choosing) this.panel.toggle();
+    });
+    this.panel = new UpgradePanel(this, shell.i18n, stat => this.tryBuy(stat));
+    this.mitosis = new Mitosis(this, shell.i18n);
+    this.division = new DivisionPicker(this, (index) => { if (shell.topId === "play") this.chooseDaughter(index); }, shell.i18n);
+    this.birth = new LifeSequence(this);
+    this.events.once("shutdown", () => { this.mitosis.close(); this.division.close(); });
+    const resize = () => {
+      cam.setZoom(Math.max(1, this.scale.width / width, this.scale.height / height));
+      cam.centerOn(this.player.x, this.player.y);
+      this.mood.resize();
+    };
+    this.scale.on("resize", resize);
+    this.events.once("shutdown", () => this.scale.off("resize", resize));
     this.picker = new DietPicker(this, shell.i18n, (d) => this.chooseDiet(d));
+    this.touch = new TouchControls(shell.input, [
+      { label: shell.i18n.t("cell.controls.dash"), action: "jump" },
+      { label: shell.i18n.t("cell.ui.upgrades"), run: () => this.panel.toggle() },
+      { label: shell.i18n.t("cell.controls.evolve"), action: "ui_accept" },
+    ]);
+    this.events.on("pause", this.touch.suspend, this.touch);
+    this.events.once("shutdown", () => { this.events.off("pause", this.touch.suspend, this.touch); this.touch.destroy(); });
     if (params.has("debug")) this.debugGfx = this.add.graphics().setDepth(900);
-    if (this.autoplay) this.hud.toast("cell.intro");
+    if (this.autoplay || askedDiet && DIETS.includes(askedDiet)) this.hud.toast("cell.intro");
     else this.picker.show(this.creature.diet, "diet.title_start");
+    if (params.has("division")) this.time.delayedCall(1500, () => {
+      if (!this.picker.isOpen && !this.choosing) this.applyFood({ creature: { ...this.creature, form: 2, food: 0 }, evolved: true });
+    });
     Log.info(LOG, `pond ready: ${this.foods.length} algae, ${this.cells.length} cells, diet ${this.creature.diet}${this.autoplay ? " (autoplay)" : ""}`);
   }
 
   update(_time: number, deltaMs: number): void {
+    this.touch?.update(shell.topId === "play" && !this.picker.isOpen && !this.choosing && !this.panel.isOpen);
+    this.touch?.setAvailable("ui_accept", this.evolveReady);
+    this.touch?.setAvailable("jump", perkLevel(this.creature, "jetBurst") > 0);
     if (shell.plantedCrash) {
       shell.plantedCrash = false;
       throw new Error("planted crash (dev.py smoke --drive crash)"); // proves the crash hook end to end
@@ -179,21 +217,48 @@ export class MainScene extends Phaser.Scene {
     // sit in the input queue; the shell clears it only when the play screen appears. Read keys only from then
     // on, or that leftover Enter picked the default diet before a keyboard player could choose (2026-11-08).
     const playing = shell.topId === "play";
+    if (this.birth.isPlaying) {
+      if (playing && this.birth.update(dt)) shell.input.clearHeld();
+      this.hud.update(this.creature, 0); return;
+    }
     if (this.picker.isOpen) {
       if (playing) this.pickerInput();
       this.hud.update(this.creature, dt);
       return; // the pond waits while you choose a diet
     }
+    if (this.mitosis.isPlaying) {
+      const complete = playing && this.mitosis.update(dt);
+      shell.input.clearPresses(); // Animation presses must never preselect a daughter or trigger a dash.
+      if (complete) {
+        this.division.show(this.offers);
+        Log.debug(LOG, "MITOSIS complete; daughter choice ready");
+      }
+      return;
+    }
+    if (this.division.isOpen) {
+      if (this.autoplay) this.chooseDaughter(0);
+      else if (playing) {
+        if (shell.input.takePress("ui_left") || shell.input.takePress("move_left")) this.division.move(-1);
+        if (shell.input.takePress("ui_right") || shell.input.takePress("move_right")) this.division.move(1);
+        if (shell.input.takePress("ui_accept") || shell.input.takePress("jump")) this.chooseDaughter(this.division.confirm());
+      }
+      return;
+    }
     if (playing) this.panelInput();
-    if (this.evolveReady) { // Enter (or 2 s of autoplay) evolves into the aquatic stage
+    if (this.evolveReady) { // Form 4 keeps playing; Enter moves on only when it is not buying a level.
       this.evolveT += dt;
-      if (this.autoplay ? this.evolveT > 2 : playing && !this.panel.isOpen && shell.input.takePress("ui_accept")) { this.evolveToAquatic(); return; }
+      if (this.autoplay ? this.evolveT > 2 : playing && !this.panel.isOpen && shell.input.takePress("ui_accept")) {
+        this.evolveToAquatic(); return;
+      }
     }
     this.movePlayer(dt);
     this.syncUpgradeLayers();
     this.mood.follow(this.player.x, this.player.y);
     this.pullAndEat(dt);
+    if (this.choosing) return;
     this.pickUpParts();
+    if (this.choosing) return;
+    this.moveRivals(dt);
     this.moveCells(dt);
     this.bumps();
     this.cellBumps();
@@ -201,8 +266,9 @@ export class MainScene extends Phaser.Scene {
     this.tickFoodLife(dt);
     this.refill(dt);
     this.cantEatCd = Math.max(0, this.cantEatCd - dt);
-    this.hud.update(this.creature, dt);
+    this.hud.update(this.creature, dt, this.jet.cooldown);
     this.panel.render(this.creature);
+
     this.sfx.update(shell.settings.audio);
     this.drawDebug();
   }
@@ -217,18 +283,10 @@ export class MainScene extends Phaser.Scene {
     }
   }
 
-  /** Deep water with soft lighter and darker patches (drawn once; colors in TUNING.mood). */
+  /** Quiet illustrated habitat; existing lamp and vignette still provide the moving microscope light. */
   private drawPond(): void {
     const { width, height } = TUNING.world;
-    const m = TUNING.mood;
-    const g = this.add.graphics().setDepth(0);
-    g.fillStyle(m.water, 1).fillRect(0, 0, width, height);
-    for (let i = 0; i < 70; i++) {
-      const light = this.rng.frac() < 0.6;
-      g.fillStyle(light ? m.waterLight : m.waterDark, 0.5);
-      g.fillEllipse(this.rng.between(0, width), this.rng.between(0, height), this.rng.between(30, 120), this.rng.between(20, 70));
-    }
-    g.lineStyle(4, m.edge, 1).strokeRect(2, 2, width - 4, height - 4);
+    this.add.image(width / 2, height / 2, "pondIllustrated").setDisplaySize(width, height).setDepth(0);
   }
 
   // ---- diet and upgrades -------------------------------------------------------------
@@ -245,14 +303,68 @@ export class MainScene extends Phaser.Scene {
     this.creature = change.creature;
     this.record = recordDiet(this.record, d);
     this.sfx.play("choose");
-    for (const p of change.dropped) { // a part the new diet cannot use floats back out
-      this.dropOrb(this.player.x, this.player.y - this.playerRadius() * 2, p);
-      this.hud.toast("cell.part_shed", { part: shell.i18n.t(`part.${p}`), diet: shell.i18n.t(`diet.${d}`) });
-    }
-    if (change.dropped.length) this.refreshPlayerLook();
-    shell.input.clearPresses(); // the confirming press must not also buy an upgrade
+    this.refreshPlayerLook();
+    this.birth.play("birth", { texture: CELL_ART.texture, frame: dietFrame(d) }, shell.i18n.t("cell.birth_caption"), shell.settings.access.reduce_motion);
+    shell.input.clearHeld();
     Log.info(LOG, `DIET ${d}`);
     if (this.creature.form >= TUNING.maxForm) this.saveLineage(); // the last choice of the stage
+  }
+
+  private chooseDaughter(index: number): void {
+    if (!this.division.isOpen) return;
+    const chosen = this.offers[index];
+    if (!chosen) throw new Error(`invalid daughter ${index}`);
+    this.offers.forEach((d, i) => { if (i !== index) this.spawnRival(d.creature); });
+    this.creature = chosen.creature;
+    this.record = recordDiet(this.record, this.creature.diet);
+    this.record = { ...this.record, selections: [...this.record.selections, {
+      form: this.creature.form, diet: this.creature.diet, stat: chosen.stat, gain: chosen.gain, perk: chosen.perk, cause: chosen.cause, evidence: { ...this.evidence },
+    }] };
+    this.evidence = newEvidence();
+    this.division.close();
+    this.offers = [];
+    this.spool = 0;
+    this.refreshPlayerLook();
+    this.syncUpgradeLayers();
+    this.sfx.play("evolve");
+    shell.input.clearPresses();
+    Log.info(LOG, `DIVISION chose ${chosen.stat} +${chosen.gain}; ${this.rivals.length} rivals`);
+    if (this.creature.form >= TUNING.maxForm) this.saveLineage();
+  }
+
+  /** Unchosen bodies keep their variants and compete for the same edible food. */
+  private spawnRival(creature: Creature): void {
+    if (this.rivals.length >= TUNING.division.maxRivals) return;
+    const dir = wanderDir(() => this.rng.frac());
+    const x = this.player.x + dir.x * TUNING.division.rivalSpread;
+    const y = this.player.y + dir.y * TUNING.division.rivalSpread;
+    const row = spriteRow(creature);
+    const scale = TUNING.player.formScale[creature.form - 1];
+    const spr = this.add.sprite(x, y, "player").play(animKey("player", row.pose, row.direction)).setScale(scale).setDepth(3);
+    const layers = UPGRADE_STATS.flatMap(stat => {
+      const tier = upgradeTier(creature.ups[stat]);
+      return tier ? [this.add.sprite(x, y, "ups", firstFrame(this.upsLayout, stat, `form${creature.form}_t${tier}`)).setScale(scale).setDepth(3.1)] : [];
+    });
+    layers.forEach(layer => layer.setVisible(false));
+    this.rivals.push({ x, y, vx: 0, vy: 0, creature: { ...creature, food: 0 }, spr, layers });
+  }
+
+  private moveRivals(dt: number): void {
+    for (const r of this.rivals) {
+      const edible = this.foods.filter(f => canEat(r.creature, f.kind));
+      const target = edible.reduce<Food | null>((best, f) => !best || Math.hypot(f.x-r.x, f.y-r.y) < Math.hypot(best.x-r.x, best.y-r.y) ? f : best, null);
+      const dir = target ? toward(r, target) : wanderDir(() => this.rng.frac());
+      swim(r, dir.x, dir.y, dt, { accel: accel(r.creature), maxSpeed: maxSpeed(r.creature) * TUNING.division.rivalSpeedMult, drag: drag(r.creature) });
+      const radius = r.spr.scaleX * TUNING.player.radiusPerScale;
+      keepInside(r, radius, TUNING.world.width, TUNING.world.height);
+      for (const spr of [r.spr, ...r.layers]) spr.setPosition(r.x, r.y).setFlipX(r.vx < 0);
+      if (target && Math.hypot(target.x-r.x, target.y-r.y) < radius) {
+        // Rivals feed without advancing forms: autonomous sibling division awaits playtesting.
+        r.creature = { ...r.creature, food: r.creature.food + target.base };
+        target.spr.destroy();
+        this.foods = this.foods.filter(f => f !== target);
+      }
+    }
   }
 
   private panelInput(): void {
@@ -270,6 +382,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private tryBuy(stat: UpgradeStat): void {
+    if (shell.topId !== "play" || this.picker.isOpen || this.choosing) return;
     const r = buyUpgrade(this.creature, stat);
     if (!r.ok) {
       if (r.reason === "points") {
@@ -295,7 +408,7 @@ export class MainScene extends Phaser.Scene {
 
   private refreshPlayerLook(): void {
     const row = spriteRow(this.creature);
-    this.player.spr.play(animKey("player", row.pose, row.direction)).setScale(this.playerScale());
+    this.player.spr.setVisible(true).play(animKey("player", row.pose, row.direction)).setScale(this.playerScale());
   }
 
   /** Each upgrade's layer follows the body: same spot, scale, flip, tilt, and the same swim frame. */
@@ -305,7 +418,7 @@ export class MainScene extends Phaser.Scene {
     for (const stat of UPGRADE_STATS) {
       const layer = this.upLayers[stat];
       const tier = upgradeTier(this.creature.ups[stat]);
-      layer.setVisible(tier > 0);
+      layer.setVisible(false); // Illustrated equipment turns and wriggles with its body.
       if (!tier) continue;
       layer.setFrame(firstFrame(this.upsLayout, stat, `form${this.creature.form}_t${tier}`) + step)
         .setPosition(body.x, body.y).setScale(body.scaleX, body.scaleY).setFlipX(body.flipX).setAngle(body.angle);
@@ -315,17 +428,32 @@ export class MainScene extends Phaser.Scene {
   private movePlayer(dt: number): void {
     let ix = 0, iy = 0;
     if (this.autoplay) {
-      const t = pilotTarget(this.creature, this.player, { orbs: this.orbs.filter((o) => partAllowed(this.creature.diet, o.part)), food: this.edibleFood(), cells: this.cells.filter((c) => c.kind !== "gulper") });
+      const t = pilotTarget(this.creature, this.player, { orbs: this.orbs.filter(o => partAllowed(this.creature.diet, o.part)), food: this.edibleFood(), cells: this.cells.filter((c) => c.kind !== "gulper") });
       if (t) ({ x: ix, y: iy } = toward(this.player, t));
     } else {
-      // move_* is WASD + d-pad (rebindable); ui_* adds the arrow keys, except while the upgrade panel uses them
+      // move_* is WASD + d-pad (rebindable); ui_* adds the arrow keys.
       const arrows = !this.panel.isOpen;
       const down = (a: string) => shell.input.isDown(`move_${a}`) || (arrows && shell.input.isDown(`ui_${a}`));
       ix = (down("right") ? 1 : 0) - (down("left") ? 1 : 0);
       iy = (down("down") ? 1 : 0) - (down("up") ? 1 : 0);
     }
     const p = this.player;
-    const top = maxSpeed(this.creature);
+    const oldJet = this.jet;
+    const pressed = shell.topId === "play" && !this.panel.isOpen &&
+      (this.autoplay || shell.input.takePress("jump"));
+    this.jet = tickJet(this.creature, this.jet, dt, pressed);
+    const bursting = this.jet.remaining > 0;
+    const top = maxSpeed(this.creature) * (bursting ? TUNING.perks.jetSpeedMult : 1);
+    if (this.jet.remaining > oldJet.remaining) {
+      const length = Math.hypot(ix, iy) || Math.hypot(p.vx, p.vy);
+      const dx = ix || iy ? ix : p.vx;
+      const dy = ix || iy ? iy : p.vy;
+      p.vx = length ? dx / length * top : (p.spr.flipX ? -top : top);
+      p.vy = length ? dy / length * top : 0;
+      this.sfx.play("evolve");
+      Log.debug(LOG, "PERK Jet Burst");
+    }
+    if (bursting) p.spr.setTint(TUNING.perks.jetTint); else p.spr.clearTint();
     this.spool = nextSpool(this.spool, ix !== 0 || iy !== 0, dt, spoolTime(this.creature));
     const thrust = thrustAt(this.spool); // momentum: a heavy cell builds up to full thrust (playtest 2026-11-08)
     swim(p, ix * thrust, iy * thrust, dt, { accel: accel(this.creature), maxSpeed: top, drag: drag(this.creature) });
@@ -337,27 +465,23 @@ export class MainScene extends Phaser.Scene {
   }
 
   private applyFood(r: { creature: Creature; evolved: boolean }): void {
+    const parent = this.creature;
     this.creature = r.creature;
     if (!r.evolved) return;
-    Log.info(LOG, `EVOLVED form ${this.creature.form}`);
+    if (this.panel.isOpen) this.panel.toggle();
+    this.offers = daughters(this.creature, this.evidence, () => this.rng.frac());
+    this.player.spr.setVisible(false);
+    Object.values(this.upLayers).forEach(layer => layer.setVisible(false));
+    this.mitosis.start(parent, this.offers, shell.settings.access.reduce_motion);
     this.sfx.play("evolve");
-    const from = this.player.spr.scale;
-    this.refreshPlayerLook();
-    this.tweens.add({ targets: this.player.spr, scale: { from: from * 0.8, to: this.playerScale() }, duration: 450, ease: "Back.Out" });
-    if (!shell.settings.access.reduce_motion) this.cameras.main.flash(TUNING.evolveFlashS * 1000, 255, 240, 200);
-    this.hud.toast(this.creature.form >= TUNING.maxForm ? "cell.evolved_last" : "cell.evolved", { form: this.creature.form, slots: slots(this.creature) });
-    Log.info(LINEAGE_LOG, `form ${this.creature.form}: ${describeTemperament(cellTemperament(this.creature, this.record))}`);
-    if (this.autoplay) {
-      if (this.creature.form >= TUNING.maxForm) this.saveLineage(); // no picker: the stage ends at once
-    } else {
-      this.picker.show(this.creature.diet, "diet.title_evolve", { form: this.creature.form });
-    }
+    shell.input.clearPresses();
+    Log.info(LOG, `DIVISION form ${this.creature.form}: ${this.offers.map(d => d.stat).join(", ")}`);
   }
 
   /** The stage's end (last form, last diet picked): build the lineage and save it once. A failed save must not end the run. */
   /** ` (test trigger): finish the stage now: the last form, the lineage saved as it stands, the evolve offered. */
   private finishStageNow(): void {
-    if (this.lineageSaved || this.picker.isOpen) return;
+    if (this.lineageSaved || this.picker.isOpen || this.choosing) return;
     this.creature = { ...this.creature, form: TUNING.maxForm };
     this.refreshPlayerLook();
     Log.info(LOG, "DEV finish the cell stage now");
@@ -366,14 +490,15 @@ export class MainScene extends Phaser.Scene {
 
   /** The stage's end: on to the aquatic stage, which reads the lineage just saved. */
   private evolveToAquatic(): void {
+    // The player may have bought levels or collected parts after the final daughter choice.
+    if (!this.saveLineage(true)) return;
     Log.info(LOG, "EVOLVE into the aquatic stage");
     shell.stopGame();
     shell.startGame("aquatic");
   }
 
-  private saveLineage(): void {
-    if (this.lineageSaved) return;
-    this.lineageSaved = true;
+  private saveLineage(refresh = false): boolean {
+    if (this.lineageSaved && !refresh) return true;
     const lineage = cellLineage(this.creature, this.record);
     const home = lineage.species[0];
     try {
@@ -381,13 +506,14 @@ export class MainScene extends Phaser.Scene {
       const spec = shipSpecialty(home.temperament);
       Log.info(LINEAGE_LOG, `saved (slot ${LINEAGE_SLOT}): ${describeTemperament(home.temperament)}; leans ${spec.kind} (${spec.tech})`);
       for (const e of home.influence) Log.debug(LINEAGE_LOG, `  ${e.cause} ${JSON.stringify(e.effect)}`);
+      const firstSave = !this.lineageSaved;
+      this.lineageSaved = true;
       this.evolveReady = true;
-      this.evolveBanner ??= this.add.text(this.scale.width / 2, this.scale.height - 40, shell.i18n.t("cell.evolve_ready"),
-        { fontFamily: "monospace", fontSize: "12px", color: "#fff6c8", backgroundColor: "#000000a0", padding: { x: 8, y: 4 } })
-        .setOrigin(0.5, 1).setScrollFactor(0).setDepth(1200).setResolution(2);
-      this.sfx.play("evolve");
+      if (firstSave) this.sfx.play("evolve");
+      return true;
     } catch (err) {
       Log.error(LINEAGE_LOG, `could not save the lineage (slot ${LINEAGE_SLOT}): ${err instanceof Error ? err.message : String(err)}`);
+      return false;
     }
   }
 
@@ -406,7 +532,7 @@ export class MainScene extends Phaser.Scene {
 
   private spawnAlgae(): void {
     const { x, y } = this.freeSpot(40);
-    this.addFood(x, y, "algae", freshBase("algae"), true, Infinity);
+    this.addFood(x, y, "algae", freshBase("algae", this.creature.form), true, Infinity);
   }
 
   /** Scatter food from (x, y): it drifts out to a spot nearby. */
@@ -416,7 +542,7 @@ export class MainScene extends Phaser.Scene {
       const r = this.rng.between(12, TUNING.droppedFoodSpread);
       const fx = Phaser.Math.Clamp(x + d.x * r, 10, TUNING.world.width - 10);
       const fy = Phaser.Math.Clamp(y + d.y * r, 10, TUNING.world.height - 10);
-      const f = this.addFood(x, y, kind, base ?? freshBase(kind), fresh, life, scale);
+      const f = this.addFood(x, y, kind, base ?? freshBase(kind, this.creature.form), fresh, life, scale);
       f.x = fx;
       f.y = fy;
       this.tweens.add({ targets: f.spr, x: fx, y: fy, duration: 350, ease: "Quad.Out" });
@@ -426,13 +552,15 @@ export class MainScene extends Phaser.Scene {
   private pullAndEat(dt: number): void {
     const p = this.player;
     const pull = pullRadius(this.creature);
+    const sense = foodSenseRadius(this.creature);
     const reach = this.playerRadius() + TUNING.player.eatRadiusBonus;
     this.foods = this.foods.filter((f) => {
+      if (this.choosing) return true;
       const d = Math.hypot(f.x - p.x, f.y - p.y);
-      if (pull > 0 && f.kind === "algae" && d < pull && !this.tweens.isTweening(f.spr)) {
+      if (canEat(this.creature, f.kind) && ((f.kind === "algae" && d < pull) || d < sense) && !this.tweens.isTweening(f.spr)) {
         const dir = toward(f, p);
-        f.x += dir.x * TUNING.mouthPullSpeed * dt;
-        f.y += dir.y * TUNING.mouthPullSpeed * dt;
+        f.x += dir.x * Math.max(TUNING.mouthPullSpeed, sense ? TUNING.perks.foodSensePullSpeed : 0) * dt;
+        f.y += dir.y * Math.max(TUNING.mouthPullSpeed, sense ? TUNING.perks.foodSensePullSpeed : 0) * dt;
         f.spr.setPosition(f.x, f.y);
       }
       if (d >= reach) return true;
@@ -446,6 +574,7 @@ export class MainScene extends Phaser.Scene {
         return true; // it floats past
       }
       this.sfx.play(f.kind === "algae" ? "eat_algae" : "eat_meat");
+      if (f.fresh) this.evidence[f.kind] += r.gained;
       this.applyFood(r);
       f.spr.destroy();
       return false;
@@ -473,6 +602,7 @@ export class MainScene extends Phaser.Scene {
   private pickUpParts(): void {
     const reach = this.playerRadius() + 10;
     this.orbs = this.orbs.filter((o) => {
+      if (this.choosing) return true;
       if (Math.hypot(o.x - this.player.x, o.y - this.player.y) >= reach) return true;
       const r = addPart(this.creature, o.part);
       if (r.kind === "refused") {
@@ -551,6 +681,7 @@ export class MainScene extends Phaser.Scene {
     const ev = gulperEvent(brain, next);
     if (ev) {
       this.record = bump(this.record, ev === "escape" ? "gulperEscapes" : "gulpersLured");
+      this.evidence[ev === "escape" ? "escapes" : "lures"]++;
       Log.debug(LINEAGE_LOG, `gulper ${g.id}: ${ev}`);
     }
     if (next.targetId === PLAYER_ID && brain.targetId !== PLAYER_ID) {
@@ -644,7 +775,7 @@ export class MainScene extends Phaser.Scene {
       const ramming = this.player.vx * into.x + this.player.vy * into.y >= TUNING.rammingSpeed;
       c.hp -= bumpDamage(this.creature, ramming);
       if (c.hp <= 0) c.poppedByPlayer = true;
-      if (ramming) this.record = bump(this.record, "cellsRammed");
+      if (ramming) { this.record = bump(this.record, "cellsRammed"); this.evidence.rams++; }
       else if (c.kind === "gulper") this.record = bump(this.record, "timesBitten");
       const loss = bumpFoodLoss(this.creature, c.kind);
       this.creature = loseFood(this.creature, loss);
@@ -664,12 +795,13 @@ export class MainScene extends Phaser.Scene {
 
   // ---- the pond refills ------------------------------------------------------------
   private refill(dt: number): void {
+    const supply = pondFood(this.creature.form);
     const algae = this.foods.filter((f) => f.kind === "algae" && f.life === Infinity).length;
-    if (algae < TUNING.algaeCount) {
+    if (algae < supply.algaeCount) {
       this.regrowIn -= dt;
       if (this.regrowIn <= 0) {
         this.spawnAlgae();
-        this.regrowIn = TUNING.algaeRegrowS;
+        this.regrowIn = supply.algaeRegrowS;
       }
     }
     // each kind refills toward cellsWanted (which grows with your form for predators), one at a time
@@ -705,6 +837,8 @@ export class MainScene extends Phaser.Scene {
     g.clear().lineStyle(1, 0xff00ff, 1);
     g.strokeCircle(this.player.x, this.player.y, this.playerRadius());
     const pull = pullRadius(this.creature);
+    const sense = foodSenseRadius(this.creature);
+    if (sense) g.lineStyle(1, 0x9be9ff, 0.5).strokeCircle(this.player.x, this.player.y, sense);
     if (pull) g.lineStyle(1, 0x80ff80, 0.5).strokeCircle(this.player.x, this.player.y, pull);
     g.lineStyle(1, 0xffff00, 1);
     for (const c of this.cells) g.strokeCircle(c.x, c.y, TUNING.cell.kinds[c.kind].radius);

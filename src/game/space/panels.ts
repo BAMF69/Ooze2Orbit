@@ -34,9 +34,9 @@ export type HangarAct = { kind: "add" | "remove"; part: PartId } | { kind: "recr
 /** A clickable box. hover: the palette item it shows when the pointer is over it. */
 export interface HangarButton { x: number; y: number; w: number; h: number; act?: HangarAct; hover?: number }
 
-const SHIP = { x: 168, y: 140 };
-const SLOT_COL: Record<SlotType, number> = { gun: 0xe0c890, turret: 0x60c0f0, defence: 0x70d0a0, engine: 0xf0a050, power: 0xf0d860 };
-const SLOT_WORD: Record<SlotType, string> = { gun: "guns", turret: "turrets", defence: "defences", engine: "engines", power: "power" };
+export const SHIP = { x: 168, y: 140 };
+export const SLOT_COL: Record<SlotType, number> = { gun: 0xe0c890, turret: 0x60c0f0, defence: 0x70d0a0, engine: 0xf0a050, power: 0xf0d860 };
+export const SLOT_WORD: Record<SlotType, string> = { gun: "guns", turret: "turrets", defence: "defences", engine: "engines", power: "power" };
 const MAKER_COL = { home: "#e8c890", ally: "#8ad8d0" } as const;
 const pct = (v: number) => `${Math.round(v * 100)} %`;
 /** Which atlas a hull's sprite lives in (yours, or the allies'). */

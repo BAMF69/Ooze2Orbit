@@ -23,16 +23,18 @@ import { writeStage, type TemperamentKind } from "../core/lineage";
 import { Log } from "../core/log";
 import { shell } from "../shell/app";
 import { revealFrom, type Reveal } from "./aquatic/reveal";
-import { animKey, animSpecs, type AtlasLayout } from "./cell/atlas";
+import { animKey, animSpecs, firstFrame, type AtlasLayout } from "./cell/atlas";
 import { cellSfx, type CellSfx } from "./cell/sfx";
 import { LineagePanel } from "./lineagePanel";
+import { ShipPreview } from "./space/shipPreview";
 import { T0 } from "./space/adapt";
 import {
   SYSTEMS, afterBattle, bossDue, escortSpecs, finished, install, launch, neighbour, nextWave, pilotFight, pilotRecruit, pilotRefit, pilotWantsShop,
-  pilotWorld, recruit, routeTo, spaceRecord, starSystem, startCampaign, swapHull, travel, uninstall, worldOf, type Campaign, type Outcome, type SystemId,
+  pilotWorld, priceOf, escortPrice, recruit, routeTo, spaceRecord, starSystem, startCampaign, swapHull, travel, uninstall, worldOf, type Campaign, type Outcome, type SystemId,
 } from "./space/campaign";
 import { IDLE, approachControls, newBattle, pilotControls, reinforce, step, type Battle, type Controls } from "./space/combat";
-import { fitProblems, shipStats } from "./space/fit";
+import { fitProblems, shipStats, part, powerOf, SLOT_TYPES, slotsOf, slotsUsed } from "./space/fit";
+import { StageUi, action, type StageAction } from "./stageUi";
 import { MAP_PICK, drawEnd, drawHangar, drawMap, drawReadout, hangarItems, hullAtlas, type HangarAct, type HangarButton, type Pen } from "./space/panels";
 import { SPACE } from "./space/tuning";
 
@@ -47,11 +49,14 @@ type Mode = "hangar" | "flight" | "map" | "jump" | "end";
 
 export class SpaceScene extends Phaser.Scene {
   private c!: Campaign;
+  private screenUi!: StageUi;
+  private commandsOpen = false;
   private b!: Battle;
   private mode: Mode = "hangar";
   private temper: Record<TemperamentKind, number> = { cautious: 0.4, aggressive: 0.3, adaptable: 0.3 };
   private reveal: Reveal | null = null;
   private lineage!: LineagePanel;
+  private shipPreview?: ShipPreview;
   private sfx!: CellSfx;
   private world!: Phaser.GameObjects.Graphics; // stars, shots, radar: redrawn every frame
   private fx!: Phaser.GameObjects.Graphics; // the wormhole, over the ships
@@ -86,6 +91,7 @@ export class SpaceScene extends Phaser.Scene {
   private pilotCheck = false; // the pilot thinks about shopping once after each win
   private stars: { x: number; y: number; p: number }[] = [];
   private onKey = (e: KeyboardEvent) => {
+    if (shell.topId !== "play") return;
     this.held.add(e.code);
     if (shell.topId !== "play" || e.repeat || this.lineage.isOpen || this.autoplay) return;
     if (this.mode === "hangar" && e.code === "KeyH") this.hangar({ kind: "hull" });
@@ -118,13 +124,15 @@ export class SpaceScene extends Phaser.Scene {
     }
     const handIn = this.readLineage();
     this.c = startCampaign({ temper: this.temper, civ: handIn.civ, harshness: handIn.harshness });
+    this.screenUi = new StageUi(this); this.commandsOpen = false;
     if (params.get("world") === "tidereach") this.c = { ...this.c, system: "tidereach" }; // debug: start at the allies' world
     if (params.has("boss")) this.c = { ...this.c, system: "lattice", latticeStreak: SPACE.boss.streak }; // debug: the Mothership arrives
     this.notes = [];
     this.foeS.clear(); this.allyS.clear(); this.held.clear();
     this.texts = []; this.icons = []; this.route = [];
     this.sel = 0; this.waveLeft = 0; this.victoryShown = false; this.autoLand = false; this.pilotGoal = "fight"; this.pilotCheck = false;
-    this.stars = Array.from({ length: 90 }, (_, i) => ({ x: (i * 197) % W, y: (i * 113 + (i % 7) * 31) % H, p: 0.15 + (i % 3) * 0.2 }));
+    const resize = () => { this.stars = Array.from({ length: 90 }, (_, i) => ({ x: (i * 197) % this.scale.width, y: (i * 113 + (i % 7) * 31) % this.scale.height, p: 0.15 + (i % 3) * 0.2 })); this.dirty = true; };
+    resize(); this.scale.on("resize", resize); this.events.once("shutdown", () => this.scale.off("resize", resize));
     this.world = this.add.graphics().setDepth(0);
     this.planetS = this.add.sprite(0, 0, "space_props").setScale(3).setDepth(1);
     this.youS = this.add.sprite(CX, CY, "space_ships").setDepth(5);
@@ -139,6 +147,7 @@ export class SpaceScene extends Phaser.Scene {
     window.addEventListener("keydown", this.onKey);
     window.addEventListener("keyup", this.onKeyUp);
     this.events.once("shutdown", () => { window.removeEventListener("keydown", this.onKey); window.removeEventListener("keyup", this.onKeyUp); });
+    const paused = () => this.held.clear(); this.events.on("pause", paused); this.events.once("shutdown", () => this.events.off("pause", paused));
     this.lineage = new LineagePanel(this);
     if (!this.autoplay) this.lineage.show(this.reveal ?? revealFrom(null, 3, "space"), "Enter or E: take the helm");
     Log.info(LOG, `START home ${this.c.makers.home}, ally ${this.c.makers.ally}, harshness ${this.c.harshness.toFixed(2)}, parts ${this.c.fit.parts.join(",")}, salvage ${this.c.credits}`);
@@ -269,6 +278,7 @@ export class SpaceScene extends Phaser.Scene {
 
   /** The wormhole: rings rushing past and a spiral, strongest at the middle of the jump, when the system changes. */
   private drawWormhole(): void {
+    const W = this.scale.width, H = this.scale.height, CX = W / 2, CY = H / 2;
     const g = this.fx, still = shell.settings.access.reduce_motion;
     const p = Math.min(1, this.jumpT / (still ? 0.4 : SPACE.jump.secs)), amp = Math.sin(Math.PI * p);
     g.clear();
@@ -455,6 +465,7 @@ export class SpaceScene extends Phaser.Scene {
   }
 
   private drawSpace(): void {
+    const W = this.scale.width, H = this.scale.height, CX = W / 2, CY = H / 2;
     const g = this.world, you = this.b.you;
     const sx = (x: number) => x - you.x + CX, sy = (y: number) => y - you.y + CY;
     const warp = this.mode === "jump" && !shell.settings.access.reduce_motion ? Math.sin(Math.PI * Math.min(1, this.jumpT / SPACE.jump.secs)) : 0;
@@ -505,6 +516,7 @@ export class SpaceScene extends Phaser.Scene {
   }
 
   private edgeArrow(x: number, y: number, col: number): void {
+    const CX = this.scale.width / 2, CY = this.scale.height / 2;
     const a = Math.atan2(y - CY, x - CX), k = Math.min((CX - 14) / Math.abs(Math.cos(a) || 1e-6), (CY - 14) / Math.abs(Math.sin(a) || 1e-6));
     const ex = CX + Math.cos(a) * k, ey = CY + Math.sin(a) * k;
     this.world.fillStyle(col, 0.9).fillTriangle(ex + Math.cos(a) * 7, ey + Math.sin(a) * 7, ex + Math.cos(a + 2.4) * 6, ey + Math.sin(a + 2.4) * 6, ex + Math.cos(a - 2.4) * 6, ey + Math.sin(a - 2.4) * 6);
@@ -554,6 +566,42 @@ export class SpaceScene extends Phaser.Scene {
       p.text(140, H - 22, this.hint(), 10, this.waveLeft > 0 && !b.foes.length ? "#ffb090" : "#c8d0c8");
       if (this.mode === "map") drawMap(p, c, this.mapSel);
     }
+    this.ui.setVisible(false); this.texts.forEach(t => t.setVisible(false)); this.icons.forEach(s => s.setVisible(false));
+    this.responsive();
+  }
+
+  private responsive(): void {
+    const c = this.c, b = this.b, i18n = shell.i18n;
+    if (!this.shipPreview || !this.shipPreview.node.isConnected) {
+      this.shipPreview = new ShipPreview(this);
+      this.screenUi.modalText.after(this.shipPreview.node);
+    }
+    this.shipPreview.node.hidden = this.mode !== "hangar";
+    this.screenUi.modalText.parentElement!.classList.toggle("space-outfitter", this.mode === "hangar");
+    if (this.mode === "hangar") this.shipPreview.update(c.fit);
+    this.toastT.setVisible(false);
+    this.screenUi.setStatus(`${starSystem(c.system).name} · Salvage ${c.credits} · Hull ${Math.ceil(b.you.hull)}/${Math.ceil(b.you.hullMax)}\nShield ${Math.ceil(b.you.shield)} · Wins ${c.wins} · Escorts ${b.allies.length}`, `Power ${powerOf(c.fit)}\n${Object.entries(c.learned).map(([k, v]) => `${k}: ${Math.round(v * 100)}% learned`).join("\n")}\n${this.hint()}`);
+    this.screenUi.setMessage(this.toastLeft > 0 ? this.toastT.text : this.mode === "flight" ? this.hint() : "");
+    const close = () => { this.commandsOpen = false; this.screenUi.hide(); this.held.clear(); shell.input.clearHeld(); };
+    this.screenUi.actions([{ id: "commands", label: i18n.t("display.commands"), run: () => { this.commandsOpen = true; this.held.clear(); shell.input.clearHeld(); } }, { id: "map", label: i18n.t("display.map"), run: () => { if (this.mode === "flight") this.openMap(); } }]);
+    if (this.mode === "hangar") {
+      const items = hangarItems(c), icon = (texture: string, pose: string) => ({ texture, frame: firstFrame(this.cache.json.get(`${texture}_layout`) as AtlasLayout, pose, "up") });
+      const choices: StageAction[] = items.map((it, n) => it.kind === "part" ? {
+        id: `buy${it.id}`, label: `${n === this.sel ? "> " : ""}${part(it.id).name}\n${priceOf(c, it.id)} salvage · ${part(it.id).slot}\nPower ${part(it.id).power}`, icon: icon("space_parts", it.id),
+        run: () => { this.sel = n; this.hangar({ kind: "add", part: it.id }); },
+      } : { id: `hire${it.id}`, label: `Recruit ${SPACE.escorts[it.id].name} · ${escortPrice(c, it.id)} salvage`, run: () => this.hangar({ kind: "recruit", escort: it.id }) });
+      const fitted = [...new Set(c.fit.parts)].map(id => ({ id: `remove${id}`, label: `Remove ${part(id).name} (${c.fit.parts.filter(p => p === id).length} fitted)`, icon: icon("space_parts", id), run: () => this.hangar({ kind: "remove", part: id }) }));
+      this.screenUi.show(`${worldOf(c.system)?.name ?? "Hangar"} · ${SPACE.hulls[c.fit.hull].name} · Salvage ${c.credits}\nPower ${powerOf(c.fit)} · ${SLOT_TYPES.map(t => `${t} ${slotsUsed(c.fit, t)}/${slotsOf(c.fit.hull)[t]}`).join(" · ")}\n${(this.notes.length ? this.notes : c.start).join("\n")}\n${this.toastLeft > 0 ? this.toastT.text : "Choose parts to buy; fitted parts can be removed below."}`, [
+        ...choices, ...fitted, { id: "hull", label: i18n.t("display.change_hull"), run: () => this.hangar({ kind: "hull" }) }, { id: "launch", label: i18n.t("display.launch"), run: () => { close(); this.launch(); } }]);
+    } else if (this.mode === "map") this.screenUi.show(`Star map · ${starSystem(this.mapSel).name}\n${starSystem(this.mapSel).blurb}\nRoute: ${[c.system, ...routeTo(c.system, this.mapSel)].map(id => starSystem(id).name).join(" → ")}\nAction is paused while you choose.`, [
+      ...SYSTEMS.filter(s => s.id !== c.system).map(s => ({ id: s.id, label: `${s.id === this.mapSel ? "> " : ""}${s.name}`, run: () => { this.mapSel = s.id; this.dirty = true; } })),
+      { id: "jump", label: i18n.t("display.jump_selected"), run: () => { close(); this.startJump(this.mapSel); } }, { id: "back", label: i18n.t("display.back_flight"), run: () => { close(); this.setMode("flight"); } }]);
+    else if (this.mode === "end") this.screenUi.show(`The Mothership has fallen.\n${spaceRecord(c).causes.map(x => x.cause).join("\n")}`, [action("continue", "ui_accept", "Keep flying")]);
+    else if (this.commandsOpen) this.screenUi.show(i18n.t("display.space_commands"), [
+      { id: "land", label: i18n.t("display.land"), run: () => { close(); this.pressLand(); } }, { id: "map", label: i18n.t("display.map"), run: () => { close(); this.openMap(); } },
+      { id: "previous", label: i18n.t("display.previous_system"), run: () => { close(); this.jumpBeside(-1); } }, { id: "next", label: i18n.t("display.next_system"), run: () => { close(); this.jumpBeside(1); } },
+      { id: "close", label: i18n.t("display.close"), run: close }]);
+    else this.screenUi.hide();
   }
 
   // ---- autoplay (smoke) -------------------------------------------------------------------------------------
@@ -597,6 +645,7 @@ export class SpaceScene extends Phaser.Scene {
   }
 
   update(_time: number, deltaMs: number): void {
+    if ((this.commandsOpen || this.screenUi.detailsOpen) && this.mode === "flight" && !this.autoplay) { this.responsive(); return; }
     const dt = Math.min(deltaMs / 1000, 0.05);
     const playing = shell.topId === "play";
     this.sfx.update(shell.settings.audio);
@@ -631,5 +680,6 @@ export class SpaceScene extends Phaser.Scene {
       if ((this.hudT += dt) > 0.2) { this.hudT = 0; this.dirty = true; } // the HUD's numbers, five times a second
     }
     if (this.dirty) { this.dirty = false; this.redraw(); }
+    this.responsive();
   }
 }

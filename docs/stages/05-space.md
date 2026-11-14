@@ -8,6 +8,13 @@
 > were chosen by Claude: confirm them with BAMF69.
 
 ## Identity
+### Shared display rollout — 2026-11-13
+User reports liking all stages. Fullscreen/safe bounds and rotation pause/resume now apply. Flight,
+edge warnings and wormholes center on the adaptive viewport. The native icon outfitter exposes
+prices, slots, power and fitted-part removal without hover. Map routes and commands are readable,
+scrollable panels; flight combat pauses while command/details/map choices are open. No fitting,
+travel, adaptation, victory or save rules changed. Actual device/touch-stick testing remains next.
+
 - **Pitch:** Captain a ship, then a fleet. Jump between star systems, land on planets to collect parts and ships,
   refit your fleet, and fight `T0|▼|`'s forces, which learn from every battle.
 - **Reference game:** Endless Sky, for its **fleet management, ship customization and space combat** (BAMF69

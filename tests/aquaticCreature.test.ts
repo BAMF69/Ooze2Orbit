@@ -32,7 +32,7 @@ describe("stats carry over and their max doubles", () => {
   });
   it("a default or broken lineage is a fresh omnivore", () => {
     expect(creatureFromLineage(null, "???").ups).toEqual(Object.fromEntries(AQ_STATS.map((s) => [s, 0])));
-    expect(creatureFromLineage({ upgrades: { attack: 99 } }, "x").ups.attack).toBe(10);
+    expect(creatureFromLineage({ upgrades: { attack: 99 } }, "x").ups.attack).toBe(11); // largest valid cell inheritance
   });
   it("buys up to level 10 with the right points, then stops", () => {
     let c = rich(fresh());

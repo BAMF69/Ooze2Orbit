@@ -62,3 +62,13 @@
 - How to verify: `python tools/dev.py run`, play with `?autoplay&diet=carnivore`, zoom on the cell while it tilts.
 - Related: ENGINE.md gotcha 7 (headless smoke uses software rendering)
 
+
+## Phaser FIT after changing its parent rectangle (2026-11-13)
+ScaleManager.refresh() uses cached parent dimensions. After assigning new host bounds, call getParentBounds() before setGameSize()/refresh(). Otherwise initial cell startup may draw behind its reserved HUD. Avoid flex-centering a canvas already centered by ScaleManager margins. Verify actual canvas bounds, not only host bounds.
+
+## Crash while advancing from creature (2026-11-13)
+Verified in Chromium/Phaser 4.2.1: `Cannot read properties of undefined (reading 'worldView')`
+in CreatureScene.draw. Shell.startGame stops the old scene synchronously; result handlers must return
+without drawing its destroyed camera/objects. Both creature→civ and civ→space now return immediately.
+Regression scenario: confirm creature reveal, claim crown, confirm civilization; win civilization, confirm
+space. Assert no page errors, expected active stage and removal of old native panels.

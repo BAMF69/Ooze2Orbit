@@ -62,6 +62,12 @@ export const allyFor = (primary: TemperamentKind): TemperamentKind => (primary =
 export const primaryOf = (t: Record<TemperamentKind, number>): TemperamentKind => (Object.entries(t) as [TemperamentKind, number][]).reduce((a, b) => (b[1] > a[1] ? b : a))[0];
 
 const HERITAGE: Record<string, { part: PartId; why: string }> = {
+  thorn: { part: "needle", why: "thorn defenses became Needle Turrets" },
+  mortar: { part: "spine", why: "seed mortars became Spine Launchers" },
+  frost: { part: "plating", why: "mist defenses became Shell Plating" },
+  runner: { part: "fin", why: "reedrunner logistics became a Fin Drive" },
+  shell: { part: "plating", why: "shellback armor became Shell Plating" },
+  swarm: { part: "gland", why: "brood coordination became a Gland Cannon" },
   siege: { part: "spine", why: "siege engines became a second Spine Launcher" },
   ships: { part: "fin", why: "trade ships became a second Fin Drive" },
   temple: { part: "plating", why: "temple walls became Shell Plating" },
@@ -77,8 +83,8 @@ export function startCampaign(o: { temper: Record<TemperamentKind, number>; civ?
   const civ = o.civ ?? {};
   const first = Array.isArray(civ.machines) ? HERITAGE[String(civ.machines[0])] : undefined;
   if (first) { parts.push(first.part); start.push(`Heritage: ${first.why}`); }
-  if (civ.victory === "conquest") { parts.push("needle"); start.push("Conquest victory: a war fleet's Needle Turret"); }
-  else if (civ.victory === "trade") { credits += SPACE.economy.tradeBonus; start.push(`Economic victory: ${SPACE.economy.tradeBonus} more salvage to spend`); }
+  if (civ.victory === "conquest" || civ.victory === "base_destroyed") { parts.push("needle"); start.push("Military victory: a war fleet's Needle Turret"); }
+  else if (civ.victory === "trade" || civ.victory === "economic_supremacy") { credits += SPACE.economy.tradeBonus; start.push(`Economic victory: ${SPACE.economy.tradeBonus} more salvage to spend`); }
   else if (civ.victory === "faith") { parts.push("membrane"); start.push("Faith victory: loyal allies gave a Tide Membrane"); }
   const learned = noLearning();
   if (civ.tookT0Tech === true) { for (const f of Object.keys(learned) as (keyof Learned)[]) learned[f] = SPACE.adapt.t0TechStart; start.push(`You took ${T0} tech: it already knows you a little`); }

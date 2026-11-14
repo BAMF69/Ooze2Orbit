@@ -56,7 +56,7 @@ lineage has its own `schemaVersion` so it can also be exported as a plain file i
 | `species[].world` | `home`, or the outer garden it lives on | The stage that creates it |
 | `species[].origin` | `played` (came from real play), `default` (a stage started on its own), `generated` (a replacement or connected-mode species) | The stage that creates it |
 | `species[].status` | `alive` or `extinct`. Extinct species stay in the file (history), and a `generated` one replaces them in the space stage | Any stage |
-| `species[].temperament` | Three scores, 0 to 1 each, independent (a species can be high in two). The highest sets its ship specialty: **cautious = shields, aggressive = weapons, adaptable = engines** (approved by BAMF69 2026-11-08). A cached copy: the cause log is the truth (`temperamentOf`) | Every stage, only by adding `influence` entries |
+| `species[].temperament` | Three shares totaling 1 (100%); increases compete with the others (BAMF69 2026-11-13). The highest sets its ship specialty: **cautious = shields, aggressive = weapons, adaptable = engines**. A cached copy: the cause log is the truth (`temperamentOf`) | Every stage, only by adding `influence` entries |
 | `species[].diet` | `herbivore`, `carnivore` or `omnivore`. Second layer of ship tech: plant eaters lean to industry and repair, meat eaters to salvage and raiding | Cell first; later stages may shift it |
 | `species[].branches[]` | Sub-lineages inside a species (aquatic on). Same shape as a species minus `stages` | Aquatic on |
 | `species[].stages.<stage>` | That stage's own block. Only that stage reads its details; later stages read only what this file promises below | Each stage, its own block only |
@@ -67,8 +67,9 @@ lineage has its own `schemaVersion` so it can also be exported as a plain file i
    `influence` entry (cause + effect) and the scores are worked out from the log (`temperamentOf`). That is how the
    temperament readout can always say why ("The ice age made your lineage more cautious: +shields").
 2. **Each stage can shift a temperament at most 50 % from where the stage before left it** (approved by BAMF69
-   2026-11-08). The cell stage sets each temperament freely, 0 to 100 %. Every later stage adds its causes to where
-   the stage before ended, then clamps each temperament to that value ± 50 % (and to 0..100 %). Example: a cell stage
+   2026-11-08; retained as 50 percentage points in the 2026-11-13 share model). Cell evidence is summed and
+   normalized without independently capping any category. Later stages normalize the prior shares plus signed
+   stage evidence, then interpolate toward that target so no share moves more than 50 points. Example: a cell stage
    that ends 100 % aggressive (a carnivore) can end the aquatic stage no lower than 50 % aggressive, and the creature
    stage as low as 0 %. A stage with no causes for a species leaves it where it was. The cap is `STAGE_SHIFT_CAP` in
    `src/core/lineage.ts`; `stageRange()` tells a stage (and its readout) the lowest and highest each temperament can
@@ -83,6 +84,13 @@ lineage has its own `schemaVersion` so it can also be exported as a plain file i
    tunable table per stage (cell: `TUNING.temperament` in `src/game/cell/tuning.ts`), never scattered literals.
 
 ## Per stage: what goes in, what comes out
+Civilization Toy 2 (2026-11-13) reads `stages.creature.hero` strength/vitality/climb. Its victory names
+are `base_destroyed` and `economic_supremacy`; space also continues accepting conquest/trade/faith.
+The `civ` block stores `towers`, `sentKinds`, sends/defense spending, maze length, hero hits, kills,
+lever and `tookT0Tech` (false until the probe exists). `machines` is an ordered technology heritage
+list of tower/send identifiers; space turns its first entry into a matching ship part. The cause
+log records spending, defensive kills, maze length and hero use under the existing ±50% stage cap.
+
 | Stage | Reads | Writes | Default lineage when played on its own |
 |---|---|---|---|
 | **Cell** | Nothing: always starts fresh | Creates species `home`; its `cell` block; diet; first influence entries | Not needed |
@@ -106,7 +114,31 @@ Each is written by `writeStage()` in `src/core/lineage.ts` when the stage ends; 
   adaptable). Reads from `stages.civ`: `victory`, `machines[0]` (the technology heritage) and, when a later
   civilization stage writes it, `tookT0Tech`. Written when the Mothership falls (the stage's win) (`src/game/space/campaign.ts` startCampaign, spaceRecord).
 
-## The cell stage's block (built 2026-11-08)
+## Cell division extension (updated 2026-11-12)
+### Creature Toy 2 extension (2026-11-13)
+`stages.creature.hero` stores the surviving creature's strength, vitality, climbing ability and diet.
+`abilities` lists `climb` when present; `traits` retains a string list for existing readers.
+`generation`, `climate`, `opened`, `visited` and `history` record the prototype's selected lineage.
+The separate `creature_generations` save slot stores generation checkpoints, is defensively validated
+and travels in normal save exports. Existing bundles without that slot remain valid. Mid-life state
+is deliberately not a checkpoint: entering Creature resumes the last generation at the nest.
+The stage reads aquatic diet and preserves upstream temperament; aquatic body-plan art is pending.
+The civilization stage remains its older Toy and does not yet activate the new hero stats.
+
+`stages.cell.selections` stores each selected form, diet, bonus stat/gain, perk, cause and generation evidence.
+`stages.cell.perks` stores the inherited ranks of division-only abilities (Food Sense, Jet Burst, Soft Landing).
+These effects currently apply only in the cell stage; later stages preserve this block without activating them.
+`upgrades` carries final levels from purchases plus daughter bonuses, which can exceed 5 (BAMF69 2026-11-12).
+Aquatic inheritance preserves legitimate cell levels up to 11 (5 purchased plus three +2 selections),
+even above its purchase cap of 10. Aquatic purchases still stop at 10; invalid import values are bounded.
+The final daughter choice writes a first lineage; continued Form 4 play is allowed, and leaving for aquatic
+refreshes that save with the latest purchased levels, parts and perks before switching scenes.
+`dietHistory` includes initial diet and every selected daughter. Purchased and bonus levels each receive
+cause-log credit once (final levels minus recorded bonuses are the purchased levels). Parts and unspent points
+persist through daughter selection; points remain cell-local and are not exported. No schema bump: the stage
+block is extensible. Old recordings without selections/perks retain their original handling.
+
+## The cell stage's block (original format, built 2026-11-08)
 Written by `cellBlock()` in `src/game/cell/record.ts` when the stage ends (the last form reached and its diet picked).
 
 ```json
@@ -133,9 +165,13 @@ Written by `cellBlock()` in `src/game/cell/record.ts` when the stage ends (the l
 The player cannot be popped in the cell stage (BAMF69 2026-11-08: bumps and bites cost food only), so there is no `timesPopped`.
 
 ### How the cell stage feeds temperament (all in `TUNING.temperament`)
-Points per cause; 10 points = 100 %. First draft *(Claude's pick)*: a creature that maxes attack, keeps its spikes and
-picks carnivore at all three choices is 100 % aggressive without any fighting; behavior adds on top, each capped so
-grinding one action cannot max a temperament alone.
+Points per cause are relative evidence weights (BAMF69 2026-11-13). Sum the three categories, then divide each
+by the total: 10 cautious + 10 aggressive + 0 adaptable becomes 50% / 50% / 0%. The existing `full` scale factor
+is retained for compatibility with later-stage pressure magnitudes, not as an independent 100% ceiling.
+Behavior evidence caps stop additional grinding from overwhelming competing evidence indefinitely.
+No positive evidence means a balanced third each. Display rounding assigns leftover percentage points so
+the three integers always add to 100. Saves retain their schema and original influence logs; derived caches
+are recomputed on lineage reads/writes, including older saves. Unknown fields and stage blocks are preserved.
 
 | Cause in the cell stage | Pushes toward | Points |
 |---|---|---|
@@ -160,3 +196,23 @@ temperament; it is revealed at the transition into the aquatic stage.
 | Question | Why it matters |
 |---|---|
 | Do outer-garden species inherit the cell temperament, or only the body plan? | Decides whether all three species start alike |
+
+## Aquatic form choices (2026-11-13)
+`stages.aquatic.selections` records form, diet, chosen stat/gain, cause and optional bonus part for
+Forms 2–4. `stages.aquatic.upgrades` carries the final stats, including daughter bonuses above 10.
+Existing `upsGained` remains the total gains; cause logs separate purchases from selected bonuses.
+Aquatic run saves additionally keep pending `me.divisionSeed` and `me.growthEvidence`, so Continue
+reconstructs the exact unconfirmed offers. Confirming removes the seed and appends one history entry.
+The parser accepts legacy saves with no fields; bounds valid stats to reachable values (16 health,
+17 other stats), validates history, and refuses a pending seed for an already-confirmed form.
+Stage blocks remain extensible; lineage/run schema versions are unchanged.
+
+## Aquatic local ecology save extension (2026-11-13)
+Run saves optionally include `sisters: { nextId, members }`. Each member stores a permanent home-map
+index, unique ID, family/parent/generation, its own creature body, position/velocity, growth/food,
+health, grace/attack timers and pending reproduction. Continue keeps all three map populations;
+inactive maps do not advance. The parser shares `readAqCreature` with the player, bounds NPC levels
+to 17, rejects invalid homes/duplicate IDs/dead bodies and limits each map to its population budget.
+Sister sprites are reconstructed, never serialized. Legacy saves without the extension remain valid.
+The existing no-mid-river save rule is unchanged. Lineage records count player sister kills with other
+hunting causes; the complete ecology is run state, not a stage-handoff payload.

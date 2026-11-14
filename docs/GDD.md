@@ -20,15 +20,20 @@
 - **The twist:** You are not only the creature. You are the Gardener looking down the lens (the top-down view), shaping the environment so life evolves on its own, because the enemy, a rogue AI, can counter anything designed but not what evolved. Less creature editor, more shaping the world that shapes the creature.
 
 ## Pillars (3 max)
+**Temperament revision (BAMF69 2026-11-13):** cautious, aggressive and adaptable are shares of one
+100% total. Increasing one reduces the competing shares. Cell evidence sets the mix; later stages
+retain the 50-percentage-point shift cap. Default/no-evidence lineages are balanced. Stored cause
+logs remain authoritative, including for recalculating older saves; displayed rounding totals 100.
+
 Pillars decide arguments, in every stage. If a feature does not serve one, it goes to the Parking lot. Stage docs say
 how each pillar applies there.
 1. **Tense but fair** *(rewritten 2026-11-07 after the first playtest: "too cozy"; 2026-11-08, BAMF69: no "getting popped", stakes rise each stage)*: other creatures can hurt you and setbacks cost something real (in the cell stage, food knocked out of you). **Stakes and difficulty rise with every stage.** Every danger is readable before it hits, including danger the camera cannot see (a predator behind you gets a red cue and a warning sound). Rules out game overs, ending the run, timers, and losing a form you already evolved into.
    **After the cell stage** *(approved by BAMF69 2026-11-08; see `docs/LORE.md`)*: creatures and branches of a species can be hurt, pushed back and die out, and a spacefaring species can die out (a new one is generated to replace it). The Gardener (the player) cannot lose: there is no game over. A branch can be lost; the garden cannot.
-2. **You shape your creature through what it does and which offspring you keep** *(rewritten 2026-11-10, BAMF69: option 3 of three considered; earlier versions in git history)*: **what your creature does in its life decides which variations its offspring are likely to carry, and you choose which offspring to keep playing** ("choose your favorite daughter"). You never buy a stat or a trait from a menu, but you are always choosing. Indirectly, the Gardener shapes the world that decides which traits pay off (the Gardener rule). The player must always see how their actions and choices shaped each trait (the cause log). **The same in every stage.**
-   - **Bodies evolve, tools are built** (BAMF69 2026-11-10): the creature's own body and stats (cell, aquatic and creature stages, and the hero after them) change only this way. Towers, machines and ship parts (civilization and space) are chosen and built directly: by then the species designs things, and `T0|▼|` counters designs, which is why the space stage makes you keep refitting.
+2. **You shape your creature through what it does and which offspring you keep** *(rewritten 2026-11-10, BAMF69: option 3 of three considered; earlier versions in git history)*: **what your creature does in its life decides which variations its offspring are likely to carry, and you choose which offspring to keep playing** ("choose your favorite daughter"). **Cell playtest revision (BAMF69, 2026-11-12):** restore part pickups and purchased stat levels between divisions; daughters inherit that progress and add bonus levels, compatible parts and exclusive perks. The division-only version felt shallow. The no-purchase direction remains the plan for later organic stages until their own playtests revisit it. Indirectly, the Gardener shapes the world that decides which traits pay off (the Gardener rule). The player must always see how their actions and choices shaped each trait (the cause log). **The same in every stage.**
+   - **Bodies evolve, tools are built** (BAMF69 2026-11-10): the long-term direction for organic bodies is variation and selection. The cell prototype now also allows pickups and active stat purchases (BAMF69 2026-11-12); offspring add to that build. Towers, machines and ship parts (civilization and space) are chosen and built directly: by then the species designs things, and `T0|▼|` counters designs, which is why the space stage makes you keep refitting.
    - **Actions raise the odds, with diminishing returns** *(Claude's pick)*: biting more makes a strong-jawed offspring more likely, never certain, so grinding one action does not pay.
-   - **Stat caps still double each stage** (5 in the cell stage, 10 in the aquatic stage, 20 in the creature stage; from 2026-11-08), reached through selection instead of points.
-   - **Built Toys still use points and upgrade panels** (cell, aquatic): they change when each stage is next worked on; the cell stage's division (`docs/stages/01-cell.md`) is the first test.
+   - **Purchase caps still double each stage** (5 cell, 10 aquatic, 20 creature; from 2026-11-08). **BAMF69 confirmed 2026-11-12:** cell and aquatic daughter bonuses can exceed the purchase cap; the full +2 is inherited and remains eligible on later divisions.
+   - **Cell and aquatic prototypes combine pickups and active leveling with offspring selection** (BAMF69 2026-11-13). Cell hybrid loop is approved as fun; aquatic form choices now await playtest.
 3. **Small world, growing bigger** *(Claude's pick)*: each stage plays in a bigger world than the last. Rules out a huge map at the start.
 
 ## Stages
@@ -37,17 +42,20 @@ the stage before), and hands its lineage to the next through `docs/HANDOFF_CONTR
 
 | # | Stage | Doc | Modes | Tier | Status |
 |---|---|---|---|---|---|
-| 1 | Cell | `docs/stages/01-cell.md` | Avatar | Toy done, **Vertical slice** next | Fun (BAMF69 2026-11-08); paused while the aquatic Toy is built |
-| 2 | Aquatic | `docs/stages/02-aquatic.md` | Avatar (behind view) + god | Toy done, **Vertical slice** next | Toy v1-v9 played (BAMF69 2026-11-09: "this is great"); paused |
-| 3 | Creature (was Land/Air) | `docs/stages/03-creature.md` | Roguelike metroidvania: each run a generation (avatar) + the Gardener between runs (god) | **Toy** (redesigned) | Redesigned 2026-11-10: Toy 1 (sidescroller levels, PR #8) is replaced by a roguelike Toy 2, not built yet |
-| 4 | Civilization | `docs/stages/04-civilization.md` | Tower wars RTS: builders, gatherers, sends and defenses, your creature as the hero (avatar) + the Gardener's levers (god) | **Toy** (redesigned) | Redesigned 2026-11-10: Toy 1 (hex strategy, PR #10) is replaced by a tower wars Toy 2, not built yet |
-| 5 | Space | `docs/stages/05-space.md` | Captain of an Endless Sky style fleet (avatar) + seeding the outer gardens (god) | **Toy** | Toy 1 built 2026-11-09 (**active**), playtest pending |
+| 1 | Cell | `docs/stages/01-cell.md` | Avatar | Toy done; **division prototype** active, then Vertical slice | Hybrid cell loop approved as fun by BAMF69 2026-11-13; original Toy fun 2026-11-08 |
+| 2 | Aquatic | `docs/stages/02-aquatic.md` | Avatar (behind view) + god | Toy done, **Vertical slice** next | Toy v1-v9 played; split + daughter choices on form growth active 2026-11-13 |
+| 3 | Creature (was Land/Air) | `docs/stages/03-creature.md` | Roguelike metroidvania: each run a generation (avatar) + the Gardener between runs (god) | **Toy** (redesigned) | Toy 2 gameplay liked by user 2026-11-13; responsive display adapter built |
+| 4 | Civilization | `docs/stages/04-civilization.md` | Tower wars RTS: builders, gatherers, sends and defenses, your creature as the hero (avatar) + the Gardener's levers (god) | **Toy** (redesigned) | Toy 2 gameplay liked by user 2026-11-13; responsive display adapter built |
+| 5 | Space | `docs/stages/05-space.md` | Captain of an Endless Sky style fleet (avatar) + seeding the outer gardens (god) | **Toy** | Gameplay liked by user 2026-11-13; responsive display adapter built |
 
-**Active stage:** Space (`docs/stages/05-space.md`), since 2026-11-09 (BAMF69: "building stage 5, the space stage,
-starting at the Toy tier"). The cell, aquatic and creature stages each left Toy after BAMF69 played them; their
-vertical slices wait. The civilization Toy is built and waits for its playtest.
+**Active work:** Shared display/input/mobile foundations (`docs/PLATFORM_FOUNDATIONS.md`). BAMF69
+reports liking how all stages play (2026-11-13), and explicitly requested the cell display changes
+across aquatic, creature, civilization and space. Display adapters are built for all five stages.
+Shared input detection/manual override and the first cell touch adapter are built. Physical-device
+validation and other-stage touch adapters remain. BAMF69 approved smooth biological illustration
+with inked cel shading; the first cell remaster pass is in `docs/HD_REMASTER.md`.
 
-Current tier: **Toy** (the active stage, Space; see its doc for what Toy means there)
+Current tier: **Toy** (shared platform foundations plus first cell HD art/UI slice; full remaster in progress)
 
 Claude scopes work by this line (SOP-08 "Tiers"). It always shows the **active stage's** tier. Tiers (Toy, Vertical
 slice, MVP / Release, Stretch) are kept **per stage**: each stage doc has its own "Scope tiers" table and "Done means".
@@ -123,6 +131,27 @@ Each stage doc adds its own palette, scale and camera. Across all stages:
 - **One engine for every stage, as long as it holds** *(Claude's pick, agreed 2026-11-08)*: all five stages, including the Endless Sky style space stage, fit 2D Phaser. A stage that needs another engine must make the case in an ADR (`docs/adr/`) and still read and write the lineage file from `docs/HANDOFF_CONTRACT.md`, so saves cross engines.
 - Code layout: one folder per stage under `src/game/` (`cell/`, `aquatic/`, later `creature/`, `civ/`, `space/`), shared code in `src/core/`.
 - Input: keyboard, gamepad optional *(Claude's pick)*
+
+## Future presentation and platforms (BAMF69 confirmed 2026-11-13)
+After the new prototypes are fun, move beyond crude-on-purpose presentation: the whole game should
+have HD visuals, support fullscreen, have complete controller support, and be playable on mobile.
+This is future work, not permission to replace prototype art before mechanics are approved.
+
+Implementation direction (your pick): establish shared render-resolution/scaling, responsive UI,
+input actions/remapping/device prompts and touch infrastructure before polishing the first stage.
+Then replace art/animation/effects and adapt controls, layouts and performance one stage at a time.
+Prototype gameplay must already use action-based controls, avoid hover-only interactions, and expose
+a feasible controller/touch scheme. Test controller reachability and touch-friendly command flow early,
+especially for the creature and civilization rebuilds. Keep physics/world units independent of render pixels.
+
+The current 640x360 logical canvas is a prototype baseline. The foundation interview (BAMF69,
+2026-11-13) confirmed iPhone/iPad and Android, both orientations, windowed desktop with fullscreen,
+Xbox/PlayStation, thumb-stick/action-button touch controls, large readable UI, paused command menus,
+rotation pause with explicit resume, offline play, and local autosaves/export/import without accounts.
+Test devices: iPhone 13 mini, 8-inch Android tablet and PlayStation controller. Browser-first with
+optional home-screen installation is the recommendation. HD style and measured performance budgets
+remain open. See `docs/PLATFORM_FOUNDATIONS.md` for the recorded choices and staged implementation.
+Fullscreen scaling and higher-detail assets are separate concerns; no new dependency is approved here.
 
 ## Risks and unknowns (game-wide)
 | Risk | Why it matters | How we test it cheaply |

@@ -19,6 +19,7 @@ import { PSEUDO_LOCALE } from "../core/i18n";
 import { COLORBLIND, CONSENT, DIFFICULTIES, DISPLAY_MODES, FRAME_CAPS, SUB_SIZES, type Settings } from "../core/settings";
 import type { Screen, Shell } from "./app";
 import { Menu, buttonItem, el, glyph, tl, valueRow, type Item } from "./ui";
+import { CONTROL_SCHEMES } from "../core/controlScheme";
 
 // ---- Tunables ----------------------------------------------------------------
 export const TABS = ["display", "audio", "controls", "access", "language"] as const;
@@ -68,6 +69,7 @@ const times = (v: number) => `${v.toFixed(2)}x`;
 
 function controls(c: Ctx): void {
   const { shell } = c;
+  choiceRow(c, "input.scheme", CONTROL_SCHEMES, s => s.input.scheme, (s, v) => s.input.scheme = v, v => `opt.scheme.${v}`);
   choiceRow(c, "input.glyphs", GLYPH_SETS, (s) => s.input.glyphs, (s, v) => (s.input.glyphs = v), (v) => `opt.glyphs.${v}`, () => drawActions());
   numRow(c, "input.deadzone", (s) => s.input.deadzone, (s, v) => (s.input.deadzone = v), 0, 0.9, 0.05, pct);
   boolRow(c, "input.invert_y", (s) => s.input.invert_y, (s, v) => (s.input.invert_y = v));
@@ -77,7 +79,7 @@ function controls(c: Ctx): void {
 
   const caps = new Map<string, HTMLElement>();
   const drawActions = () => {
-    const active = glyphSet(shell.settings.input.glyphs, shell.input.lastDevice);
+    const active = glyphSet(shell.settings.input.glyphs, shell.input.promptDevice);
     const padSet = active === "keyboard" ? "generic" : active;
     const conflicts = findConflicts(shell.settings.input.bindings);
     for (const action of REBINDABLE) {

@@ -298,7 +298,7 @@ DEFAULT_SETTINGS = {
                "speaker_names": True, "subtitle_barks": False, "captions_sfx": False, "colorblind": "none",
                "reduce_motion": False, "shake_scale": 1.0, "flash_limit": True, "hold_to_toggle": False,
                "difficulty": "normal", "game_speed": 1.0},
-    "input": {"bindings": DEFAULT_BINDINGS, "deadzone": 0.2, "invert_y": False, "glyphs": "auto"},
+    "input": {"bindings": DEFAULT_BINDINGS, "deadzone": 0.2, "invert_y": False, "glyphs": "auto", "scheme": "auto"},
     "telemetry": {"consent": "unset"},
 }
 
@@ -312,7 +312,8 @@ SCHEMA = {
                "captions_sfx": ("bool",), "colorblind": ("enum", COLORBLIND), "reduce_motion": ("bool",),
                "shake_scale": ("num", 0.0, 1.0), "flash_limit": ("bool",), "hold_to_toggle": ("bool",),
                "difficulty": ("enum", DIFFICULTIES), "game_speed": ("num", 0.5, 1.0)},
-    "input": {"deadzone": ("num", 0.0, 0.9), "invert_y": ("bool",), "glyphs": ("enum", GLYPH_SETS)},
+    "input": {"deadzone": ("num", 0.0, 0.9), "invert_y": ("bool",), "glyphs": ("enum", GLYPH_SETS),
+              "scheme": ("enum", ["auto", "keyboard", "touch", "controller"])},
     "telemetry": {"consent": ("enum", CONSENT)},
 }
 SCHEMA["audio"]["mono"] = ("bool",)

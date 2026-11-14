@@ -20,6 +20,7 @@
 import { atomicWrite } from "./atomicFile";
 import { deepCopy, hasKey, isObject, type JsonObject } from "./jsonUtil";
 import type { TextStore } from "./textStore";
+import { refreshLineage } from "./lineage";
 
 // ---- Tunables ----------------------------------------------------------------
 export const SAVE_VERSION = 3;
@@ -95,6 +96,10 @@ export class SaveStore {
     const r = saveLoad(this.store.read(name), this.store.read(name + ".bak"));
     if (r.problems.some((p) => p.endsWith(": newer"))) this.newer.add(name);
     else this.newer.delete(name);
+    if (slot === "lineage" && r.envelope) {
+      const refreshed = refreshLineage(r.envelope.data);
+      if (refreshed) r.envelope.data = refreshed as unknown as JsonObject;
+    }
     return r;
   }
 
@@ -104,7 +109,8 @@ export class SaveStore {
     if (this.newer.has(name) || parseSave(this.store.read(name))[1] === "newer") {
       throw new Error(`${name} was written by a newer version of the game: not overwriting it`);
     }
-    const text = JSON.stringify({ format: SAVE_FORMAT, version: SAVE_VERSION, data }, null, 1) + "\n";
+    const refreshed = slot === "lineage" ? refreshLineage(data) : null;
+    const text = JSON.stringify({ format: SAVE_FORMAT, version: SAVE_VERSION, data: refreshed ?? data }, null, 1) + "\n";
     atomicWrite(this.store, name, text, { isGood: (old) => parseSave(old)[1] === "" });
   }
 }

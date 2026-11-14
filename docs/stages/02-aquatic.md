@@ -1,5 +1,10 @@
 # Stage 2: Aquatic
 
+Entry presentation (2026-11-13): scene-clock descent precedes the temperament reveal; confirmation
+plays an arrival sequence before swimming. Both hold simulation/input and support pause/Reduced Motion.
+Continue/autoplay/debug starts skip the intro where appropriate. Reveal now has accessible red aggressive,
+green cautious and blue adaptable meters; actual diet is shown separately. Temperament math is unchanged.
+
 > Stage design doc. Short beats complete. Game-wide rules (pillars, lore, win and lose, what carries between stages)
 > live in the spine, `docs/GDD.md`; this file covers only what is special to the aquatic stage.
 > Rebuilt from `docs/stages/_TEMPLATE.md` on 2026-11-08, when this became the active stage. Last reviewed: 2026-11-08
@@ -25,6 +30,13 @@
 > Play it: main menu "Aquatic stage (prototype)". Code: `src/game/AquaticScene.ts`, `src/game/aquatic/`.
 
 ## Identity
+### Shared display rollout — 2026-11-13
+User reports liking all stages and requested fullscreen/responsive display here. Native readable
+status, health/stamina bars, upgrades and daughter cards now adapt to portrait/landscape. The
+Gardener sheet leaves the habitat visible; warnings, background and cutscene framing resize.
+Rotation pauses until Resume. Inheritance, sisters, food, river and save rules are unchanged.
+Emulated browser checks pass; physical-device testing and movement-stick/controller expansion remain.
+
 - **Pitch:** The pond becomes a lake. You swim behind your creature through deep, dark water, and for the first time
   the Gardener's hand shapes the world it lives in.
 - **Reference games for this stage:** Spore's creature stages for "the body you built is the body you play"
@@ -112,9 +124,8 @@ dorsal fin; grey countershading and teeth; a shark (slate grey, crescent tail, g
 Each step up is announced (pillar 2). Numbers: `AQ.shark`.
 
 ## Your creature (v2, BAMF69 2026-11-08)
-> **Changing (pillar 2 rewritten 2026-11-10):** stats will no longer be bought with points in the upgrade panel. What
-> your creature does shapes its offspring's likely traits, and you choose which offspring to keep (`docs/GDD.md`). The
-> built Toy below still uses points until this stage is next worked on.
+> **BAMF69 confirmed 2026-11-13:** keep pickups and active leveling, and add the cell stage's split + daughter
+> choice at each food-driven form advancement. The hybrid cell loop was approved as fun.
 - **Stats:** attack, speed, defense, mobility and health, max 10 (the cell stage's 5, doubled each stage). They
   start at the cell stage's final levels (health is new, from 0). Plant points buy defense, mobility; meat points
   buy attack, speed (the cell stage's split); health takes either, or a mix (v3). Bought in the upgrade panel (E,
@@ -192,6 +203,7 @@ How each is built goes in `docs/ARCHITECTURE.md` once it exists. Code lives in `
 | Cruise / full speed (toggle) | Shift | Left bumper |
 | Dash | Q | Right bumper |
 | Admin panel (dev) | ` (the key above Tab) | none |
+| Daughter choice after form growth | Left/right or A/D + Enter, or click | D-pad + south |
 | Upgrade panel | E toggles (as in the cell stage); arrows + Enter, or click | North |
 | Look down the lens (god mode) and back | U (BAMF69 2026-11-08) | Select |
 | Change the water (god mode) | Left/right (arrows or A/D) | D-pad |
@@ -242,3 +254,60 @@ how far a trait drifts per generation per degree of temperature.
 - The two outer gardens (the space stage, for now: spine "Out of scope")
 - Branches, the stillness zone and lake-to-sea growth until the Toy is fun
 - Online play
+
+## Form advancement: split and choose (BAMF69, 2026-11-13)
+The food meter filling for Forms 2, 3 and 4 now starts a growth/split presentation using the aquatic
+swimmer and its worn parts. Three actual daughters separate before their menu opens. The water,
+threats, timers, population and river current wait; early input cannot preselect an option. Reduced
+motion uses the same brief fade as cell division. Pause and shutdown control the presentation.
+
+Prototype details (your picks, 2026-11-13):
+- One herbivore, one carnivore and one omnivore. Each inherits purchased stats, normal/river parts,
+  unspent plant/meat points, thickness and previous selection history. The selected form is fully healed;
+  stamina carries forward, respecting its maximum.
+- Three distinct, food-weighted stats each add +2, including beyond the E-menu purchase cap of 10.
+  Meat favors attack/speed, plants defense/mobility, either health; bounded square-root weights.
+- A free normal slot may grow jaws, gills, plates or fins with the stat. River-only parts still come
+  from rivers; existing parts are never replaced by the daughter bonus. No new exclusive perk set in this pass.
+- The menu shows diet, bonus level, part growth, a plain cause and what is inherited. Left/right or
+  A/D + Enter / gamepad south, or mouse click, selects. The chosen body returns to the existing swim/river loop.
+- Map mouths, river runs, Gardener generations, enemy spawning and the coast exit retain their existing rules.
+  Unchosen sisters now found map-local rival lineages (BAMF69 2026-11-13; see below).
+- `me.selections` records each choice. The final `aquatic` lineage block stores them and final levels;
+  purchased and bonus levels receive cause-log credit once each.
+- Pending autosaves store a choice seed and this form's food evidence; Continue reconstructs the same
+  three offers and resumes the split before allowing play. Confirmed choices never repeat on Continue.
+  Existing no-mid-river autosave policy remains: quitting mid-river returns to the prior map save.
+- Normal starting runs never open a daughter menu. `?stage=aquatic&division` is a debug preview that
+  skips the opening reveal and triggers one split; it does not overwrite the player's Continue save.
+
+Logic: `aquatic/division.ts`; UI: `aquatic/divisionPicker.ts`; shared choreography: `cell/mitosis.ts`
+with aquatic body factories, timing and card layout from `AQ.division` / `AQ.mitosis` in `aquatic/tuning.ts`.
+No new dependencies, art or audio. Awaiting BAMF69's playtest.
+
+## Map-local sister lineages (BAMF69 confirmed 2026-11-13)
+Both unchosen daughters enter the shared habitat with their actual diets, stats, parts and river parts.
+They seek edible plant/meat pickups, removing the same items the player could have eaten. They grow
+and replace themselves with three inherited, varied descendants when their food meter fills. Forms
+stop at 4; adults can keep reproducing on a full adult meter. Family, parent and generation IDs persist.
+
+- Each sister has a permanent home map: pond, lake or coast. Descendants inherit it. Only the active
+  habitat simulates; absent habitats keep their saved residents, positions, health and food progress.
+- River-born unchosen sisters settle by the departure map's mouth, never inside the river or on the
+  arrival map. Entering a river hides and pauses all sister populations.
+- Carnivores/omnivores may hunt the player when closer than edible food; herbivores prioritize plants.
+  All can make contact attacks: a readable orange windup precedes bites or herbivore bumps. A newborn
+  grace period and bite cooldown give room to react. Existing edge warning and hunt banner/music apply.
+- The player can ram/dash them, kill them, and collect meat/part loot. This frees population space.
+- Prototype choices (your picks): 3s birth grace, 0.65s windup, 2s attack cooldown; up to 18 autonomous
+  residents plus six reserved founder places per map (24 total). At capacity, full sisters stop eating
+  and wait for division room. NPC stats stop at 17 to bound repeated autonomous variation.
+- Render each actual body/parts, family/form/generation labels, growth pulses and attack tells. `?debug`
+  adds feed/hunt/wander/crowded state labels. Reduced motion suppresses growth pulses.
+- All values are in `AQ.sisters`. `sisters.ts` owns engine-free simulation; `sisterView.ts` owns sprites.
+  Save/Continue and export preserve all map populations and ancestry; old saves start with no sisters.
+
+Validation: all 424 tests and shader checks pass. Browser scenarios verified real shared-food removal,
+autonomous growth/three-descendant birth, warning before actual HP loss, ram kills/loot, persistent
+residents across map visits, departure-map river births, separate coast founders and Continue.
+No new art, audio or dependencies; await BAMF69's aquatic playtest.

@@ -205,7 +205,8 @@ describe("temperament reveal (Toy 2)", () => {
     const r = revealFrom(lineage);
     expect(r.fromSave).toBe(true);
     const ag = r.rows.find((x) => x.kind === "aggressive")!;
-    expect(ag.pct).toBe(80);
+    expect(ag.pct).toBe(89);
+    expect(r.rows.reduce((sum, row) => sum + row.pct, 0)).toBe(100);
     expect(ag.causes).toEqual(["Bought attack level 5", "Picked carnivore 3 times"]);
     expect(r.leaning).toMatch(/aggressive/);
     expect(r.diet).toBe("carnivore");
@@ -213,7 +214,8 @@ describe("temperament reveal (Toy 2)", () => {
   it("no save: the default lineage, explained", () => {
     const r = revealFrom(null);
     expect(r.fromSave).toBe(false);
-    expect(r.rows.every((x) => x.pct === 0)).toBe(true);
+    expect(r.rows.reduce((sum, row) => sum + row.pct, 0)).toBe(100);
+    expect(r.rows.every((x) => x.pct >= 33 && x.pct <= 34)).toBe(true);
     expect(r.problems).toEqual([]);
     expect(r.diet).toBe("omnivore");
   });

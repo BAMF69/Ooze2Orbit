@@ -27,8 +27,9 @@ function canvasTexture(scene: Phaser.Scene, key: string, w: number, h: number, p
 
 export class PondMood {
   private readonly lamp: Phaser.GameObjects.Image;
+  private screens: Phaser.GameObjects.Image[] = [];
 
-  constructor(scene: Phaser.Scene) {
+  constructor(private scene: Phaser.Scene) {
     const { width: w, height: h } = scene.scale;
     const m = TUNING.mood;
 
@@ -59,8 +60,9 @@ export class PondMood {
       ctx.fillRect(0, 0, r * 2, r * 2);
     });
 
-    scene.add.image(0, 0, tilt).setOrigin(0, 0).setScrollFactor(0).setDepth(MOOD_DEPTH);
-    scene.add.image(0, 0, vig).setOrigin(0, 0).setScrollFactor(0).setDepth(MOOD_DEPTH + 1);
+    this.screens = [scene.add.image(0, 0, tilt).setOrigin(0, 0).setScrollFactor(0).setDepth(MOOD_DEPTH),
+      scene.add.image(0, 0, vig).setOrigin(0, 0).setScrollFactor(0).setDepth(MOOD_DEPTH + 1)];
+    this.resize();
     this.lamp = scene.add.image(0, 0, lamp).setDepth(LAMP_DEPTH).setBlendMode(Phaser.BlendModes.ADD);
   }
 
@@ -68,4 +70,5 @@ export class PondMood {
   follow(x: number, y: number): void {
     this.lamp.setPosition(x, y);
   }
+  resize(): void { this.screens.forEach(s => s.setDisplaySize(this.scene.scale.width, this.scene.scale.height)); }
 }

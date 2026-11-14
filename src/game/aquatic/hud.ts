@@ -16,15 +16,24 @@ import type { I18n } from "../../core/i18n";
 import type { Reveal } from "./reveal";
 import { temperamentWord } from "./reveal";
 import type { Edge } from "./view";
+import { StageUi, action } from "../stageUi";
+import { temperamentChart } from "../temperamentChart";
 
 const DEPTH = 3000;
 const FONT = { fontFamily: "monospace", fontSize: "11px", color: "#e8f0e8" };
 const SMALL = { ...FONT, fontSize: "10px", color: "#c4d4cc" };
 const WARN_RGB = 0xff3a28;
-const BAR = { cautious: 0x6aa0d8, aggressive: 0xd85a48, adaptable: 0x8ad06a } as const;
+const BAR = { cautious: 0x8bd77d, aggressive: 0xef716a, adaptable: 0x72b6f1 } as const;
 const TOAST_S = 3.5;
 
 export class AquaticHud {
+  readonly screenUi: StageUi;
+  private statusLines: readonly string[] = [];
+  private partLines: string[] = [];
+  private staminaLine = "";
+  private bannerValue = "";
+  private healthBar = document.createElement("progress");
+  private staminaBar = document.createElement("progress");
   private readonly statusText: Phaser.GameObjects.Text;
   private readonly partIcons: Phaser.GameObjects.Image[] = [];
   private readonly partTexts: Phaser.GameObjects.Text[] = [];
@@ -45,10 +54,13 @@ export class AquaticHud {
   private panelTexts: Phaser.GameObjects.Text[] = [];
   private toastLeft = 0;
   private pulse = 0;
-  private readonly w: number;
-  private readonly h: number;
+  private w: number;
+  private h: number;
 
   constructor(private readonly scene: Phaser.Scene, private readonly i18n: I18n) {
+    this.screenUi = new StageUi(scene);
+    this.healthBar.setAttribute("aria-label", "Health"); this.staminaBar.setAttribute("aria-label", "Stamina");
+    this.screenUi.meters.append(this.healthBar, this.staminaBar);
     this.w = scene.scale.width;
     this.h = scene.scale.height;
     this.statusText = this.text(this.w - 8, 6, "", { ...FONT, align: "right", lineSpacing: 1 }).setOrigin(1, 0); // top right: the bottom centre is the "behind" cue's
@@ -67,6 +79,9 @@ export class AquaticHud {
     this.blackRect = scene.add.rectangle(0, 0, this.w, this.h, 0x000000, 1).setOrigin(0, 0).setScrollFactor(0).setDepth(DEPTH + 30).setVisible(false);
     this.blackText = scene.add.text(this.w / 2, this.h / 2, "", { ...FONT, fontSize: "14px", color: "#f0e6d8", align: "center", wordWrap: { width: this.w - 160 } })
       .setOrigin(0.5).setScrollFactor(0).setDepth(DEPTH + 31).setResolution(2).setVisible(false);
+    this.gaugeGfx.setVisible(false); this.healthGfx.setVisible(false);
+    const resize = () => { this.w = scene.scale.width; this.h = scene.scale.height; this.blackRect.setSize(this.w, this.h); this.blackText.setPosition(this.w / 2, this.h / 2).setWordWrapWidth(this.w - 24); };
+    scene.scale.on("resize", resize); scene.events.once("shutdown", () => scene.scale.off("resize", resize));
   }
 
   /** True while the screen is black or fading back in: the scene holds the world still. */
@@ -98,7 +113,7 @@ export class AquaticHud {
 
   /** The status block, top right: one string per line (form, health, food, points, parts, abilities). */
   status(lines: readonly string[]): void {
-    this.statusText.setVisible(true).setText([...lines]);
+    this.statusLines = lines; this.statusText.setVisible(false).setText([...lines]); this.publish();
   }
 
   /**
@@ -117,17 +132,20 @@ export class AquaticHud {
       txt.setPosition(this.w - 30, y + 8).setText(r.text).setVisible(true).setColor(r.unique ? "#ffd27f" : r.frame === null ? "#7a8a84" : "#c4d4cc");
     });
     for (let i = rows.length; i < this.partTexts.length; i++) { this.partTexts[i].setVisible(false); this.partIcons[i].setVisible(false); }
+    this.partTexts.forEach(t => t.setVisible(false)); this.partIcons.forEach(t => t.setVisible(false));
+    this.partLines = rows.map(r => r.text); this.publish();
   }
 
   /** The stamina gauge, bottom right: the bar, a mark at the share dash and breach need, and your pace. */
   stamina(cur: number, max: number, paceLabel: string, needShare: number, redBelow: number): void {
+    this.staminaBar.max = max; this.staminaBar.value = cur;
     const g = this.gaugeGfx.clear();
     const w = 120, x = this.w - 8 - w, y = this.h - 14;
     const f = Math.max(0, Math.min(1, cur / max));
     const col = cur < redBelow ? 0xff6b6b : 0x7ee07a; // red below the minimum for full speed
     g.fillStyle(0x000000, 0.55).fillRect(x - 2, y - 2, w + 4, 10).fillStyle(col, 1).fillRect(x, y, w * f, 6)
       .fillStyle(0xffffff, 0.8).fillRect(x + w * needShare - 1, y - 2, 2, 10);
-    this.gaugeText.setVisible(true).setText(`${paceLabel}   ${Math.round(cur)}/${Math.round(max)}`);
+    this.staminaLine = `${paceLabel} ${Math.round(cur)}/${Math.round(max)}`; this.gaugeText.setVisible(false).setText(this.staminaLine); this.publish();
   }
 
   clearToast(): void {
@@ -136,21 +154,24 @@ export class AquaticHud {
   }
 
   toast(s: string, seconds = TOAST_S): void {
-    this.toastText.setText(s).setVisible(true);
+    this.toastText.setText(s).setVisible(false);
     this.toastLeft = seconds;
   }
 
   /** A message pinned to the top of the screen while it applies (null hides it): red for danger, green for good news. */
   banner(s: string | null, tone: "danger" | "good" = "danger"): void {
+    this.bannerValue = s ?? ""; this.screenUi.message.classList.toggle("danger", tone === "danger" && !!s);
     if (s === null) { this.bannerText.setVisible(false); return; }
     const danger = tone === "danger";
     const pulse = danger ? 0.75 + 0.25 * Math.sin(this.scene.time.now / 220) : 1;
     this.bannerText.setVisible(true).setText(s).setAlpha(pulse)
       .setBackgroundColor(danger ? "#5a0c0ccc" : "#0c4a26cc").setColor(danger ? "#ffe0d8" : "#e0ffe8");
+    this.bannerText.setVisible(false);
   }
 
   /** The health bar, right under the numbers in the status block (2026-11-08): green, then yellow, then red. */
   health(cur: number, max: number): void {
+    this.healthBar.max = max; this.healthBar.value = cur;
     const g = this.healthGfx.clear();
     if (!this.statusText.visible) return;
     const w = 150, x = this.w - 8 - w, y = this.statusText.y + 16;
@@ -161,7 +182,7 @@ export class AquaticHud {
 
   /** A longer message at the bottom of the screen (the generation's cause). */
   notice(s: string, seconds: number): void {
-    this.noticeText.setText(s).setVisible(true).setAlpha(1);
+    this.noticeText.setText(s).setVisible(false).setAlpha(1);
     this.noticeLeft = seconds;
   }
 
@@ -177,6 +198,7 @@ export class AquaticHud {
       this.toastText.setAlpha(Math.min(1, this.toastLeft / 0.5));
       if (this.toastLeft <= 0) this.toastText.setVisible(false);
     }
+    this.screenUi.setMessage(this.blackedOut ? this.blackText.text : this.bannerValue || (this.toastLeft > 0 ? this.toastText.text : this.noticeLeft > 0 ? this.noticeText.text : ""));
   }
 
   /** The red cue on the screen edge a hidden predator comes from; stronger as it nears. Steady under reduce motion. */
@@ -233,6 +255,11 @@ export class AquaticHud {
 
   /** Toy 2: the first time the player sees their lineage's temperament, with the causes behind it. */
   showReveal(r: Reveal): void {
+    this.screenUi.modal.classList.remove("stage-sheet");
+    this.screenUi.modal.querySelector(".temperament-chart")?.remove(); this.screenUi.modalText.before(temperamentChart(r));
+    if (this.screenUi) {
+      this.screenUi.show(`${r.title}\n\n${r.rows.map(row => `${temperamentWord(row.kind)} ${row.pct}%\n${row.causes.map(c => "• " + c).join("\n")}`).join("\n\n")}\n\n${r.leaning}`, [action("continue", "interact", this.i18n.t("display.confirm"))]); return;
+    }
     this.clearPanel();
     const x = 70, y = 34, w = this.w - 140, h = this.h - 68;
     this.box(x, y, w, h);
@@ -254,6 +281,11 @@ export class AquaticHud {
 
   /** Toy 3: the lens. Water temperature, your kin's thickness (one bar each, sorted), the latest causes. */
   showLens(tempC: number, tMin: number, tMax: number, kin: readonly number[], causes: readonly string[], generation: number, effects: readonly string[] = []): void {
+    this.screenUi.modal.classList.add("stage-sheet");
+    if (this.screenUi) {
+      this.screenUi.show(`${this.i18n.t("aq.lens_title")}\n${this.i18n.t("aq.water", { t: Math.round(tempC) })} · ${this.i18n.t("aq.generation", { n: generation })}\nPopulation ${kin.length} · Average thickness ${Math.round(kin.reduce((a, b) => a + b, 0) / Math.max(1, kin.length) * 100)}%\n\n${effects.join("\n")}\n\n${causes.slice(-3).reverse().join("\n\n")}`, [
+        action("cold", "ui_left", this.i18n.t("display.colder")), action("warm", "ui_right", this.i18n.t("display.warmer")), action("generation", "ui_accept", this.i18n.t("display.generation")), action("return", "lens", this.i18n.t("display.close"))]); return;
+    }
     this.clearPanel();
     const w = 250, x = this.w - w - 8, y = 8, h = this.h - 16;
     this.box(x, y, w, h);
@@ -288,6 +320,9 @@ export class AquaticHud {
   }
 
   hidePanel(): void {
+    this.screenUi.modal.querySelector(".temperament-chart")?.remove();
+    this.screenUi.modal.classList.remove("stage-sheet");
+    this.screenUi.hide();
     this.clearPanel();
   }
 
@@ -299,5 +334,9 @@ export class AquaticHud {
     this.partTexts.forEach((t) => t.setVisible(false));
     this.gaugeGfx.clear();
     this.gaugeText.setVisible(false);
+  }
+  private publish(): void {
+    const lines = this.statusLines.filter(s => s.trim());
+    this.screenUi.setStatus(`${lines[0] ?? ""}\n${lines[1] ?? ""} · ${this.staminaLine}`, [...lines, this.staminaLine, ...this.partLines].join("\n"));
   }
 }

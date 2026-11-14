@@ -10,6 +10,7 @@
 // Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
 // ---------------------------------------------------------------------------
 import type { StageCause, TemperamentKind } from "../../core/lineage";
+import type { AqSelection } from "./creature";
 import { AQ, AQ_STATS, type AqStat } from "./tuning";
 
 export const AQ_RECORD = {
@@ -23,6 +24,8 @@ export const AQ_RECORD = {
 const UPGRADE_LEAN: Record<AqStat, TemperamentKind> = { attack: "aggressive", speed: "aggressive", defense: "cautious", health: "cautious", mobility: "adaptable" };
 
 export interface AquaticRun {
+  selections?: AqSelection[];
+  upgrades?: Record<AqStat, number>;
   kills: number;
   breaches: number;
   deaths: number;
@@ -40,12 +43,18 @@ export function aquaticRecord(r: AquaticRun, prevHarshness: number): { causes: S
   if (r.breaches) causes.push({ cause: `Leapt from the water ${r.breaches} times`, effect: { adaptable: Math.min(c.breachCap, r.breaches * c.perBreach) } });
   if (r.deaths) causes.push({ cause: `Lost ${r.deaths} relatives to the deep and learned caution`, effect: { cautious: Math.min(c.deathCap, r.deaths * c.perDeath) } });
   for (const s of AQ_STATS) {
-    const n = r.upsGained[s] ?? 0;
+    const bonus = (r.selections ?? []).filter(p => p.stat === s).reduce((sum, p) => sum + p.gain, 0);
+    const n = Math.max(0, (r.upsGained[s] ?? 0) - bonus);
     if (n > 0) causes.push({ cause: `Grew ${s} ${n} time${n === 1 ? "" : "s"} in the water`, effect: { [UPGRADE_LEAN[s]]: n * c.perUpgrade } });
   }
+  for (const pick of r.selections ?? []) causes.push({
+    cause: `Kept a ${pick.diet} daughter with ${pick.stat} +${pick.gain}. ${pick.cause}`,
+    effect: { [UPGRADE_LEAN[pick.stat]]: pick.gain * c.perUpgrade },
+  });
   const span = Math.max(AQ.lens.tempMax - AQ.population.neutralTemp, AQ.population.neutralTemp - AQ.lens.tempMin);
   const extreme = r.temps.length ? r.temps.reduce((a, t) => a + Math.abs(t - AQ.population.neutralTemp), 0) / r.temps.length / span : 0;
   const harshness = Math.max(0, Math.min(1, prevHarshness + extreme * c.harshFromWater));
-  const block = { form: r.form, parts: [...r.parts], diet: r.diet, kills: r.kills, breaches: r.breaches, deaths: r.deaths, generations: r.temps.length, upsGained: { ...r.upsGained } };
+  const block = { ...(r.selections ? { selections: r.selections.map(p => ({ ...p })) } : {}),
+    ...(r.upgrades ? { upgrades: { ...r.upgrades } } : {}), form: r.form, parts: [...r.parts], diet: r.diet, kills: r.kills, breaches: r.breaches, deaths: r.deaths, generations: r.temps.length, upsGained: { ...r.upsGained } };
   return { causes, block, harshness };
 }

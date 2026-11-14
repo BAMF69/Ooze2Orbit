@@ -117,7 +117,8 @@
      },
      "deadzone": 0.2,
      "glyphs": "auto",
-     "invert_y": false
+     "invert_y": false,
+     "scheme": "auto"
     },
     "language": "en",
     "telemetry": {
@@ -246,7 +247,8 @@
      },
      "deadzone": 0.2,
      "glyphs": "auto",
-     "invert_y": false
+     "invert_y": false,
+     "scheme": "auto"
     },
     "language": "en",
     "telemetry": {
@@ -378,7 +380,8 @@
      },
      "deadzone": 0.2,
      "glyphs": "auto",
-     "invert_y": false
+     "invert_y": false,
+     "scheme": "auto"
     },
     "language": "en",
     "telemetry": {
@@ -510,7 +513,8 @@
      },
      "deadzone": 0.2,
      "glyphs": "auto",
-     "invert_y": false
+     "invert_y": false,
+     "scheme": "auto"
     },
     "language": "en",
     "telemetry": {
@@ -642,7 +646,8 @@
      },
      "deadzone": 0.2,
      "glyphs": "auto",
-     "invert_y": false
+     "invert_y": false,
+     "scheme": "auto"
     },
     "language": "en",
     "telemetry": {
@@ -650,7 +655,7 @@
     },
     "version": 1
    },
-   "input": "{\"version\": 1, \"display\": {\"mode\": \"windowed\", \"vsync\": true, \"frame_cap\": 0, \"resolution\": [1920, 1080], \"ui_scale\": 1.0}, \"audio\": {\"master\": 1.0, \"music\": 0.8, \"sfx\": 1.0, \"ui\": 1.0, \"voice\": 1.0, \"mono\": false}, \"language\": \"en\", \"access\": {\"text_scale\": 1.0, \"subtitles\": true, \"subtitle_size\": \"medium\", \"subtitle_background\": 0.6, \"speaker_names\": true, \"subtitle_barks\": false, \"captions_sfx\": false, \"colorblind\": \"none\", \"reduce_motion\": false, \"shake_scale\": 1.0, \"flash_limit\": true, \"hold_to_toggle\": false, \"difficulty\": \"normal\", \"game_speed\": 1.0}, \"input\": {\"bindings\": {\"ui_up\": [\"key:up\", \"pad:dpad_up\"], \"ui_down\": [\"key:down\", \"pad:dpad_down\"], \"ui_left\": [\"key:left\", \"pad:dpad_left\"], \"ui_right\": [\"key:right\", \"pad:dpad_right\"], \"ui_accept\": [\"key:enter\", \"pad:south\"], \"ui_cancel\": [\"key:escape\", \"pad:east\"], \"move_left\": [\"key:a\", \"pad:dpad_left\"], \"move_right\": [\"key:d\", \"pad:dpad_right\"], \"move_up\": [\"key:w\", \"pad:dpad_up\"], \"move_down\": [\"key:s\", \"pad:dpad_down\"], \"jump\": [\"key:space\", \"pad:south\"], \"attack\": [\"key:j\", \"pad:west\"], \"interact\": [\"key:e\", \"pad:north\"], \"pause\": [\"key:escape\", \"pad:start\"], \"rise\": [\"key:r\", \"pad:r2\"], \"sink\": [\"key:f\", \"pad:l2\"], \"dash\": [\"key:q\", \"pad:r1\"], \"pace\": [\"key:shift\", \"pad:l1\"], \"lens\": [\"key:u\", \"pad:select\"]}, \"deadzone\": 0.2, \"invert_y\": false, \"glyphs\": \"auto\"}, \"telemetry\": {\"consent\": \"unset\"}}",
+   "input": "{\"version\": 1, \"display\": {\"mode\": \"windowed\", \"vsync\": true, \"frame_cap\": 0, \"resolution\": [1920, 1080], \"ui_scale\": 1.0}, \"audio\": {\"master\": 1.0, \"music\": 0.8, \"sfx\": 1.0, \"ui\": 1.0, \"voice\": 1.0, \"mono\": false}, \"language\": \"en\", \"access\": {\"text_scale\": 1.0, \"subtitles\": true, \"subtitle_size\": \"medium\", \"subtitle_background\": 0.6, \"speaker_names\": true, \"subtitle_barks\": false, \"captions_sfx\": false, \"colorblind\": \"none\", \"reduce_motion\": false, \"shake_scale\": 1.0, \"flash_limit\": true, \"hold_to_toggle\": false, \"difficulty\": \"normal\", \"game_speed\": 1.0}, \"input\": {\"bindings\": {\"ui_up\": [\"key:up\", \"pad:dpad_up\"], \"ui_down\": [\"key:down\", \"pad:dpad_down\"], \"ui_left\": [\"key:left\", \"pad:dpad_left\"], \"ui_right\": [\"key:right\", \"pad:dpad_right\"], \"ui_accept\": [\"key:enter\", \"pad:south\"], \"ui_cancel\": [\"key:escape\", \"pad:east\"], \"move_left\": [\"key:a\", \"pad:dpad_left\"], \"move_right\": [\"key:d\", \"pad:dpad_right\"], \"move_up\": [\"key:w\", \"pad:dpad_up\"], \"move_down\": [\"key:s\", \"pad:dpad_down\"], \"jump\": [\"key:space\", \"pad:south\"], \"attack\": [\"key:j\", \"pad:west\"], \"interact\": [\"key:e\", \"pad:north\"], \"pause\": [\"key:escape\", \"pad:start\"], \"rise\": [\"key:r\", \"pad:r2\"], \"sink\": [\"key:f\", \"pad:l2\"], \"dash\": [\"key:q\", \"pad:r1\"], \"pace\": [\"key:shift\", \"pad:l1\"], \"lens\": [\"key:u\", \"pad:select\"]}, \"deadzone\": 0.2, \"invert_y\": false, \"glyphs\": \"auto\", \"scheme\": \"auto\"}, \"telemetry\": {\"consent\": \"unset\"}}",
    "name": "all defaults",
    "problems": 0,
    "telemetry_allowed": false,
@@ -774,7 +779,8 @@
      },
      "deadzone": 0.2,
      "glyphs": "auto",
-     "invert_y": false
+     "invert_y": false,
+     "scheme": "auto"
     },
     "language": "en",
     "telemetry": {
@@ -910,7 +916,8 @@
      },
      "deadzone": 0.2,
      "glyphs": "auto",
-     "invert_y": false
+     "invert_y": false,
+     "scheme": "auto"
     },
     "language": "fr-CA",
     "telemetry": {
@@ -1041,7 +1048,8 @@
      },
      "deadzone": 0.9,
      "glyphs": "playstation",
-     "invert_y": false
+     "invert_y": false,
+     "scheme": "auto"
     },
     "language": "en",
     "telemetry": {
@@ -1173,7 +1181,8 @@
      },
      "deadzone": 0.2,
      "glyphs": "auto",
-     "invert_y": false
+     "invert_y": false,
+     "scheme": "auto"
     },
     "language": "x-𝔣𝔯𝔞𝔫𝔠𝔢",
     "telemetry": {
@@ -1305,7 +1314,8 @@
      },
      "deadzone": 0.2,
      "glyphs": "auto",
-     "invert_y": false
+     "invert_y": false,
+     "scheme": "auto"
     },
     "language": "en",
     "telemetry": {
@@ -1437,7 +1447,8 @@
      },
      "deadzone": 0.2,
      "glyphs": "auto",
-     "invert_y": false
+     "invert_y": false,
+     "scheme": "auto"
     },
     "language": "en",
     "telemetry": {
@@ -1569,7 +1580,8 @@
      },
      "deadzone": 0.2,
      "glyphs": "auto",
-     "invert_y": false
+     "invert_y": false,
+     "scheme": "auto"
     },
     "language": "en",
     "telemetry": {
@@ -1701,7 +1713,8 @@
      },
      "deadzone": 0.2,
      "glyphs": "auto",
-     "invert_y": false
+     "invert_y": false,
+     "scheme": "auto"
     },
     "language": "en",
     "telemetry": {

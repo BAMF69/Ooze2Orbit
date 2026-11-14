@@ -4,18 +4,23 @@
 > Claude reads the **Now** section at session start.
 
 ## Now (max 3 items)
-Active stage: **Space, Toy** (`docs/stages/05-space.md`).
-- [ ] **Space Toy 1: refit because T0|▼| adapted** (built 2026-11-09, playtest pending): three systems, a hangar with two hulls and eight parts from two makers, real-time combat against patrols that hunt like gulpers, T0|▼| learning what you used after every battle with a readout, five wins to finish. **Toy 2 (2026-11-10):** slots and an icon hangar, turrets and homing missiles, a second friendly world (Tidereach), recruited escorts that fly themselves. **Toy 3 (2026-11-10):** wormhole jumps with next / previous keys and a clickable map, enemy waves on a countdown, auto-land, reverse and side thrusters, the ending is now three wins in a row at the Lattice then the Mothership | Done when: BAMF69 refits the ship because T0|▼| adapted, and wants another fight | Timebox: 2 sessions
+- [ ] **All-stage display/input/mobile foundations** (BAMF69 2026-11-13): display rollout built for all five stages: fullscreen, safe areas, responsive status/menus/cameras, portrait layouts and rotation pause. Civilization/space command panels pause combat. Next: touch movement, controller improvements and real-device checks. Plan: `docs/PLATFORM_FOUNDATIONS.md`.
+- [ ] **Aquatic form division** (BAMF69 2026-11-13): add split + daughter choice to food-driven form growth, retaining pickups and active leveling. Inherited diet/stat/part choices, pause-safe animation, save/Continue and lineage history. Unchosen sisters now compete, bite/bump, grow and reproduce in map-local saved lineages. User reports liking all stages; aquatic display rollout built.
+Active work: **Cell HUD and lifecycle presentation**. Full-pond overlay, four-section food meter,
+equipment icons, stage icon selector, birth and aquatic pre/post temperament animations are built.
+Auto/manual input, cell touch controls, controller support, illustrated art and start-screen branding remain.
+Next: hands-on input tests, other-stage touch adapters, distinct form art and world-render resolution.
+See `docs/HD_REMASTER.md`.
+- [ ] **Space Toy 1: refit because T0|▼| adapted** (built 2026-11-09; gameplay liked by user 2026-11-13): three systems, a hangar with two hulls and eight parts from two makers, real-time combat against patrols that hunt like gulpers, T0|▼| learning what you used after every battle with a readout, five wins to finish. **Toy 2 (2026-11-10):** slots and an icon hangar, turrets and homing missiles, a second friendly world (Tidereach), recruited escorts that fly themselves. **Toy 3 (2026-11-10):** wormhole jumps with next / previous keys and a clickable map, enemy waves on a countdown, auto-land, reverse and side thrusters, the ending is now three wins in a row at the Lattice then the Mothership | Done when: BAMF69 refits the ship because T0|▼| adapted, and wants another fight | Timebox: 2 sessions
 
 ## Next
-- [ ] **Cell stage: "choose your favorite daughter"** (BAMF69 2026-11-10, the first test of the rewritten pillar 2): division replaces the upgrade panel and its points; daughters vary, weighted by what you did; the others stay as rivals (`docs/stages/01-cell.md` "Division") | Done when: BAMF69 enjoys choosing daughters more than buying upgrades, or we learn why not
-- [ ] **Creature Toy 2: roguelike metroidvania** (redesigned 2026-11-10, `docs/stages/03-creature.md`): runs as generations, offspring with varied traits, stat and ability gates, two Gardener levers | Done when: BAMF69 starts another run right away and can say why the new offspring differs; then remove Toy 1
-- [ ] **Civilization Toy 2: tower wars battler** (redesigned 2026-11-10, `docs/stages/04-civilization.md`): builders, gatherers, sends vs. defenses, base kill or 5x income, maze and hero for adaptable | Done when: BAMF69 wants a rematch to try the other win; then remove Toy 1 and update the space stage's civ hand-in
+- [x] **Civilization/creature Toy 2 initial playtest**: user reports liking how all stages play (2026-11-13); display rollout requested. Detailed balance tuning can follow device testing.
 - [ ] **Aquatic stage: vertical slice** (Toy done 2026-11-09) and **write the aquatic lineage** for the creature stage to read
 - [ ] **Cell stage: vertical slice** (Toy done 2026-11-08): fill `docs/VERTICAL_SLICE.md`; music, saves, first-time teaching, polish | Done when: the slice brief's "Done when" holds
 - [ ] **Cell stage ending: the pond floods** (from the parking lot): the bridge into the aquatic stage and its temperament reveal | Done when: finishing the cell stage leads into the aquatic stage
 
 ## Later
+- [ ] **Remaining shared platform foundations**: local checkpoint/autosave adapters, offline readiness and other stage adapters after cell display/input testing. See `docs/PLATFORM_FOUNDATIONS.md`. Final art waits until prototypes prove fun.
 - [ ] 
 
 ## Parking lot (ideas, no commitment)

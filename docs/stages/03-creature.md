@@ -9,6 +9,37 @@
 > Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69. Everything else was decided by BAMF69.
 
 ## Identity
+### Shared display rollout — 2026-11-13
+User reports liking all stages. Fullscreen/safe margins and explicit rotation resume now apply.
+Portrait uses a bounded following camera through the same rooms; native status, details and
+generation choices stay readable. Offscreen approaching predators get a text warning. No inherited
+traits, room gates, food or physics tuning changed. Real-device/touch-stick work remains separate.
+
+### First playable Toy 2 — 2026-11-13 (Codex prototype picks; playtest pending)
+- Six connected, screen-sized handmade rooms: Shore nest → Fern crossroads → Stone passage →
+  Sunken orchard → Crown clearing, plus Fern crossroads → Claw ascent → Crown clearing.
+- Strength 4 breaks the stone wall with a bite. Climbing claws scale the upper wall: hold W against it.
+  Gates and discovery persist across generations; each life resets food, predators and traps.
+- Die, or explore and return to the nest (E), to choose drought/flood and then three contrasting heirs.
+  Stonejaw gains strength; three successful bites add a bonus. Vinefoot gains vitality and claws after
+  visiting the cliff or making three jumps. Mossheart gains endurance, improved by plants/stealth;
+  solving a trap adds strength. These offers are deterministic for this first test, not the final
+  behavior-weighted random offspring system. Stats stop at 20; there is no mid-life leveling menu.
+- Drought supplies more meat and stronger bites. Flood supplies more plants, slower predators and
+  concealment while crouched. Diet comes from the aquatic lineage (standalone default: omnivore).
+- J/F bite, S hide, Space jump, E use trap/nest/arch/seed, Shift run, A/D move. Existing shell action
+  bindings handle gamepad. HD assets, touch controls and the final controller UI remain future work.
+- Crown guardian can be fought, passed unseen or cleared with the hanging-stone lever. Claiming the
+  seed writes the surviving creature as the civilization hero. This goal is a prototype pick.
+- Generation checkpoints survive reload and normal export/import. Select Creature to resume;
+  unfinished lives restart at the nest. Existing Continue remains aquatic-specific.
+- Original walking/action sprites reused; claw heirs tint green and vitality increases body size.
+  Aquatic body-plan art, richer visible mutations, ecosystem evolution and evolving boss behaviors
+  remain for subsequent tests. Old Toy 1 scene is unregistered and retained until this test proves fun.
+- Validation: 430 tests, type check, shader checks, production GPU smoke; browser scenarios exercised
+  actual movement/climbing, locked/opened gates, death, climate/heir choice, nesting, combat, traps,
+  hero recording and reloading. Screens and frame burst inspected.
+
 - **Pitch:** Life leaves the water. Explore one big side-view world whose areas open only when your lineage has the
   right stat or ability. Each run is one creature's life; when it dies, one of its offspring carries on.
 - **Reference games (mechanics only):**

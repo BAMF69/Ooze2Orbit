@@ -8,7 +8,7 @@
 // Notes   : Pure functions over a small immutable Creature record, so tests cover every rule (tests/cellRules.test.ts).
 //           Pillar 1 (tense but fair): nothing here can end the game or undo a form. For now a bump only moves
 //           food out of the meter (getting popped is a ROADMAP item).
-//           Pillar 2 (you build it): parts are only ever added by the player picking one up. Slots = form, and a
+//           Cell playtest revision: pickups and daughter bonuses both add parts. Slots = form, and a
 //           new part into full slots replaces the OLDEST one. Diet and upgrades are the player's picks too.
 //           Points come only from FRESH food (algae in the pond, meat from a popped cell). Food knocked out of you
 //           by a bump gives food back but no points, or getting bumped on purpose would farm points.
@@ -18,13 +18,16 @@ import {
   TUNING, UPGRADE_PAID_WITH, UPGRADE_STATS, type CellKind, type Diet, type FoodKind, type PartKind, type UpgradeStat,
 } from "./tuning";
 
+import { foodLossMultiplier, type PerkLevels } from "./perks";
+
 export interface Creature {
+  readonly perks?: PerkLevels; // daughter-only abilities; absent on legacy bodies
   readonly form: number; // 1 .. TUNING.maxForm
   readonly food: number; // growth meter toward the next evolution (can be fractional: the omnivore eats halves)
   readonly parts: readonly PartKind[]; // oldest first
   readonly diet: Diet;
   readonly points: Readonly<Record<FoodKind, number>>; // algae -> plant points, meat -> meat points
-  readonly ups: Readonly<Record<UpgradeStat, number>>; // upgrade levels, 0 .. maxLevel()
+  readonly ups: Readonly<Record<UpgradeStat, number>>; // total levels; purchases stop at maxLevel(), daughters can exceed it
 }
 
 export function newCreature(diet: Diet = "omnivore"): Creature {
@@ -83,9 +86,14 @@ export function foodValue(c: Creature, kind: FoodKind, base: number): number {
   return v;
 }
 
-/** The base value of a fresh piece of food lying in the pond. */
-export function freshBase(kind: FoodKind): number {
-  return kind === "algae" ? TUNING.algaeFood : TUNING.meatFood;
+/** Food supply follows the player's form, including the original leaner opening pond. */
+export function pondFood(form: number): { algaeCount: number; algaeRegrowS: number; meatFood: number } {
+  return form === 1 ? TUNING.form1Food : TUNING;
+}
+
+/** The base value of freshly spawned food; existing drops keep their original value. */
+export function freshBase(kind: FoodKind, form = 1): number {
+  return kind === "algae" ? TUNING.algaeFood : pondFood(form).meatFood;
 }
 
 /**
@@ -164,7 +172,8 @@ export function heaviness(c: Creature): number {
   const table = TUNING.player.heaviness;
   const atForm = table[Math.min(c.form, table.length) - 1];
   const left = 1 - Math.min(c.ups.mobility, maxLevel()) / maxLevel();
-  return 1 + (atForm - 1) * left;
+  const over = Math.max(0, c.ups.mobility - maxLevel());
+  return (1 + (atForm - 1) * left) / (1 + over * TUNING.overcap.handlingPerLevel);
 }
 
 /** Seconds for thrust to build to full from a standstill: longer at bigger forms, 0 at full mobility. */
@@ -202,7 +211,8 @@ export function drag(c: Creature): number {
 
 /** Knockback this creature takes from a bump, after the mobility upgrade. */
 export function knockbackTaken(c: Creature): number {
-  return TUNING.bumpKnockback * Math.max(0, 1 - TUNING.mobilityKnockPerLevel * c.ups.mobility);
+  return TUNING.bumpKnockback * Math.max(0, 1 - TUNING.mobilityKnockPerLevel * Math.min(c.ups.mobility, maxLevel())) *
+    Math.pow(TUNING.overcap.knockbackMult, Math.max(0, c.ups.mobility - maxLevel()));
 }
 
 // ---- bumps -------------------------------------------------------------------------------
@@ -231,8 +241,9 @@ export function deathMeat(kind: CellKind, byPlayer: boolean): number {
 export function bumpFoodLoss(c: Creature, by: CellKind): number {
   let loss = TUNING.bumpFoodLoss * TUNING.cell.kinds[by].bumpMult;
   if (has(c, "shell")) loss *= TUNING.shellLossMult;
-  loss *= Math.max(0, 1 - TUNING.defensePerLevel * c.ups.defense);
-  return Math.min(Math.floor(c.food), Math.round(loss));
+  loss *= Math.max(0, 1 - TUNING.defensePerLevel * Math.min(c.ups.defense, maxLevel())) *
+    Math.pow(TUNING.overcap.foodLossMult, Math.max(0, c.ups.defense - maxLevel()));
+  return Math.min(Math.floor(c.food), Math.round(loss * foodLossMultiplier(c)));
 }
 
 /** Take food out of the meter (a bump). Never below zero, never undoes an evolution. */
