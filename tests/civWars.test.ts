@@ -5,6 +5,24 @@ import { WAR } from "../src/game/civ/warsTuning";
 import { startCampaign } from "../src/game/space/campaign";
 const tick = (s: Battle, seconds: number) => { for (let n = 0; n < seconds * 20; n++) stepBattle(s, 0.05); };
 describe("civilization tower wars", () => {
+  it("farmers add food on each payday without increasing ore income", () => {
+    const a = newBattle(), b = newBattle();
+    const beforeIncome = income(a, 0), ore = a.sides[0].ore;
+    expect(train(a, "farmer")).toBe(true);
+    expect(a.sides[0].ore).toBe(ore - WAR.farmerCost);
+    expect(income(a, 0)).toBe(beforeIncome);
+    tick(a, WAR.tick * 2 + 0.1); tick(b, WAR.tick * 2 + 0.1);
+    expect(a.sides[0].food - b.sides[0].food).toBe(WAR.farmerFood * 2);
+    expect(a.sides[0].ore - b.sides[0].ore).toBeCloseTo(-WAR.farmerCost);
+  });
+  it("farmer hiring respects affordability, capacity, ended matches and missing legacy counts", () => {
+    const s = newBattle(); delete s.sides[0].farmers;
+    expect(train(s, "farmer")).toBe(true); expect(s.sides[0].farmers).toBe(1);
+    s.sides[0].ore = 0; expect(train(s, "farmer")).toBe(false);
+    s.sides[0].ore = 100; s.sides[0].farmers = WAR.maxWorkers;
+    expect(train(s, "farmer")).toBe(false); expect(s.sides[0].ore).toBe(100);
+    s.sides[0].farmers = 0; s.status = "fallen"; expect(train(s, "farmer")).toBe(false);
+  });
   it("lengthens the maze and refuses the final blocking tile without charging", () => {
     const s = newBattle(); s.sides[0].ore = 1000;
     for (let y = 0; y < 6; y++) expect(place(s, { x: 5, y }, "thorn")).toBe(true);

@@ -1,0 +1,38 @@
+/* Civilization owns this two-row command dock; other stage adapters retain their layout. */
+.civ-controls { --civ-menu-height: 104px; --civ-dock-offset: 112px; }
+.civ-controls .civ-live-menu {
+  inset: auto calc(var(--safe-right) + 8px) calc(var(--safe-bottom) + var(--civ-dock-offset)) calc(var(--safe-left) + 8px);
+  height: var(--civ-menu-height);
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.civ-controls .civ-live-menu .stage-dialog { width: 100%; min-width: 0; height: 100%; margin: 0; padding: 6px; box-sizing: border-box; }
+.civ-controls .civ-live-menu .stage-modal-text { font-size: 13px; margin-bottom: 4px; white-space: nowrap; }
+.civ-controls .civ-live-menu .stage-actions { display: flex; gap: 6px; overflow-x: auto; height: 66px; }
+.civ-controls .civ-live-menu button { flex: 1 0 128px; padding: 4px 6px; font-size: 13px; }
+.civ-controls.civ-menu-open .stage-message { visibility: hidden; }
+.civ-controls .stage-footer {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  max-width: 620px;
+  margin: 0 auto;
+  overflow: visible;
+}
+.civ-controls .stage-footer button { padding: 4px; min-width: 0; height: 44px; font-size: 14px; line-height: 1.1; }
+.civ-controls button[aria-pressed="true"] { background: #385c40; border-color: #f1d788; color: #fff1be; }
+.civ-controls .stage-message { bottom: calc(var(--safe-bottom) + 112px); font-size: 14px; white-space: pre-line; max-height: 60px; overflow: auto; }
+@media (max-height: 500px) { .civ-controls .stage-message { max-height: 42px; } }
+@media (max-height: 500px) {
+  .civ-controls { --civ-menu-height: 64px; --civ-dock-offset: 62px; }
+  .civ-controls .stage-footer { grid-template-columns: repeat(6, minmax(0, 1fr)); max-width: none; }
+  .civ-controls .stage-message { bottom: calc(var(--safe-bottom) + 62px); }
+  .civ-controls .civ-live-menu .stage-modal-text { display: none; }
+  .civ-controls .civ-live-menu .stage-actions { height: 48px; }
+  .civ-controls .civ-live-menu button { flex-basis: 110px; font-size: 12px; }
+}
+.civ-controls .stage-dialog { border: 2px solid #79947d; box-shadow: 4px 5px 0 #06161b; }

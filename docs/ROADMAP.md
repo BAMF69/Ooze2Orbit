@@ -4,7 +4,7 @@
 > Claude reads the **Now** section at session start.
 
 ## Now (max 3 items)
-- [ ] **All-stage display/input/mobile foundations** (BAMF69 2026-11-13): display rollout built for all five stages: fullscreen, safe areas, responsive status/menus/cameras, portrait layouts and rotation pause. Civilization/space command panels pause combat. Next: touch movement, controller improvements and real-device checks. Plan: `docs/PLATFORM_FOUNDATIONS.md`.
+- [ ] **All-stage display/input/mobile foundations** (BAMF69 2026-11-13): display rollout built for all five stages: fullscreen, safe areas, responsive status/menus/cameras, portrait layouts and rotation pause. Space command panels pause combat. Civilization now has 1/2/3 role controls, optional hero patrol and live docked submenus (user revision, 2026-11-14); Details still pauses. See `docs/HANDOFF_CIVILIZATION.md`. Next: touch movement, controller improvements and real-device checks. Plan: `docs/PLATFORM_FOUNDATIONS.md`.
 - [ ] **Aquatic form division** (BAMF69 2026-11-13): add split + daughter choice to food-driven form growth, retaining pickups and active leveling. Inherited diet/stat/part choices, pause-safe animation, save/Continue and lineage history. Unchosen sisters now compete, bite/bump, grow and reproduce in map-local saved lineages. User reports liking all stages; aquatic display rollout built.
 Active work: **Cell HUD and lifecycle presentation**. Full-pond overlay, four-section food meter,
 equipment icons, stage icon selector, birth and aquatic pre/post temperament animations are built.

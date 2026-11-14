@@ -4,6 +4,19 @@
 **Branch:** `feat/cell-division`. User authorized committing all repository changes on 2026-11-13; no push requested.
 **Active:** Full-pond cell HUD, clear equipment, birth and aquatic entry presentations built. Other stage touch adapters and remaining HD rendering/form art follow. User says all stages play well (2026-11-13).
 
+## Civilization controls branch — 2026-11-14
+- `feat/civilization-remaster` is based on fd0f29d in sibling `Ooze2Orbit-civilization`.
+- User approved playtest and authorized commit/push of this civilization work on 2026-11-14.
+- 1 Hero / 2 Builder / 3 Summons, matching native touch buttons, independent build cursor,
+  obstacle-aware hero move orders and optional automatic combat patrol.
+- User revised the pause-menu preference: compact submenus run live above the controls and leave
+  both mazes visible. Details and explicit shell/rotation pause still freeze the battle.
+- Farmer workers cost 35 ore and add 6 food per payday; gatherer output stays unchanged.
+- 476 tests, type/11-shader checks and civilization GPU production smoke pass. Browser checks
+  cover desktop, emulated touch/controller, live menus/paydays, placement, rematch and space.
+- No shared shell/core changes, assets/dependencies or creature/space/save contract changes.
+  Physical-device validation remains. Detailed record: `docs/HANDOFF_CIVILIZATION.md`.
+
 ## Full-pond HUD, birth and aquatic entry (2026-11-13)
 - User requested clearer spikes, birth after diet choice, five stage icons, aquatic animations around the
   temperament reveal, red/green/blue temperament graphics, full-pond HUD overlay and four growth sections.
