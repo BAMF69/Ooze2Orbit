@@ -15,6 +15,13 @@ export function cellViewport(width: number, height: number, safe: Insets) {
 }
 /** Stage adapters own world framing; all reserve readable native status/command space. */
 export function stageViewport(stage: DisplayStage, width: number, height: number, safe: Insets) {
+  // Civilization draws a fullscreen habitat; its native HUD supplies unobscured maze bounds.
+  // This is deliberately independent of other stages' in-progress display adapters.
+  if (stage === "civ") {
+    const w = Math.max(1, width), h = Math.max(1, height), logicalWidth = Math.min(1600, Math.round(w));
+    return { left: 0, top: 0, width: w, height: h, logicalWidth,
+      logicalHeight: Math.max(1, Math.round(logicalWidth * h / w)), portrait: h > w };
+  }
   if (stage === "main") {
     const portrait = height > width, w = Math.max(1, width), h = Math.max(1, height);
     const logicalWidth = portrait ? width < DISPLAY.tabletAt ? DISPLAY.phoneWidth : DISPLAY.tabletWidth : DISPLAY.width;

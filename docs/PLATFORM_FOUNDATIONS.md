@@ -130,3 +130,18 @@ while commands or details are open. Stage changes stop old scenes and clean thei
 fullscreen, paused clocks, retained choices, purchases, construction and cleanup. This does not
 certify Safari or actual Android devices. No new assets, dependencies, account system, save schema,
 offline cache, movement stick or controller bindings were added. Those remain next phases.
+
+## Civilization strategy adapter — 2026-11-14
+The user explicitly reaffirmed live civilization submenus after the HD brief: this overrides the
+older table's civilization command-pause entry. Space retains its own policy. Civilization Details,
+explicit Pause, focus loss and rotation still freeze; rotation requires Resume. Civilization now
+uses an edge-to-edge viewport, with safe native HUD bounds supplying the draw/hit transform. The
+same pure transform fits mazes above/beside controls in desktop, portrait and short landscape.
+
+One finger selects roles, buys commands, places towers and orders hero movement. Only a completed
+single-pointer tap can issue a world order; drags, extra fingers, cancellation, loss of capture,
+focus/visibility changes, pause, rotation/layout changes and scheme switches invalidate it. Existing
+keyboard/controller bindings, auto/manual input selection and fullscreen remain. No mandatory
+multi-touch gesture, creature stick or hidden offscreen build area was added. Browser emulation and
+simulated controller actions pass; real iPhone 13 mini / Android tablet / Xbox / PlayStation checks
+remain required. Local save/export/import and future offline scope are unchanged.

@@ -1,10 +1,19 @@
 // Purpose: Meaningful tower-wars checks: valid mazes, live routes, resources, combat, wins and space handoff.
 import { describe, expect, it } from "vitest";
-import { newBattle, place, route, train, send, setLever, income, heroAttack, moveHero, stepBattle, warsRecord, type Battle } from "../src/game/civ/wars";
+import { newBattle, place, route, train, send, setLever, income, heroAttack, moveHero, stepBattle, warsRecord, placementIssue, type Battle } from "../src/game/civ/wars";
 import { WAR } from "../src/game/civ/warsTuning";
 import { startCampaign } from "../src/game/space/campaign";
 const tick = (s: Battle, seconds: number) => { for (let n = 0; n < seconds * 20; n++) stepBattle(s, 0.05); };
 describe("civilization tower wars", () => {
+  it("read-only build previews match placement checks without mutating the battle", () => {
+    const s = newBattle(); const before = JSON.stringify(s);
+    expect(placementIssue(s, { x: 4, y: 2 }, "thorn")).toBeNull();
+    expect(placementIssue(s, { x: 0, y: 3 }, "thorn")).toBe("cell");
+    expect(JSON.stringify(s)).toBe(before);
+    expect(place(s, { x: 4, y: 2 }, "thorn")).toBe(true);
+    expect(placementIssue(s, { x: 4, y: 2 }, "thorn")).toBe("cell");
+    s.sides[0].ore = 0; expect(placementIssue(s, { x: 5, y: 2 }, "thorn")).toBe("ore");
+  });
   it("farmers add food on each payday without increasing ore income", () => {
     const a = newBattle(), b = newBattle();
     const beforeIncome = income(a, 0), ore = a.sides[0].ore;

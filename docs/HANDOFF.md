@@ -4,6 +4,16 @@
 **Branch:** `feat/cell-division`. User authorized committing all repository changes on 2026-11-13; no push requested.
 **Active:** Full-pond cell HUD, clear equipment, birth and aquatic entry presentations built. Other stage touch adapters and remaining HD rendering/form art follow. User says all stages play well (2026-11-13).
 
+## Civilization HD worktree — 2026-11-14 (uncommitted)
+- Civilization HD remaster is implemented in sibling Ooze2Orbit-civilization on feat/civilization-remaster.
+  Fullscreen habitat, original illustrated atlas/terrain, persistent localized HUD/cards, safe tap
+  placement and hero controls. The user reaffirmed live submenus; Details and explicit pause still freeze.
+- Gameplay/progression and lineage/space contracts remain. Only shared runtime change: civ-specific
+  fullscreen viewport case. Main checkout's uncommitted cell/aquatic work was inspected, not modified.
+- 487 tests, type/shader checks and recorded GPU production smoke pass; desktop and emulated mobile/
+  controller interaction tests pass. Real devices remain pending. No HD commit/push authorized.
+- Details: docs/HANDOFF_CIVILIZATION.md; exact artwork prompts: assets_src/civ/HD_ART_PROMPTS.md.
+
 ## Civilization controls branch — 2026-11-14
 - `feat/civilization-remaster` is based on fd0f29d in sibling `Ooze2Orbit-civilization`.
 - User approved playtest and authorized commit/push of this civilization work on 2026-11-14.
@@ -229,3 +239,5 @@ layout; then input/touch, offline/checkpoints, and individual stage adapters. Ar
 ## Next
 BAMF69 plays aquatic normally: are form choices worth anticipating and do they fit the swim/river pacing?
 Do not make further design changes until notes. Cell vertical slice waits; space Toy playtest still pending.
+
+Civilization playtest follow-up (2026-11-15): fixed four-tab command HUD implemented in the civilization worktree. Builder/Summons stay open after actions; Back returns to Hero; maze geometry stays fixed between pages. Temperament-tinted organic HUD, shortcut 4 for Workers / terrain. Preview is **5186** (5176 served old scene). See docs/HANDOFF_CIVILIZATION.md. No commit/push.

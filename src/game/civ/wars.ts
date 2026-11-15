@@ -48,14 +48,25 @@ export function newBattle(hero: Partial<Hero> = {}, rival: Battle["rival"] = "ra
   return s;
 }
 export function towerCost(s: Battle, kind: TowerKind): number { return Math.ceil(TOWERS[kind].cost * (s.lever === "rocky" ? WAR.rockyDiscount : 1)); }
-export function place(s: Battle, c: Cell, kind: TowerKind): boolean {
-  if (s.status !== "playing") return false;
-  const side = s.sides[0], cost = towerCost(s, kind);
-  if (!Number.isInteger(c.x) || !Number.isInteger(c.y) || c.x <= 0 || c.x >= WAR.cols - 1 || c.y < 0 || c.y >= WAR.rows || side.towers.some(t => key(t) === key(c))) { s.message = "Choose an empty cell; entrance and base columns stay clear."; return false; }
-  if (side.ore < cost) { s.message = "Not enough ore for that defense."; return false; }
-  if (s.units.some(u => u.target === 0 && (distance(u, c) < 0.8 || (u.waypoint && key(u.waypoint) === key(c))))) { s.message = "A creature occupies that cell."; return false; }
+export type PlacementIssue = "cell" | "ore" | "occupied" | "route" | "ended";
+/** Read-only preview shares the exact construction checks; no spend or message mutation. */
+export function placementIssue(s: Battle, c: Cell, kind: TowerKind): PlacementIssue | null {
+  if (s.status !== "playing") return "ended";
+  const side = s.sides[0];
+  if (!Number.isInteger(c.x) || !Number.isInteger(c.y) || c.x <= 0 || c.x >= WAR.cols - 1 || c.y < 0 || c.y >= WAR.rows || side.towers.some(t => key(t) === key(c))) return "cell";
+  if (side.ore < towerCost(s, kind)) return "ore";
+  if (s.units.some(u => u.target === 0 && (distance(u, c) < 0.8 || (u.waypoint && key(u.waypoint) === key(c))))) return "occupied";
   const candidate = [...side.towers, c];
-  if (!route(candidate).length || s.units.some(u => u.target === 0 && !route(candidate, u).length)) { s.message = "Keep a route open for every creature. A maze cannot seal the lane."; return false; }
+  if (!route(candidate).length || s.units.some(u => u.target === 0 && !route(candidate, u).length)) return "route";
+  return null;
+}
+export function place(s: Battle, c: Cell, kind: TowerKind): boolean {
+  const issue = placementIssue(s, c, kind);
+  if (issue) {
+    if (issue !== "ended") s.message = ({ cell: "Choose an empty cell; entrance and base columns stay clear.", ore: "Not enough ore for that defense.", occupied: "A creature occupies that cell.", route: "Keep a route open for every creature. A maze cannot seal the lane." })[issue];
+    return false;
+  }
+  const side = s.sides[0], cost = towerCost(s, kind), candidate = [...side.towers, c];
   side.ore -= cost; side.towers.push({ ...c, id: s.nextId++, kind, cooldown: 0, build: WAR.buildSeconds });
   s.tally.defenses += cost; s.tally.longest = Math.max(s.tally.longest, route(candidate).length - 1); s.message = `${TOWERS[kind].name} queued. Builders share construction work.`; return true;
 }
