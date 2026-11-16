@@ -48,6 +48,12 @@ Tasks created (ROADMAP):
 ```
 
 ## Entries
+### 2026-11-15  Build 0.1.0 (main 61d4a8a)  Tester: self (BAMF69)
+Note: work from 2026-11-10 was never pushed while main moved on (PRs #12-#16: the Gardener rule, roguelike creature,
+tower-wars civilization, cell division, illustrated remaster). Decision (BAMF69: "port them"): carry over what is still
+needed onto main (opening screen order, the Lattice lock, pause export / import, space save and Continue); the rest is
+replaced on main or needs a fresh call (see ROADMAP Done 2026-11-15).
+
 ### 2026-11-13  Aquatic ecology and future production direction  Tester: pending BAMF69
 Requested: unchosen sisters compete for shared resources, bump/bite the player, reproduce/grow,
 and remain on their pond/lake/coast map. Implemented persistent map-local families with inherited

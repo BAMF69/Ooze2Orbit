@@ -333,7 +333,7 @@
  "menu.import": "Import save file",
  "save.exported": "Save file downloaded: keep it to pick up later, or import it on another computer",
  "save.nothing": "Nothing to export yet: play a stage first",
- "save.imported": "Save file imported: Continue picks up where it left off",
+ "save.imported": "Save file imported: it is used when you next start or continue a stage",
  "save.import_failed": "Could not import: {why}",
  "aq.welcome_back": "Welcome back: your lineage carries on at form {form}",
  "menu.creature": "Creature stage (prototype)",
@@ -450,5 +450,7 @@
  "civ.hd.notice.kill": "Hero kill: bounty and permanent defensive income.",
  "civ.hd.notice.wounded": "Hero wounded: recovering at home for 10s; 5 ore spent on care.",
  "civ.hd.notice.worker_blocked": "Cannot train: more ore is needed, or this worker type is at capacity.",
- "civ.hd.notice.send_blocked": "More ore and food are needed to send creatures."
+ "civ.hd.notice.send_blocked": "More ore and food are needed to send creatures.",
+ "menu.continue_aquatic": "Continue (aquatic stage)",
+ "menu.continue_space": "Continue (space stage)"
 }

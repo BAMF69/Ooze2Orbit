@@ -24,7 +24,7 @@ import { AQ, AQ_PARTS, AQ_STATS, MAPS, UNIQUE_PARTS, type AqPart, type AqStat } 
 export const RUN_SLOT = "aquatic_run";
 export const RUN_V = 1;
 /** The slots an export carries, in this order. */
-export const EXPORT_SLOTS = ["lineage", RUN_SLOT, "creature_generations"] as const;
+export const EXPORT_SLOTS = ["lineage", RUN_SLOT, "creature_generations", "space_run"] as const; // space added 2026-11-10
 export const EXPORT_FORMAT = "ooze2orbit-save";
 export const EXPORT_V = 1;
 const MAX_CAUSES = 20;
@@ -142,5 +142,6 @@ export function unpackBundle(text: string): { slots: Partial<Record<(typeof EXPO
   if (!Object.keys(slots).length) return { slots, problems: ["the file holds no saves"] };
   if (slots[RUN_SLOT] && !unpackRun(slots[RUN_SLOT]).run && slots[RUN_SLOT].finished !== true) return { slots: {}, problems: ["its aquatic run is damaged"] };
   if (slots.creature_generations && !readGarden(slots.creature_generations)) return { slots: {}, problems: ["its creature garden is damaged"] };
+  if (slots.space_run && slots.space_run.kind !== "space_run") return { slots: {}, problems: ["its space save is damaged"] }; // checked in full when it loads
   return { slots, problems: [] };
 }

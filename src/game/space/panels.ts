@@ -190,7 +190,8 @@ export function drawMap(p: Pen, c: Campaign, sel: SystemId): void {
     if (s.id === sel) g.lineStyle(2, 0xffffff, 1).strokeCircle(s.x, s.y, 13);
     p.text(s.x, s.y + 16, `${s.name}${here ? " (you)" : ""}`, 10, "#ffffff", 0.5);
     const drift = s.id === "driftfield" ? (here ? (c.visitWins ? `, wave ${c.visitWins + 1}: it grows while you stay` : ", easiest on arrival") : " (easiest on every arrival)") : "";
-    const streak = (s.id === "lattice" && here && c.latticeStreak ? `, streak ${c.latticeStreak}/${SPACE.boss.streak}` : "") + drift;
+    const lock = s.id === "lattice" && !c.latticeOpen ? ` LOCKED: win ${SPACE.patrol.latticeUnlock} Driftfield waves in a row (${c.driftStreak}/${SPACE.patrol.latticeUnlock})` : "";
+    const streak = (s.id === "lattice" && here && c.latticeStreak ? `, streak ${c.latticeStreak}/${SPACE.boss.streak}` : "") + drift + lock;
     p.text(s.x, s.y + 29, patrol.length ? `${T0}: ${patrol.length > 3 ? `${patrol.length} ships` : patrol.map((k) => SPACE.t0[k].name).join(", ")}${streak}` : s.blurb, 10, patrol.length ? "#ff9080" : "#a0e0c0", 0.5).setWordWrapWidth(150).setAlign("center");
   }
   const hops = route.length > 1 ? ` (${route.length} jumps)` : "";

@@ -26,10 +26,11 @@ import { revealFrom, type Reveal } from "./aquatic/reveal";
 import { animKey, animSpecs, firstFrame, type AtlasLayout } from "./cell/atlas";
 import { cellSfx, type CellSfx } from "./cell/sfx";
 import { LineagePanel } from "./lineagePanel";
+import { STAGE_SLOT, packSpace, unpackSpace } from "./stageSaves";
 import { ShipPreview } from "./space/shipPreview";
 import { T0 } from "./space/adapt";
 import {
-  SYSTEMS, afterBattle, bossDue, escortSpecs, finished, install, launch, neighbour, nextWave, pilotFight, pilotRecruit, pilotRefit, pilotWantsShop,
+  SYSTEMS, afterBattle, bossDue, jumpLock, escortSpecs, finished, install, launch, neighbour, nextWave, pilotFight, pilotRecruit, pilotRefit, pilotWantsShop,
   pilotWorld, priceOf, escortPrice, recruit, routeTo, spaceRecord, starSystem, startCampaign, swapHull, travel, uninstall, worldOf, type Campaign, type Outcome, type SystemId,
 } from "./space/campaign";
 import { IDLE, approachControls, newBattle, pilotControls, reinforce, step, type Battle, type Controls } from "./space/combat";
@@ -80,6 +81,7 @@ export class SpaceScene extends Phaser.Scene {
   private jumpTo: SystemId = "hearth";
   private jumpT = 0;
   private jumped = false; // this hop has crossed over (the system changed at the wormhole's middle)
+  private allowSave = false; // autosave the campaign (off for autoplay, so tests never touch your save)
   private waveLeft = 0; // seconds until the next T0|▼| wave arrives here (0: none coming)
   private bossWave = false; // the wave being fought is the Mothership's
   private victoryShown = false;
@@ -126,7 +128,9 @@ export class SpaceScene extends Phaser.Scene {
     this.c = startCampaign({ temper: this.temper, civ: handIn.civ, harshness: handIn.harshness });
     this.screenUi = new StageUi(this); this.commandsOpen = false;
     if (params.get("world") === "tidereach") this.c = { ...this.c, system: "tidereach" }; // debug: start at the allies' world
-    if (params.has("boss")) this.c = { ...this.c, system: "lattice", latticeStreak: SPACE.boss.streak }; // debug: the Mothership arrives
+    if (params.has("boss")) this.c = { ...this.c, system: "lattice", latticeStreak: SPACE.boss.streak, latticeOpen: true }; // debug: the Mothership arrives
+    this.allowSave = !this.autoplay || params.has("save"); // &save: an autoplay run writes its save (smoke checks Continue)
+    const resumed = (shell.takeContinue("space") || params.has("continue")) && this.resume(); // menu Continue: that system, all your progress
     this.notes = [];
     this.foeS.clear(); this.allyS.clear(); this.held.clear();
     this.texts = []; this.icons = []; this.route = [];
@@ -149,7 +153,8 @@ export class SpaceScene extends Phaser.Scene {
     this.events.once("shutdown", () => { window.removeEventListener("keydown", this.onKey); window.removeEventListener("keyup", this.onKeyUp); });
     const paused = () => this.held.clear(); this.events.on("pause", paused); this.events.once("shutdown", () => this.events.off("pause", paused));
     this.lineage = new LineagePanel(this);
-    if (!this.autoplay) this.lineage.show(this.reveal ?? revealFrom(null, 3, "space"), "Enter or E: take the helm");
+    if (!this.autoplay && !resumed) this.lineage.show(this.reveal ?? revealFrom(null, 3, "space"), "Enter or E: take the helm");
+    if (resumed) this.toast(`Welcome back, captain: ${starSystem(this.c.system).name}, ${this.c.wins} wins, ${this.c.credits} salvage.`, 5);
     Log.info(LOG, `START home ${this.c.makers.home}, ally ${this.c.makers.ally}, harshness ${this.c.harshness.toFixed(2)}, parts ${this.c.fit.parts.join(",")}, salvage ${this.c.credits}`);
   }
 
@@ -157,7 +162,7 @@ export class SpaceScene extends Phaser.Scene {
   private readLineage(): { civ: Record<string, unknown> | null; harshness: number } {
     try {
       const saved = shell.saves.load("lineage").envelope?.data ?? null;
-      const rv = revealFrom(saved, 3, "space");
+      const rv = revealFrom(saved, 4, "space");
       this.reveal = rv;
       if (!rv.fromSave) return { civ: null, harshness: 0 };
       for (const row of rv.rows) this.temper[row.kind] = row.pct / 100;
@@ -206,6 +211,7 @@ export class SpaceScene extends Phaser.Scene {
     this.toast(d.ok ? d.why : `Cannot: ${d.why}`, 2);
     if (d.ok && a.kind === "recruit") Log.info(LOG, `RECRUIT ${a.escort}: fleet ${d.c.fleet.join(",")}`);
     this.c = d.c;
+    this.saveRun(); // a refit or a recruit
     this.dirty = true;
   }
 
@@ -221,10 +227,34 @@ export class SpaceScene extends Phaser.Scene {
     this.toast(`In orbit over ${worldOf(this.c.system)?.name ?? "nothing"}.  ] next system   U: star map`, 4);
   }
 
+  /** Continue: the campaign as you left it, in that star system. false = no usable save (a new campaign starts). */
+  private resume(): boolean {
+    let raw: unknown = null;
+    try { raw = shell.saves.load(STAGE_SLOT.space).envelope?.data ?? null; } catch (err) { Log.warn(LOG, `could not read the save: ${String(err)}`); }
+    const r = unpackSpace(raw, this.c);
+    if (r.problems.length) Log.warn(LOG, `save not used: ${r.problems.join("; ")}`);
+    if (!r.run) return false;
+    this.c = r.run.campaign;
+    this.temper = r.run.temper;
+    Log.info(LOG, `CONTINUE ${this.c.system}: ${this.c.wins} wins, ${this.c.credits} salvage, fleet ${this.c.fleet.join(",") || "none"}`);
+    return true;
+  }
+
+  /** Autosave on landing, arriving, after every battle and every refit (BAMF69 2026-11-10). */
+  private saveRun(): void {
+    if (!this.allowSave) return;
+    try {
+      shell.saves.save(STAGE_SLOT.space, packSpace({ campaign: this.c, temper: this.temper }, Date.now()) as Parameters<typeof shell.saves.save>[1]);
+    } catch (err) {
+      Log.warn(LOG, `could not save: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   private land(): void {
     this.sfx.play("sp_land");
     this.sel = 0;
     this.setMode("hangar");
+    this.saveRun();
     Log.info(LOG, `LAND ${this.c.system}`);
   }
 
@@ -238,6 +268,8 @@ export class SpaceScene extends Phaser.Scene {
 
   /** Jump to any system: through each system on the way, one wormhole per hop. A patrol on the way stops the trip. */
   private startJump(to: SystemId): void {
+    const lock = jumpLock(this.c, to);
+    if (lock) { this.sfx.play("sp_deny"); this.toast(lock, 3); return; } // the Lattice waits for a Driftfield streak
     this.route = routeTo(this.c.system, to);
     if (this.route.length) this.beginHop();
   }
@@ -257,6 +289,7 @@ export class SpaceScene extends Phaser.Scene {
     if (this.b.hostile && !this.b.over) this.endBattle("fled");
     const frac = this.b.you.hull / this.b.you.hullMax;
     this.c = travel(this.c, to);
+    this.saveRun();
     this.clearShips();
     this.b = this.battleHere(frac);
     Log.info(LOG, `JUMP ${to}: patrol ${this.b.foes.map((f) => f.kind).join(",") || "none"}, fleet ${this.c.fleet.join(",") || "none"}, hull ${Math.round(frac * 100)} %`);
@@ -300,6 +333,7 @@ export class SpaceScene extends Phaser.Scene {
   private endBattle(outcome: Outcome): void {
     const r = afterBattle(this.c, outcome, this.b.dealt, this.b.salvage, this.b.lostEscorts, this.bossWave && outcome === "won");
     this.c = r.c;
+    this.saveRun();
     this.notes = r.notes;
     this.b.hostile = false; // this wave is settled
     this.toast(r.notes.join("\n"), 7);
