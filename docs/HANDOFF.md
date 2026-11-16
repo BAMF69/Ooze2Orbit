@@ -1,8 +1,55 @@
 # Handoff
 
-**Last updated:** 2026-11-15
+**Last updated:** 2026-11-16
 **Branch:** `feat/cell-division`. Previous baseline committed and pushed as fd0f29d. This snapshot includes the subsequent aquatic remaster, map rewards and organic HUD/input polish. Push only when asked.
 **Active:** Cell/aquatic upgrade and growth HUD polish, expanded effects in Details, and aquatic illustrated remaster. Creature/civilization may be developed in independent chats/worktrees; preserve their scope.
+
+## Aquatic crash and recovery polish (2026-11-16)
+- Fixed reported daughter-selection crashes: SisterView no longer draws legacy aparts overlays.
+  AquaticIllustrations already owns complete equipment, including toxicTendrils and electricOrgan.
+  GPU browser regression exercises form3/form4 daughter selections with each part on desktop/phone.
+- Player food and health purchase healing is 2× old values in pond, 4× lake, 8× coast, HP capped.
+- Plates articulate along the swimming body; all equipped gear shimmers and pickup parts bob/glow.
+  Tendrils and organ use organic shaded details. Stun adds blue static around player, no flashes.
+- Food halos are subtler, include bloom pods; blooms sway. Growth bars are roomier/taller, HUD uses
+  serif small caps, and empty normal/unique part slots always render in the inventory.
+- Validation: 493 tests, type/shader checks, form regression browser checks and production coast smoke.
+- Empty inventory placeholders follow normal form capacity (1, 2, 3, 3); unique river parts appear only when acquired. The hosted Sites preview has not yet been updated.
+
+## Aquatic player animation and modular looks (2026-11-16)
+- A-0034 adds diet-specific three-view swim/chomp sheets. playerMotion.ts selects idle/swim/attack/dash/
+  breach/stun. Actual speed controls cadence; eating/rams trigger chomp; dashes streamline with wake;
+  breaches use side pose/pitch and a re-entry splash. River and map avatars share the renderer.
+- Stat ranks add ridges, streamlines, scutes, fins and bulk. Equipment is curved/shaded, pose-aware and
+  cached; body/parts share every transform. Diet, temperament, part tiers and game rules are preserved.
+- Touch pause freezes animation; reduced motion keeps static cues without wake trails or breach pitch.
+- Prompts, runtime paths and design details: docs/art/AQUATIC_PLAYER.md.
+- Validation: 492 tests, type/shader checks and desktop/phone GPU browser checks of diet, swim, dash,
+  eating, breach/re-entry, mid-breach pause, reduced motion and health bulk.
+
+## Aquatic ambient animation and visibility (2026-11-16)
+- A-0033 adds three-view swim/bite poses for darter, finray, spinefish and shellback. Measured frame
+  rectangles preserve complete silhouettes. All bites, including school bites, trigger actual poses.
+- Fleeing/retreat uses hunting cadence (2× normal cruising). Jellyfish remain quarter speed and passive.
+- Jellyfish bump retaliation obscures the world in murky green for 2s; HUD remains readable.
+- Seaweed/kelp sway from floor anchors; food breathes with a colored halo, without changing collisions.
+- Touch menu pause freezes animation/effect timers; reduced motion uses still foliage/fog and steady food.
+- Validation: 489 tests, type/shader checks, desktop/phone GPU browser scenarios and production coast smoke.
+- Runtime asset paths and imagegen prompt set: docs/art/AQUATIC_MOTION.md.
+
+## Aquatic wildlife animation and eel combat (2026-11-16)
+- Predator frames now use measured silhouette rectangles in motionFrames.ts rather than equal cells,
+  fixing cut shark noses and rear fins (deepmaw/hammerhead included). Source PNGs remain intact.
+- Hunt animations retain their original speed; normal swimming is half speed, jellyfish quarter speed.
+  Per-creature clocks preserve phase on state changes. Jellyfish never chase and retaliate only on bumps.
+- A-0032 supersedes single-pose wildlife: faceless purple/green jellyfish matching the supplied concept,
+  pulsing swim + tentacle-sweep frames; turquoise/gold eel tail-swim + bite frames. Both have three views.
+- Eel bites arm a 220ms wind-up when shock is ready. Discharge stuns nearby submerged players for 1.2s,
+  starts a five-second cooldown and 2.5s retreat. No extra shock damage. Eels cannot bite during retreat.
+- Touch upgrade pause freezes all new animation and combat timers. Reduced-motion keeps static cues.
+- Deepmaw/shark/hammerhead swim and bite sheets remain. Asset prompts and timing: docs/art/AQUATIC_MOTION.md.
+- Validation: 487 tests, typecheck/shader checks and desktop/phone GPU browser checks (actual contact,
+  swim frames, stun movement suppression, retreat, cooldown, touch pause, alpha and no runtime errors).
 
 ## Painted trim and persistent tab meters (2026-11-15)
 - A-0030 replaces vector connecting trim with long independently painted botanical/bone/amber rails.

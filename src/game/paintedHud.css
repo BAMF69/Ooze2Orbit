@@ -98,3 +98,8 @@ body:is(.cell-display,.aquatic-display)[data-overlay-diet] .compact-organic-hud 
 .hud-dock,.upgrade-quarter,.dock-control-tray { transition:opacity .18s ease; }
 .hud-dock.hud-occluded,.upgrade-quarter.hud-occluded,.dock-control-tray.hud-occluded { opacity:.2; }
 @media(prefers-reduced-motion:reduce) { .hud-dock,.upgrade-quarter,.dock-control-tray { transition:none; } }
+
+.aquatic-display .compact-organic-hud .growth-section { height:64px; }
+.aquatic-display .compact-organic-hud .cell-growth-segments { padding:5px 7px 7px; gap:12px !important; }
+.aquatic-display .hud-dock :is(button,.growth-label,.stage-status,.dock-status) { font-family:var(--hud-heading) !important; font-variant:small-caps; letter-spacing:.035em; }
+@media(max-height:450px) { .aquatic-display .compact-organic-hud .growth-section { height:48px; } }

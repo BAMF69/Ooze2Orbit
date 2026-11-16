@@ -152,13 +152,13 @@ export function foodToEvolve(c: AqCreature): number {
 }
 
 /** Eat: food and points by the diet's share (0 = it cannot eat this). May grow into the next form (full health). */
-export function eatFood(c: AqCreature, kind: FoodKind, base: number): { creature: AqCreature; eaten: boolean; evolved: boolean; gained: number } {
+export function eatFood(c: AqCreature, kind: FoodKind, base: number, healMult=1): { creature: AqCreature; eaten: boolean; evolved: boolean; gained: number } {
   const gained = base * dietShare(c, kind);
   if (gained <= 0) return { creature: c, eaten: false, evolved: false, gained: 0 };
   let next: AqCreature = {
     ...c, growthEvidence: { algae: c.growthEvidence?.algae ?? 0, meat: c.growthEvidence?.meat ?? 0,
       [kind]: (c.growthEvidence?.[kind] ?? 0) + gained }, food: c.food + gained, points: { ...c.points, [kind]: c.points[kind] + gained },
-    hp: Math.min(maxHp(c), c.hp + AQ.food.heal), // every food pickup heals a little
+    hp: Math.min(maxHp(c), c.hp + AQ.food.heal*healMult), // every food pickup heals a little
   };
   const need = foodToEvolve(next);
   if (next.food < need) return { creature: next, eaten: true, evolved: false, gained };
@@ -190,13 +190,13 @@ export function pay(points: { algae: number; meat: number }, stat: AqStat, cost:
   return { ...points, [first]: points[first] - fromFirst, [second]: points[second] - (cost - fromFirst) } as { algae: number; meat: number };
 }
 
-export function buyUpgrade(c: AqCreature, stat: AqStat): BuyResult {
+export function buyUpgrade(c: AqCreature, stat: AqStat, healMult=1): BuyResult {
   const cost = upgradeCost(c, stat);
   if (cost === null) return { ok: false, reason: "max" };
   if (pointsFor(c, stat) < cost) return { ok: false, reason: "points" };
   const next: AqCreature = { ...c, points: pay(c.points, stat, cost), ups: { ...c.ups, [stat]: c.ups[stat] + 1 } };
   // a health level raises the max and heals by the same amount
-  return { ok: true, creature: stat === "health" ? { ...next, hp: c.hp + AQ.stats.hpPerLevel } : next };
+  return { ok: true, creature: stat === "health" ? { ...next, hp: Math.min(maxHp(next),c.hp + AQ.stats.hpPerLevel*healMult) } : next };
 }
 
 // ---- parts -------------------------------------------------------------------------------------

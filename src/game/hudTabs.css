@@ -142,3 +142,14 @@ body:is(.cell-display,.aquatic-display)[data-overlay-diet] .hud-dock .upgrade-tr
  .hud-dock[data-tab=growth] > .dock-center { position:absolute; top:4px; left:210px; right:14px; width:auto; min-height:14px; height:14px; }
  .hud-dock > .dock-center.compact-meters { top:-40px; }
 }
+
+/* Roomier growth tracks, kept within the existing dock footprint. */
+.aquatic-display .compact-organic-hud .cell-growth-segments { gap:12px !important; padding:3px 5px 5px; }
+.aquatic-display .hud-dock { font-family:Georgia,'Palatino Linotype',serif; font-weight:600; letter-spacing:.025em; }
+.aquatic-display .empty-part-slot { display:grid; place-items:center; opacity:.6; border:1px dashed #d5c58a; }
+
+.aquatic-display .compact-organic-hud .hud-dock { height:calc(17.5dvh + 24px) !important; max-height:none !important; }
+.aquatic-display .compact-organic-hud .growth-section { height:42px !important; min-height:42px; flex-shrink:0; }
+.aquatic-display .empty-part-slot { width:40px; height:40px; flex:0 0 40px; box-sizing:border-box; border-radius:8px; }
+@media(max-width:700px) { .aquatic-display .compact-organic-hud .growth-section { height:30px !important; min-height:30px; } .aquatic-display .empty-part-slot {width:28px;height:28px;flex-basis:28px;} }
+@media(max-height:450px) { .aquatic-display .compact-organic-hud .hud-dock {height:calc(17.5dvh + 16px) !important;} .aquatic-display .compact-organic-hud .growth-section {height:22px !important;min-height:22px;} }

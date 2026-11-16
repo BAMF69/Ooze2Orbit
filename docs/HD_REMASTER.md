@@ -1,5 +1,12 @@
 # HD remaster: first cell slice
 
+## Aquatic motion and wildlife (2026-11-16)
+A-0031 adds detailed transparent jellyfish/eel cutouts and three-view swim/bite sheets for deepmaws,
+blue sharks and hammerheads. Frame timing is simulation-clock based and reduced-motion aware. Actual
+attacks trigger open jaws and brief lunge/recovery without changing damage or collision timing.
+Wildlife is currently a single side pose; predator rows cover front, side and back.
+
+
 ## Purpose-built components and compact proportions (2026-11-15)
 Latest outer frame replaces A-0028's cropped/feathered legacy decorations with A-0029: newly generated
 transparent corner and centerpiece objects. Their drawn attachment arms meet long continuous vector trim;

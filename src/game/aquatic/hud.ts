@@ -170,7 +170,9 @@ export class AquaticHud {
       this.equipmentKey = key; this.equipment.replaceChildren();
       const icons = node("div", "", "cell-icon-row");
       const frames: Record<string,number> = { fins:7,jaws:8,plates:9,gills:10,endurance:11,torrent:11 };
-      for (const r of rows) if (r.part) {
+      for (const r of rows) {
+        if(r.unique&&!r.part)continue;
+        if(!r.part){const empty=node('span','◇','cell-ability-icon empty-part-slot');empty.title=r.text;empty.setAttribute('aria-label',r.text);icons.append(empty);continue;}
         const b = node("button", "", "cell-ability-icon"); b.title = r.text; b.setAttribute("aria-label",r.text);
         const canvas = node("canvas"); canvas.width = canvas.height = 96;
         const f = this.scene.textures.getFrame(r.part==="toxicTendrils"||r.part==="electricOrgan" ? `aq-${r.part}` : "aqPropsHD",frames[r.part]??"__BASE"), ctx = canvas.getContext("2d");

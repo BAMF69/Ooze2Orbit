@@ -1,4 +1,14 @@
 # Playtest Log
+## 2026-11-16 — Aquatic wildlife art and predator swim/bite pass
+Replaced procedural jellyfish/eel avatars with detailed transparent single-pose illustrations. New
+deepmaw/blue-shark/hammerhead sheets supply three swim key poses and open-jaw bite in front/side/back
+views. Actual attack events drive bite/recovery; physics and damage are unchanged.
+Type/shader checks, 480 tests and coast GPU production smoke pass. Browser checks at 1440x900 and
+375x650 verify frame cycling, real deepmaw/shark bite paths, recovery, touch-upgrade animation freeze,
+reduced-motion neutral swim/bite cue, and transparent wildlife exterior pixels. Captures inspected.
+Wildlife remains single-pose with flips/deformation; full directional wildlife animation is a later pass.
+Physical-device retest remains pending. No commit/push requested.
+
 ## 2026-11-15 — Painted connecting rails, live-menu dash and compact meters
 Added A-0030 long painted rails to match the independent ornaments. Cell Jet works during live upgrades;
 Q/R1 offers a controller-friendly alternative to shared confirm. Touch upgrade pause remains. Live resource/
@@ -422,3 +432,21 @@ Decisions / tuning changes:
 Tasks created (ROADMAP):
 - Stakes tuning pass; Upgrade choice on 4 stats; Player can be popped (pending pillar decision).
 
+
+2026-11-16 — A-0032 wildlife swim/attack pass: 484 tests, typecheck + 11 shader checks passed.
+GPU browser checks at 1440×900 and 375×650 verified painted swim frame cycles, actual eel contact
+arming shock, five-second cooldown, player movement blocked during stun, retreat velocity away from
+player, pause freezing combat timers, transparent sprite alpha and no page errors. Production coast
+GPU smoke reached DRIVE_DONE without errors. Reference-style jellyfish is faceless and mouthless.
+
+2026-11-16 — Remaining aquatic animation: 489 tests, typecheck and 11 shaders pass. Desktop1440×900
+and phone375×650 GPU browser fixtures verify all four new fauna swim cycles, actual spinefish bite,
+food pulse and weed sway, fast eel retreat, actual jellyfish hit causing 2s murk, touch-menu pause
+freezing murk, reduced-motion stillness, and no page errors. Production coast smoke reached DRIVE_DONE.
+
+2026-11-16 — Aquatic modular player pass: 492 tests, typecheck and 11 shader checks passed. GPU browser
+checks at1440×900 and375×650 verified all diet sheets, movement-speed swim frames, keyboard dash,
+real eating/chomp, surface breach/re-entry, paused body/equipment frames, reduced-motion neutral pose
+and health-stat bulk. Inspected equipped dash and breach screenshots; reduced plate coverage and added
+curved shading to keep the diet body readable. Coast and river production GPU smokes passed.
+Asset paths and built-in imagegen prompt set: docs/art/AQUATIC_PLAYER.md.

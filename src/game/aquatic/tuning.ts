@@ -63,7 +63,7 @@ export const KINDS: Readonly<Record<AqKind, KindTuning>> = {
 };
 
 export const AQ = {
-  combat: { jellySlowS:3, toxicS:3, toxicDps:5, toxicSlow:.45, electricRange:260, electricStunS:2.5, electricCooldownS:8, electricDamage:8 },
+  combat: { eelShockCooldownS:5, eelFleeS:2.5, eelStunS:1.2, eelShockRange:180, jellySlowS:3, toxicS:3, toxicDps:5, toxicSlow:.45, electricRange:260, electricStunS:2.5, electricCooldownS:8, electricDamage:8 },
   // Map-bound sisters and descendants (your picks, 2026-11-13; awaiting playtest).
   sisters: {
     maxPerMap: 24, founderReserve: 6, broodSize: 3, statCap: 17,

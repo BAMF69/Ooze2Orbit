@@ -47,5 +47,10 @@ export default defineConfig({
     assetsInlineLimit: 0, // keep game assets as files (easier to cache and to audit)
     chunkSizeWarningLimit: 2000, // Phaser alone is over the 500 kB default
   },
-  server: { port: 5173, open: false },
+  server: {
+    host: process.env.O2O_DEV_HOST ?? 'localhost',
+    port: Number(process.env.O2O_DEV_PORT ?? 5173),
+    strictPort: !!process.env.O2O_DEV_PORT,
+    open: false,
+  },
 });

@@ -384,6 +384,7 @@
   "aq.desc_toxicTendrils": "Contact attackers take 5 damage/second and swim 55% slower for 3 seconds.",
   "aq.part_electricOrgan": "Electric organ",
   "aq.desc_electricOrgan": "F / right-stick click / Shock: stun nearby enemies for 2.5 seconds. 8 second recharge.",
+  "aq.eel_stunned": "Electric shock — stunned!",
   "aq.shock_fired": "Electric pulse! Nearby enemies stunned.",
   "aq.map_rewards": "Lake: tier II parts + toxic tendrils. Coast: tier III parts + electric organ.",
   "aq.goal_pond": "Explore the lake: tier II parts + toxic tendrils",
