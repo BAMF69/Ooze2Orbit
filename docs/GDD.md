@@ -44,7 +44,7 @@ the stage before), and hands its lineage to the next through `docs/HANDOFF_CONTR
 |---|---|---|---|---|---|
 | 1 | Cell | `docs/stages/01-cell.md` | Avatar | Toy done; **division prototype** active, then Vertical slice | Hybrid cell loop approved as fun by BAMF69 2026-11-13; original Toy fun 2026-11-08 |
 | 2 | Aquatic | `docs/stages/02-aquatic.md` | Avatar (behind view) + god | Toy done, **Vertical slice** next | Toy v1-v9 played; split + daughter choices on form growth active 2026-11-13 |
-| 3 | Creature (was Land/Air) | `docs/stages/03-creature.md` | Roguelike metroidvania: each run a generation (avatar) + the Gardener between runs (god) | **Toy** (redesigned) | Toy 2 gameplay liked by user 2026-11-13; responsive display adapter built |
+| 3 | Creature (was Land/Air) | `docs/stages/03-creature.md` | Roguelike metroidvania: each run a generation (avatar) + the Gardener between runs (god) | **Toy** (redesigned) | Procedural Water gameplay slice: seeded persistent world, inherited gills/fins and required Gardener interventions; other biomes follow |
 | 4 | Civilization | `docs/stages/04-civilization.md` | Tower wars RTS: builders, gatherers, sends and defenses, your creature as the hero (avatar) + the Gardener's levers (god) | **Toy** (redesigned) | Toy 2 gameplay liked by user 2026-11-13; responsive display adapter built |
 | 5 | Space | `docs/stages/05-space.md` | Captain of an Endless Sky style fleet (avatar) + seeding the outer gardens (god) | **Toy** | Gameplay liked by user 2026-11-13; responsive display adapter built |
 

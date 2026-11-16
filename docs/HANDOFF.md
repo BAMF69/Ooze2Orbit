@@ -1,5 +1,15 @@
 # Handoff
 
+## Creature worktree update (2026-11-14)
+Creature gameplay work is isolated on `feat/creature-remaster` at the `fd0f29d` baseline.
+Approved procedural Water slice supersedes the six-room creature prototype. Post-playtest: physical
+walkable overworld/shoreline replace menu navigation; direct image loading plus sheet validation
+fix intermittent missing-avatar textures. See
+`docs/CREATURE_WATER_SLICE.md` for implemented scope and `docs/CREATURE_HANDOFF.md` for
+validation/local preview. User authorized committing/pushing this creature branch on 2026-11-15. Other stage entries below
+remain the shared baseline history.
+
+
 **Last updated:** 2026-11-13
 **Branch:** `feat/cell-division`. User authorized committing all repository changes on 2026-11-13; no push requested.
 **Active:** Full-pond cell HUD, clear equipment, birth and aquatic entry presentations built. Other stage touch adapters and remaining HD rendering/form art follow. User says all stages play well (2026-11-13).

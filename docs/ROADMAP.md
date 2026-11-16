@@ -4,6 +4,12 @@
 > Claude reads the **Now** section at session start.
 
 ## Now (max 3 items)
+Creature-chat update 2026-11-15: Medium encounter pass built (three enemy behaviors, vertical
+swim routes, vent timing, limited traps); human difficulty/fun playtest next.
+Creature-chat priority approved 2026-11-13: procedural creature content before controls/art.
+First slice: Overworld + Water easy/medium/hard, offspring adaptations and mandatory Gardener
+solutions. Implemented scope/acceptance: `docs/CREATURE_WATER_SLICE.md`. Other stage work remains
+owned by its separate chats.
 - [ ] **All-stage display/input/mobile foundations** (BAMF69 2026-11-13): display rollout built for all five stages: fullscreen, safe areas, responsive status/menus/cameras, portrait layouts and rotation pause. Civilization/space command panels pause combat. Next: touch movement, controller improvements and real-device checks. Plan: `docs/PLATFORM_FOUNDATIONS.md`.
 - [ ] **Aquatic form division** (BAMF69 2026-11-13): add split + daughter choice to food-driven form growth, retaining pickups and active leveling. Inherited diet/stat/part choices, pause-safe animation, save/Continue and lineage history. Unchosen sisters now compete, bite/bump, grow and reproduce in map-local saved lineages. User reports liking all stages; aquatic display rollout built.
 Active work: **Cell HUD and lifecycle presentation**. Full-pond overlay, four-section food meter,
