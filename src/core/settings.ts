@@ -124,6 +124,7 @@ function fixBindings(value: unknown, problems: string[]): Bindings {
     if (clean.length !== lst.length) problems.push(`input.bindings.${action}`);
     out[action] = clean;
   }
+  if (!hasKey(value,"electric") && out.sink?.[0]==="key:f") out.sink=["key:c",...out.sink.slice(1)];
   return out;
 }
 

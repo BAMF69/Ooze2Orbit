@@ -230,7 +230,7 @@ export function gameplay(shell: Shell, key: GameKey): Screen {
         if (navigateNative(a, () => shell.input.clearPresses())) return true;
       }
       const focused = document.activeElement;
-      if (key !== "juice" && (a === "ui_accept" || a === "jump") && focused instanceof HTMLElement &&
+      if (key !== "juice" && a === "ui_accept" && focused instanceof HTMLElement &&
         focused.matches("button, summary") && focused.getClientRects().length > 0 && getComputedStyle(focused).visibility !== "hidden" && !focused.closest("[hidden], [inert]") && focused.closest(".cell-ui-layer, .cell-toolbar, .stage-ui-layer")) {
         shell.input.clearPresses(); focused.click(); return true;
       }

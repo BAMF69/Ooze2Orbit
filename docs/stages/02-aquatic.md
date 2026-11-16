@@ -1,5 +1,13 @@
 # Stage 2: Aquatic
 
+Map rewards revision (2026-11-15): pond/lake/coast drops upgrade existing fins/jaws/plates to tiers I/II/III,
+without spending an additional slot or downgrading stronger gear. Lake and coast add dangerous contact
+jellyfish, which drop toxic tendrils (retaliatory damage over time and slowing). Coast adds electric eels,
+which drop an active electric organ (F / R3 / touch Shock: nearby stun, 8s recharge). Descent moves to C;
+old default F settings migrate, custom bindings remain. Timings/damage live in AQ.combat, tuning.ts.
+These are initial prototype values awaiting hands-on balance testing. New parts use existing normal slots.
+The Gardener command is central in the shared bottom HUD; next-map reward prompts encourage exploration.
+
 Entry presentation (2026-11-13): scene-clock descent precedes the temperament reveal; confirmation
 plays an arrival sequence before swimming. Both hold simulation/input and support pause/Reduced Motion.
 Continue/autoplay/debug starts skip the intro where appropriate. Reveal now has accessible red aggressive,
@@ -28,6 +36,13 @@ green cautious and blue adaptable meters; actual diet is shown separately. Tempe
 > the evolve, a chomp per fish, a black-screen death, a "move on" banner, calm music; v9: the evolve waits for the coast,
 > the run autosaves and the menu has Continue, Export and Import. Waiting for BAMF69's playtest.
 > Play it: main menu "Aquatic stage (prototype)". Code: `src/game/AquaticScene.ts`, `src/game/aquatic/`.
+
+## Illustrated presentation — 2026-11-13
+Original inked, cel-shaded diet bodies, wildlife, predators, food/parts and pond/lake/coast backdrops
+replace prototype imagery through a presentation adapter. Behind-view projection, rivers, lens,
+combat and reproduction rules are unchanged. Shared worn equipment/temperament accents appear in
+play and daughter/mitosis previews. Native upgrades show effects and inherited levels; Details
+explains the build. Four growth chambers use the existing thresholds, alongside actual HP/stamina.
 
 ## Identity
 ### Shared display rollout — 2026-11-13

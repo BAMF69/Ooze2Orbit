@@ -35,6 +35,7 @@ export class SisterView {
             color: AQ.sisters.labelColor, stroke: "#071418", strokeThickness: 2 }).setOrigin(0.5, 1).setResolution(2) };
         this.visuals.set(s.id, v);
       }
+      v.spr.setData("aqBody", s.body);
       if (!place(v.spr, s)) continue;
       const look = bodyLook(lookScores(context.temper, s.body, 0, 0));
       const view = lens ? { view: "side", flip: false } : viewOf(s.heading, heading);

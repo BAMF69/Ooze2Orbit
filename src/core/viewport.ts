@@ -13,9 +13,9 @@ export function cellViewport(width: number, height: number, safe: Insets) {
   const logicalHeight = responsive ? Math.max(DISPLAY.minHeight, Math.min(DISPLAY.maxHeight, Math.round(logicalWidth * h / w))) : DISPLAY.height;
   return { left, top, width: w, height: h, logicalWidth, logicalHeight, portrait };
 }
-/** Stage adapters own world framing; all reserve readable native status/command space. */
+/** Stage adapters own framing: cell/aquatic fill the display; later stages reserve native command space. */
 export function stageViewport(stage: DisplayStage, width: number, height: number, safe: Insets) {
-  if (stage === "main") {
+  if (stage === "main" || stage === "aquatic") {
     const portrait = height > width, w = Math.max(1, width), h = Math.max(1, height);
     const logicalWidth = portrait ? width < DISPLAY.tabletAt ? DISPLAY.phoneWidth : DISPLAY.tabletWidth : DISPLAY.width;
     return { left: 0, top: 0, width: w, height: h, logicalWidth,

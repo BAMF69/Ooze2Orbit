@@ -69,6 +69,9 @@ export function readAqCreature(raw: unknown): AqCreature {
     stamina: num(m.stamina, 0, 1e6, 1e6),
     thickness: num(m.thickness, 0, 1, 0.5),
   };
+  if (isObj(m.partTiers)) me.partTiers = Object.fromEntries(AQ_PARTS.filter(p => Object.hasOwn(m.partTiers as Json,p)).map(p => [p, ["fins","jaws","plates"].includes(p) ? int((m.partTiers as Json)[p],1,3,1) : 1]));
+  if (Array.isArray(m.formDiets)) me.formDiets = m.formDiets.slice(0, form).map(d =>
+    d === "herbivore" || d === "carnivore" || d === "omnivore" ? d : me.diet);
   if (isObj(m.growthEvidence)) me.growthEvidence = {
     algae: num(m.growthEvidence.algae, 0, 1e6, 0), meat: num(m.growthEvidence.meat, 0, 1e6, 0),
   };

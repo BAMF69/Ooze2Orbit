@@ -3,7 +3,7 @@
 // Authored: Written with Codex for Ooze2Orbit.
 import { CONTROL, stickDirections } from "../core/controlScheme";
 import type { ShellInput } from "./input";
-export interface TouchAction { label: string; action?: string; run?: () => void }
+export interface TouchAction { label: string; action?: string; run?: () => void; group?: "depth" }
 export class TouchControls {
   readonly root = document.createElement("div");
   private stick = document.createElement("div");
@@ -16,6 +16,7 @@ export class TouchControls {
     this.stick.className = "touch-stick"; this.stick.setAttribute("aria-label", "Movement stick");
     this.knob.className = "touch-knob"; this.stick.append(this.knob);
     const buttons = document.createElement("div"); buttons.className = "touch-actions";
+    const depth = document.createElement("div"); depth.className = "touch-depth";
     for (const [i, a] of actions.entries()) {
       const b = document.createElement("button"); b.textContent = a.label; b.dataset.touchAction = a.action ?? "menu";
       const source = `touch:button${i}`; this.sources.add(source);
@@ -30,7 +31,7 @@ export class TouchControls {
         if (!a.action) a.run?.();
         else if (e.detail === 0 && !(e instanceof PointerEvent && e.pointerType)) { this.input.hold(source, [a.action]); this.input.releaseVirtual(source); }
       };
-      buttons.append(b);
+      (a.group === "depth" ? depth : buttons).append(b);
     }
     this.stick.onpointerdown = e => {
       if (!this.active || this.pointer !== null) return;
@@ -40,7 +41,7 @@ export class TouchControls {
     this.stick.onpointerup = this.stick.onpointercancel = this.stick.onlostpointercapture = e => {
       if (e.pointerId === this.pointer) this.releaseStick();
     };
-    this.root.append(this.stick, buttons); document.body.append(this.root);
+    this.root.append(this.stick, buttons, depth); document.body.append(this.root);
   }
   private move(e: PointerEvent): void {
     const r = this.stick.getBoundingClientRect(), dx = e.clientX - r.left - r.width / 2, dy = e.clientY - r.top - r.height / 2;

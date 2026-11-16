@@ -1,0 +1,144 @@
+/* One fixed geometry for every tab: only the content changes. */
+.compact-organic-hud .hud-dock {
+ width:calc(100vw - var(--safe-left) - var(--safe-right) - 28px) !important; max-width:none !important;
+ height:17.5dvh !important; box-sizing:border-box; border:0 !important; border-image:none !important;
+ border-radius:0 !important; background:none !important; background-color:transparent !important; box-shadow:none !important;
+ padding:14px 20px 13px !important; display:flex; flex-direction:column; gap:6px;
+}
+.compact-organic-hud .hud-dock::before,.compact-organic-hud .hud-dock::after { display:none !important; }
+.modular-hud-frame { position:absolute !important; inset:0; pointer-events:none; z-index:0 !important; }
+.modular-hud-frame > svg { display:block; overflow:visible; }
+.modular-hud-frame svg svg { overflow:hidden; }
+.hud-dock [hidden] { display:none !important; }
+.hud-dock > .dock-header,.hud-dock > .dock-content { position:relative; z-index:1; }
+.compact-organic-hud .hud-dock > .dock-header { flex:none; min-height:44px; margin:0 !important; display:flex; gap:8px; }
+.dock-header > :first-child { flex:1; min-width:0; }
+.dock-header :is(.cell-status-main,.stage-status) { white-space:pre-line; max-height:40px; overflow:hidden; }
+.dock-tabs { display:flex; align-items:center; gap:5px; flex:none; }
+.dock-tabs button { min-height:44px; box-sizing:border-box; white-space:nowrap; margin:0 !important; }
+.dock-tabs [aria-selected=true] { box-shadow:inset 0 -3px #ffe394 !important; }
+.dock-content { flex:1; min-height:0; position:relative; }
+.dock-growth-panel { height:100%; display:flex; flex-direction:column; justify-content:space-between; gap:2px; }
+.dock-center { display:flex; align-items:center; justify-content:center; gap:12px; min-height:32px; flex:none; }
+.dock-resource,.dock-dash { display:grid; gap:2px; font:700 10px/1.1 system-ui; min-width:45px; max-width:230px; flex:1; text-align:center; }
+.dock-center progress { width:100%; height:8px; border:1px solid #e3d7ab; border-radius:8px; overflow:hidden; background:#061822; }
+.dock-center progress::-webkit-progress-bar { background:#061822; }.dock-center progress::-webkit-progress-value { background:#8fe830; }
+.dock-resource.meat progress::-webkit-progress-value { background:#ff5c67; }.dock-dash progress::-webkit-progress-value { background:#62ddff; }
+.dock-center progress::-moz-progress-bar { background:#8fe830; }.dock-resource.meat progress::-moz-progress-bar { background:#ff5c67; }.dock-dash progress::-moz-progress-bar { background:#62ddff; }
+.dock-middle { display:flex; align-items:center; justify-content:center; gap:6px; flex:1; max-width:230px; }
+.dock-middle .dock-dash { flex:1; }.dock-gardener { min-height:44px; padding:4px !important; font-size:10px !important; }
+.purchase-ready,.evolution-ready { box-shadow:0 0 10px #e9f982,inset 0 0 7px #e9f94f66 !important; }
+.compact-organic-hud .cell-growth-segments { max-width:1000px; margin:10px auto 0; width:100%; flex:none; }
+.compact-organic-hud .growth-section { height:clamp(24px,5dvh,48px); }
+.dock-map-reward { display:block; font:10px/1.2 system-ui; text-align:center; margin:0; color:#fff1bd; }
+.dock-electric { font:10px/1.2 system-ui; color:#c6fbff; }
+.dock-info-panel { height:100%; overflow:auto; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); gap:20px; padding:0 4px; box-sizing:border-box; }
+.dock-info-panel section { min-width:0; }.dock-info-panel h3 { font:700 14px/1.2 var(--hud-heading); margin:0 0 6px; color:#fff0c7; }
+.dock-guide-details :is(pre,.cell-effect-details) { position:static !important; margin:0; padding:0 !important; max-height:none !important; white-space:pre-line; font:12px/1.45 system-ui; }
+.dock-guide-controls .stage-footer { position:static !important; display:flex; flex-wrap:wrap; margin:4px 0; }
+.dock-guide-controls .stage-footer [data-action=upgrades],.dock-guide-controls .stage-footer [data-action=advance],.dock-guide-controls .stage-footer [data-action=lens] { display:none; }
+.dock-browser-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }.dock-browser-actions button { min-height:44px; }
+.dock-install-help { font:12px/1.4 system-ui; }
+.organic-fullscreen { position:fixed; left:calc(var(--safe-left) + 8px); top:calc(var(--safe-top) + 8px); min-height:44px; pointer-events:auto; z-index:9; }
+body:is(.cell-display,.aquatic-display)[data-overlay-diet][data-overlay-diet] button.organic-fullscreen.is-fullscreen {
+ width:32px !important; height:30px !important; min-height:30px !important; min-width:32px !important; padding:0 !important;
+ font:700 20px/1 system-ui !important; opacity:1 !important; background:#102b37 !important; background-image:none !important;
+ color:#fff3d1 !important; border:1px solid #d8bc83 !important; border-radius:7px !important; box-shadow:0 2px 6px #0008;
+}
+.organic-upgrades-open .hud-dock { visibility:visible !important; pointer-events:auto !important; }
+.hud-dock .cell-ui-layer.upgrade-quarter { position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; max-height:none !important; transform:none !important; overflow:hidden !important; }
+.hud-dock .upgrade-quarter .upgrade-tray-panel { height:100%; border:0 !important; background:none !important; box-shadow:none !important; border-radius:0 !important; padding:0 !important; grid-template-columns:minmax(0,1fr) !important; grid-template-rows:minmax(0,1fr) !important; }
+.hud-dock .upgrade-tray-header,.hud-dock .upgrade-tray-close { display:none !important; }
+.hud-dock .upgrade-rail { grid-column:1 !important; grid-row:1 !important; grid-template-rows:minmax(44px,1fr); }
+.hud-dock .upgrade-quarter button.upgrade-card { padding-top:4px; padding-bottom:6px; }
+.hud-dock:has(.upgrade-quarter[data-paused=true]:not([hidden])) .dock-upgrade::after { content:' Ⅱ'; font:10px system-ui; }
+.compact-organic-hud .hud-inventory { border-image:none !important; border:2px solid #c9af72 !important; border-radius:14px; }
+@media(max-width:600px) and (orientation:portrait) {
+ .compact-organic-hud .hud-dock { padding:12px 13px 10px !important; }
+ .compact-organic-hud .hud-dock > .dock-header { gap:4px; }
+ .dock-tabs { gap:3px; }.dock-tabs button,.dock-header .dock-advance { padding:4px !important; font-size:10px !important; }
+ .dock-header :is(.cell-status-main,.stage-status) { font-size:10px !important; }
+ .dock-center { gap:5px; }.dock-info-panel { grid-template-columns:minmax(0,1fr); gap:14px; }
+ .dock-map-reward { font-size:9px; }.dock-middle { gap:3px; }
+ .compact-organic-hud .growth-section { height:26px; }.compact-organic-hud .growth-label { font-size:9px !important; }
+ .dock-electric { font-size:9px; }
+}
+@media(max-height:450px) {
+ .compact-organic-hud .hud-dock { padding:7px 13px 7px 104px !important; }
+ .compact-organic-hud .hud-dock > .dock-header { position:absolute; left:14px; top:7px; width:82px; height:calc(100% - 14px); min-height:0; margin:0 !important; display:flex; flex-wrap:wrap; align-content:center; gap:2px; }
+ .dock-header > :first-child { display:none; }.dock-tabs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:2px; width:82px; }
+ .dock-tabs button,.dock-header .dock-advance { min-height:21px !important; padding:1px 0 !important; font-size:9px !important; letter-spacing:0 !important; min-width:0; }
+ .dock-header .dock-advance { position:absolute; left:43px; bottom:0; width:39px; }
+ .dock-content { height:100%; }.dock-growth-panel { display:grid; grid-template-columns:minmax(220px,1fr) minmax(0,1.2fr); gap:12px; align-items:center; }
+ .dock-center { gap:5px; }.dock-gardener { font-size:9px !important; }.dock-electric { display:none; }
+ .dock-map-reward { display:none; }.compact-organic-hud .cell-growth-segments { margin:10px 0 0; }
+ .compact-organic-hud .growth-section { height:27px; }.compact-organic-hud .growth-label { font-size:9px !important; top:-10px; }
+ .dock-info-panel { grid-template-columns:1fr 1fr; gap:12px; }.dock-info-panel h3 { font-size:12px; }
+}
+
+body:is(.cell-display,.aquatic-display)[data-overlay-diet] .compact-organic-hud .hud-dock,
+body:is(.cell-display,.aquatic-display)[data-overlay-diet] .hud-dock .upgrade-tray-panel { background:none !important; background-color:transparent !important; }
+
+/* Notifications clear the fixed crest rather than crossing its silhouette. */
+.compact-organic-hud :is(.cell-toast,.stage-message) { bottom:calc(var(--safe-bottom) + var(--organic-dock-height,100px) + 64px) !important; }
+
+/* Compact layout: 30% shorter than the former 25dvh dock. */
+:fullscreen .compact-organic-hud .hud-dock { width:75vw !important; }
+.compact-organic-hud .hud-dock { padding:9px 16px 8px !important; gap:3px; }
+.dock-growth-panel { display:grid; grid-template-columns:minmax(250px,1fr) minmax(0,1.6fr); grid-template-rows:minmax(0,1fr) auto; gap:1px 14px; align-items:center; }
+.dock-center { grid-column:1; grid-row:1; gap:7px; min-height:0; }
+.compact-organic-hud .cell-growth-segments { grid-column:2; grid-row:1; margin:9px auto 0; }
+.compact-organic-hud .growth-section { height:clamp(20px,3.5dvh,34px); }
+.dock-map-reward { grid-column:1 / 3; grid-row:2; font-size:9px; }
+@media(max-width:600px) and (orientation:portrait) {
+ .compact-organic-hud .hud-dock { padding:6px 12px !important; }
+ .dock-growth-panel { display:flex; gap:1px; justify-content:space-between; }
+ .dock-center { width:100%; flex:none; min-height:25px; gap:4px; }
+ .dock-gardener { min-height:26px; font-size:9px !important; }
+ .dock-resource,.dock-dash { min-width:30px; font-size:9px; }.dock-middle { min-width:0;gap:2px; }
+ .dock-center progress { height:6px; }.dock-electric { display:none; }
+ .compact-organic-hud .cell-growth-segments { margin:8px auto 0; }
+ .compact-organic-hud .growth-section { height:18px; }.compact-organic-hud .growth-label { top:-9px; font-size:8px !important; }
+ .dock-map-reward { display:none; }
+ .dock-tabs button,.dock-header .dock-advance { padding:3px !important; font-size:9px !important; }
+}
+@media(max-height:450px) {
+ .compact-organic-hud .hud-dock { padding:4px 12px 4px 100px !important; }
+ .compact-organic-hud .hud-dock > .dock-header { top:4px;left:12px;height:calc(100% - 8px); }
+ .dock-tabs button,.dock-header .dock-advance { min-height:17px !important; font-size:8px !important; }
+ .dock-growth-panel { display:grid; grid-template-columns:minmax(180px,1fr) minmax(0,1.2fr); grid-template-rows:1fr; gap:10px; }
+ .dock-gardener { min-height:30px; }.dock-resource,.dock-dash { font-size:9px;min-width:30px; }
+ .compact-organic-hud .growth-section { height:21px; }.compact-organic-hud .growth-label { font-size:8px !important; }
+ .hud-dock .upgrade-rail { grid-template-rows:minmax(30px,1fr); }
+ .hud-dock .upgrade-quarter button.upgrade-card { min-height:30px; padding:0 3px 3px; gap:0; }
+ .upgrade-quarter .upgrade-title { font-size:10px; }.upgrade-quarter .upgrade-level,.upgrade-quarter .upgrade-cost { font-size:8px; }
+}
+
+/* Growth keeps its original hierarchy: resources above a full-width bottom form row. */
+.dock-growth-panel { display:flex; flex-direction:column; justify-content:space-between; align-items:stretch; gap:1px; }
+.dock-center { width:100%; flex:none; min-height:25px; }
+.compact-organic-hud .cell-growth-segments { width:100%; max-width:none; flex:none; margin:9px 0 0; }
+.dock-map-reward { display:none; }
+@media(max-height:450px) {
+ .hud-dock[data-tab=growth] > .dock-header { width:185px; height:18px; top:4px; }
+ .hud-dock[data-tab=growth] .dock-tabs { display:flex; width:auto; }
+ .hud-dock[data-tab=growth] .dock-advance { position:static; width:auto; }
+ .hud-dock[data-tab=growth] .dock-content { position:static; }
+ .hud-dock[data-tab=growth] .dock-center { position:absolute; top:4px; left:210px; right:14px; width:auto; min-height:14px; height:14px; }
+ .hud-dock[data-tab=growth] .dock-gardener { min-height:16px; height:16px; font-size:8px !important; padding:0 2px !important; }
+ .hud-dock[data-tab=growth] .dock-resource,.hud-dock[data-tab=growth] .dock-dash { font-size:8px; gap:0; }
+ .hud-dock[data-tab=growth] .dock-center progress { height:4px; }
+ .hud-dock[data-tab=growth] .cell-growth-segments { position:absolute; bottom:4px; left:14px; right:14px; width:auto; margin:0; }
+ .hud-dock[data-tab=growth] .growth-section { height:14px; }.hud-dock[data-tab=growth] .growth-label { font-size:7px !important;top:-7px; }
+}
+
+/* The meter strip remains available while tab content replaces only the growth row. */
+.hud-dock > .dock-center { margin:0; min-height:25px; }
+.hud-dock > .dock-center.compact-meters { position:absolute !important; top:-48px; left:50%; transform:translateX(-50%); width:min(60%,480px) !important; height:15px; min-height:15px; padding:3px 7px; border-radius:9px; background:#091c24ed; z-index:3; gap:6px; }
+.compact-meters .dock-resource,.compact-meters .dock-dash { font-size:8px; gap:0; min-width:25px; }
+.compact-meters progress { height:4px; }.compact-meters .dock-gardener,.compact-meters .dock-electric { display:none; }
+.dock-growth-panel { justify-content:flex-end; }
+@media(max-height:450px) {
+ .hud-dock[data-tab=growth] > .dock-center { position:absolute; top:4px; left:210px; right:14px; width:auto; min-height:14px; height:14px; }
+ .hud-dock > .dock-center.compact-meters { top:-40px; }
+}
