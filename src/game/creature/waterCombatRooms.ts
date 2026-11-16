@@ -2,7 +2,8 @@
 import type { WaterRoom } from "./waterWorld";
 import type { RoomObjective } from "./waterObjectives";
 import { ENEMIES, type WaterEnemy } from "./waterEncounters";
-export const arenaRoom = (r: WaterRoom): boolean => [2, 7, 10].includes(r.id);
+import { roomSpec } from "./levelgen/roomSpec";
+export const arenaRoom = (r: WaterRoom): boolean => roomSpec(r).sealed;
 export const activeThreat = (e: WaterEnemy): boolean => e.hp > 0 && !e.incapacitated;
 export function encounterLock(r: WaterRoom, o: RoomObjective, enemies: WaterEnemy[], x: number): RoomObjective {
   if (!arenaRoom(r) || o.arenaCleared) return o;
@@ -10,7 +11,7 @@ export function encounterLock(r: WaterRoom, o: RoomObjective, enemies: WaterEnem
   return { ...o, arenaActive: true, arenaCleared: enemies.every(e => !activeThreat(e)) };
 }
 export const sealedEncounter = (o: RoomObjective): boolean => !!o.arenaActive && !o.arenaCleared;
-export const guardedControl = (r: WaterRoom, index: number): boolean => [4, 6, 8, 9, 10].includes(r.id) && index === 0;
+export const guardedControl = (r: WaterRoom, index: number): boolean => roomSpec(r).controls[index]?.guarded ?? false;
 export const CONTROL_SECONDS = 2;
 export interface Operation { x: number; y: number; hp: number; elapsed: number }
 export function advanceOperation(op: Operation, x: number, y: number, hp: number, enemies: WaterEnemy[], dt: number): Operation | null {

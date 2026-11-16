@@ -2,6 +2,7 @@
 // Notes: Attack direction locks after the tell. All clocks are advanced only by active scene dt.
 // Authored: Written with Codex (GPT-6).
 import type { WaterRoom } from "./waterWorld";
+import { roomSpec } from "./levelgen/roomSpec";
 export type EnemyKind = "charger" | "ambusher" | "swimmer" | "dropper";
 export type EnemyPhase = "patrol" | "tell" | "strike" | "recover";
 export interface WaterEnemy { kind: EnemyKind; x: number; y: number; home: number; hp: number; facing: number;
@@ -14,20 +15,12 @@ export const ENEMIES = {
   swimmer: { damage: 2, stun: 0, name: "Needle swimmer", hp: 4, tell: 0.85, strike: 0.7, recover: 1.35, speed: 190, detect: 156, frame: 4, tint: 0x82cddc },
   dropper: { damage: 3, stun: 0, name: "Canopy dropper", hp: 4, tell: 0.95, strike: 1, recover: 1.8, speed: 310, detect: 64, frame: 8, tint: 0xc4a6db },
 } as const;
-export function encounterKinds(r: WaterRoom): EnemyKind[] {
-  if (r.id === 3 || r.id === 0) return [];
-  if (r.tier === "easy") return [r.id === 1 ? "charger" : "ambusher"];
-  return ({ 4: ["charger", "ambusher"], 5: ["swimmer"], 6: ["dropper", "swimmer"],
-    7: ["charger"], 8: ["charger", "swimmer"], 9: ["swimmer", "swimmer"], 10: ["charger", "dropper", "swimmer"] } as Record<number, EnemyKind[]>)[r.id] ?? [];
-}
+export const encounterKinds = (r: WaterRoom): EnemyKind[] => roomSpec(r).enemies.map(e => e.kind);
 export function spawnEncounters(r: WaterRoom): WaterEnemy[] {
-  return encounterKinds(r).map((kind, n) => { const x = kind === "dropper" ? 368 : 416 + n * 48 + r.variant * 8;
-    return { kind, x, home: x, y: kind === "dropper" ? 128 : kind === "swimmer" ? 268 : 288, hp: ENEMIES[kind].hp,
-      facing: -1, phase: "patrol", timer: 0, aimY: 0, passed: false, age: n }; });
+  return roomSpec(r).enemies.map(({ kind, x, y }, n) => ({ kind, x, home: x, y, hp: ENEMIES[kind].hp,
+    facing: -1, phase: "patrol", timer: 0, aimY: 0, passed: false, age: n }));
 }
-export function reedPatches(r: WaterRoom): number[] {
-  return [r.cover + 48, ...encounterKinds(r).flatMap((kind, n) => kind === "ambusher" ? [416 + n * 48 + r.variant * 8] : [])];
-}
+export const reedPatches = (r: WaterRoom): number[] => roomSpec(r).reeds;
 export const reedCover = (r: WaterRoom, x: number): boolean => reedPatches(r).some(center => Math.abs(x - center) < 36);
 export interface EnemyTarget { x: number; y: number; hidden: boolean; submerged: boolean }
 export function stepEnemy(e: WaterEnemy, target: EnemyTarget, dt: number, flood: boolean, minX: number,
@@ -60,7 +53,7 @@ export function evasion(e: WaterEnemy, x: number, y: number, hidden: boolean): "
   return hidden ? "stealth" : e.kind === "swimmer" && x > 560 || Math.abs(y - e.y) > 32 ? "route" : null;
 }
 export const trapCanHit = (e: WaterEnemy): boolean => e.hp > 0 && !e.incapacitated && e.kind !== "swimmer" && Math.abs(e.x - ENCOUNTER.trapTarget) < ENCOUNTER.trapRadius;
-export const hasVent = (r: WaterRoom): boolean => r.id === 6 || r.id === 10;
+export const hasVent = (r: WaterRoom): boolean => roomSpec(r).vent !== null;
 export function ventPhase(clock: number): "quiet" | "tell" | "active" {
   const t = clock % ENCOUNTER.ventPeriod;
   return t < ENCOUNTER.ventTell ? "tell" : t < ENCOUNTER.ventTell + ENCOUNTER.ventActive ? "active" : "quiet";

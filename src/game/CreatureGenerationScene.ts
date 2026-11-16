@@ -18,11 +18,12 @@ import { drawWaterRoom, type WaterFood } from "./creature/waterView";
 import { OVERWORLD, BIOME_PATHS, WATER_PATHS, hubSolid, nearLandmark } from "./creature/overworld";
 import { drawHub, hubLabels } from "./creature/overworldView";
 import { AVATAR_ASSETS, avatarAssetsReady, queueAvatarAssets } from "./creature/avatarAssets";
-import { ENEMIES, ENCOUNTER, spawnEncounters, stepEnemy, biteDamage, evasion, reedCover, hasVent, ventPhase, type WaterEnemy } from "./creature/waterEncounters";
-import { switchback, challengeSolid, clearWaterLine } from "./creature/waterChallenges";
-import { newObjective, newCargo, valves, leftExit, drainedRoom, tickObjective, useValve, bankCargo, objectiveBarrier, canClaimSeal, emergencyRelease, type RoomObjective, type Cargo } from "./creature/waterObjectives";
+import { ENEMIES, ENCOUNTER, spawnEncounters, stepEnemy, biteDamage, evasion, reedCover, ventPhase, type WaterEnemy } from "./creature/waterEncounters";
+import { challengeSolid, clearWaterLine } from "./creature/waterChallenges";
+import { newObjective, newCargo, valves, drainedRoom, tickObjective, useValve, bankCargo, objectiveBarrier, canClaimSeal, emergencyRelease, type RoomObjective, type Cargo } from "./creature/waterObjectives";
 import { arenaRoom, activeThreat, encounterLock, sealedEncounter, guardedControl, CONTROL_SECONDS, advanceOperation, canIncapacitate, type Operation } from "./creature/waterCombatRooms";
-import { NET, useNet, netCatches } from "./creature/waterTraps";
+import { netRig, netFrame, useNet, netCatches } from "./creature/waterTraps";
+import { roomSpec } from "./creature/levelgen/roomSpec";
 import { verticalArrival, horizontalReturn, pitRoom } from "./creature/waterRoutes";
 import { StageUi, action, type StageAction } from "./stageUi";
 import { LineagePanel } from "./lineagePanel";
@@ -133,7 +134,8 @@ export class CreatureScene extends Phaser.Scene {
     this.oxygen = WATER.oxygenSeconds; this.hurt = 0; this.stun = 0; this.bite = 0; this.clock = 0;
     this.weather = { climate: this.garden.climate, remaining: 0 }; this.enter(-1, OVERWORLD.nest);
   }
-  private get currentRoom(): WaterRoom { return this.world.rooms[this.room]; }
+  private get currentRoom(): WaterRoom { return this.roomById(this.room); }
+  private roomById(id: number): WaterRoom { return this.world.rooms.find(r => r.id === id)!; }
   private remember(): void {
     if (this.room < 0) return;
     this.rooms.set(this.room, { food: this.food, foes: this.enemies.map(({ sprite: _sprite, label: _label, ...e }) => ({ ...e })), trap: this.trap, cache: this.foodCache, objective: { ...this.objective } });
@@ -152,34 +154,26 @@ export class CreatureScene extends Phaser.Scene {
     this.explored = true;
     const e = this.garden.expedition!;
     if (!e.visited.includes(id)) { e.visited.push(id); this.save(); }
-    const r = this.currentRoom, old = this.rooms.get(id), climate = this.climateNow();
+    const r = this.currentRoom, spec = roomSpec(r), old = this.rooms.get(id), climate = this.climateNow();
     this.trap = old?.trap ?? false; this.foodCache = old?.cache ?? false;
     this.objective = old?.objective ? { ...old.objective } : newObjective();
-    if (id === 5 && this.rooms.get(4)?.objective.open) this.objective.verticalOpen = true;
+    if (spec.verticalOpenFrom !== null && this.rooms.get(spec.verticalOpenFrom)?.objective.open) this.objective.verticalOpen = true;
     this.landmarks = valves(r).map((v, n) => this.add.text(v.x, v.y - 24, `${n + 1} · ${v.text.split(" · ").at(-1)}${guardedControl(r, n) ? " · E + stay 2s" : ""}`, { fontFamily: "monospace", fontSize: "10px", color: "#fff0bd", backgroundColor: "#172b2a", padding: { x: 3, y: 3 } }).setOrigin(0.5, 1).setDepth(7));
-    if (leftExit(r)) this.landmarks.push(this.add.text(128, 196, "← ONWARD HATCH\nReturn after both controls", { fontFamily: "monospace", fontSize: "10px", color: "#bfe7d8", align: "center" }).setOrigin(0.5, 1).setDepth(7));
+    if (spec.leftHatch) this.landmarks.push(this.add.text(spec.leftHatch.x, spec.leftHatch.y - 40, "← ONWARD HATCH\nReturn after both controls", { fontFamily: "monospace", fontSize: "10px", color: "#bfe7d8", align: "center" }).setOrigin(0.5, 1).setDepth(7));
     if (arenaRoom(r)) this.landmarks.push(this.add.text(98, 194, "ENCOUNTER SEAL\nDefeat / subdue / trap", { fontFamily: "monospace", fontSize: "10px", color: "#ffcf91", align: "center" }).setOrigin(0.5, 1).setDepth(7));
     if (this.enemies.length || spawnEncounters(r).length) {
-      this.landmarks.push(this.add.text(NET.rigX, 260, "E: RIGGING", { fontFamily: "monospace", fontSize: "10px", color: "#f0d79c", backgroundColor: "#172b2a" }).setOrigin(0.5, 1).setDepth(7));
-      this.landmarks.push(this.add.text(NET.x, 208, "E: NET\nLure here", { fontFamily: "monospace", fontSize: "10px", color: "#f0d79c", align: "center", backgroundColor: "#172b2a" }).setOrigin(0.5, 1).setDepth(7));
+      this.landmarks.push(this.add.text(netRig(r).x, netRig(r).y - 44, "E: RIGGING", { fontFamily: "monospace", fontSize: "10px", color: "#f0d79c", backgroundColor: "#172b2a" }).setOrigin(0.5, 1).setDepth(7));
+      this.landmarks.push(this.add.text(netFrame(r).x, netFrame(r).y - 80, "E: NET\nLure here", { fontFamily: "monospace", fontSize: "10px", color: "#f0d79c", align: "center", backgroundColor: "#172b2a" }).setOrigin(0.5, 1).setDepth(7));
     }
-    if (r.id === 1) this.landmarks.push(this.add.text(128, 104, "↑ NURSERY", { fontFamily: "monospace", fontSize: "10px", color: "#bfe7d8" }).setOrigin(0.5, 0).setDepth(7));
-    if (r.id === 3 || r.id === 4) this.landmarks.push(this.add.text(r.id === 3 ? 128 : 328, 312, r.id === 3 ? "↓ REED SHAFT" : "↓ GALLERY DRAIN\nOpens with sluice", { fontFamily: "monospace", fontSize: "10px", color: "#bfe7d8", align: "center" }).setOrigin(0.5, 0).setDepth(7));
-    if (r.id === 5 && this.objective.verticalOpen) this.landmarks.push(this.add.text(280, 104, "↑ DRAIN CHAMBER", { fontFamily: "monospace", fontSize: "10px", color: "#bfe7d8" }).setOrigin(0.5, 0).setDepth(7));
+    for (const op of spec.openings) if (op.label.always || this.objective.verticalOpen) this.landmarks.push(this.add.text((op.tiles[0] + op.tiles[1] + 1) * 8, op.side === "top" ? 104 : 312, op.label.text, { fontFamily: "monospace", fontSize: "10px", color: "#bfe7d8", align: "center" }).setOrigin(0.5, 0).setDepth(7));
     this.food = old?.food ?? r.food.map((x, n) => ({ x, meat: climate === "drought" ? n !== 0 : n === 3, taken: false }));
     this.enemies = (old?.foes ?? spawnEncounters(r)).map(foe => ({ ...foe,
       sprite: this.add.sprite(foe.x, foe.y, "genFoe", ENEMIES[foe.kind].frame).setDepth(3),
       label: this.add.text(foe.x, foe.y - 26, ENEMIES[foe.kind].name, { fontFamily: "monospace", fontSize: "11px", color: "#eef0d9", backgroundColor: "#12272bcc", padding: { x: 3, y: 2 } }).setOrigin(0.5, 1).setResolution(1).setDepth(6)
     }));
-    this.message = r.id === 4 || r.id === 8 ? "Find the lower drain control 1, then backtrack to upper release 2. E operates controls. Carry rewards home alive." :
-      r.id === 6 || r.id === 10 ? "Charge lower control 1, return to raised wheel 2, then cross before pressure expires. The seal must come home alive." :
-      r.id === 3 ? "Nursery branch: open the upper lever, then study the ripplefins. Carry their sample home alive to unlock fins for daughters." :
-      r.gate && !e.basinRaised ? "A sealed log sluice blocks the passage. Open the Gardener lens and raise the basin." :
-      r.current && !e.torrentDiverted ? "The torrent overpowers even fins. The Gardener must divert its headwaters." :
-      switchback(r) ? "Dive beneath the roof to upper relay 1, then over the rock to lower latch 2. The onward hatch is back LEFT; retrace the shaft." :
-      hasVent(r) ? "Bubble vent crossing: bubbles warn before the plume. Wait for it to settle, or swim above it. Watch for submerged hunters." :
-      r.id === 4 ? "Chargers commit to their rush: jump or change height, then counterattack while they recover. Reed eyes warn of ambushers." :
-      "Find the raised gold sluice lever; jump or swim UP to reach it and press E. Open the route, then bring discoveries back to the nest alive.";
+    this.message = spec.hint.priority ??
+      (r.gate && !e.basinRaised ? "A sealed log sluice blocks the passage. Open the Gardener lens and raise the basin." :
+      r.current && !e.torrentDiverted ? "The torrent overpowers even fins. The Gardener must divert its headwaters." : spec.hint.fallback);
   }
   private travel(id: number, x: number, y: number = WATER.floor, facing: number = x > 500 ? -1 : 1, vy = 0): void { this.remember(); this.enter(id, x, y, facing, vy); shell.input.clearPresses(); }
   private retreat(): void { this.travel(-1, OVERWORLD.nest); this.close(); }
@@ -314,10 +308,11 @@ export class CreatureScene extends Phaser.Scene {
       }
       this.stepEnemies(dt, crouch);
       this.objective = encounterLock(r, this.objective, this.enemies, this.body.x);
-      if (hasVent(r) && ventPhase(this.clock) === "active" && Math.abs(this.body.x - ENCOUNTER.ventX) < ENCOUNTER.ventRadius && this.body.y > 267 && this.hurt === 0) {
+      const spec = roomSpec(r);
+      if (spec.vent && ventPhase(this.clock) === "active" && Math.abs(this.body.x - spec.vent.x) < ENCOUNTER.ventRadius && this.body.y > 267 && this.hurt === 0) {
         this.hp--; this.hurt = GEN.damageGrace; this.body.vy = -150; this.message = "Scalding vent! Bubbles warn first: wait for it to stop, or swim over the plume.";
       }
-      if (switchback(r) && !this.foodCache && Math.abs(this.body.x - ENCOUNTER.cacheX) < 18 && Math.abs(this.body.y - ENCOUNTER.cacheY) < 10) {
+      if (spec.cache && !this.foodCache && Math.abs(this.body.x - spec.cache.x) < 18 && Math.abs(this.body.y - spec.cache.y) < 10) {
         this.foodCache = true; this.hp = Math.min(GEN.health + this.garden.traits.vitality, this.hp + ENCOUNTER.cacheHeal);
         this.hunger = Math.max(0, this.hunger - WATER.foodRelief * 2); this.message = "Shaft cache found: compatible food restores health and hunger. The detour paid off.";
         if (this.garden.traits.diet === "carnivore") this.evidence.meat++; else this.evidence.plants++;
@@ -339,15 +334,15 @@ export class CreatureScene extends Phaser.Scene {
       if (this.mode === "play" && this.room === r.id) {
         if (this.body.x > 625) r.right >= 0 ? this.travel(r.right, WATER.spawn) : this.message = "E claims the goal. Turn back through the rooms and shoreline to reach the nest alive.";
         else if (this.body.x < 20) {
-          if (r.left >= 0) { const a = horizontalReturn(r.id, r.left); this.travel(a.room, a.x, a.y, a.facing); }
+          if (r.left >= 0) { const a = horizontalReturn(r, this.roomById(r.left)); this.travel(a.room, a.x, a.y, a.facing); }
           else this.travel(-2, WATER_PATHS.find(p => p.tier === r.tier)!.x, WATER.floor, -1);
         }
         if (this.room === r.id) {
-          const arrival = verticalArrival(r.id, this.body.x, this.body.y, this.objective);
+          const arrival = verticalArrival(r, this.body.x, this.body.y, this.objective);
           if (arrival) this.travel(arrival.room, arrival.x, arrival.y, arrival.facing, arrival.vy);
-          else if (pitRoom(r.id) && this.body.y > 338) {
+          else if (pitRoom(r) && this.body.y > 338) {
             this.hp -= 3; this.hurt = GEN.damageGrace; this.stun = 0.5; this.operation = null;
-            this.body = newBody(96, WATER.floor); this.message = "Spiked pit! Lost 3 health. Jump across the marked gap; the recovery ledge is at its near side.";
+            this.body = newBody(spec.pits[0].recoverX, WATER.floor); this.message = "Spiked pit! Lost 3 health. Jump across the marked gap; the recovery ledge is at its near side.";
           }
         }
         if (r.gate && !this.garden.expedition!.basinRaised && Math.abs(this.body.x - r.gateX) < 45) this.message = "Sealed log sluice: only the Gardener can open it. Use Gardener → Raise basin.";
@@ -367,7 +362,7 @@ export class CreatureScene extends Phaser.Scene {
     const r = this.currentRoom, flood = this.climateNow() === "flood";
     for (const [lane, e] of this.enemies.entries()) {
       e.sprite.setVisible(e.hp > 0); e.label.setVisible(e.hp > 0); if (e.hp <= 0) continue;
-      if (e.incapacitated) { e.sprite.setTint(0x86959b).setAlpha(0.55).setAngle(80); e.label.setPosition(e.trapped ? NET.x - 36 : e.x, e.trapped ? 232 + lane * 16 : e.y - 26 - lane * 18).setText(e.trapped ? "NETTED" : "SUBDUED"); continue; }
+      if (e.incapacitated) { e.sprite.setTint(0x86959b).setAlpha(0.55).setAngle(80); e.label.setPosition(e.trapped ? netFrame(r).x - 36 : e.x, e.trapped ? 232 + lane * 16 : e.y - 26 - lane * 18).setText(e.trapped ? "NETTED" : "SUBDUED"); continue; }
       const reeds = reedCover(r, this.body.x);
       // S steers a swimmer down; it is not universal invisibility in open water.
       const hidden = crouch && (flood || reeds) && (!inWater(this.body, this.roomWater()) || reeds && this.body.y > 285);
@@ -375,7 +370,7 @@ export class CreatureScene extends Phaser.Scene {
         submerged: this.body.y - this.body.h > waterline(this.roomWater()) }, dt, flood,
         r.gate && !this.garden.expedition!.basinRaised ? r.gateX + 28 : e.kind === "swimmer" ? 152 : 72,
         (x, y) => boxHits(x, y + 8, 16, 16, (tx, ty) => objectiveBarrier(r, this.objective, tx) || challengeSolid(r, this.garden.expedition!.basinRaised, tx, ty, this.objective)));
-      if (netCatches(this.objective, e)) {
+      if (netCatches(r, this.objective, e)) {
         e.incapacitated = true; e.trapped = true; this.objective.netArmed = false; this.objective.netCaught = (this.objective.netCaught ?? 0) + 1;
         this.evidence.solves++; this.message = "Net immobilized a healthy threat! No bite required. E at the frame rearms it for another enemy.";
       } else if (hit && this.hurt === 0) {
@@ -397,7 +392,7 @@ export class CreatureScene extends Phaser.Scene {
   }
   private interact(): void {
     const r = this.currentRoom, x = this.body.x;
-    const net = this.enemies.length ? useNet(this.objective, x, this.body.y) : null;
+    const net = this.enemies.length ? useNet(r, this.objective, x, this.body.y) : null;
     if (net) { this.objective = net.state; this.message = net.message; return; }
     const subdued = this.enemies.find(e => canIncapacitate(e, x, this.body.y) && clearWaterLine(r, this.roomWater().basinRaised, x, this.body.y - 16, e.x, e.y, this.objective));
     if (subdued) { subdued.incapacitated = true; this.evidence.solves++; this.objective = encounterLock(r, this.objective, this.enemies, x); this.message = "Threat subdued for this life. It will not attack or hold the encounter seal."; return; }
@@ -411,13 +406,15 @@ export class CreatureScene extends Phaser.Scene {
       }
       this.objective = valve.state; this.message = valve.message; return;
     }
-    if (leftExit(r) && Math.abs(x - 128) < 28 && Math.abs(this.body.y - 236) < 25) {
+    const hatch = roomSpec(r).leftHatch;
+    if (hatch && Math.abs(x - hatch.x) < 28 && Math.abs(this.body.y - hatch.y) < 25) {
       if (this.objective.open) this.travel(r.right, WATER.spawn);
       else this.message = "Onward hatch locked. Prime the shaft relay, release the far lower latch, then come back here.";
       return;
     }
     // Entrance rigging is handled first; the adjacent nursery arch remains a separate route.
-    if (r.branch >= 0 && Math.abs(x - 126) < WATER.interactReach) { this.travel(r.branch, WATER.spawn); return; }
+    const arch = roomSpec(r).branchArchX;
+    if (r.branch >= 0 && arch !== null && Math.abs(x - arch) < WATER.interactReach) { this.travel(r.branch, WATER.spawn); return; }
     if (r.reward && x > 550) {
       const had = this.garden.expedition!.unlocked.includes(r.reward);
       if (!had && !this.cargo.samples.includes(r.reward)) this.cargo.samples.push(r.reward);

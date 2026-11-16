@@ -5,14 +5,15 @@
 import type * as Phaser from "phaser";
 import { WATER, type WaterRoom } from "./waterWorld";
 import { challengeSolid, switchback } from "./waterChallenges";
-import { ENCOUNTER, hasVent, ventPhase, encounterKinds, reedPatches } from "./waterEncounters";
+import { hasVent, ventPhase, encounterKinds, reedPatches } from "./waterEncounters";
 import type { Expedition } from "./expedition";
 import { waterline } from "./waterPhysics";
 import { valves, leftExit, objectiveBarrier, type RoomObjective } from "./waterObjectives";
-import { pitRoom } from "./waterRoutes";
-import { NET } from "./waterTraps";
+import { netRig, netFrame } from "./waterTraps";
+import { roomSpec } from "./levelgen/roomSpec";
 export interface WaterFood { x: number; meat: boolean; taken: boolean }
 export function drawWaterRoom(g: Phaser.GameObjects.Graphics, r: WaterRoom, e: Expedition, food: WaterFood[], _trap: boolean, clock: number, cache: boolean, objective: RoomObjective): void {
+  const spec = roomSpec(r);
   const bg = r.tier === "easy" ? 0x193e47 : r.tier === "medium" ? 0x17313e : 0x263644;
   g.fillStyle(bg).fillRect(0, 0, 640, 360);
   for (let x = 0; x < 640; x += 64) {
@@ -43,23 +44,25 @@ export function drawWaterRoom(g: Phaser.GameObjects.Graphics, r: WaterRoom, e: E
   }
   if (leftExit(r)) g.lineStyle(3, objective.open ? 0x94e0bc : 0xb47558).strokeRoundedRect(112, 204, 32, 36, 8);
   if (encounterKinds(r).length) {
-    g.lineStyle(2, objective.rigging ? 0x8ed8ab : 0xe5ce91).strokeCircle(NET.rigX, 292, 9).strokeCircle(NET.rigX, 292, 5);
-    g.lineStyle(2, objective.netArmed ? 0xf2ba63 : objective.netCaught ? 0x8ed8ab : 0x799293).strokeRect(NET.x - 24, 224, 48, 80);
-    if (objective.netArmed) for (let d = -24; d <= 24; d += 8) g.lineStyle(1, 0xf2ba63, 0.7).lineBetween(NET.x + d, 224, NET.x + d, 302);
+    const rig = netRig(r), net = netFrame(r);
+    g.lineStyle(2, objective.rigging ? 0x8ed8ab : 0xe5ce91).strokeCircle(rig.x, rig.y - 12, 9).strokeCircle(rig.x, rig.y - 12, 5);
+    g.lineStyle(2, objective.netArmed ? 0xf2ba63 : objective.netCaught ? 0x8ed8ab : 0x799293).strokeRect(net.x - 24, net.y - 64, 48, 80);
+    if (objective.netArmed) for (let d = -24; d <= 24; d += 8) g.lineStyle(1, 0xf2ba63, 0.7).lineBetween(net.x + d, net.y - 64, net.x + d, net.y + 14);
   }
-  if (pitRoom(r.id)) {
-    g.fillStyle(0x142027).fillRect(112, 304, 32, 56);
-    for (let x = 112; x < 144; x += 8) g.fillStyle(0xd1a28b).fillTriangle(x, 348, x + 4, 332, x + 8, 348);
-    g.lineStyle(2, 0xe3bd69).lineBetween(108, 300, 108, 277).lineBetween(148, 300, 148, 277);
+  for (const pit of spec.pits) {
+    const x0 = pit.tiles[0] * 16, x1 = (pit.tiles[1] + 1) * 16;
+    g.fillStyle(0x142027).fillRect(x0, 304, x1 - x0, 56);
+    for (let x = x0; x < x1; x += 8) g.fillStyle(0xd1a28b).fillTriangle(x, 348, x + 4, 332, x + 8, 348);
+    g.lineStyle(2, 0xe3bd69).lineBetween(x0 - 4, 300, x0 - 4, 277).lineBetween(x1 + 4, 300, x1 + 4, 277);
   }
 
   if (switchback(r)) {
     g.lineStyle(2, 0x9edbd5).lineBetween(276, 283, 276, 246).lineBetween(276, 246, 270, 253);
     g.lineStyle(2, 0x9edbd5).lineBetween(390, 246, 390, 280).lineBetween(390, 280, 384, 273);
-    if (!cache) { g.fillStyle(0xe2ca75).fillEllipse(ENCOUNTER.cacheX, ENCOUNTER.cacheY - 14, 17, 12); g.lineStyle(2, 0x122d30).strokeEllipse(ENCOUNTER.cacheX, ENCOUNTER.cacheY - 14, 17, 12); }
+    if (!cache && spec.cache) { g.fillStyle(0xe2ca75).fillEllipse(spec.cache.x, spec.cache.y - 14, 17, 12); g.lineStyle(2, 0x122d30).strokeEllipse(spec.cache.x, spec.cache.y - 14, 17, 12); }
   }
   if (hasVent(r)) {
-    const phase = ventPhase(clock), x = ENCOUNTER.ventX;
+    const phase = ventPhase(clock), x = spec.vent!.x;
     g.fillStyle(0x333c40).fillEllipse(x, 300, 40, 10);
     if (phase !== "quiet") { g.lineStyle(2, phase === "active" ? 0xff9b65 : 0xf0d88d).strokeCircle(x, 284, 5).strokeCircle(x + 8, 275, 3); }
     if (phase === "active") g.fillStyle(0xec936c, 0.65).fillTriangle(x - 20, 304, x, 253, x + 20, 304);
