@@ -1,3 +1,5 @@
+import { tickCombatStatus, toxicRetaliation, type CombatStatus } from './combatEffects';
+import { has } from './creature';
 // Map-bound offspring ecology. Engine-free perception, decisions, steering, feeding and reproduction.
 // The scene owns sprites, real food removal, player damage and loot. Inactive maps never tick.
 import { aquaticDaughters } from "./division";
@@ -5,7 +7,7 @@ import { dietShare, eatFood, maxHp, maxStamina, movement, ramDamage, takeHit, si
 import { AQ, MAPS, AQ_STATS } from "./tuning";
 
 export type SisterIntent = "feed" | "hunt" | "wander" | "windup" | "crowded";
-export interface AqSister {
+export interface AqSister extends CombatStatus {
   id: number; family: number; parent: number | null; generation: number; home: number;
   body: AqCreature;
   x: number; y: number; z: number; vx: number; vy: number; vz: number; heading: number;
@@ -80,7 +82,7 @@ export function sisterIntent(s: AqSister, foods: readonly SisterFood[], player: 
 
 /** Steering and arrival are separate from the choice of target. */
 function move(s: AqSister, target: { x: number; y: number; z: number } | null, dt: number): void {
-  const speed = movement(s.body).maxSpeed * AQ.sisters.speedMult;
+  const speed = movement(s.body).maxSpeed * AQ.sisters.speedMult * ((s.toxicLeft??0)>0?AQ.combat.toxicSlow:1);
   const dx = target ? target.x - s.x : Math.cos(s.heading) * speed;
   const dy = target ? target.y - s.y : Math.sin(s.heading) * speed;
   const dz = target ? target.z - s.z : 0;
@@ -105,10 +107,13 @@ export function stepSisters(colony: SisterColony, home: number, foods: readonly 
     s.age += dt; s.growth = Math.max(0, s.growth - dt);
     s.grace = Math.max(0, s.grace - dt); s.contactCd = Math.max(0, s.contactCd - dt);
     s.attackCd = Math.max(0, s.attackCd - dt); s.provoked = Math.max(0, s.provoked - dt);
+    const effect=tickCombatStatus(s,dt); s.body={...s.body,hp:Math.max(0,s.body.hp-effect.damage)};
+    if(s.body.hp<=0) { events.deaths.push({sister:s,byPlayer:true});continue; }
+    const stunned=effect.speed===0;if(stunned) {s.vx=s.vy=s.vz=0;s.windup=0;}
     const choice = sisterIntent(s, foods.filter(f => !consumed.has(f.id)), player);
     s.intent = choice.intent;
-    move(s, choice.target, dt);
-    if (choice.food && distance(s, choice.food) < size(s.body) * t.radiusMult + t.eatBonus) {
+    if(!stunned)move(s, choice.target, dt);
+    if (!stunned && choice.food && distance(s, choice.food) < size(s.body) * t.radiusMult + t.eatBonus) {
       const before = s.body.form;
       const eaten = eatFood(s.body, choice.food.food, choice.food.base);
       s.body = eaten.creature; consumed.add(choice.food.id); events.eaten.push(choice.food.id);
@@ -130,12 +135,13 @@ export function stepSisters(colony: SisterColony, home: number, foods: readonly 
       s.vx += dx / Math.max(1, d) * t.knockback; s.vy += dy / Math.max(1, d) * t.knockback;
       if (s.body.hp <= 0) { events.deaths.push({ sister: s, byPlayer: true }); continue; }
     }
-    if (d < reach && !ram && s.attackCd <= 0) {
+    if (d < reach && !ram && s.attackCd <= 0 && !stunned) {
       if (s.windup <= 0) s.windup = t.attackWindupS;
       else {
         s.intent = "windup"; s.windup = Math.max(0, s.windup - dt);
         if (s.windup === 0) {
           const bite = s.body.diet !== "herbivore";
+          if(has(player.body,"toxicTendrils"))toxicRetaliation(s);
           events.hits.push({ id: s.id, bite, damage: (bite ? ramDamage(s.body) * t.biteDamageMult : t.bumpDamage) * MAPS[home].mult.bite,
             dx: dx / Math.max(1, d), dy: dy / Math.max(1, d) });
           s.attackCd = t.attackCooldownS;

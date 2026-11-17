@@ -1,0 +1,61 @@
+/* Scoped to aquatic so independent later-stage remasters retain their own layout. */
+.aquatic-remaster .stage-status { max-height:70px; padding:6px 12px; border:1px solid #80b4ab; border-radius:16px 6px 16px 6px; background:linear-gradient(120deg,#20464ef5,#102b39ed); font-size:14px; box-sizing:border-box; }
+.aquatic-remaster .stage-details { background:linear-gradient(145deg,#274e52f5,#0b2634fa); border:1px solid #85b3a5; border-radius:14px 6px 14px 6px; }
+.aquatic-remaster .stage-details pre { line-height:1.55; font-size:13px; font-family:system-ui,sans-serif; }
+.aquatic-remaster .stage-footer button { background:linear-gradient(#345c60,#193940); border-color:#86b5a5; border-radius:14px 5px 14px 5px; box-shadow:0 3px 8px #0005; font-size:13px; }
+.aquatic-remaster .stage-status > div { display:flex; gap:16px; margin-top:3px; }
+.aquatic-vital { display:flex; align-items:center; gap:7px; font-size:11px; color:#d4e5d9; width:45%; }
+.aquatic-remaster .stage-status progress { flex:1; width:auto; height:10px; appearance:none; border:1px solid #061d29; border-radius:8px; overflow:hidden; background:#061d29; }
+.aquatic-vital progress::-webkit-progress-bar { background:#061d29; }.aquatic-vital progress::-webkit-progress-value { background:linear-gradient(#c7eab0,#5caa78); border-radius:6px; }
+.aquatic-vital.stamina progress::-webkit-progress-value { background:linear-gradient(#b2eaff,#4e9fc1); }.aquatic-vital.health progress { accent-color:#78c18d; }.aquatic-vital.stamina progress { accent-color:#75bde0; }
+.aquatic-growth { bottom:calc(var(--safe-bottom) + 64px); width:min(650px,calc(100vw - var(--safe-left) - var(--safe-right) - 24px)); padding:6px 14px 9px; }
+.aquatic-growth .growth-track { height:13px; }.aquatic-growth .cell-growth-caption { margin-bottom:3px; font-size:11px; }
+.aquatic-remaster .stage-dialog { border:2px solid #96bfaa; border-radius:24px 9px 24px 9px; background:linear-gradient(145deg,#244a50f5,#0b2533fa); box-shadow:0 10px 40px #0008; }
+@media(max-height:480px) { .aquatic-growth { width:min(400px,60vw); padding:4px 9px 6px; bottom:calc(var(--safe-bottom) + 58px); }.aquatic-growth .growth-label { font-size:10px; margin-bottom:2px; }.aquatic-growth .growth-track { height:9px; }.aquatic-remaster .stage-status { font-size:12px; padding:3px 8px; } }
+
+.aquatic-display #game canvas { image-rendering:auto !important; }
+.aquatic-display .cell-preview { width:clamp(96px,12vw,164px); height:auto; image-rendering:auto; }
+.aquatic-remaster .stage-message { top:calc(var(--safe-top) + 130px); bottom:auto; max-width:min(960px,calc(100vw - var(--safe-left) - var(--safe-right) - 24px)); padding:8px 12px; border:1px solid #7ba79b88; border-radius:16px 6px 16px 6px; background:#102b37ee; font-size:12px; }
+@media(max-height:480px) { .aquatic-remaster .stage-message { top:calc(var(--safe-top) + 125px); font-size:10px; padding:4px 8px; } }
+
+.aquatic-vital.low progress::-webkit-progress-value { background:linear-gradient(#f5bb80,#d35b59); }.aquatic-vital.low progress { accent-color:#e18168; }
+
+/* Edge-to-edge aquatic play uses the cell stage's overlay hierarchy. */
+.aquatic-remaster .stage-status { top:calc(var(--safe-top) + 62px); left:calc(var(--safe-left) + 12px); right:auto; max-width:240px; max-height:none; padding:10px 12px; font-size:13px; }
+.aquatic-remaster .stage-footer { top:calc(var(--safe-top) + 133px); bottom:auto; left:calc(var(--safe-left) + 12px); right:auto; max-width:250px; flex-wrap:wrap; }
+.aquatic-remaster .stage-details { top:calc(var(--safe-top) + 190px); left:calc(var(--safe-left) + 12px); right:auto; max-width:min(430px,85vw); }
+.aquatic-remaster .aquatic-vitals { position:absolute; top:calc(var(--safe-top) + 62px); right:calc(var(--safe-right) + 12px); width:230px; padding:10px 12px; border:1px solid #85b3a5; border-radius:14px; background:#0b2632e8; display:grid; gap:8px; box-sizing:border-box; }
+.aquatic-remaster .aquatic-vital { width:100%; }.aquatic-remaster .aquatic-vital progress { width:100%; height:12px; min-width:0; }
+.aquatic-remaster .aquatic-equipment { top:calc(var(--safe-top) + 148px); }.aquatic-equipment canvas { display:block; width:36px; height:36px; }.aquatic-equipment button { padding:3px; min-height:44px; }
+.aquatic-remaster .aquatic-control-hints { top:calc(var(--safe-top) + 12px); bottom:auto; max-width:calc(100vw - 440px); font-size:12px; }
+.aquatic-remaster .aquatic-control-hints .touch-hint { display:none; }
+[data-controls=touch] .aquatic-control-hints { display:block; }[data-controls=touch] .aquatic-control-hints .keyboard-hint,[data-controls=touch] .aquatic-control-hints .controller-hint { display:none; }[data-controls=touch] .aquatic-control-hints .touch-hint { display:inline; }
+.aquatic-remaster .aquatic-growth { bottom:calc(var(--safe-bottom) + 12px); width:min(760px,calc(100vw - var(--safe-left) - var(--safe-right) - 24px)); padding:9px 14px 12px; }.aquatic-growth .growth-track { height:17px; }
+.aquatic-remaster .stage-message { top:calc(var(--safe-top) + 220px); max-width:min(650px,70vw); }
+.aquatic-touch .touch-stick { bottom:calc(var(--safe-bottom) + 108px); }
+.aquatic-touch .touch-actions { display:grid; grid-template-columns:repeat(2,76px); gap:8px; bottom:calc(var(--safe-bottom) + 108px); right:calc(var(--safe-right) + 12px); }.aquatic-touch .touch-actions button { min-width:0; min-height:48px; font-size:13px; }.aquatic-touch .touch-actions button:last-child { grid-column:1 / 3; }
+.aquatic-touch .touch-depth { position:absolute; left:calc(var(--safe-left) + 20px); bottom:calc(var(--safe-bottom) + 242px); display:flex; gap:8px; pointer-events:auto; }.aquatic-touch .touch-depth button { min-height:44px; border:2px solid #8fb5a2; border-radius:14px; color:#f2f4de; background:#193c47; font:13px system-ui; touch-action:none; }
+
+@media(orientation:portrait) {
+ .aquatic-remaster .aquatic-control-hints { top:calc(var(--safe-top) + 54px); width:calc(100vw - 24px); max-width:none; box-sizing:border-box; font-size:11px; }
+ .aquatic-remaster .stage-status { top:calc(var(--safe-top) + 104px); max-width:calc(50vw - 24px); font-size:11px; padding:8px; }
+ .aquatic-remaster .aquatic-vitals { top:calc(var(--safe-top) + 104px); width:calc(50vw - 24px); padding:8px; gap:6px; }.aquatic-vital { font-size:10px; }
+ .aquatic-remaster .stage-footer { top:calc(var(--safe-top) + 175px); }.aquatic-remaster .stage-footer button { padding:6px 8px; font-size:12px; }
+ .aquatic-remaster .stage-details { top:calc(var(--safe-top) + 232px); }.aquatic-remaster .aquatic-equipment { top:calc(var(--safe-top) + 175px); max-width:calc(50vw - 24px); }.aquatic-equipment .cell-icon-row { flex-wrap:wrap; }
+ .aquatic-remaster .stage-message { top:calc(var(--safe-top) + 295px); max-width:90vw; font-size:11px; }
+ .aquatic-remaster .aquatic-growth { width:calc(100vw - 20px); padding:8px 10px; }
+}
+@media(max-height:480px) {
+ .aquatic-remaster .aquatic-growth { width:min(390px,48vw); padding:5px 8px; }.aquatic-growth .growth-track { height:10px; }
+ .aquatic-touch .touch-stick { bottom:calc(var(--safe-bottom) + 20px); width:100px; height:100px; }.aquatic-touch .touch-knob { left:26px;top:26px; }
+ .aquatic-touch .touch-depth { bottom:calc(var(--safe-bottom) + 136px); }.aquatic-touch .touch-actions { bottom:calc(var(--safe-bottom) + 20px); }
+ .aquatic-remaster .stage-message { top:calc(var(--safe-top) + 112px); max-width:42vw; font-size:10px; }
+}
+
+@media(max-height:480px) { .aquatic-remaster .stage-details { top:calc(var(--safe-top) + 133px); left:calc(var(--safe-left) + 202px); } }
+
+.aquatic-remaster .stage-footer { overflow:visible; }
+.aquatic-remaster .stage-footer [data-action=advance] { position:absolute; top:52px; left:0; white-space:nowrap; }
+.aquatic-remaster.aquatic-can-evolve .stage-details { top:calc(var(--safe-top) + 245px); }
+@media(orientation:portrait) { .aquatic-remaster.aquatic-can-evolve .stage-details { top:calc(var(--safe-top) + 286px); }.aquatic-remaster.aquatic-can-evolve .stage-message { top:calc(var(--safe-top) + 342px); } }
+@media(max-height:480px) { .aquatic-remaster .stage-footer [data-action=advance] { left:202px; top:0; }.aquatic-remaster.aquatic-can-evolve .stage-details { top:calc(var(--safe-top) + 185px); } }

@@ -12,8 +12,10 @@ it("fills the active section from its real food gate, and marks Form 4 complete 
 });
 it("fills desktop and mobile viewports while the HUD independently respects cutouts", () => {
   for (const [w, h] of [[1440, 900], [375, 812], [812, 375], [800, 1280]]) {
-    const b = stageViewport("main", w, h, { top: 44, right: 10, bottom: 34, left: 10 });
-    expect([b.left, b.top, b.width, b.height]).toEqual([0, 0, w, h]);
-    expect(Math.abs(b.logicalWidth / b.logicalHeight - w / h)).toBeLessThan(.01);
+    for (const stage of ["main", "aquatic"] as const) {
+      const b = stageViewport(stage, w, h, { top: 44, right: 10, bottom: 34, left: 10 });
+      expect([b.left, b.top, b.width, b.height]).toEqual([0, 0, w, h]);
+      expect(Math.abs(b.logicalWidth / b.logicalHeight - w / h)).toBeLessThan(.01);
+    }
   }
 });

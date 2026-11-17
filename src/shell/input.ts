@@ -146,6 +146,8 @@ export class ShellInput {
     this.presses.clear();
   }
   /** Modal/display transitions must also forget held directions; no stale thrust after rotation. */
+  /** Menu tabs release touch/queued actions without forgetting physical keys still held down. */
+  clearMenuInput(): void { this.virtual.clear(); this.presses.clear(); }
   clearHeld(): void { this.down.clear(); this.virtual.clear(); this.presses.clear(); }
 
   /** The next press of any key or button goes to cb instead of the game; Escape or a timeout cancel (null). */

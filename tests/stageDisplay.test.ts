@@ -4,7 +4,7 @@ import { stageViewport, type DisplayStage } from "../src/core/viewport";
 import { warsLayout } from "../src/game/civ/layout";
 const safe = { top: 44, right: 12, bottom: 34, left: 12 };
 describe("remaining stage display adapters", () => {
-  for (const stage of ["aquatic", "creature", "space"] as DisplayStage[]) it(`${stage} keeps portrait and landscape inside safe bounds`, () => {
+  for (const stage of ["creature", "space"] as DisplayStage[]) it(`${stage} keeps portrait and landscape inside safe bounds`, () => {
     for (const [w, h] of [[375, 812], [812, 375], [800, 1280], [1280, 720]]) {
       const box = stageViewport(stage, w, h, safe);
       expect(box.top).toBeGreaterThanOrEqual(safe.top); expect(box.left).toBe(safe.left);

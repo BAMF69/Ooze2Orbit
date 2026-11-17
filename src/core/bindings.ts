@@ -39,7 +39,8 @@ export const DEFAULT_BINDINGS: Readonly<Bindings> = {
   pause: ["key:escape", "pad:start"],
   // the aquatic stage (BAMF69 2026-11-08): swim up and down, dash, look down the Gardener's lens
   rise: ["key:r", "pad:r2"],
-  sink: ["key:f", "pad:l2"],
+  sink: ["key:c", "pad:l2"],
+  electric: ["key:f", "pad:r3"],
   dash: ["key:q", "pad:r1"],
   pace: ["key:shift", "pad:l1"], // toggles cruise / full speed (stamina, BAMF69 2026-11-08)
   lens: ["key:u", "pad:select"],

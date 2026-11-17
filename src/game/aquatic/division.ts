@@ -26,7 +26,9 @@ export function aquaticDaughters(grown: AqCreature, random: () => number): AqDau
       (bonusPart ? ` Grows ${bonusPart}.` : "");
     const { divisionSeed: _pending, ...inherited } = grown;
     void _pending;
-    let creature: AqCreature = { ...inherited, diet, parts: bonusPart ? [...grown.parts, bonusPart] : [...grown.parts],
+    const formDiets = [...(grown.formDiets ?? [])];
+    formDiets[grown.form - 2] = grown.diet; formDiets[grown.form - 1] = diet;
+    let creature: AqCreature = { ...inherited, diet, formDiets, parts: bonusPart ? [...grown.parts, bonusPart] : [...grown.parts],
       uniques: [...grown.uniques], points: { ...grown.points }, ups: { ...grown.ups, [stat]: grown.ups[stat] + gain },
       growthEvidence: { algae: 0, meat: 0 }, selections: [...(grown.selections ?? []),
         { form: grown.form, diet, stat, gain, cause, ...(bonusPart ? { bonusPart } : {}) }] };

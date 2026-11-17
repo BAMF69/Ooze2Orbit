@@ -5,6 +5,14 @@ import { settingsLoad, settingsText, defaultSettings } from "../src/core/setting
 import { ShellInput } from "../src/shell/input";
 import { defaultBindings } from "../src/core/bindings";
 describe("control schemes", () => {
+  it("preserves physical WASD across menu changes while releasing touch and queued actions",()=>{
+    const input=new ShellInput(defaultBindings,()=>.2);
+    const physical=input as unknown as {press:(binding:string)=>void;release:(binding:string)=>void};
+    physical.press('key:w');input.hold('stick',['move_right']);input.hold('button',['jump']);
+    input.clearMenuInput();expect(input.isDown('move_up')).toBe(true);expect(input.isDown('move_right')).toBe(false);expect(input.takePress('jump')).toBe(false);
+    physical.release('key:w');expect(input.isDown('move_up')).toBe(false);
+    physical.press('key:w');input.clearHeld();expect(input.isDown('move_up')).toBe(false);
+  });
   it("starts by pointer capability and ignores isolated accidental taps", () => {
     const p = new ControlIntent(false); expect(p.resolve("auto")).toBe("keyboard");
     p.observe("touch", 10, false); expect(p.resolve("auto")).toBe("keyboard");

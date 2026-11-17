@@ -6,7 +6,10 @@
 ## Now (max 3 items)
 - [ ] **All-stage display/input/mobile foundations** (BAMF69 2026-11-13): display rollout built for all five stages: fullscreen, safe areas, responsive status/menus/cameras, portrait layouts and rotation pause. Space command panels pause combat. Civilization now has 1/2/3 role controls, optional hero patrol and live docked submenus (user revision, 2026-11-14); Details still pauses. Civilization illustrated HD world/HUD and guarded tap input are implemented in its isolated worktree (2026-11-14); physical-device checks remain. See `docs/HANDOFF_CIVILIZATION.md`. Next: touch movement, controller improvements and real-device checks. Plan: `docs/PLATFORM_FOUNDATIONS.md`.
 - [ ] **Aquatic form division** (BAMF69 2026-11-13): add split + daughter choice to food-driven form growth, retaining pickups and active leveling. Inherited diet/stat/part choices, pause-safe animation, save/Continue and lineage history. Unchosen sisters now compete, bite/bump, grow and reproduce in map-local saved lineages. User reports liking all stages; aquatic display rollout built.
-Active work: **Cell HUD and lifecycle presentation**. Full-pond overlay, four-section food meter,
+Active work: **Shared cell/aquatic HUD tabs and aquatic map rewards** (2026-11-15): simplified shared frame, affordability/dash meters, readiness glows, tier II/III parts, lake/coast jellyfish and coast electric eels. Built; physical-device/balance retest and deployment pending. See HANDOFF for bindings and values.
+Previous work: **Aquatic full-screen overlay and touch adapter; touch upgrade pause in cell/aquatic** (2026-11-14).
+Previous work: **Cell/aquatic HUD and illustrated remaster**. Upgrade cards, effect Details, aquatic art and four-chamber growth are built.
+Previous work: **Cell HUD and lifecycle presentation**. Full-pond overlay, four-section food meter,
 equipment icons, stage icon selector, birth and aquatic pre/post temperament animations are built.
 Auto/manual input, cell touch controls, controller support, illustrated art and start-screen branding remain.
 Next: hands-on input tests, other-stage touch adapters, distinct form art and world-render resolution.

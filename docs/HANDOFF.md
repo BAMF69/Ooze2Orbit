@@ -1,8 +1,247 @@
 # Handoff
 
-**Last updated:** 2026-11-13
-**Branch:** `feat/cell-division`. User authorized committing all repository changes on 2026-11-13; no push requested.
-**Active:** Full-pond cell HUD, clear equipment, birth and aquatic entry presentations built. Other stage touch adapters and remaining HD rendering/form art follow. User says all stages play well (2026-11-13).
+**Last updated:** 2026-11-16
+**Branch:** `feat/cell-division`. Previous baseline committed and pushed as fd0f29d. This snapshot includes the subsequent aquatic remaster, map rewards and organic HUD/input polish. Push only when asked.
+**Active:** Cell/aquatic upgrade and growth HUD polish, expanded effects in Details, and aquatic illustrated remaster. Creature/civilization may be developed in independent chats/worktrees; preserve their scope.
+
+## Aquatic crash and recovery polish (2026-11-16)
+- Fixed reported daughter-selection crashes: SisterView no longer draws legacy aparts overlays.
+  AquaticIllustrations already owns complete equipment, including toxicTendrils and electricOrgan.
+  GPU browser regression exercises form3/form4 daughter selections with each part on desktop/phone.
+- Player food and health purchase healing is 2× old values in pond, 4× lake, 8× coast, HP capped.
+- Plates articulate along the swimming body; all equipped gear shimmers and pickup parts bob/glow.
+  Tendrils and organ use organic shaded details. Stun adds blue static around player, no flashes.
+- Food halos are subtler, include bloom pods; blooms sway. Growth bars are roomier/taller, HUD uses
+  serif small caps, and empty normal/unique part slots always render in the inventory.
+- Validation: 493 tests, type/shader checks, form regression browser checks and production coast smoke.
+- Empty inventory placeholders follow normal form capacity (1, 2, 3, 3); unique river parts appear only when acquired. The hosted Sites preview has not yet been updated.
+
+## Aquatic player animation and modular looks (2026-11-16)
+- A-0034 adds diet-specific three-view swim/chomp sheets. playerMotion.ts selects idle/swim/attack/dash/
+  breach/stun. Actual speed controls cadence; eating/rams trigger chomp; dashes streamline with wake;
+  breaches use side pose/pitch and a re-entry splash. River and map avatars share the renderer.
+- Stat ranks add ridges, streamlines, scutes, fins and bulk. Equipment is curved/shaded, pose-aware and
+  cached; body/parts share every transform. Diet, temperament, part tiers and game rules are preserved.
+- Touch pause freezes animation; reduced motion keeps static cues without wake trails or breach pitch.
+- Prompts, runtime paths and design details: docs/art/AQUATIC_PLAYER.md.
+- Validation: 492 tests, type/shader checks and desktop/phone GPU browser checks of diet, swim, dash,
+  eating, breach/re-entry, mid-breach pause, reduced motion and health bulk.
+
+## Aquatic ambient animation and visibility (2026-11-16)
+- A-0033 adds three-view swim/bite poses for darter, finray, spinefish and shellback. Measured frame
+  rectangles preserve complete silhouettes. All bites, including school bites, trigger actual poses.
+- Fleeing/retreat uses hunting cadence (2× normal cruising). Jellyfish remain quarter speed and passive.
+- Jellyfish bump retaliation obscures the world in murky green for 2s; HUD remains readable.
+- Seaweed/kelp sway from floor anchors; food breathes with a colored halo, without changing collisions.
+- Touch menu pause freezes animation/effect timers; reduced motion uses still foliage/fog and steady food.
+- Validation: 489 tests, type/shader checks, desktop/phone GPU browser scenarios and production coast smoke.
+- Runtime asset paths and imagegen prompt set: docs/art/AQUATIC_MOTION.md.
+
+## Aquatic wildlife animation and eel combat (2026-11-16)
+- Predator frames now use measured silhouette rectangles in motionFrames.ts rather than equal cells,
+  fixing cut shark noses and rear fins (deepmaw/hammerhead included). Source PNGs remain intact.
+- Hunt animations retain their original speed; normal swimming is half speed, jellyfish quarter speed.
+  Per-creature clocks preserve phase on state changes. Jellyfish never chase and retaliate only on bumps.
+- A-0032 supersedes single-pose wildlife: faceless purple/green jellyfish matching the supplied concept,
+  pulsing swim + tentacle-sweep frames; turquoise/gold eel tail-swim + bite frames. Both have three views.
+- Eel bites arm a 220ms wind-up when shock is ready. Discharge stuns nearby submerged players for 1.2s,
+  starts a five-second cooldown and 2.5s retreat. No extra shock damage. Eels cannot bite during retreat.
+- Touch upgrade pause freezes all new animation and combat timers. Reduced-motion keeps static cues.
+- Deepmaw/shark/hammerhead swim and bite sheets remain. Asset prompts and timing: docs/art/AQUATIC_MOTION.md.
+- Validation: 487 tests, typecheck/shader checks and desktop/phone GPU browser checks (actual contact,
+  swim frames, stun movement suppression, retreat, cooldown, touch pause, alpha and no runtime errors).
+
+## Painted trim and persistent tab meters (2026-11-15)
+- A-0030 replaces vector connecting trim with long independently painted botanical/bone/amber rails.
+  Complete illustrations bridge corners/center; no short raster tile pattern. Component ornaments stay.
+- Cell Jet Burst now works with live upgrades open. Space remains available on keyboard; Q/R1/RB also
+  activates dash without competing with controller confirm. Touch upgrades retain their pause behavior.
+- One live plant/dash/meat meter group moves from normal HUD row to a smaller strip above the crest for
+  Upgrades/Info. Values, readiness and cooldowns keep updating; growth form bars remain full-width below.
+- Type/shader checks and 477 tests pass. Desktop, portrait and short-landscape browser checks cover both
+  tabs' visible mini meters, actual Space dash/cooldown while upgrading, held WASD and bottom form bars.
+  Physical mobile retest and deployment remain pending.
+
+## Held movement and restored growth hierarchy (2026-11-15)
+- Menu clearHeld calls were discarding physical WASD while key-repeat events were ignored. New
+  ShellInput.clearMenuInput clears virtual/queued inputs but preserves physical held keys. Organic tab
+  clicks and both upgrade-toggle callbacks use it. Pause, focus loss and stage transitions still hard-reset.
+  Regression test covers retained W, released touch/queues, key-up and hard reset.
+- Growth layout now keeps the four form bars across the bottom, full inner HUD width, with resource/dash
+  bars above. Short landscape uses the same hierarchy with compact top actions. 17.5dvh height and
+  fullscreen 75vw remain. Independent corners/crest remain; intertwined continuous trim and sparse
+  asymmetric leaf/claw outgrowths add organic variation without tiled bitmap connectors.
+- Type/shader checks and 477 tests pass. Desktop/portrait/short-landscape browser checks exercise held W
+  through E and Info/Growth clicks, release/new keypress and full-width bottom form placement in both stages.
+
+## Compact HUD and genuine component art (2026-11-15)
+- User rejected the legacy frame crops, feathered seams and short tiled connectors. A-0029 now provides
+  three newly generated transparent sheets, each containing complete independent corner and centerpiece
+  objects with connecting arms. A-0028's renderer is replaced; no legacy HUD frame images, feather masks
+  or raster pattern tiles appear in the outer frame. Existing individual form meter artwork is unchanged.
+- The new renderer uses authored attachment ports, mirrored whole corners and long continuous vector trim.
+  Source sheet dimensions, component regions, generation notes and final asset paths are in
+  docs/art/HUD_COMPONENTS.md. Verdant uses botanical materials after an imagegen refinement.
+- HUD height is now 17.5dvh (30% shorter than 25dvh). Fullscreen width is 75vw, centered. Windowed width
+  still respects safe areas. Every tab retains identical frame bounds. Compact desktop/short-landscape
+  layouts place resources and form bars side by side; portrait stacks them and keeps Info scrollable.
+  Very short landscape uses smaller purchase targets to fit the explicitly reduced HUD height.
+- Aquatic framing now follows the measured dock for every tab, removing the old 25%-upgrade clamp.
+- Validation: type/shader checks and 476 tests pass. Both stages at desktop/phone/short safe-inset landscape/
+  tablet pass reduced-height geometry, tab consistency, input/purchases and touch pause. Fullscreen tests
+  verify exact centered 75% width, 17.5% height and windowed restoration. Browser alpha samples confirm
+  transparent exterior/gap pixels; frame DOM contains no masks or patterns. Production results follow in
+  PLAYTEST_LOG. Physical-device retest and deployment remain pending; work is local/uncommitted.
+
+## Fixed HUD tabs and modular organic silhouette (2026-11-15)
+- Supersedes the separate Controls/Details disclosure implementation below. Growth, Upgrades and Info are
+  real buttons; Info combines controls, system actions, parts/perks and effect descriptions in one scrollable
+  panel. The entire dock is 25dvh in every state. Tab changes only replace content, never resize the frame.
+  Touch upgrade pause, native Enter, gameplay Space and left/right purchase navigation are preserved.
+- HudDock now owns one content area. Original details wrappers are removed after retaining their live text
+  nodes; cell/aquatic visibility guards use infoOpen. Other StageUi adapters keep their native disclosures.
+- A-0028: ModularHudFrame draws the organic silhouette and quieter textured connectors as responsive SVG,
+  reusing A-0026 fixed corner/crest crops. One central diet landmark, four corners and sparse leaf/claw
+  accents avoid repeated skull/leaf centerpieces. SVG masks blend source-crop joints; no solid CSS rectangle
+  or stretched whole-frame bitmap sits behind the art. Resize/theme observers disconnect on shutdown.
+- Exit fullscreen is a 32x30 opaque icon with title/accessible label. Normal Fullscreen remains labeled.
+  Overlap fading now applies once to the shared parent rather than multiplying child-panel opacity.
+- Validation: type/shader checks and 476 tests pass. Desktop, portrait, short safe-inset landscape and tablet
+  checks cover both stages, all diet frame themes, exact unchanged tab bounds, combined content, Space,
+  arrow selection and touch pause/close. Desktop fullscreen checks verify actual 32x30 bounds and solid
+  background/opacity, plus enter/exit and Info behavior. Production results are in PLAYTEST_LOG.
+  Physical Safari/Android testing and deployment remain pending. Changes remain local and uncommitted.
+
+## Shared HUD tabs and aquatic map rewards (2026-11-15)
+- Latest HUD supersedes the ornate outer rim and separate upgrade tray described below. A simpler stable
+  bottom border contains Growth, Upgrades, Controls and Details. Upgrade/control/detail content replaces
+  growth inside the frame; upgrades retain quarter-viewport height. Very short landscape uses a compact
+  tab grid and scrollable content. Individual diet form capsules and overlap transparency remain.
+- Mouse/touch activation releases disclosure focus. Space stays a gameplay action; Enter still activates
+  focused native controls. Both organic upgrade panels accept Left/Right as well as Up/Down and Enter.
+- Plant/meat tracks target the cheapest eligible cost (exclude capped stats); mixed health purchases count
+  toward availability. Resource tracks and Upgrades glow when a purchase is affordable. Central dash meter
+  uses real cooldown; Evolve glows when the stage allows advancing. Top-left fullscreen appears for fine
+  pointers or while already fullscreen. Aquatic Gardener sits in the center next to dash recharge.
+- Aquatic base fins/jaws/plates drop at tier I in pond, II in lake, III on coast. Higher-tier duplicates
+  upgrade the existing slot without downgrading. Jaws add 6 damage/tier; plates multiply damage by .75/tier;
+  fins add 3 handling/tier and 12% turning per tier above I. Optional partTiers survives save/load/inheritance.
+- Lake/coast jellyfish deal 22 base contact damage (map multipliers apply) and a 3s movement slow. They drop
+  toxicTendrils: contacting attackers get 3s of 5 damage/s and .45 movement speed, refreshing without stacking.
+  Coast electricEel drops electricOrgan: F / right-stick click / touch Shock stuns enemies in a 260-unit
+  3D radius for 2.5s, with 8s cooldown. Fauna also take 8 pulse damage. Stunned enemies can still be rammed.
+  Status effects use simulation time, including sharks/sisters, and stop during touch upgrades/pause.
+- F was descent: defaults and old uncustomized settings migrate descent to C; custom bindings are retained.
+  Bindings and their generated Python golden reference were updated together. New code-native wildlife,
+  loot icons and worn organs are A-0027. Later-map reward prompts explain why to explore.
+- Validation: type/shader checks, 476 Vitest tests and 25 Python reference tests pass. Desktop, portrait and
+  273px safe-inset landscape browser checks exercise tabs, focus/Space, arrow selection, meters/glows,
+  touch pause and actual new-map fauna/parts/F cooldown/toxic contact. Desktop fullscreen enter/exit passes.
+  Production smoke results are recorded in PLAYTEST_LOG. Physical-device retest and deployment remain pending.
+
+## Form identity and adaptive transparency (2026-11-15)
+- Each growth section owns its diet frame/fill. Completed forms retain their identity; unreached forms are
+  grayscale. Aquatic stores optional formDiets through food growth, daughter selection and defensive save
+  loading. Older saves fall back to available selection evidence/current diet when history is unknown.
+- Upgrade cards take their palette from payment currency: plant=green, meat=red, either=gold. Unaffordable
+  and capped cards are grayscale, while their descriptions remain inspectable.
+- Outer HUD edges now repeat painted trim with fixed-size corners instead of stretching the whole strip.
+  A thicker double rim and central jewels make the overall dock more ornate than individual form capsules.
+- Scene-owned postupdate projection checks fade overlapping dock/upgrade/control panels to 20% opacity;
+  menus retain input and restore opacity as the creature moves clear. Shutdown removes the checks/classes.
+- Validation: type/shader checks and 471 tests pass, including diet-history save round trips. Desktop,
+  portrait phone and safe-inset short-landscape browser checks pass for both stages: form themes/future
+  grayscale, currency themes, affordability grayscale, purchases and close/cleanup. Cell overlap fade/
+  restore is exercised. Both GPU production smokes pass. Physical mobile retest remains pending.
+
+## Painted HUD and quarter-screen upgrades (2026-11-15)
+- Cell and aquatic upgrades now occupy exactly the bottom 25dvh, full width, covering the growth dock.
+  All stat purchases sit side by side; short landscape and portrait layouts retain 44px targets.
+  Touch opening still pauses simulation/timers/tweens. Resource balances and inherited bonus levels remain visible;
+  full effects/cost descriptions remain in Details and accessible button labels.
+- A-0026 adds three transparent illustrated frames: vivid green vines/wood, scarlet bone/fangs and gold mixed
+  chitin/leaves. Four live growth capsules, dock/inventory rims and upgrade cards use these assets.
+  Local serif font stacks style headings without a network font dependency. Images preload before gameplay.
+- Tray remains below shell Pause/rotation overlays; closing or leaving a stage restores the dock and controls.
+  Aquatic redraws the frozen avatar when opening the tray so the creature remains framed above it.
+- Browser verification covers desktop, tablet, portrait phone and 273px landscape, all diets in both stages,
+  quarter bounds, touch pause, purchases, inherited levels, close/resume and scene cleanup. Physical Safari/
+  Android retest remains pending. Type/shader checks, all 470 unit tests and both GPU production smokes pass.
+  A separate browser check verifies shell Pause covers an open tray. These changes remain local and
+  uncommitted; the published site is older.
+
+## Compact organic HUD and Safari chrome (2026-11-15)
+- User's phone captures showed the older GitHub Pages teal HUD, with Safari landscape tabs consuming height.
+  Current local changes are not deployed; do not commit/push unless requested. Safari chrome is outside
+  page control. Controls now includes a Home Screen/Open as Web App guide when fullscreen is unavailable;
+  index.html enables Apple's standalone-web-app metadata. No offline caching/install prompt is promised.
+- `hudDock.ts/css` consolidates status, plant/meat points, upgrades, Controls and evolution into the bottom
+  four-form meter. Pause/fullscreen/help and scheme-specific instructions are in Controls; aquatic Gardener
+  stays in that drawer. Touch movement/abilities remain above the dock. Cell's floating Upgrades/Evolve
+  buttons are removed; Jet remains a thumb action. Native buttons retain existing scene callbacks.
+- Parts/Details now shares the top-right parts strip. Mobile cell perks stay in Details to limit strip
+  width. Aquatic health/stamina are small readouts inside the dock, freeing the top right for parts.
+  Drawer heights and touch offsets follow measured dock/inventory bounds, including 273px landscape.
+- A-0025 logs original scalable carved frames inspired by the user's vine-bar reference: wood/leaves,
+  bone/claws and amber cellular shell. The four live tracks have inset shading, tick marks and glowing
+  diet-colored fills. Existing thresholds, diet themes and temperament semantics are preserved.
+- Cell camera follows the region above the dock. Aquatic camera distance increases only when a grown body
+  cannot fit in the available play area. These are presentation changes, not physics or stat changes.
+- Validation: check/type/shaders and 470 tests pass. Desktop, tablet, portrait and short-landscape browser
+  checks exercise layout, Details/Controls, single-finger paused upgrades, Pause/Resume and Safari guide.
+  Full-grown cell/aquatic checks cover spacing, evolution and cleanup. Cell/aquatic GPU production smokes pass; fullscreen enter/exit is verified through the new Controls
+  proxy. Actual Safari/Android device retest and published-site deployment remain pending.
+
+## Diet overlay identity (2026-11-14)
+- User requested diet-colored backgrounds and ornaments in both organic stages: green herbivore with
+  leaves/vines, red carnivore with teeth/scratches, yellow omnivore. Omnivore treatment uses cellular
+  honeycomb outlines with leaf/fang accents to suggest a mixed diet.
+- `dietOverlay.ts/css` follows the actual creature diet, updates immediately after daughter choice and
+  removes its body attribute on stage shutdown. Scoped styles cover HUD, upgrades, Details, touch
+  controls and toolbar without restyling later stages. Ornaments are static backgrounds, not hit targets.
+- Growth's omnivore color is now yellow. Temperament's adaptable meters remain blue; no rule or save
+  format changes. HP/stamina/warnings keep their functional colors. Code-native ornament asset A-0024.
+- Validation: 470 tests and type/shader check pass. Desktop/phone browser matrix verifies all three
+  palettes in cell/aquatic HUD and upgrades, actual daughter diet changes and cleanup on entering space.
+  Cell/aquatic GPU production smokes pass; final screenshots are in sibling outputs. Physical device retest still pending.
+
+## Aquatic full-screen overlay and touch upgrades (2026-11-14)
+- User playtested cell on an Android tablet and could not swim while upgrading. Touch upgrades now pause
+  cell/aquatic simulation, scene timers and tweens. Menus remain interactive, and opening/closing clears
+  held/queued actions. Keyboard/controller upgrade behavior stays live. `TouchMenuPause` preserves prior
+  clock states; presentation clocks also stop during touch upgrades. No hardware multi-touch claim is made.
+- Aquatic fills the viewport, like cell. Native safe-area overlays put build/commands/Details left,
+  health/stamina and illustrated part buttons right, scheme-specific controls top-center, growth bottom.
+  Remaining creature/civilization/space viewport policies are unchanged.
+- Aquatic touch adapter: left stick swims/reverses/turns; right Dash, Jump and Cruise/Fast; separate held
+  Ascend/Descend buttons. Buttons support independent captured pointers. Touch releases/hides during
+  introductions, choices, upgrades, Details, pause, rotation, admin, blackout and scene shutdown.
+- Upgrade pausing also works in rivers. Existing Gardener buttons remain available outside river runs.
+- Internal verification: type/shader checks, 470 tests, browser emulation at 800x1280, 375x812 and 812x375.
+  Browser checks cover single-finger purchases while world/timers freeze, resumed input cleanup, simultaneous
+  swim/dash, river freeze, edge-to-edge canvas, controls/growth separation and stage cleanup. Cell and aquatic GPU production smokes pass. Depth, pace, jump, and live keyboard upgrades also passed.
+  Physical tablet/iPhone/controller playtests remain needed.
+
+## Aquatic illustrated remaster and upgrade polish (2026-11-13)
+- Cell and aquatic upgrades use stable native effect cards: costs, level tracks, inherited over-cap labels,
+  affordable/short states and keyboard/controller selection. Gameplay stays live while spending, as before.
+- Details explains owned parts, purchased/inherited levels and daughter/river perks. New effect totals derive
+  from the actual rules and use localized templates. Cell has no health pool; aquatic retains real HP/stamina.
+- Four-chamber growth presentation is polished in cell and added to aquatic using existing 70/120/180 gates.
+  Completed forms preserve diet colors during the run; Form 4 is complete without inventing another gate.
+- A-0023 adds original illustrated diet bodies (three views), fauna, predators, props and pond/lake/coast art.
+  `aquatic/illustrated.ts` mirrors projected simulation sprites through a hidden scene-owned container;
+  gameplay, sister populations, fog, threat cues, lens, rivers and jump cutscenes retain their existing owners.
+- Organic equipment and temperament silhouette accents are shared by world bodies, daughters and mitosis.
+  Aquatic arrival uses the new body art. Swimming respects pause/Reduced Motion; backdrop covers portrait bounds.
+- Aquatic-only CSS polishes health/stamina, menus and Details, keeps messages above growth, and enables smooth
+  canvas scaling without changing later-stage styling. Legacy world logical resolution remains a future pass.
+- Validation: 470 tests, type check and 11 shader compiles pass. Cell and aquatic GPU production smokes
+  pass. Browser emulation at 1440x900 and 375x812 covers upgrade/Details content, inherited labels, all
+  three maps, equipped daughters, river entry and stage cleanup with no page errors. Final captures in
+  sibling outputs; nine recorded production frames inspected. GIF conversion skipped (Pillow unavailable).
+- Physical iPhone/Android/controller checks and full world-render resolution remain pending. No new
+  dependency and no commit/push for this change. New assets are tracked through the existing PNG LFS rule.
 
 ## Civilization HD worktree — 2026-11-14 (uncommitted)
 - Civilization HD remaster is implemented in sibling Ooze2Orbit-civilization on feat/civilization-remaster.

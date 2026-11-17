@@ -1,7 +1,8 @@
+import { dietColumn } from './illustrated';
+import { equipmentTexture, paintAquaticEquipment } from './equipmentArt';
 // Aquatic body previews and choices use the same split choreography as the cell stage.
 import * as Phaser from "phaser";
 import type { I18n } from "../../core/i18n";
-import { animKey, firstFrame, type AtlasLayout } from "../cell/atlas";
 import { Mitosis } from "../cell/mitosis";
 import { bodyLook, lookScores, type AqCreature } from "./creature";
 import type { AqDaughter } from "./division";
@@ -45,14 +46,13 @@ export class AqDivisionPicker {
     this.objects = []; this.borders = []; this.offers = []; this.isOpen = false;
   }
 
+  private look(c: AqCreature): string { return bodyLook(lookScores(this.context.temper, c, this.context.kills, this.context.breaches)).row; }
+
   private body(c: AqCreature, depth: number): Phaser.GameObjects.Sprite[] {
-    const look = bodyLook(lookScores(this.context.temper, c, this.context.kills, this.context.breaches));
-    const body = this.scene.add.sprite(0, 0, "aswim").play(animKey("aswim", "swim", `back${look.row}`))
-      .setScrollFactor(0).setDepth(depth);
-    const layout = this.scene.cache.json.get("aparts_layout") as AtlasLayout;
-    const layers = [...c.parts, ...c.uniques].map(part => this.scene.add.sprite(0, 0, "aparts", firstFrame(layout, "on", part))
-      .setScrollFactor(0).setDepth(depth + 1));
-    return [body, ...layers];
+    const body = this.scene.add.sprite(0, 0, "aqHeroHD", 6 + dietColumn(c.diet)).setScrollFactor(0).setDepth(depth);
+    const equipment = this.scene.add.sprite(0, 0, equipmentTexture(this.scene, c, "back", this.look(c))).setScrollFactor(0).setDepth(depth + 1);
+    for (const spr of [body, equipment]) spr.setData("artScale", 38 / spr.width);
+    return [body, equipment];
   }
 
   private showMenu(): void {
@@ -63,11 +63,9 @@ export class AqDivisionPicker {
   private showNative(): void {
     this.native.hidden = false; const panel = node("section", "", "cell-dialog"), cards = node("div", "", "cell-cards");
     panel.append(node("h2", this.i18n.t("aq.division_title")), cards, node("p", this.i18n.t("aq.division_controls")));
-    const bodyLayout = this.scene.cache.json.get("aswim_layout") as AtlasLayout, parts = this.scene.cache.json.get("aparts_layout") as AtlasLayout;
     this.nativeButtons = this.offers.map((d, index) => {
-      const look = bodyLook(lookScores(this.context.temper, d.creature, this.context.kills, this.context.breaches));
       const b = node("button", "", `cell-card ${d.creature.diet}`);
-      this.cleaners.push(preview(this.scene, b, [{ texture: "aswim", first: firstFrame(bodyLayout, "swim", `back${look.row}`), animated: true }, ...[...d.creature.parts, ...d.creature.uniques].map(p => ({ texture: "aparts", first: firstFrame(parts, "on", p) }))]));
+      this.cleaners.push(preview(this.scene, b, [{ texture: "aqHeroHD", first: 6 + dietColumn(d.creature.diet) }], ctx => paintAquaticEquipment(ctx, d.creature, "back", this.look(d.creature))));
       b.append(node("strong", `${index + 1}. ${this.i18n.t(`diet.${d.creature.diet}`)}`), node("span", `${d.stat} +${d.gain} (level ${d.creature.ups[d.stat]})`), node("span", d.cause), node("span", this.i18n.t("aq.division_inherits")));
       b.onclick = () => { if (this.isOpen) this.onChoose(index); }; cards.append(b); return b;
     });

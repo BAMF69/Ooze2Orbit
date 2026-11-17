@@ -10,6 +10,14 @@ const save = (me: AqCreature = grown()): AqRun => ({ map: 0, me, pop: { generati
   causes: [], temper: { cautious: 0, aggressive: 0, adaptable: 0 }, kills: 0, deaths: 0, breaches: 0 });
 
 describe("aquatic daughters", () => {
+  it("retains each form diet through later daughter choices and a save round trip", () => {
+    const parent = { ...grown(), diet: "herbivore" as const };
+    const second = aquaticDaughters(parent, () => 0)[1].creature;
+    const third = aquaticDaughters({ ...second, form: 3 }, () => 0)[2].creature;
+    expect(third.formDiets).toEqual(["herbivore", "carnivore", "omnivore"]);
+    expect(parent).not.toHaveProperty("formDiets");
+    expect(unpackRun(JSON.parse(JSON.stringify(packRun(save(third))))).run?.me.formDiets).toEqual(third.formDiets);
+  });
   it("offers three diets, distinct stat bonuses and inherited progress without mutating the parent", () => {
     const parent = { ...grown(), parts: ["fins"] as const, uniques: ["endurance"] as const };
     const mutable = { ...parent, parts: [...parent.parts], uniques: [...parent.uniques] };

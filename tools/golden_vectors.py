@@ -284,7 +284,7 @@ DEFAULT_BINDINGS = {
     "move_up": ["key:w", "pad:dpad_up"], "move_down": ["key:s", "pad:dpad_down"],
     "jump": ["key:space", "pad:south"], "attack": ["key:j", "pad:west"],
     "interact": ["key:e", "pad:north"], "pause": ["key:escape", "pad:start"],
-    "rise": ["key:r", "pad:r2"], "sink": ["key:f", "pad:l2"], "dash": ["key:q", "pad:r1"],
+    "rise": ["key:r", "pad:r2"], "sink": ["key:c", "pad:l2"], "dash": ["key:q", "pad:r1"], "electric": ["key:f", "pad:r3"],
     "pace": ["key:shift", "pad:l1"],
     "lens": ["key:u", "pad:select"],
 }
@@ -361,6 +361,8 @@ def _fix_bindings(value, problems):
         if len(clean) != len(lst):
             problems.append(f"input.bindings.{action}")
         out[action] = clean
+    if "electric" not in value and out.get("sink", [None])[0] == "key:f":
+        out["sink"] = ["key:c"] + out["sink"][1:]
     return out
 
 
