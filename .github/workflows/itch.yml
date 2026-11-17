@@ -1,0 +1,88 @@
+# ---------------------------------------------------------------------------
+# itch.yml
+# Purpose : Uploads the web build to the itch.io demo page https://bamf69.itch.io/ooze2orbitdemo
+#           (BAMF69 2026-11-17: "look for another way to host the demo version of the game").
+# Usage   : Run by hand only: Actions tab -> itch -> Run workflow. Publishing is a deliberate step, never every push.
+#           One-time setup:
+#             1. itch.io -> Settings -> API keys -> Generate new API key.
+#             2. GitHub repo -> Settings -> Secrets and variables -> Actions -> New repository secret,
+#                name BUTLER_API_KEY, value = that key. Never paste the key anywhere else.
+#             3. After the FIRST run: itch "Edit game" page -> Kind of project: HTML -> tick "This file will be played
+#                in the browser" on the html5 upload -> Save. butler does not set either.
+# Notes   : Same gate as pages.yml (unit tests, then build). tools/package_itch.py checks itch's HTML5 rules (file
+#           count, sizes, relative paths) before anything is uploaded. butler uploads only what changed and records
+#           the package.json version on itch. butler comes from itch's broth CI URL (verified against
+#           https://itch.io/docs/butler/installing on 2026-11-17).
+# Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
+# ---------------------------------------------------------------------------
+name: itch
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: itch
+  cancel-in-progress: false
+
+env:
+  ITCH_TARGET: bamf69/ooze2orbitdemo:html5
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Refuse early without the API key
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          if [ -z "$BUTLER_API_KEY" ]; then
+            echo "::error::Repository secret BUTLER_API_KEY is not set (see the header of .github/workflows/itch.yml)"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v7
+
+      # Same as pages.yml: LFS without the PNG art masters, which the build does not ship.
+      - name: Fetch LFS files the build needs
+        run: git lfs pull --exclude="assets_src/**"
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Unit tests (a broken game is never published)
+        run: python tools/dev.py test
+
+      - name: Build
+        run: python tools/dev.py build
+
+      - name: Check itch HTML5 rules
+        run: python tools/package_itch.py
+
+      - name: Install butler
+        run: |
+          curl -fsSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d "$RUNNER_TEMP/butler"
+          chmod +x "$RUNNER_TEMP/butler/butler"
+          echo "$RUNNER_TEMP/butler" >> "$GITHUB_PATH"
+
+      - name: Upload to itch
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          butler -V
+          version=$(node -p "require('./package.json').version")
+          butler push dist "$ITCH_TARGET" --userversion "$version"
+          butler status "$ITCH_TARGET"
