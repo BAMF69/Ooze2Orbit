@@ -20,6 +20,10 @@ import { drawWaterRoom, type WaterFood } from "./creature/waterView";
 import { OVERWORLD, BIOME_PATHS, WATER_PATHS, hubSolid, nearLandmark } from "./creature/overworld";
 import { drawHub, hubLabels } from "./creature/overworldView";
 import { AVATAR_ASSETS, avatarAssetsReady, queueAvatarAssets } from "./creature/avatarAssets";
+import { AvatarView } from "./creature/avatarView";
+import { addFoeSprite, poseHdFoe } from "./creature/foeView";
+import { RoomArt } from "./creature/roomArt";
+import { avatarDiet, avatarFamily, wornTraits, type AvatarFamily, type AvatarLook } from "./creature/avatarLook";
 import { ENEMIES, ENCOUNTER, spawnEncounters, stepEnemy, biteDamage, evasion, reedCover, ventPhase, type WaterEnemy } from "./creature/waterEncounters";
 import { challengeSolid, clearWaterLine } from "./creature/waterChallenges";
 import { newObjective, newCargo, valves, useKeyed, drainedRoom, tickObjective, useValve, bankCargo, objectiveBarrier, canClaimSeal, emergencyRelease, type RoomObjective, type Cargo } from "./creature/waterObjectives";
@@ -42,6 +46,11 @@ export class CreatureScene extends Phaser.Scene {
   private stun = 0;
   private body!: Body;
   private player!: Phaser.GameObjects.Sprite;
+  /** HD avatar (creature-hd): body + worn-trait strips; `player` is its anchor sprite. */
+  private avatar!: AvatarView;
+  private incoming!: Pick<AvatarLook, "family" | "diet">;
+  /** Illustrated Water terrain drawn from live collision (creature-hd). */
+  private roomArt!: RoomArt;
   private gfx!: Phaser.GameObjects.Graphics;
   private landmarks: Phaser.GameObjects.Text[] = [];
   private ready = false;
@@ -76,18 +85,19 @@ export class CreatureScene extends Phaser.Scene {
     // Direct image loading avoids the intermittent XHR -> blob URL decode failures seen in
     // the desktop browser. Both paths are supported by Phaser; this choice is creature-local.
     this.load.imageLoadType = "HTMLImageElement";
-    queueAvatarAssets(this);
+    this.incoming = this.incomingLook();
+    queueAvatarAssets(this, this.incoming);
     if (new URLSearchParams(location.search).has("debug")) {
       Log.info("creature", `Avatar preload queued ${this.load.list.size}; cached ${AVATAR_ASSETS.map(a => `${a.key}:${this.textures.exists(a.key)}`).join(",")}`);
       this.load.on("loaderror", (file: Phaser.Loader.File) => Log.warn("creature", `Avatar load failed: ${file.key} ${file.src}`));
-      this.load.once("complete", () => Log.info("creature", `Avatar preload complete ${this.load.totalComplete}/${this.load.totalFailed}; ready ${avatarAssetsReady(this)}`));
+      this.load.once("complete", () => Log.info("creature", `Avatar preload complete ${this.load.totalComplete}/${this.load.totalFailed}; ready ${avatarAssetsReady(this, this.incoming)}`));
     }
   }
   create(): void {
     this.ready = false;
     this.screenUi = new StageUi(this);
     this.screenUi.root.classList.add("creature-expedition");
-    if (avatarAssetsReady(this)) this.beginCreature();
+    if (avatarAssetsReady(this, this.incoming)) this.beginCreature();
     else {
       Log.warn("creature", `Creature textures not ready: ${AVATAR_ASSETS.map(a => `${a.key}:${this.textures.exists(a.key) ? this.textures.get(a.key).getFrameNames().length : "absent"}`).join(", ")}`);
       // create runs inside the loader's complete event. Start retries on the next scene tick,
@@ -97,9 +107,9 @@ export class CreatureScene extends Phaser.Scene {
   }
   private retryAvatars(): void {
     this.screenUi.show("Loading creature bodies…", []);
-    this.load.reset(); queueAvatarAssets(this);
+    this.load.reset(); queueAvatarAssets(this, this.incoming);
     this.load.once("complete", () => {
-      if (avatarAssetsReady(this)) this.beginCreature();
+      if (avatarAssetsReady(this, this.incoming)) this.beginCreature();
       else this.screenUi.show("Creature images could not be loaded. Your checkpoint is unchanged. Retry to load the player and predators before exploring.",
         [{ id: "retry-assets", label: "Retry creature images", run: () => this.retryAvatars() }]);
     });
@@ -108,7 +118,9 @@ export class CreatureScene extends Phaser.Scene {
   private beginCreature(): void {
     if (this.ready) return;
     this.gfx = this.add.graphics();
-    this.player = this.add.sprite(64, WATER.floor - 16, "genWalker", 0).setDepth(4);
+    this.avatar = new AvatarView(this, { ...this.incoming, worn: [] }, 64, WATER.floor - 16);
+    this.player = this.avatar.anchor;
+    this.roomArt = new RoomArt(this);
     this.cameras.main.setBounds(0, 0, 640, 360).startFollow(this.player, true, 0.15, 0.15);
     const prev = shell.saves.load("lineage").envelope?.data, reveal = revealFrom(prev, 3, "creature");
     const home = refreshLineage(prev)?.species[0];
@@ -122,6 +134,18 @@ export class CreatureScene extends Phaser.Scene {
       this.lineage.show(reveal, "Begin exploring"); this.screenUi.root.inert = true; shell.input.clearHeld();
     }
     this.ready = true; this.draw();
+  }
+  /**
+   * The HD body to load before play: family from the incoming temperament reveal, diet from the lineage, exactly
+   * as beginCreature resolves them (resumeGarden keeps a checkpoint only when its diet matches the reveal).
+   */
+  private incomingLook(): Pick<AvatarLook, "family" | "diet"> {
+    const reveal = revealFrom(shell.saves.load("lineage").envelope?.data, 3, "creature");
+    const pct = Object.fromEntries(reveal.rows.map(r => [r.kind, r.pct])) as Partial<Record<AvatarFamily, number>>;
+    // Dev override for art review only: ?avatarFamily=cautious&avatarDiet=carnivore (ignored unless valid).
+    const q = new URLSearchParams(location.search), qf = q.get("avatarFamily");
+    const family = qf === "aggressive" || qf === "cautious" || qf === "adaptable" ? qf : avatarFamily(pct);
+    return { family, diet: avatarDiet(q.get("avatarDiet") ?? reveal.diet) };
   }
   private requestedSeed(): number {
     const raw = new URLSearchParams(location.search).get("creatureSeed");
@@ -175,7 +199,7 @@ export class CreatureScene extends Phaser.Scene {
     for (const op of spec.openings) if (op.label.always || this.objective.verticalOpen) this.landmarks.push(this.add.text((op.tiles[0] + op.tiles[1] + 1) * 8, op.side === "top" ? 104 : 312, op.label.text, { fontFamily: "monospace", fontSize: "10px", color: "#bfe7d8", align: "center" }).setOrigin(0.5, 0).setDepth(7));
     this.food = old?.food ?? r.food.map((x, n) => ({ x, meat: climate === "drought" ? n !== 0 : n === 3, taken: false }));
     this.enemies = (old?.foes ?? spawnEncounters(r)).map(foe => ({ ...foe,
-      sprite: this.add.sprite(foe.x, foe.y, "genFoe", ENEMIES[foe.kind].frame).setDepth(3),
+      sprite: addFoeSprite(this, foe), // HD charger sheet (creature-hd); other kinds keep genFoe
       label: this.add.text(foe.x, foe.y - 26, ENEMIES[foe.kind].name, { fontFamily: "monospace", fontSize: "11px", color: "#eef0d9", backgroundColor: "#12272bcc", padding: { x: 3, y: 2 } }).setOrigin(0.5, 1).setResolution(1).setDepth(6)
     }));
     this.message = spec.hint.priority ??
@@ -257,7 +281,7 @@ export class CreatureScene extends Phaser.Scene {
     else if (i.takePress("lens") && this.mode === "gardener") this.close();
   }
   update(_time: number, delta: number): void {
-    if (!this.ready) { if (avatarAssetsReady(this)) this.beginCreature(); else return; }
+    if (!this.ready) { if (avatarAssetsReady(this, this.incoming)) this.beginCreature(); else return; }
     if (shell.topId !== "play") return;
     if (this.lineage.isOpen) {
       if (shell.input.takePress("ui_accept") || shell.input.takePress("interact")) {
@@ -362,16 +386,16 @@ export class CreatureScene extends Phaser.Scene {
     // Select atlas frames on the scene clock: avoids re-entering Phaser's animation-start path on pose changes.
     const pose = this.bite > 0.15 ? "bite" : !this.body.onGround ? "jump" : crouch ? "crouch" : dir ? "walk" : "idle";
     const frame = POSE_START[pose] + (shell.settings.access.reduce_motion ? 0 : Math.floor(this.clock * 8) % 4);
-    this.player.setPosition(this.body.x, this.body.y - 16).setFlipX(this.facing < 0).setFrame(frame)
-      .setTint(this.garden.traits.gills ? 0xa4dfe5 : this.garden.traits.climb ? 0xb1e5ba : 0xffffff)
-      .setAlpha(this.hurt > 0 ? 0.6 : 1).setScale(1 + this.garden.traits.vitality * 0.015);
+    // Worn traits now show as body parts (creature-hd), replacing the old gills/claws tint.
+    this.avatar.update({ ...this.incoming, worn: wornTraits(this.garden.traits) }, this.body.x, this.body.y - 16, frame,
+      this.facing < 0, 1 + this.garden.traits.vitality * 0.015, this.hurt > 0 ? 0.6 : 1);
     this.draw();
   }
   private stepEnemies(dt: number, crouch: boolean): void {
     const r = this.currentRoom, flood = this.climateNow() === "flood";
     for (const [lane, e] of this.enemies.entries()) {
       e.sprite.setVisible(e.hp > 0); e.label.setVisible(e.hp > 0); if (e.hp <= 0) continue;
-      if (e.incapacitated) { e.sprite.setTint(0x86959b).setAlpha(0.55).setAngle(80); e.label.setPosition(e.trapped ? netFrame(r).x - 36 : e.x, e.trapped ? 232 + lane * 16 : e.y - 26 - lane * 18).setText(e.trapped ? "NETTED" : "SUBDUED"); continue; }
+      if (e.incapacitated) { if (!poseHdFoe(e.sprite, e, this.clock, shell.settings.access.reduce_motion)) e.sprite.setTint(0x86959b).setAlpha(0.55).setAngle(80); e.label.setPosition(e.trapped ? netFrame(r).x - 36 : e.x, e.trapped ? 232 + lane * 16 : e.y - 26 - lane * 18).setText(e.trapped ? "NETTED" : "SUBDUED"); continue; }
       const reeds = reedCover(r, this.body.x);
       // S steers a swimmer down; it is not universal invisibility in open water.
       const hidden = crouch && (flood || reeds) && (!inWater(this.body, this.roomWater()) || reeds && this.body.y > 285);
@@ -393,8 +417,9 @@ export class CreatureScene extends Phaser.Scene {
         this.message = avoided === "stealth" ? "Passed unseen: stealth shaped your descendants." : "Evaded through a safer route: adaptable exploration recorded.";
       }
       const tint = e.phase === "tell" ? 0xffb75c : e.phase === "recover" ? 0xbbb1d8 : ENEMIES[e.kind].tint;
-      e.sprite.setPosition(e.x, e.y).setFlipX(e.facing < 0).setTint(tint).setScale(e.kind === "charger" ? 1.25 : e.kind === "ambusher" ? 0.85 : 1)
-        .setAlpha(e.kind === "ambusher" && e.phase === "patrol" ? 0.6 : 1);
+      if (!poseHdFoe(e.sprite, e, this.clock, shell.settings.access.reduce_motion))
+        e.sprite.setPosition(e.x, e.y).setFlipX(e.facing < 0).setTint(tint).setScale(e.kind === "charger" ? 1.25 : e.kind === "ambusher" ? 0.85 : 1)
+          .setAlpha(e.kind === "ambusher" && e.phase === "patrol" ? 0.6 : 1);
       const tell = canIncapacitate(e, this.body.x, this.body.y) ? "E: SUBDUE" : e.phase === "tell" ? "! DODGE" : e.phase === "recover" ? "OPEN" : e.phase === "strike" ? "RUSH" : e.kind.toUpperCase();
       e.label.setPosition(e.x, e.y - 22 - lane * 18).setText(tell);
     }
@@ -458,8 +483,9 @@ export class CreatureScene extends Phaser.Scene {
   }
   private draw(): void {
     const g = this.gfx; g.clear();
-    if (this.room < 0) drawHub(g, this.room === -2, this.garden.traits, this.garden.expedition!);
-    else drawWaterRoom(g, this.currentRoom, this.roomWater(), this.food, this.trap, this.clock, this.foodCache, this.objective);
+    if (this.room < 0) { this.roomArt.syncHub(this.room === -2); drawHub(g, this.room === -2, this.garden.traits, this.garden.expedition!); }
+    else this.roomArt.sync(this.currentRoom, this.roomWater(), this.objective);
+    if (this.room >= 0) drawWaterRoom(g, this.currentRoom, this.roomWater(), this.food, this.trap, this.clock, this.foodCache, this.objective);
     for (const foe of this.enemies) if (foe.kind === "dropper" && activeThreat(foe)) {
       g.fillStyle(foe.phase === "tell" ? 0xe9b55e : 0x111e27, 0.65).fillEllipse(foe.x, 300, 46, 9);
       if (foe.phase === "tell") g.lineStyle(2, 0xe9b55e).strokeRect(foe.x - 22, 238, 44, 65);

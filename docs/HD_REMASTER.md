@@ -66,3 +66,46 @@ size on PC and iPhone 13 mini before extending the treatment to aquatic and subs
 Input stays separate from framing: Auto/keyboard/touch/controller determines controls, while size,
 orientation and safe margins determine layout. Cell has the first thumb-stick/action adapter; other
 stages get dedicated adapters next. Physical Safari, Android and PS-controller checks remain required.
+
+## Creature stage: Form 5 avatar (2026-11-17, branch feat/creature-hd)
+
+BAMF69 approved concepts C-0101..C-0107 as FINAL v1 and the build defaults: sheets drawn at 3x and shown at
+32 px, omnivore stays gold-teal, art generated in code. First pass: the player avatar only.
+
+- Family = dominant incoming temperament (ties aggressive, cautious, adaptable), diet from the lineage:
+  Ridgejaw (shark line), Shellback (leaf-shell), Ribbonstrider (ribbon tail). `creature/avatarLook.ts` is pure.
+- Worn traits are body parts, not tints: gills, fins, claws, class skill (Roar/Burrow/Tool use), and slots for
+  full armor and ice breath (shown once daughters inherit grotto parts; a `traits.parts` field must be agreed
+  with the levelgen chat first). Overlays are diet-independent strips on the walker's 20-frame grid.
+- Art source `assets_src/sprites/creature_hd/creatureArt.mjs`; `bake.mjs` writes 9 body sheets + 3 worn
+  atlases (A-0041). `avatarAssets.ts` queues only the lineage's body and family atlas and still rejects
+  incomplete sheets. `avatarView.ts` draws back strips, body, front strips with linear filtering.
+- Scene hook in CreatureGenerationScene.ts: preload computes the incoming look; the player sprite is the
+  avatar's anchor; the per-frame setFrame/setTint chain became `avatar.update(...)`. Pose choice, collision
+  and spawn positions are unchanged. Dev override for review: `?avatarFamily=&avatarDiet=`.
+- Known limit: on the 640x360 canvas the traits are small (C-0103). They become sharp only when the world
+  renders at screen resolution, a separate shell/main change needing BAMF69's approval and the levelgen chat.
+- Verification: `tools/creature-hd-playtest.mjs` (dev server 5188) runs all families at desktop, 375x812 and
+  812x375: sheet in use, 32 px footprint, overlay alignment per pose frame, Reduced Motion frame 0, no errors.
+- Pass 2 (same day): the Bristle charger (C-0105, A-0042) draws from `creature_hd_charger_v1.png`: patrol, tell
+  (quills up, dust), strike (lean, speed lines), recover (quills flat, dazed eyes: the bite window) and down
+  (netted or subdued, lying flat instead of the old 80-degree rotation). `foeArt.ts` picks the frame (Reduced
+  Motion holds frame 0), `foeView.ts` creates/poses it; ambusher, swimmer and dropper keep genFoe and tints.
+  Scene hook: spawn uses addFoeSprite; stepEnemies calls poseHdFoe first. Enemy AI, hitboxes and positions unchanged.
+- Pass 3 (same day): Water rooms (C-0106, A-0043). `RoomArt` (roomArt.ts) shows a far background and a rock
+  tile layer; `roomTileGrid` (roomTiles.ts) picks each tile from the scene's own collision test
+  (`terrainSolid` = objectiveBarrier || challengeSolid) every draw and re-tiles only changed cells, so drains,
+  raised basins and arena seals update the art. Ink sits only on exposed sides = the collision boundary.
+  Wood (log sluice, exit/arena barriers, rows 6-18 only) and every landmark stay state-drawn in waterView.ts,
+  restyled with ink; all state colours kept. Levers now stand on the first solid tile below their control point.
+  A unit test proves art == collision for every cell of the v1 world and four v2 seeds in three states.
+  Overworld and shoreline still use the old drawHub art; the room art hides there.
+- Pass 4 (same day, BAMF69: "finish the remaster pass"): Reed ambusher (straw-olive mantis-hopper, kept far
+  from the Shellback's leaf green), Needle swimmer (needle-snout gar) and Canopy dropper (violet sloth-leech
+  hanging by its tail) in the charger's treatment, A-0044, no separate concept round. `FOE_HD` (foeArt.ts) covers
+  all four kinds at their legacy sizes; the patrolling ambusher keeps its 60% hiding alpha. Overworld and
+  shoreline now use the rock tiles from hubSolid (sky above row 6, never a ceiling) over a dusk-forest backdrop
+  (A-0045) or the Water backdrop; overworldView.ts is restyled (inked arches, woven nest, shoreline reeds).
+  Unit tests prove hub art == hub collision. Every creature-stage visual now uses the HD art except the HUD rack.
+- Remaining: the HUD icon rack (C-0107; needs the rack code location), the
+  existing collision (C-0106), overworld/shoreline, HUD rack (C-0107; needs the rack code location).
