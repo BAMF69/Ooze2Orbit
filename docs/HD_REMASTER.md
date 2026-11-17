@@ -102,6 +102,22 @@ Input stays separate from framing: Auto/keyboard/touch/controller determines con
 orientation and safe margins determine layout. Cell has the first thumb-stick/action adapter; other
 stages get dedicated adapters next. Physical Safari, Android and PS-controller checks remain required.
 
+## Civilization illustrated remaster — 2026-11-14
+Civilization now fills the viewport behind native status and command overlays. Original generated
+biological towers, shell settlements, three diet heroes, sends, workers and resources replace active
+pixel placeholders. A quiet illustrated habitat fills portrait and landscape; code-native ownership
+badges, route arrows, build previews/progress, shots, damage/slow feedback and pulse effects keep the
+battle readable. Atlas and terrain are A-CIV-0001/0002; exact prompts: assets_src/civ/HD_ART_PROMPTS.md.
+The three-role control scheme and optional hero patrol remain. User explicitly reaffirmed live
+submenus; Details and shell/rotation pause still freeze. Touch uses completed taps, cancelling drags
+and interrupted input; no new stick or camera gesture is required. Native localized cards persist
+without focus churn. Actual effects, costs, inheritance and technology records are described in Details.
+
+Only the civilization case in core/viewport.ts was added to shared runtime code. No uncommitted
+cell/aquatic files were copied wholesale or modified. World logical width is capped at 1600; this is
+not a game-wide render-resolution overhaul, new progression or offline support. Browser emulation
+covers desktop/phone/tablet and short landscape; real iPhone/Android/controller performance is pending.
+
 ## Aquatic and upgrade polish — 2026-11-13
 Cell and aquatic purchase menus now use persistent native cards with effect descriptions, costs, level
 tracks and inherited bonus labels. Details explains parts, active levels and exclusive daughter/river

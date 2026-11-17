@@ -57,8 +57,9 @@ describe("temperament from the cell stage", () => {
     r = bump(r, "gulperEscapes", 4);
     const c = creature({ diet: "herbivore", parts: ["shell", "mouth"], ups: { attack: 0, speed: 0, defense: 4, mobility: 1 } });
     const t = cellTemperament(c, r);
-    const cautious = 4 + TUNING.temperament.shellKept + 4 * TUNING.temperament.escape;
-    expect(t.cautious).toBeCloseTo(cautious / (cautious + TUNING.temperament.perUpgradeLevel.mobility));
+    const w = TUNING.temperament; // the three herbivore picks count most (food over upgrades, 2026-11-10)
+    const cautious = 4 * w.perUpgradeLevel.defense + w.shellKept + 4 * w.escape + 3 * w.herbivorePick;
+    expect(t.cautious).toBeCloseTo(cautious / (cautious + w.perUpgradeLevel.mobility));
     expect(shipSpecialty(t).tech).toBe("shields");
   });
 
@@ -89,6 +90,27 @@ describe("temperament from the cell stage", () => {
   });
 });
 
+describe("food over upgrades (BAMF69 2026-11-10)", () => {
+  const bare = { attack: 0, speed: 0, defense: 0, mobility: 0 };
+  it("diet picks and food eaten outweigh maxing a stat", () => {
+    const eater = cellTemperament(creature({ ups: bare }), bump(diets("carnivore", "carnivore", "omnivore"), "meatEaten", 20));
+    const grinder = cellTemperament(creature({ ups: { ...bare, attack: 5 } }), diets("omnivore", "omnivore", "omnivore"));
+    expect(eater.aggressive).toBeGreaterThan(grinder.aggressive);
+  });
+  it("one diet pick is worth more than three attack levels", () => {
+    const w = TUNING.temperament;
+    expect(w.carnivorePick).toBeGreaterThan(3 * w.perUpgradeLevel.attack);
+    expect(w.herbivorePick).toBeGreaterThan(3 * w.perUpgradeLevel.defense);
+  });
+  it("grazing counts toward cautious, up to its cap; a record from before food was counted still reads", () => {
+    const w = TUNING.temperament;
+    const grazed = cellInfluence(creature({ ups: bare }), bump(diets("omnivore"), "algaeEaten", 1000));
+    expect(grazed.find((i) => /grazed 1000 pieces of algae/.test(i.cause))?.effect.cautious).toBeCloseTo(w.algaeEatenMax / w.full);
+    const old = { ...diets("omnivore"), behavior: { cellsRammed: 0, cellsPopped: 0, timesBitten: 0, gulperEscapes: 0, gulpersLured: 0 } };
+    expect(() => cellInfluence(creature({ ups: bare }), old as never)).not.toThrow();
+  });
+});
+
 describe("the lineage handed to the aquatic stage", () => {
   it("passes the contract's shape check and carries the cell block", () => {
     const c = creature({ diet: "carnivore", parts: ["spikes", "shell"], ups: { attack: 3, speed: 1, defense: 2, mobility: 0 } });
@@ -102,7 +124,7 @@ describe("the lineage handed to the aquatic stage", () => {
     expect(home.stages.cell).toEqual({
       selections: [], finalForm: 3, diet: "carnivore", dietHistory: ["omnivore", "carnivore", "carnivore"], parts: ["spikes", "shell"],
       upgrades: { attack: 3, speed: 1, defense: 2, mobility: 0 },
-      behavior: { cellsRammed: 0, cellsPopped: 0, timesBitten: 0, gulperEscapes: 2, gulpersLured: 0 },
+      behavior: { cellsRammed: 0, cellsPopped: 0, timesBitten: 0, gulperEscapes: 2, gulpersLured: 0, meatEaten: 0, algaeEaten: 0 },
     });
     expect(home.temperament).toEqual(cellTemperament(c, r));
   });

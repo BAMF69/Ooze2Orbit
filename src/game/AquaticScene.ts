@@ -77,6 +77,8 @@ import { AqDivisionPicker } from "./aquatic/divisionPicker";
 import { AqUpgradePanel } from "./aquatic/upgradePanel";
 import { cameraBehind, hiddenThreat, project, viewOf, wrapAngle, type Camera } from "./aquatic/view";
 
+const stamp = (d: Record<string, unknown>) => ({ ...d, savedAt: Date.now() }); // the menu continues the most recent stage
+
 const LOG = "aquatic";
 const LINEAGE_SLOT = "lineage";
 const MAX_DT = 0.1;
@@ -346,6 +348,7 @@ export class AquaticScene extends Phaser.Scene {
       setTemperament: (k, v) => this.adminTemper(k, v),
       goTo: (d) => this.adminGoTo(d),
       setForm: (n) => { this.me = { ...this.me, form: n }; this.me = { ...this.me, hp: maxHp(this.me) }; Log.info(LOG, `ADMIN form ${n}`); },
+      setDiet: (diet) => { this.me = { ...this.me, diet }; Log.info(LOG, `ADMIN diet ${diet}`); },
       addPoints: () => { this.me = { ...this.me, points: { algae: this.me.points.algae + 50, meat: this.me.points.meat + 50 } }; },
       toggleInvincible: () => { this.invincible = !this.invincible; Log.info(LOG, `ADMIN invincible ${this.invincible}`); },
     });
@@ -363,7 +366,7 @@ export class AquaticScene extends Phaser.Scene {
     this.me = { ...this.me, hp: maxHp(this.me) };
     for (const p of (params.get("parts") ?? "").split(",")) if (isPart(p)) this.me = addPart(this.me, p).creature; // ?parts=fins,jaws (captures)
     this.allowSave = !this.autoplay && !params.has("map") && !params.has("river") && !params.has("form") && !params.has("division");
-    const resumed = shell.takeContinue() || params.has("continue") ? this.loadRun() : null; // menu "Continue" (or ?continue): the saved run (2026-11-09)
+    const resumed = shell.takeContinue("aquatic") || params.has("continue") ? this.loadRun() : null; // menu "Continue" (or ?continue): the saved run (2026-11-09)
     this.buildMap(resumed ? resumed.map : Math.max(0, askMap), "start");
     if (resumed) { this.closeReveal(false); this.hud.toast(shell.i18n.t("aq.welcome_back", { form: this.me.form }), 5); }
     if (askRiver === 1 || askRiver === 2) this.startRiver(askRiver - 1);
@@ -695,10 +698,10 @@ export class AquaticScene extends Phaser.Scene {
   private saveRun(finished = false): void {
     if (!this.allowSave || (this.run && !finished)) return;
     try {
-      const data = finished ? { kind: "aquatic_run", v: 1, finished: true } : packRun({
+      const data = finished ? { kind: "aquatic_run", v: 1, finished: true } : stamp(packRun({
         sisters: this.sisters, map: this.mapIndex, me: { ...this.me, thickness: this.thickness }, tempC: this.tempC, pop: this.pop, causes: this.causes,
         temper: this.temper, kills: this.kills, deaths: this.deaths, breaches: this.breaches,
-      });
+      }));
       shell.saves.save(RUN_SLOT, data as Parameters<typeof shell.saves.save>[1]);
       Log.debug(LOG, `SAVED run (${finished ? "finished" : MAPS[this.mapIndex].id})`);
     } catch (err) {
@@ -822,7 +825,7 @@ export class AquaticScene extends Phaser.Scene {
   }
 
   private adminState() {
-    return { temperament: { ...this.temper }, form: this.me.form, look: this.lookName, invincible: this.invincible };
+    return { temperament: { ...this.temper }, form: this.me.form, diet: this.me.diet, look: this.lookName, invincible: this.invincible };
   }
 
   /** Admin: set a temperament (not saved); aggressive drives the shark look at once. */
@@ -1787,7 +1790,9 @@ export class AquaticScene extends Phaser.Scene {
   private viewCamera() {
     const C = AQ.camera, h = this.scale.height;
     const maxBodyHeight = Math.max(1, Math.min(h * C.avatarMaxScreenShare, organicPlayBottom(h) * C.avatarMaxPlayShare));
-    return { ...C, back: Math.max(C.back, bodySize(this.me) * C.focal / maxBodyHeight) };
+    // Keep the organism above the portrait touch controls; the dock and control layout retain their owners.
+    const avatarY = shell.input.scheme === "touch" && this.scale.height > this.scale.width ? .48 : C.avatarY;
+    return { ...C, avatarY, back: Math.max(C.back, bodySize(this.me) * C.focal / maxBodyHeight) };
   }
 
   private drawAvatar(airborne: boolean): void {

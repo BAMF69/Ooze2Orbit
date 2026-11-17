@@ -203,12 +203,19 @@ export const TUNING = {
   // Behavior caps bound its weight against other evidence; `full` preserves the old log pressure scale.
   temperament: {
     full: 10, // evidence unit scale; no longer an independent percentage ceiling
-    perUpgradeLevel: { attack: 1, defense: 1, speed: 0.5, mobility: 0.5 }, // attack: aggressive, defense: cautious, speed + mobility: adaptable
+    // Food outweighs upgrades (BAMF69 2026-11-10: "make your food choices more relevant than stat level ups"): a diet
+    // pick is worth four attack levels, and what you actually eat counts too.
+    perUpgradeLevel: { attack: 0.5, defense: 0.5, speed: 0.25, mobility: 0.25 }, // attack: aggressive, defense: cautious, speed + mobility: adaptable (halved 2026-11-10)
     spikesKept: 2, // aggressive: the part you finish the stage with
     shellKept: 2, // cautious
-    carnivorePick: 1, // aggressive, per diet choice (start + each evolution)
-    omnivorePick: 0.5, // adaptable, per diet choice
-    dietSwitch: 1.5, // adaptable, per evolution where you changed diet
+    carnivorePick: 2, // aggressive, per diet choice (start + each evolution)
+    herbivorePick: 2, // cautious, per diet choice (2026-11-10: grazing away from the fights)
+    omnivorePick: 1.5, // adaptable, per diet choice
+    dietSwitch: 2, // adaptable, per evolution where you changed diet
+    meatEaten: 0.1, // aggressive, per piece of meat eaten...
+    meatEatenMax: 3, // ...up to this many points
+    algaeEaten: 0.05, // cautious, per piece of algae eaten...
+    algaeEatenMax: 3,
     ram: 0.1, // aggressive, per cell you rammed...
     ramMax: 3, // ...up to this many points
     pop: 0.2, // aggressive, per cell you popped...

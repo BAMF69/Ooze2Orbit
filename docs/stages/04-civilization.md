@@ -9,9 +9,94 @@
 > Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69. Everything else was decided by BAMF69.
 
 ## Identity
+### Illustrated HD remaster — 2026-11-14
+- `CivWarsScene` remains the registered tower-wars adapter. Fullscreen habitat fills the window;
+  native resources, base-health/income meters, wave preview, Details and persistent role controls
+  overlay it. Mazes fit the unobscured space, stacking when that yields larger tiles. Short phone
+  landscape puts an open command panel beside the mazes. No camera gesture is needed to reach a cell.
+- The latest user clarification explicitly retains **live submenus** from the prior playtest.
+  Hero orders, Builder, Summons and Workers do not pause combat or patrol. Details, explicit Pause,
+  focus loss and rotation retain freeze/resume behavior. Details also freezes scene timers/tweens.
+- Pointer orders happen on release. Drags over 10 CSS px, extra fingers, cancellation, lost capture,
+  focus/visibility loss, pause, layout/rotation changes and input-scheme changes invalidate a tap.
+  One finger handles selection, tower placement, send/worker purchases, cancellation and hero movement.
+  Keyboard 1/2/3, remappable Q/U and controller bindings remain; no creature-style stick was added.
+- Read-only build previews share the same route/resource/occupancy checks as construction. Invalid
+  cells show a cross, valid cells a translucent tower, with a range indicator. Draw and hit testing
+  share one pure transform. Building still cannot seal the entrance or trap existing creatures.
+- Original 4×4 illustrated atlas covers three towers, grown-shell settlements, three hero diets,
+  three sends, workers, resources and ruin. Habitat backdrop fills all orientations. Root badges
+  distinguish ownership by circle/diamond as well as color; construction, attack, damage, slowed units,
+  range and pulse effects are scene-owned code-native presentation. Inherited climbing shows claws;
+  diet, real strength/vitality damage/HP and technology behavior are explained in Details.
+- All new UI uses `civ.hd.*` localization keys. Cards/buttons persist while prices and affordability
+  update; focus survives. Locale changes refresh persistent labels. Effects/costs come from WAR,
+  TOWERS and SENDS; no fictional upgrade levels, prices or new progression were added.
+- Game-speed settings scale the simulation; Reduced Motion disables procedural bob/tilt and pulse
+  expansion. Atlas textures use linear filtering; canvas smoothing is restored on stage shutdown.
+  Native HUD remains independent of world resolution; civilization's world width is capped at 1600
+  logical pixels to bound work, with no claim of physical-device frame-rate certification.
+- Validation: 487 tests, wrapper type/11-shader checks and 34-second recorded GPU production smoke.
+  Browser desktop and emulated touch/controller scenarios cover actual construction/sends/Farmer
+  paydays, drag/cancel/blur guards, persistent focus, all four layouts, live menus/patrol, Details
+  clocks, game speed, Reduced Motion, rotation freeze, both result paths, save-failure retry,
+  unknown lineage field preservation, rematch and space cleanup. Physical devices remain pending.
+
+### Live command dock and Farmers — 2026-11-14
+User revised the earlier pause-menu preference: Builder, Summons, Workers/terrain and Hero orders
+now open as compact nonmodal panels above the 1/2/3 controls. No veil or battle pause; construction,
+waves, movement, payday clocks and automatic patrol continue. Details and explicit shell/rotation
+pause retain their existing freeze behavior. The role buttons stay usable while a submenu is open.
+
+Worker choices now include **Farmer: 35 ore, +6 food per 8-second payday**, capped at 20 farmers.
+Farmers start at zero and do not add recurring ore income or directly advance economic victory.
+Gatherers retain +1.5 recurring ore income and +3 food per payday. These are initial tunable values
+in warsTuning. A missing farmer count is treated as zero; no lineage/save-schema change is needed.
+
+The dock scrolls horizontally on small screens. Short landscape uses one control row; portrait
+uses two. Draw and pointer conversion share a layout fitted above the dock, so menus never cover
+either maze. Controller menu navigation remains available; choosing a tower clears the confirming
+input before returning to placement. Manual gameplay intents wait during controller menu navigation,
+while patrol and battle simulation continue.
+
+Validation: 476 unit tests; wrapper type/shader and production civilization smoke; browser pointer
+and emulated touch tests for live clocks/patrol, hire/payday output, nonoverlapping grid/menu/control
+bounds at 1280x720, 375x812 and 812x375, sends, construction, Details freeze, rematch and space cleanup.
+Visuals inspected in all three sizes. Physical-device checks remain pending.
+
+## Civilization controls and patrol — 2026-11-13
+- **1 Hero, 2 Builder, 3 Summons** select the three control roles. Matching native buttons stay
+  visible on touch; the selected role is highlighted and exposed with aria-pressed.
+- Hero: WASD / left stick / D-pad move, J/F bite, Space pulse. Tap/click an open cell for an
+  obstacle-aware move order. Touch has native Bite and Pulse buttons with pulse cooldown.
+- Builder: choose Thorn, Seed mortar or Mist spire in the live command dock, then tap/click your maze.
+  WASD / stick / D-pad step an independent build cursor; E / north or south confirms placement.
+  Attack / west reopens tower choices. Construction still uses the shared builder workforce;
+  this is a control role, not a new individually simulated builder unit.
+- Summons: live menu sends Reedrunner, Shellback and Briar brood. Repeated sends can be
+  purchased while choosing; Close hides the panel; battle continues throughout. Worker training and terrain remain under
+  Builder (also accessible through Workers / terrain). Costs and resource rules are unchanged.
+- Existing Q / right shoulder cycles the three roles forward; U / select cycles backward.
+  In Hero, E / north opens Hero orders, including the patrol toggle for controller-only play.
+  Number shortcuts are stage-local; shared action rebinding and other stages are unchanged.
+- **Patrol: OFF/ON** is always available in the battle dock. Opt-in patrol walks between maze
+  ends, prioritizes reachable attackers nearest the base, bites in range and pulses groups of two
+  or more. It respects towers unless inherited climbing allows crossing, and retains ordinary
+  speed, damage, cooldowns, wound costs, recovery and hero-hit/kill heritage credit.
+- Selecting Builder or Summons leaves patrol enabled. Manual Hero movement, a valid move order,
+  bite or pulse turns patrol off. Selecting Hero alone does not interrupt patrol. New matches
+  start in manual Hero mode. Details, shell pause and rotation hold all battle/patrol clocks; command menus run live.
+- World drawing and pointer placement still share warsLayout. Two-row scoped controls reserve
+  additional board space; sprites scale with the tiles for short landscape. No assets/dependencies,
+  save schema, creature hero contract or space technology contract changed.
+- Validation: 474 unit tests, wrapper type/shader check and civilization GPU production smoke;
+  browser desktop keyboard, simulated controller actions and real emulated touch taps for roles,
+  placement, sends, menu/Details freeze, patrol/manual takeover, rematch and space cleanup.
+  Portrait/landscape visuals inspected; physical iPhone/Android/Xbox/PlayStation checks remain.
+
 ### Shared display rollout — 2026-11-13
 User reports liking all stages. Maze grids now stack in portrait and share one draw/hit transform.
-Native command panels pause the battle while choosing; Details also pauses. Tower selection closes
+Native command panels now run live in the compact dock; Details pauses (revised 2026-11-14). Tower selection closes
 the panel immediately, then placement resumes the existing build rules. Fullscreen, safe margins and
 rotation pause/resume are shared. Grid mechanics, costs and win rules stay unchanged. Emulation
 checks cover real pointer placement; physical-device/controller expansion remains separate.
@@ -156,3 +241,12 @@ The space stage (built) reads the old victory types (conquest, trade, faith); it
 | Which resources, exactly? | Fewer is easier to read |
 | Can the hero die in battle, and what does it cost? | Hero use is part of adaptable |
 | 1v1, or you against two rivals (one per other temperament)? | Scope and balance |
+
+## Fixed civilization command tabs — 2026-11-15
+- User playtest revision: a single fixed command habitat replaces expanding submenus. Hero, Builder, Summons and Workers / terrain are always visible tabs (keyboard 1–4; Q/U and controller shoulder/select cycle all four).
+- Selecting towers, sending creatures, training workers and changing terrain retain their page. Back returns to Hero. Commands remain live; Details and explicit shell pauses still freeze combat.
+- HUD bounds reserve the same footprint on every page: a bottom dock in portrait/desktop/tablet, a permanent right dock on short landscape. Maze transforms and pointer mapping no longer change with tab selection.
+- Scoped code-native organic styling draws on the user's supplied HUD reference: bone rims, rooted leaf corners and luminous channels. Inherited normalized temperament shares tint presentation only: balanced/cautious lagoon teal, aggressive coral, adaptable violet. Diet stays independent; no lineage or simulation changes.
+- Controller tower selection releases command navigation for build-cursor movement without hiding the Builder page; West or selecting Builder again re-enters command navigation. Native buttons retain stable DOM identity and 44px minimum targets.
+- Verification: 490 unit tests; type/shader checks; GPU production smoke. Browser tests check identical full layout/dock geometry across all four tabs and Back on 1440×900, 375×812, 812×375 and 800×1280; actual build completion, sends, Farmer, live clock, patrol/manual hero, Details freeze and controller selection. Touch emulation also checked; physical hardware remains pending.
+- Preview: http://localhost:5186/ from this civilization worktree. Port 5176 was found serving the older scene; do not use that link for the remaster. Nothing committed or pushed.
