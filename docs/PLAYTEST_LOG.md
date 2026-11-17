@@ -124,6 +124,15 @@ predator imagery, illustrated props and three environments, shared worn equipmen
 emulation exercised cards, Details, maps, daughter choice, rivers and cleanup. User playtest and physical
 phone/tablet/controller verification remain pending; this entry is not approval of the new art or layout.
 
+## 2026-11-16 — Review of PR #17 (not user approval)
+- Findings: importing a save file from a pause menu left the stage running, and its next autosave wrote the old state
+  back over the imported one; a debug start (`&boss`, `&world`) wrote over the real space save; the menu offered
+  Continue for any space save, readable or not; the space save's numbers were not checked.
+- Decisions: importing from a pause menu now returns to the title; debug starts do not save; Continue needs a
+  loadable save; every field of the space save is checked.
+- Carried over from the 2026-11-10 asks: food over upgrades in the cell stage (diet picks and food eaten outweigh
+  stat levels). The aquatic stage's weights are left for a decision: its daughter choices came later.
+
 ## 2026-11-13 — All-stage display rollout
 User says they like how all stages play and explicitly requested the cell display changes in aquatic,
 creature, civilization and space. Implemented shared fullscreen/safe bounds/rotation handling plus
@@ -173,6 +182,12 @@ Tasks created (ROADMAP):
 ```
 
 ## Entries
+### 2026-11-15  Build 0.1.0 (main 61d4a8a)  Tester: self (BAMF69)
+Note: work from 2026-11-10 was never pushed while main moved on (PRs #12-#16: the Gardener rule, roguelike creature,
+tower-wars civilization, cell division, illustrated remaster). Decision (BAMF69: "port them"): carry over what is still
+needed onto main (opening screen order, the Lattice lock, pause export / import, space save and Continue); the rest is
+replaced on main or needs a fresh call (see ROADMAP Done 2026-11-15).
+
 ### 2026-11-13  Aquatic ecology and future production direction  Tester: pending BAMF69
 Requested: unchosen sisters compete for shared resources, bump/bite the player, reproduce/grow,
 and remain on their pond/lake/coast map. Implemented persistent map-local families with inherited

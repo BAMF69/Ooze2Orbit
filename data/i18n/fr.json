@@ -76,10 +76,12 @@
  "menu.import": "Importer une sauvegarde",
  "save.exported": "Sauvegarde téléchargée : gardez-la pour reprendre plus tard, ou importez-la sur un autre ordinateur",
  "save.nothing": "Rien à exporter : jouez d'abord une étape",
- "save.imported": "Sauvegarde importée : Continuer reprend là où elle s'était arrêtée",
+ "save.imported": "Sauvegarde importée : elle sert au prochain lancement ou à la reprise d'une étape",
  "save.import_failed": "Import impossible : {why}",
  "menu.creature": "Étape créature (prototype)",
  "cr.civ_soon": "Votre lignée s'élève vers la civilisation. L'étape civilisation n'est pas encore construite.",
  "menu.civ": "Étape civilisation (prototype)",
- "menu.space": "Étape spatiale (prototype)"
+ "menu.space": "Étape spatiale (prototype)",
+ "menu.continue_aquatic": "Continuer (étape aquatique)",
+ "menu.continue_space": "Continuer (étape spatiale)"
 }

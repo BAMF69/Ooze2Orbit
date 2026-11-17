@@ -333,7 +333,7 @@
  "menu.import": "Import save file",
  "save.exported": "Save file downloaded: keep it to pick up later, or import it on another computer",
  "save.nothing": "Nothing to export yet: play a stage first",
- "save.imported": "Save file imported: Continue picks up where it left off",
+ "save.imported": "Save file imported: it is used when you next start or continue a stage",
  "save.import_failed": "Could not import: {why}",
  "aq.welcome_back": "Welcome back: your lineage carries on at form {form}",
  "menu.creature": "Creature stage (prototype)",
@@ -509,5 +509,7 @@
  "aq.shock_ready": "Shock ready",
  "hud.info": "Info",
  "hud.info_label": "Controls & details",
- "hud.tabs": "Game HUD"
+ "hud.tabs": "Game HUD",
+ "menu.continue_aquatic": "Continue (aquatic stage)",
+ "menu.continue_space": "Continue (space stage)"
 }

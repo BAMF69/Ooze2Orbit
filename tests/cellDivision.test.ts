@@ -10,6 +10,7 @@ import { daughters, newEvidence, variationWeights } from "../src/game/cell/divis
 import { buyUpgrade, bumpFoodLoss, newCreature, type Creature } from "../src/game/cell/rules";
 import { cellInfluence, cellLineage, newCellRecord } from "../src/game/cell/record";
 import { foodSenseRadius, grantPerk, perkLevel, tickJet } from "../src/game/cell/perks";
+import { TUNING } from "../src/game/cell/tuning";
 import { creatureFromLineage, buyUpgrade as buyAquaticUpgrade } from "../src/game/aquatic/creature";
 
 describe("cell division", () => {
@@ -94,7 +95,8 @@ describe("cell division", () => {
     const r = { ...newCellRecord(), selections: [{ form: 2, stat: "attack" as const, gain: 2, cause: "Stronger jaws" }] };
     const influences = cellInfluence(c, r);
     expect(influences.map(i => i.cause)).toContain("Your ancestor grew its attack to level 1");
-    expect(influences.reduce((sum, i) => sum + (i.effect.aggressive ?? 0), 0)).toBeCloseTo(0.3);
+    const w = TUNING.temperament; // one purchased level + a daughter's two, each counted once
+    expect(influences.reduce((sum, i) => sum + (i.effect.aggressive ?? 0), 0)).toBeCloseTo((3 * w.perUpgradeLevel.attack) / w.full);
     const evolved = grantPerk(c, "jetBurst");
     expect(cellLineage(evolved, r).species[0].stages.cell?.perks).toEqual({ jetBurst: 1 });
   });

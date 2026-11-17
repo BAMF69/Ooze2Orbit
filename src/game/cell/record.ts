@@ -22,7 +22,7 @@ import type { Perk } from "./perks";
 import type { Creature } from "./rules";
 import { TUNING, UPGRADE_STATS, type Diet, type UpgradeStat } from "./tuning";
 
-export const BEHAVIORS = ["cellsRammed", "cellsPopped", "timesBitten", "gulperEscapes", "gulpersLured"] as const;
+export const BEHAVIORS = ["cellsRammed", "cellsPopped", "timesBitten", "gulperEscapes", "gulpersLured", "meatEaten", "algaeEaten"] as const;
 export type Behavior = (typeof BEHAVIORS)[number];
 
 export interface CellRecord {
@@ -76,11 +76,15 @@ export function cellInfluence(c: Creature, r: CellRecord): Influence[] {
 
   const picks = (d: Diet) => r.dietHistory.filter((x) => x === d).length;
   add("aggressive", picks("carnivore") * w.carnivorePick, `Your ancestor chose to eat meat ${plural(picks("carnivore"), "time")}`);
+  add("cautious", picks("herbivore") * w.herbivorePick, `Your ancestor chose to graze on plants ${plural(picks("herbivore"), "time")}`);
   add("adaptable", picks("omnivore") * w.omnivorePick, `Your ancestor chose to eat anything ${plural(picks("omnivore"), "time")}`);
   const switches = r.dietHistory.filter((d, i) => i > 0 && d !== r.dietHistory[i - 1]).length;
   add("adaptable", switches * w.dietSwitch, `Your ancestor changed its diet ${plural(switches, "time")}`);
 
   const b = r.behavior;
+  // what it actually ate (2026-11-10); `?? 0`: a record from before these were counted
+  add("aggressive", Math.min(w.meatEatenMax, (b.meatEaten ?? 0) * w.meatEaten), `Your ancestor ate ${plural(b.meatEaten ?? 0, "piece")} of meat`);
+  add("cautious", Math.min(w.algaeEatenMax, (b.algaeEaten ?? 0) * w.algaeEaten), `Your ancestor grazed ${plural(b.algaeEaten ?? 0, "piece")} of algae`);
   add("aggressive", Math.min(w.ramMax, b.cellsRammed * w.ram), `Your ancestor rammed ${plural(b.cellsRammed, "cell")}`);
   add("aggressive", Math.min(w.popMax, b.cellsPopped * w.pop), `Your ancestor popped ${plural(b.cellsPopped, "cell")}`);
   add("cautious", Math.min(w.escapeMax, b.gulperEscapes * w.escape), `Your ancestor escaped the gulpers ${plural(b.gulperEscapes, "time")}`);

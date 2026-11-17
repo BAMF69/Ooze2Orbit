@@ -65,7 +65,7 @@ export const SPACE = {
   wave: { secs: 12, warnS: 3 }, // a hostile system sends its next patrol this long after the last one fell; the klaxon sounds warnS before (2026-11-10)
   jump: { secs: 1.5 }, // the wormhole: half going in, half coming out
   // the Lattice: one more Shard every 2 wins; the Driftfield: two Shards on every arrival, driftStep more per wave won there
-  patrol: { shardsBase: 2, shardsPerWins: 2, shardsMax: 5, spawnDist: 520, driftStep: 1 },
+  patrol: { shardsBase: 2, shardsPerWins: 2, shardsMax: 5, spawnDist: 520, driftStep: 1, latticeUnlock: 3 }, // latticeUnlock: Driftfield waves won in a row to open the Lattice (2026-11-10)
   adapt: {
     learn: 0.35, // a weapon family that dealt all your damage is learned this much per battle
     defLearn: 0.25, // a defence family that was your whole defence

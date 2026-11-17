@@ -47,7 +47,7 @@ export class CivScene extends Phaser.Scene {
     const hero = saved?.species?.[0]?.stages?.creature?.hero;
     this.inherited = { strength: typeof hero?.strength === "number" && Number.isFinite(hero.strength) ? hero.strength : 2,
       maxHp: typeof hero?.vitality === "number" && Number.isFinite(hero.vitality) ? hero.vitality : 0, climb: hero?.climb === true };
-    const reveal = revealFrom(saved, 3, "civ"); this.diet = reveal.diet;
+    const reveal = revealFrom(saved, 4, "civ"); this.diet = reveal.diet;
     this.temperament = { cautious: reveal.rows.find(r => r.kind === "cautious")!.pct, aggressive: reveal.rows.find(r => r.kind === "aggressive")!.pct, adaptable: reveal.rows.find(r => r.kind === "adaptable")!.pct };
     this.rival = reveal.rows.find(r => r.kind === "aggressive")!.pct > reveal.rows.find(r => r.kind === "cautious")!.pct ? "warden" : "raider";
     this.battle = newBattle(this.inherited, this.rival); this.pauseClocks = new PresentationPause(this);

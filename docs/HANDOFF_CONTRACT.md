@@ -216,3 +216,11 @@ to 17, rejects invalid homes/duplicate IDs/dead bodies and limits each map to it
 Sister sprites are reconstructed, never serialized. Legacy saves without the extension remain valid.
 The existing no-mid-river save rule is unchanged. Lineage records count player sister kills with other
 hunting causes; the complete ecology is run state, not a stage-handoff payload.
+
+## The opening screen and food (2026-11-10 asks, carried onto main 2026-11-16)
+- The opening screen lists up to 4 causes per temperament, **newest stage first**, each labelled with its stage, so
+  the cell stage's bigger causes no longer push the later stages' decisions off the screen (`aquatic/reveal.ts`).
+- **Cell stage, food over upgrades:** a diet pick (2 points; omnivore 1.5) outweighs an upgrade level (0.5, or 0.25 for
+  speed and mobility); herbivore picks now count (cautious); meat and algae actually eaten count too, each capped at 3
+  points (`TUNING.temperament`). The cell block's `behavior` gains `meatEaten` and `algaeEaten`; older records without
+  them read as 0. The aquatic stage's weights are unchanged: its daughter choices came later and need their own call.
