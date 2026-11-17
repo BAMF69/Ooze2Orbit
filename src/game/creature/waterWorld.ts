@@ -11,7 +11,9 @@ export const WATER = {
 } as const;
 export const DIFFICULTIES = ["easy", "medium", "hard"] as const;
 export type Difficulty = typeof DIFFICULTIES[number];
-export type Adaptation = "gills" | "fins";
+/** What a room can teach a lineage: the two story keys, or a fun part from a bonus vault (levelgen/keys.ts). */
+export type Adaptation = "gills" | "fins" | "fullArmor" | "iceBreath";
+export const ADAPTATIONS: readonly Adaptation[] = ["gills", "fins", "fullArmor", "iceBreath"];
 export interface WaterRoom {
   id: number; tier: Difficulty; name: string; left: number; right: number; branch: number;
   gate: boolean; tunnel: boolean; current: boolean; goal: boolean; reward?: Adaptation;

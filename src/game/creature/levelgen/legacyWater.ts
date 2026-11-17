@@ -56,5 +56,6 @@ export function legacySpec(r: WaterRoom): RoomSpec {
     returnArrival: id === 3 ? { x: 126, y: 304, facing: 1 } : null, arriveFromRight: shaft ? { x: 128, y: 236, facing: -1 } : { x: 600, y: 304, facing: -1 },
     branchArchX: r.branch >= 0 ? 126 : null,
     hint: { priority: drain ? HINTS.drain : pressure ? HINTS.pressure : id === 3 ? HINTS.nursery : null, fallback: shaft ? HINTS.shaft : HINTS.lever },
+    keyed: null,
   };
 }

@@ -3,10 +3,10 @@
 // Authored: Written with Codex (GPT-6); moved onto the room model with Claude (Fable 5.1).
 import type { RoomObjective } from "./waterObjectives";
 import type { WaterRoom } from "./waterWorld";
-import { roomSpec, openingRect, type Arrival, type Opening } from "./levelgen/roomSpec";
+import { roomSpec, openingRect, conditionMet, type Arrival, type Opening } from "./levelgen/roomSpec";
 export type { Arrival };
 export const pitRoom = (r: WaterRoom): boolean => roomSpec(r).pits.length > 0;
-const openNow = (op: Opening, o: RoomObjective): boolean => !op.when || (op.when === "open" ? o.open : !!o.verticalOpen);
+const openNow = (op: Opening, o: RoomObjective): boolean => conditionMet(op.when, o);
 export function verticalOpening(r: WaterRoom, o: RoomObjective, tx: number, ty: number): boolean {
   return roomSpec(r).openings.some(op => { const q = openingRect(op); return openNow(op, o) && tx >= q.x0 && tx <= q.x1 && ty >= q.y0 && ty <= q.y1; });
 }

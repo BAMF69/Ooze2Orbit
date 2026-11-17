@@ -47,7 +47,8 @@ function link(edges: Edge[], from: RoomNode, to: RoomNode, fromSide: Side, mater
 }
 
 /** Which rooms may open a shaft upward into a branch: those whose template has a free top edge. */
-const canHostTop = (n: RoomNode): boolean => (n.role === "lever" || n.role === "pressure" || n.role === "classTrial" || n.role === "arena") && !n.hostsTop;
+// One keyed control per room (a class trial already has its door) and no climbing ledges over a pit.
+const canHostTop = (n: RoomNode): boolean => (n.role === "lever" || n.role === "pressure" || n.role === "arena") && !n.hostsTop && !n.pit;
 
 function waterRecipe(tier: Difficulty, rng: Rng, authored: boolean): LevelGraph {
   const nodes: RoomNode[] = [], edges: Edge[] = [], placements: Placement[] = [];
@@ -65,7 +66,7 @@ function waterRecipe(tier: Difficulty, rng: Rng, authored: boolean): LevelGraph 
     chain.push(node(id(chain.length), "pressure", { goal: true, enemies: ["dropper", "swimmer"] }));
   } else {
     chain.push(node(id(0), "hardEntry", { sealed: true, pit: true, enemies: ["charger"] }),
-      node(id(1), "drain", { current: true, enemies: ["charger", "swimmer"] }), node(id(2), "shaft", { current: true, gate: true, enemies: ["swimmer", "swimmer"] }));
+      node(id(1), "drain", { current: true, enemies: ["charger", "swimmer"] }), node(id(2), "shaft", { current: true, enemies: ["swimmer", "swimmer"] }));
     for (let n = 0; n < extra; n++) chain.push(node(id(chain.length), rng.chance(0.6) ? "classTrial" : "lever", { current: true, enemies: [rng.pick(["charger", "ambusher"] as const)] }));
     chain.push(node(id(chain.length), "pressure", { goal: true, sealed: true, pit: true, current: true, enemies: ["charger", "dropper", "swimmer"] }));
   }

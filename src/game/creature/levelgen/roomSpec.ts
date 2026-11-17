@@ -12,16 +12,20 @@ import { roomSolid, type WaterRoom } from "../waterWorld";
 import type { EnemyKind } from "../waterEncounters";
 import type { RoomObjective } from "../waterObjectives";
 import { legacySpec } from "./legacyWater";
+import type { Key } from "./keys";
 
 export interface Point { x: number; y: number }
 /** Inclusive tile rectangle; -99/99 stand for "to the edge" so bounds rules read naturally. */
 export interface TileRect { x0: number; x1: number; y0: number; y1: number }
 export type Puzzle = "lever" | "drain" | "shaft" | "pressure";
-export type StateCondition = "open" | "verticalOpen";
+export type StateCondition = "open" | "verticalOpen" | "keyOpen" | "bonusOpen";
 export interface Control { x: number; y: number; text: string; guarded: boolean }
 export interface EnemySpawn { kind: EnemyKind; x: number; y: number }
-/** Extra collision over the base room. `stateOnly` rules exist only when an objective state is supplied. */
-export interface CollisionRule extends TileRect { solid: boolean; when?: StateCondition; stateOnly?: boolean }
+/** Extra collision over the base room. `stateOnly` rules exist only when an objective state is supplied;
+ *  `when` applies a rule once a condition holds, `unless` removes it once a condition holds. */
+export interface CollisionRule extends TileRect { solid: boolean; when?: StateCondition; unless?: StateCondition; stateOnly?: boolean }
+/** A control that opens with a key the lineage holds (class skill, stat threshold), not with play alone. */
+export interface KeyedControl { x: number; y: number; text: string; requires: Key[][]; opens: "keyOpen" | "bonusOpen"; locked: string }
 export interface Arrival { room: number; x: number; y: number; facing: number; vy?: number }
 export interface Opening {
   side: "top" | "bottom"; tiles: [number, number]; probe: [number, number]; when?: StateCondition;
@@ -37,6 +41,7 @@ export interface RoomSpec {
   openings: Opening[]; verticalOpenFrom: number | null;
   returnArrival: { x: number; y: number; facing: number } | null; arriveFromRight: { x: number; y: number; facing: number };
   branchArchX: number | null; hint: { priority: string | null; fallback: string };
+  keyed: KeyedControl | null; variant?: string;
 }
 
 const cache = new WeakMap<WaterRoom, RoomSpec>();
@@ -47,7 +52,8 @@ export function roomSpec(r: WaterRoom): RoomSpec {
 }
 const inRect = (q: TileRect, x: number, y: number): boolean => x >= q.x0 && x <= q.x1 && y >= q.y0 && y <= q.y1;
 const met = (when: StateCondition | undefined, o: RoomObjective | undefined): boolean =>
-  !when || (when === "open" ? !!o?.open : !!o?.verticalOpen);
+  !when || (when === "open" ? !!o?.open : when === "verticalOpen" ? !!o?.verticalOpen : when === "keyOpen" ? !!o?.keyOpen : !!o?.bonusOpen);
+export const conditionMet = met;
 export const openingRect = (op: Opening): TileRect => ({ x0: op.tiles[0], x1: op.tiles[1], y0: op.side === "top" ? -99 : 19, y1: op.side === "top" ? 5 : 99 });
 
 /** Order matters: openings and pits punch through, then stated ledges, then the base room. */
@@ -59,7 +65,7 @@ export function specSolid(r: WaterRoom, raised: boolean, x: number, y: number, o
   }
   for (const rule of s.collision) {
     if (rule.stateOnly && !o) continue;
-    if (!met(rule.when, o)) continue;
+    if (!met(rule.when, o) || rule.unless && met(rule.unless, o)) continue;
     if (inRect(rule, x, y)) return rule.solid;
   }
   return roomSolid({ ...r, platforms: s.base.platforms ? r.platforms : [], tunnel: r.tunnel && s.base.tunnel, gate: r.gate && s.base.gate }, raised, x, y);

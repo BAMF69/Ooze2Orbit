@@ -6,8 +6,9 @@ import { completeLevel, discover } from "./expedition";
 import type { Garden } from "./generations";
 import type { Adaptation, Difficulty, WaterRoom } from "./waterWorld";
 import { roomSpec } from "./levelgen/roomSpec";
+import { holds, type Key } from "./levelgen/keys";
 export interface RoomObjective { first: boolean; open: boolean; remaining: number; arenaActive?: boolean; arenaCleared?: boolean;
-  rigging?: boolean; netArmed?: boolean; netCaught?: number; verticalOpen?: boolean }
+  rigging?: boolean; netArmed?: boolean; netCaught?: number; verticalOpen?: boolean; keyOpen?: boolean; bonusOpen?: boolean }
 export interface Cargo { samples: Adaptation[]; clears: Difficulty[] }
 export interface Valve { x: number; y: number; text: string }
 export const SEAL_TILES = [3, 35] as const, EXIT_TILE = 35;
@@ -38,6 +39,14 @@ export function useValve(r: WaterRoom, o: RoomObjective, x: number, y: number): 
   const timed = s.puzzle === "pressure";
   return { state: { ...o, first: true, open: true, remaining: timed ? s.timed : 0 }, used: true,
     message: timed ? `Pressure gate opens for ${s.timed} active seconds. Cross the vent safely before it closes; the wheel can be reset.` : leftExit(r) ? "Lower latch released. The onward hatch is back LEFT at the entrance, above the floor. Retrace the shaft." : "Sluice unbarred. The route is open in both directions for this life." };
+}
+/** A keyed control (class door, vault shaft) opens only for a lineage holding one of its key sets. */
+export function useKeyed(r: WaterRoom, o: RoomObjective, x: number, y: number, keys: ReadonlySet<Key>): { state: RoomObjective; message: string; used: boolean } {
+  const k = roomSpec(r).keyed;
+  if (!k || Math.abs(x - k.x) >= 28 || Math.abs(y - k.y) >= 25) return { state: o, message: "", used: false };
+  if (o[k.opens]) return { state: o, message: "Already open for this life.", used: true };
+  if (!k.requires.some(all => all.every(key => holds(keys, key)))) return { state: o, message: k.locked, used: true };
+  return { state: { ...o, [k.opens]: true }, message: k.text, used: true };
 }
 export function bankCargo(g: Garden, cargo: Cargo): Garden {
   for (const sample of cargo.samples) g = discover(g, sample);

@@ -3,7 +3,7 @@
 // Notes: Persistent terrain differs from temporary weather. Unknown save fields survive all updates.
 // Authored: Written with Codex (GPT-6).
 import type { Garden, Traits, Climate } from "./generations";
-import { WATER, DIFFICULTIES, type Adaptation, type Difficulty } from "./waterWorld";
+import { WATER, DIFFICULTIES, ADAPTATIONS, type Adaptation, type Difficulty } from "./waterWorld";
 export interface Expedition {
   version: 1; seed: number; unlocked: Adaptation[]; completed: Difficulty[]; visited: number[];
   basinRaised: boolean; torrentDiverted: boolean; interventions: string[];
@@ -16,7 +16,7 @@ export function validExpedition(v: unknown): v is Expedition {
   const e = v as Expedition;
   return e.version === 1 && Number.isInteger(e.seed) && e.seed >= 0 && e.seed <= 0xffffffff &&
     typeof e.basinRaised === "boolean" && typeof e.torrentDiverted === "boolean" &&
-    Array.isArray(e.unlocked) && e.unlocked.every(a => a === "gills" || a === "fins") &&
+    Array.isArray(e.unlocked) && e.unlocked.every(a => ADAPTATIONS.includes(a)) &&
     Array.isArray(e.completed) && e.completed.every(a => DIFFICULTIES.includes(a)) &&
     Array.isArray(e.visited) && e.visited.every(id => Number.isInteger(id) && id >= 0 && id < 11) &&
     Array.isArray(e.interventions) && e.interventions.every(s => typeof s === "string");
@@ -34,11 +34,13 @@ export function levelLock(tier: Difficulty, t: Traits): string | null {
   if (tier === "hard" && !t.fins) return "Needs inherited swimming fins. Explore Easy's nursery branch, then choose Reedheart at the nest.";
   return null;
 }
+const DISCOVERY_TEXT: Record<Adaptation, string> = { gills: "the breathing reef; gills", fins: "the ripplefin nursery; swimming fins",
+  fullArmor: "a hidden grotto; full armor plating", iceBreath: "a hidden grotto; ice breath" };
 export function discover(g: Garden, adaptation: Adaptation): Garden {
   const e = g.expedition!;
   if (e.unlocked.includes(adaptation)) return g;
   return { ...g, expedition: { ...e, unlocked: [...e.unlocked, adaptation] },
-    history: [...g.history, `G${g.generation}: explored ${adaptation === "gills" ? "the breathing reef; gills" : "the ripplefin nursery; swimming fins"} can now appear in daughters.`] };
+    history: [...g.history, `G${g.generation}: explored ${DISCOVERY_TEXT[adaptation]} can now appear in daughters.`] };
 }
 export function completeLevel(g: Garden, tier: Difficulty): Garden {
   const e = g.expedition!;
