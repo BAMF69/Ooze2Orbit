@@ -333,3 +333,17 @@ Grotto vaults hold `fullArmor` or `iceBreath`, banked like gills and fins.
 - Room geometry still comes from the v1 templates, so variety is topology, room order, branches, vaults and
   class trials rather than new room shapes. New templates are the next content lever.
 - The lever label can overlap the net label in some lever positions (also true in v1).
+
+### Playtest follow-up (2026-11-17, BAMF69 seeds pt7 and pt15)
+Reports: Hard stayed locked after choosing Reedheart; a Reedheart lineage could not swim upstream. Both reproduced
+as missing traits, not broken levels: a daughter adds one adaptation and keeps the others, Reedheart only
+expresses fins when the nursery sample was banked, and upstream swimming needs fins and a diverted torrent.
+Changes (`creature/guidance.ts`, `creature/creatureIcons.ts`):
+- Current rooms say exactly what is missing (fins, diversion, or both) on entry and on stepping into the water.
+- Locked Medium/Hard entrances name the missing trait and the route, including "this takes two generations".
+- Daughter cards say whether she will express gills or fins, or not because the sample was never carried home.
+- The daughter screen opens with a lineage plan when banked adaptations still need more generations.
+- An equipment rack in the top right, styled like the cell stage's, shows Equipped traits (gills, fins, claws,
+  class skill) and dimmed Banked discoveries; tapping an icon explains it.
+Tests: `creatureGuidance.test.ts`; `tools/creature-levelgen-playtest.mjs` checks each message and the rack in the
+real scene, desktop and phone.
