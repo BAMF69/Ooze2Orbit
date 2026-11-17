@@ -77,6 +77,8 @@ import { AqDivisionPicker } from "./aquatic/divisionPicker";
 import { AqUpgradePanel } from "./aquatic/upgradePanel";
 import { cameraBehind, hiddenThreat, project, viewOf, wrapAngle, type Camera } from "./aquatic/view";
 
+const stamp = (d: Record<string, unknown>) => ({ ...d, savedAt: Date.now() }); // the menu continues the most recent stage
+
 const LOG = "aquatic";
 const LINEAGE_SLOT = "lineage";
 const MAX_DT = 0.1;
@@ -364,7 +366,7 @@ export class AquaticScene extends Phaser.Scene {
     this.me = { ...this.me, hp: maxHp(this.me) };
     for (const p of (params.get("parts") ?? "").split(",")) if (isPart(p)) this.me = addPart(this.me, p).creature; // ?parts=fins,jaws (captures)
     this.allowSave = !this.autoplay && !params.has("map") && !params.has("river") && !params.has("form") && !params.has("division");
-    const resumed = shell.takeContinue() || params.has("continue") ? this.loadRun() : null; // menu "Continue" (or ?continue): the saved run (2026-11-09)
+    const resumed = shell.takeContinue("aquatic") || params.has("continue") ? this.loadRun() : null; // menu "Continue" (or ?continue): the saved run (2026-11-09)
     this.buildMap(resumed ? resumed.map : Math.max(0, askMap), "start");
     if (resumed) { this.closeReveal(false); this.hud.toast(shell.i18n.t("aq.welcome_back", { form: this.me.form }), 5); }
     if (askRiver === 1 || askRiver === 2) this.startRiver(askRiver - 1);
@@ -696,10 +698,10 @@ export class AquaticScene extends Phaser.Scene {
   private saveRun(finished = false): void {
     if (!this.allowSave || (this.run && !finished)) return;
     try {
-      const data = finished ? { kind: "aquatic_run", v: 1, finished: true } : packRun({
+      const data = finished ? { kind: "aquatic_run", v: 1, finished: true } : stamp(packRun({
         sisters: this.sisters, map: this.mapIndex, me: { ...this.me, thickness: this.thickness }, tempC: this.tempC, pop: this.pop, causes: this.causes,
         temper: this.temper, kills: this.kills, deaths: this.deaths, breaches: this.breaches,
-      });
+      }));
       shell.saves.save(RUN_SLOT, data as Parameters<typeof shell.saves.save>[1]);
       Log.debug(LOG, `SAVED run (${finished ? "finished" : MAPS[this.mapIndex].id})`);
     } catch (err) {

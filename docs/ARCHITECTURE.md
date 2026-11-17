@@ -26,6 +26,22 @@ Engine-specific folder layout is documented in `docs/ENGINE.md`. Universal folde
 | `tests/` | Automated tests |
 | `.claude/` | Claude Code settings, skills, subagents |
 
+## Creature encounters (2026-11-15)
+Pure `creature/waterEncounters.ts` owns enemy perception/state timing, evasion/trap rules and
+vent timings. `waterChallenges.ts` owns shared collision/sight for submerged switchbacks.
+The registered scene applies intents/damage and displays short warnings; `waterView.ts`
+draws terrain/vent/cache. `tests/creatureEncounters.test.ts` protects counterplay and scenario
+pairs; existing Water traversal bots use actual collision through the new vertical routes.
+
+## Creature Water slice (2026-11-13)
+`CreatureGenerationScene.ts` remains registered as creature. Pure `creature/waterWorld.ts` owns
+seeded generation, validation and shared collision; `waterPhysics.ts` layers swimming/current on
+the existing controller. `expedition.ts` owns persistent discovery/Gardener rules and temporary
+weather; `waterView.ts` draws the prototype. Optional validated generation-save extensions retain
+existing export/import/source identity. No shell/core/other-stage code changes. Full rubric and
+module responsibilities: `docs/CREATURE_WATER_SLICE.md`; regression: `tests/creatureWater.test.ts`
+and current `tools/creature-stakes-playtest.mjs` / `tools/creature-depth-playtest.mjs`. Older Toy 1 table rows below describe inactive code.
+
 ## Key systems
 All-stage display adapters (ADR 0005): `core/viewport.ts` selects stage-specific camera sizes;
 `shell/viewport.ts` owns safe bounds and rotation notification. `game/stageUi.ts` owns native
@@ -84,6 +100,7 @@ The old Toy 1 scene remains unregistered pending the replacement's playtest; no 
 | Admin panel (dev) | ` key: temperaments, go to any map or river, form, points, invincible | `src/game/aquatic/adminPanel.ts` | smoke `?admin` |
 | The Gardener's lever | Body thickness -> health, bite damage, speed, turning; water temperature -> food, hunter and prey speed, hunter sight, stamina refill; the words for both | `src/game/aquatic/gardener.ts`, `AquaticScene.syncGardener` | `tests/aquaticGardener.test.ts` |
 | Run saves and save files | The aquatic run packed for slot `aquatic_run` and read back clamped; the export bundle (lineage + run) and its checks; the menu's Continue / Export / Import | `src/game/aquatic/runSave.ts`, `src/shell/saveFiles.ts`, `AquaticScene.saveRun/loadRun` | `tests/aquaticRunSave.test.ts`, smoke `?continue` |
+| Space save | The space campaign packed for slot `space_run`, every field checked and merged over a fresh campaign; `savedAt` lets the menu continue the most recent stage | `src/game/stageSaves.ts`, `src/shell/saveFiles.ts` latestRun | `tests/stageSaves.test.ts`, smoke `&save` then `?continue` |
 | Civilization stage (Toy 1) | Hex planet, three ways per region, machines, acts of god, the rival, tally and victory | `src/game/CivScene.ts`, `src/game/civ/rules.ts` | `tests/civ.test.ts`, smoke `?stage=civ&autoplay` |
 | Creature stage (Toy 1) | World map + Fernwood sidescroller; three ways per obstacle | `src/game/CreatureScene.ts`, `src/game/creature/` (physics, level, ways, sight, worldMap, draw, tuning) | `tests/creature.test.ts`, smoke `?stage=creature&autoplay` |
 | Sharks | Roam / hunt / rest; breach or distance ends a hunt; relentless or merciful below half health | `src/game/aquatic/sharks.ts`, `AquaticScene.moveSharks` | `tests/aquaticSharks.test.ts` |

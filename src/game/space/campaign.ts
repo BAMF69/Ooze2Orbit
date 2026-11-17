@@ -50,6 +50,8 @@ export interface Campaign {
   battles: number; wins: number; losses: number; refits: number; escortsLost: number;
   latticeStreak: number; // wins in a row at the Lattice without leaving: at SPACE.boss.streak the Mothership comes
   visitWins: number; // waves won since arriving in this system (the Driftfield starts easy on every arrival)
+  driftStreak: number; // Driftfield waves won in a row (fleeing, losing or leaving breaks it)
+  latticeOpen: boolean; // the Lattice opens for good after SPACE.patrol.latticeUnlock Driftfield waves in a row (BAMF69 2026-11-10)
   bossDown: boolean; // the Mothership has been destroyed at least once: the stage is won (you can keep playing)
   bosses: number;
   flownFit: string; // the fit at the last launch, to count refits
@@ -91,7 +93,7 @@ export function startCampaign(o: { temper: Record<TemperamentKind, number>; civ?
   const fit: Fit = { hull: "seedpod", parts };
   const harshness = Math.max(0, Math.min(1, o.harshness ?? 0));
   if (harshness > 0.3) start.push("The allies resent a harsh Gardener: their parts and ships cost more");
-  return { credits, fit, fleet: [], learned, makers: { home: primary, ally: allyFor(primary) }, harshness, system: "hearth", battles: 0, wins: 0, losses: 0, refits: 0, escortsLost: 0, latticeStreak: 0, visitWins: 0, bossDown: false, bosses: 0, flownFit: fitKey(fit), leans: { cautious: 0, aggressive: 0, adaptable: 0 }, start };
+  return { credits, fit, fleet: [], learned, makers: { home: primary, ally: allyFor(primary) }, harshness, system: "hearth", battles: 0, wins: 0, losses: 0, refits: 0, escortsLost: 0, latticeStreak: 0, visitWins: 0, driftStreak: 0, latticeOpen: false, bossDown: false, bosses: 0, flownFit: fitKey(fit), leans: { cautious: 0, aggressive: 0, adaptable: 0 }, start };
 }
 
 /** The ally's goods cost more the harsher the Gardener was. */
@@ -173,8 +175,14 @@ export function nextWave(c: Campaign): T0Kind[] {
  */
 export const travel = (c: Campaign, to: SystemId): Campaign => {
   const stay = to === c.system;
-  return { ...c, system: to, latticeStreak: to === "lattice" && c.system === "lattice" ? c.latticeStreak : 0, visitWins: stay ? c.visitWins : 0 };
+  return { ...c, system: to, latticeStreak: to === "lattice" && c.system === "lattice" ? c.latticeStreak : 0, visitWins: stay ? c.visitWins : 0, driftStreak: stay ? c.driftStreak : 0 };
 };
+
+/** Why a jump there is not allowed yet ("" = it is): the Lattice waits for three Driftfield waves won in a row. */
+export function jumpLock(c: Campaign, to: SystemId): string {
+  const need = SPACE.patrol.latticeUnlock;
+  return to === "lattice" && !c.latticeOpen ? `The Lattice is locked: win ${need} Driftfield waves in a row first (${c.driftStreak}/${need})` : "";
+}
 
 /** The systems to jump through from one to another, in order (not counting the start); empty when already there. */
 export function routeTo(from: SystemId, to: SystemId): SystemId[] {
@@ -216,7 +224,7 @@ export function afterBattle(c: Campaign, outcome: Outcome, dealt: Readonly<Recor
   const notes: string[] = [];
   if (outcome === "lost") {
     const lost = Math.floor(c.credits * SPACE.economy.podLoss);
-    next = { ...next, losses: c.losses + 1, credits: c.credits - lost, system: "hearth", latticeStreak: 0, visitWins: 0 };
+    next = { ...next, losses: c.losses + 1, credits: c.credits - lost, system: "hearth", latticeStreak: 0, visitWins: 0, driftStreak: 0 };
     notes.push(`Ship lost. The escape pod reached Hearth without ${salvage + lost} salvage.`);
   } else {
     next = { ...next, credits: c.credits + salvage };
@@ -228,12 +236,17 @@ export function afterBattle(c: Campaign, outcome: Outcome, dealt: Readonly<Recor
         notes.push(`${T0}'s Mothership is destroyed: +${salvage} salvage`);
       } else {
         notes.push(`Patrol destroyed: +${salvage} salvage`);
+        if (c.system === "driftfield") {
+          const streak = c.driftStreak + 1, need = SPACE.patrol.latticeUnlock;
+          next = { ...next, driftStreak: streak, latticeOpen: c.latticeOpen || streak >= need };
+          if (!c.latticeOpen) notes.push(streak >= need ? `${need} Driftfield waves in a row: the way to the Lattice is open` : `Driftfield streak ${streak} of ${need}: stay to open the way to the Lattice`);
+        }
         if (c.system === "lattice") {
           next = { ...next, latticeStreak: c.latticeStreak + 1 };
           notes.push(next.latticeStreak >= SPACE.boss.streak ? `${SPACE.boss.streak} in a row at the Lattice: ${T0}'s Mothership is coming` : `Lattice streak ${next.latticeStreak} of ${SPACE.boss.streak}: stay to summon the Mothership`);
         }
       }
-    } else { next = { ...next, latticeStreak: 0 }; notes.push(salvage ? `You broke off with ${salvage} salvage` : "You broke off"); }
+    } else { next = { ...next, latticeStreak: 0, driftStreak: 0 }; notes.push(salvage ? `You broke off with ${salvage} salvage` : "You broke off"); }
   }
   if (gone.length) notes.push(`Lost for good: ${gone.map((id) => SPACE.escorts[id].name).join(", ")}`);
   return { c: next, notes: [...notes, ...a.notes] };
@@ -277,7 +290,7 @@ export function pilotRefit(c: Campaign): { c: Campaign; note: string } {
 }
 
 /** Where the pilot fights: the Driftfield until it has wins and a wing behind it, then the Lattice. */
-export const pilotFight = (c: Campaign): SystemId => (c.wins >= 3 && c.fleet.length >= 2 ? "lattice" : "driftfield");
+export const pilotFight = (c: Campaign): SystemId => (c.latticeOpen && c.wins >= 3 && c.fleet.length >= 2 ? "lattice" : "driftfield");
 /** Between waves the pilot goes shopping when T0|▼| knows its guns well or it is hurt; otherwise it stays for the next wave. */
 export function pilotWantsShop(c: Campaign, hullFrac: number): boolean {
   const guns = c.fit.parts.filter((id) => part(id).slot === "gun");

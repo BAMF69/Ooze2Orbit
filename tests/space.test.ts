@@ -13,7 +13,7 @@ import { temperamentOf, writeStage } from "../src/core/lineage";
 import { revealFrom } from "../src/game/aquatic/reveal";
 import { adapt, shown } from "../src/game/space/adapt";
 import {
-  afterBattle, allyFor, bossDue, builtAround, neighbour, nextWave, routeTo, travel, escortFit, escortPrice, escortSpecs, escortsSoldAt, finished, install, launch, partsSoldAt, patrolFor, pilotRecruit,
+  afterBattle, allyFor, bossDue, builtAround, jumpLock, neighbour, nextWave, routeTo, travel, escortFit, escortPrice, escortSpecs, escortsSoldAt, finished, install, launch, partsSoldAt, patrolFor, pilotRecruit,
   pilotRefit, pilotWorld, priceOf, recruit, spaceRecord, startCampaign, swapHull, uninstall, ESCORT_IDS, SYSTEMS, type Campaign,
 } from "../src/game/space/campaign";
 import { IDLE, angleTo, approachControls, newBattle, pilotControls, reinforce, step, type Battle, type Controls } from "../src/game/space/combat";
@@ -456,5 +456,21 @@ describe("the space stage's own sounds (BAMF69 2026-11-10)", async () => {
       expect(events[n], n).toBeDefined();
       for (const f of events[n].files) expect(fs.existsSync(`public/assets/audio/${f}`), f).toBe(true);
     }
+  });
+});
+
+describe("the Lattice is locked until three Driftfield waves in a row (BAMF69 2026-11-10)", () => {
+  it("locked at first; three wins in a row open it for good; fleeing or leaving breaks the streak", () => {
+    let c = travel(fresh(), "driftfield");
+    expect(jumpLock(c, "lattice")).toMatch(/locked/);
+    expect(jumpLock(c, "tidereach")).toBe("");
+    c = afterBattle(c, "won", none, 0).c;
+    c = afterBattle(c, "won", none, 0).c;
+    expect(afterBattle(c, "fled", none, 0).c.driftStreak).toBe(0); // fleeing breaks it
+    expect(travel(travel(c, "hearth"), "driftfield").driftStreak).toBe(0); // so does leaving
+    c = afterBattle(c, "won", none, 0).c;
+    expect(c.latticeOpen).toBe(true);
+    expect(jumpLock(c, "lattice")).toBe("");
+    expect(jumpLock(travel(travel(c, "hearth"), "driftfield"), "lattice")).toBe(""); // open for good
   });
 });

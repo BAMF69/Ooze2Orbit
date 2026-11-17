@@ -63,6 +63,14 @@ Equipment attachment refinement is still deferred. Older uncommitted/shared-art 
   avatarY clamp (.48). This keeps the player clear of observed touch-control/banner overlap. No HUD file changed.
 - Legacy equipment cache trims stale composites to 32 plus referenced textures. New source textures are renamed
   into runtime atlases rather than uploaded twice. Read docs/art/AQUATIC_AVATAR_SLICE.md for prompts and scope.
+## Creature worktree update (2026-11-14)
+Creature gameplay work is isolated on `feat/creature-remaster` at the `fd0f29d` baseline.
+Approved procedural Water slice supersedes the six-room creature prototype. Post-playtest: physical
+walkable overworld/shoreline replace menu navigation; direct image loading plus sheet validation
+fix intermittent missing-avatar textures. See
+`docs/CREATURE_WATER_SLICE.md` for implemented scope and `docs/CREATURE_HANDOFF.md` for
+validation/local preview. User authorized committing/pushing this creature branch on 2026-11-15. Other stage entries below
+remain the shared baseline history.
 
 ## Aquatic crash and recovery polish (2026-11-16)
 - Fixed reported daughter-selection crashes: SisterView no longer draws legacy aparts overlays.
@@ -303,6 +311,29 @@ Equipment attachment refinement is still deferred. Older uncommitted/shared-art 
 - Physical iPhone/Android/controller checks and full world-render resolution remain pending. No new
   dependency and no commit/push for this change. New assets are tracked through the existing PNG LFS rule.
 
+## Civilization HD worktree — 2026-11-14 (uncommitted)
+- Civilization HD remaster is implemented in sibling Ooze2Orbit-civilization on feat/civilization-remaster.
+  Fullscreen habitat, original illustrated atlas/terrain, persistent localized HUD/cards, safe tap
+  placement and hero controls. The user reaffirmed live submenus; Details and explicit pause still freeze.
+- Gameplay/progression and lineage/space contracts remain. Only shared runtime change: civ-specific
+  fullscreen viewport case. Main checkout's uncommitted cell/aquatic work was inspected, not modified.
+- 487 tests, type/shader checks and recorded GPU production smoke pass; desktop and emulated mobile/
+  controller interaction tests pass. Real devices remain pending. No HD commit/push authorized.
+- Details: docs/HANDOFF_CIVILIZATION.md; exact artwork prompts: assets_src/civ/HD_ART_PROMPTS.md.
+
+## Civilization controls branch — 2026-11-14
+- `feat/civilization-remaster` is based on fd0f29d in sibling `Ooze2Orbit-civilization`.
+- User approved playtest and authorized commit/push of this civilization work on 2026-11-14.
+- 1 Hero / 2 Builder / 3 Summons, matching native touch buttons, independent build cursor,
+  obstacle-aware hero move orders and optional automatic combat patrol.
+- User revised the pause-menu preference: compact submenus run live above the controls and leave
+  both mazes visible. Details and explicit shell/rotation pause still freeze the battle.
+- Farmer workers cost 35 ore and add 6 food per payday; gatherer output stays unchanged.
+- 476 tests, type/11-shader checks and civilization GPU production smoke pass. Browser checks
+  cover desktop, emulated touch/controller, live menus/paydays, placement, rematch and space.
+- No shared shell/core changes, assets/dependencies or creature/space/save contract changes.
+  Physical-device validation remains. Detailed record: `docs/HANDOFF_CIVILIZATION.md`.
+
 ## Full-pond HUD, birth and aquatic entry (2026-11-13)
 - User requested clearer spikes, birth after diet choice, five stage icons, aquatic animations around the
   temperament reveal, red/green/blue temperament graphics, full-pond HUD overlay and four growth sections.
@@ -515,3 +546,5 @@ layout; then input/touch, offline/checkpoints, and individual stage adapters. Ar
 ## Next
 BAMF69 plays aquatic normally: are form choices worth anticipating and do they fit the swim/river pacing?
 Do not make further design changes until notes. Cell vertical slice waits; space Toy playtest still pending.
+
+Civilization playtest follow-up (2026-11-15): fixed four-tab command HUD implemented in the civilization worktree. Builder/Summons stay open after actions; Back returns to Hero; maze geometry stays fixed between pages. Temperament-tinted organic HUD, shortcut 4 for Workers / terrain. Preview is **5186** (5176 served old scene). See docs/HANDOFF_CIVILIZATION.md. No commit/push.

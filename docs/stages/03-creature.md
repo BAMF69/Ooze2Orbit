@@ -8,6 +8,40 @@
 > (BAMF69 2026-11-10). Its full design and build notes are in this file's git history.
 > Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69. Everything else was decided by BAMF69.
 
+## Water difficulty/content follow-up (2026-11-15)
+Stronger hits and charger stun; rig/arm/lure nets can immobilize healthy enemies without bites.
+Ceiling droppers, marked damaging pits and two reciprocal top/bottom route pairs add vertical
+threats/exploration. Returns now preserve entrance side, height and facing. See the creature handoff
+for exact scope; generator room IDs/version remain unchanged.
+Easy final and Hard entry/final are sealed encounters: all threats must be defeated or subdued.
+Wound, then E nearby during recovery for nonlethal subdual. Selected guarded switches need two
+uninterrupted seconds; lure guards away or disable them. Traversal rooms still allow evasion.
+Physical sluice controls now gate every room. Medium/Hard require ordered lower/upper controls,
+backtracking to a left-side onward hatch and a timed pressure crossing. Samples and completion seals
+must be carried to the physical nest alive; death/reload loses unbanked cargo. No retreat teleport.
+Medium now combines charging, ambushing and swimming threats with a submerged switchback,
+timed bubble vent and optional cache. Easy introduces behaviors separately; Hard combines them
+with its existing current requirements. Telegraphs, committed attacks and recovery reward
+movement/timing rather than only stat growth. Traps have limited reach; open-water swimming
+is not hidden merely by holding down. Content details/tests: `../CREATURE_WATER_SLICE.md`.
+
+## Current: procedural Water gameplay slice (2026-11-13)
+BAMF69 approved content/gameplay before controls/art. The active scene now starts at a four-path
+Overworld, with Water playable (easy/medium/hard) and Jungle/Mountains/Ice reserved. Seeded rooms,
+world-persistent discoveries, offspring-only gills/fins, permanent Gardener sluice/torrent changes
+and temporary rain/drought implement the first full biome loop. Medium needs gills; Hard needs
+gills + fins + Gardener diversion. The full-stage plan is any two hard biomes opening a final
+region; Water Hard is explicitly the temporary one-biome ending/hero handoff in this build.
+
+Playtest correction: the Overworld and Water shoreline are now physical side-view levels. Walk
+to signed biome/difficulty entrances; no world-selection menu appears after the reveal. Avatar
+loading validates complete sheets and uses direct image loading to avoid blob-decoding failures.
+
+Read **[CREATURE_WATER_SLICE.md](../CREATURE_WATER_SLICE.md)** for implemented rules, generation
+rubric, seed/save behavior, controls, tests and limits. No new dependencies/assets/shared contracts.
+The six-room Toy 2 descriptions and open questions below are historical, superseded where they
+conflict with the approved Water slice. Future ecosystem/evolving-boss ideas are not implemented.
+
 ## Identity
 ### Shared display rollout — 2026-11-13
 User reports liking all stages. Fullscreen/safe margins and explicit rotation resume now apply.

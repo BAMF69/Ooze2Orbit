@@ -4,13 +4,21 @@ import { stageViewport, type DisplayStage } from "../src/core/viewport";
 import { warsLayout } from "../src/game/civ/layout";
 const safe = { top: 44, right: 12, bottom: 34, left: 12 };
 describe("remaining stage display adapters", () => {
-  for (const stage of ["creature", "civ", "space"] as DisplayStage[]) it(`${stage} keeps portrait and landscape inside safe bounds`, () => {
+  for (const stage of ["creature", "space"] as DisplayStage[]) it(`${stage} keeps portrait and landscape inside safe bounds`, () => {
     for (const [w, h] of [[375, 812], [812, 375], [800, 1280], [1280, 720]]) {
       const box = stageViewport(stage, w, h, safe);
       expect(box.top).toBeGreaterThanOrEqual(safe.top); expect(box.left).toBe(safe.left);
       expect(box.left + box.width).toBeLessThanOrEqual(w - safe.right);
       expect(box.top + box.height).toBeLessThanOrEqual(h - safe.bottom - 64);
       expect(box.logicalWidth).toBeGreaterThan(0); expect(box.logicalHeight).toBeGreaterThan(0);
+    }
+  });
+  it("civilization fills the window while retaining its aspect ratio for HUD coordinate conversion", () => {
+    for (const [w, h] of [[375, 812], [812, 375], [800, 1280], [2560, 1440]]) {
+      const b = stageViewport("civ", w, h, safe);
+      expect([b.left, b.top, b.width, b.height]).toEqual([0, 0, w, h]);
+      expect(b.logicalWidth).toBeLessThanOrEqual(1600);
+      expect(Math.abs(b.logicalWidth / b.logicalHeight - w / h)).toBeLessThan(0.01);
     }
   });
   it("stacks civilization mazes in portrait and keeps grid hit coordinates aligned", () => {
