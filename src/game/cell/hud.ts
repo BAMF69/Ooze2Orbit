@@ -36,6 +36,7 @@ export class CellHud {
     const segments = node("div", "", "cell-growth-segments");
     for (let form = 1; form <= 4; form++) {
       const section = node("div", "", "growth-section"), label = node("span", i18n.t("cell.ui.form_label", { form }), "growth-label"), track = node("div", "", "growth-track"), fill = node("span");
+      label.dataset.roman=['I','II','III','IV'][form-1];
       track.setAttribute("role", "progressbar"); track.setAttribute("aria-label", label.textContent!); track.setAttribute("aria-valuemin", "0"); track.setAttribute("aria-valuemax", "100");
       track.append(fill); section.append(label, track); segments.append(section); this.sections.push({ root: section, fill });
     }
@@ -56,11 +57,12 @@ export class CellHud {
     this.main.textContent = `${this.i18n.t("cell.ui.form_label", { form: c.form })} · ${this.i18n.t(`diet.${c.diet}`)}`;
     this.growthCaption.textContent = full ? this.i18n.t("cell.ui.fully_grown") : this.i18n.t("cell.hud_form", { form: c.form, food: Math.floor(c.food), need });
     this.diets[c.form - 1] = c.diet;
+    this.growth.style.setProperty('--proof-form-columns',[1,2,3,4].map(form=>`minmax(0,${form===c.form?1.35:1}fr)`).join(' '));
     growthSections(c).forEach((value, i) => {
       const { root, fill } = this.sections[i]; root.style.setProperty("--growth-color", DIET_COLORS[this.diets[i] ?? c.diet]);
-      root.dataset.formDiet = this.diets[i] ?? c.diet; root.classList.toggle("future", i >= c.form);
+      if(root.dataset.formDiet!==(this.diets[i]??c.diet))root.dataset.formDiet=this.diets[i]??c.diet; root.classList.toggle("future", i >= c.form);
       root.classList.toggle("current", i === c.form - 1); root.classList.toggle("complete", value === 1);
-      root.querySelector(".growth-label")!.textContent = i === c.form - 1 ? `${c.form} · ${full ? "✓" : `${Math.floor(c.food)}/${need}`}` : this.i18n.t("cell.ui.form_label", { form:i+1 });
+      root.querySelector(".growth-label")!.textContent = i===c.form-1?(full?'✓':`${Math.floor(c.food)}/${need}`):value===1?'✓':'';
       fill.style.width = `${value * 100}%`; fill.parentElement!.setAttribute("aria-valuenow", String(Math.round(value * 100)));
     });
     const detail = [
@@ -88,7 +90,7 @@ export class CellHud {
         b.onclick = () => { this.iconNote.hidden = !this.iconNote.hidden && this.iconNote.textContent === b.title; this.iconNote.textContent = b.title; }; row.append(b);
       };
       for (const p of c.parts) add(p, `${this.i18n.t(`part.${p}`)} · ${this.i18n.t(`part.${p}_hint`)}`);
-      if (!c.parts.length) row.append(node("span", this.i18n.t("cell.ui.empty_parts"), "empty-icons"));
+      for(let n=c.parts.length;n<slots(c);n++){const empty=node('span','◇','cell-ability-icon empty-part-slot');empty.setAttribute('aria-label',this.i18n.t('cell.ui.empty_parts'));row.append(empty);}
       this.rack.append(row);
       const perkRow = node("div", "", "cell-icon-row"); perkRow.append(node("span", this.i18n.t("cell.ui.perks"), "icon-row-label"));
       for (const p of PERKS) if (perkLevel(c, p) > 0) {

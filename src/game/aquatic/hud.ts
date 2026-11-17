@@ -53,7 +53,7 @@ export class AquaticHud {
   private growthDiets: (AqCreature["diet"] | undefined)[] = [];
   private goalText=node("small","","dock-map-reward");
   private electricText = node('span','','dock-electric');
-  electric(owned:boolean,cooldown:number):void { this.electricText.hidden=!owned;this.electricText.textContent=cooldown>0?this.i18n.t('aq.shock_recharge',{seconds:cooldown.toFixed(1)}):this.i18n.t('aq.shock_ready');const center=this.growthRoot.querySelector('.dock-center');if(center&&!this.electricText.isConnected)center.append(this.electricText); }
+  electric(owned:boolean,cooldown:number):void { this.electricText.hidden=!owned;this.electricText.textContent=cooldown>0?this.i18n.t('aq.shock_recharge',{seconds:cooldown.toFixed(1)}):this.i18n.t('aq.shock_ready');const center=this.screenUi.root.querySelector('.dock-center');if(center&&!this.electricText.isConnected)center.append(this.electricText); }
   private bannerValue = "";
   private healthBar = document.createElement("progress");
   private staminaBar = document.createElement("progress");
@@ -92,18 +92,19 @@ export class AquaticHud {
     const segments = node("div", "", "cell-growth-segments");
     for (let form = 1; form <= 4; form++) {
       const section = node("div", "", "growth-section"), label = node("span", i18n.t("cell.ui.form_label", { form }), "growth-label"), track = node("div", "", "growth-track"), fill = node("span");
+      label.dataset.roman=['I','II','III','IV'][form-1];
       track.setAttribute("role", "progressbar"); track.setAttribute("aria-label", label.textContent!); track.setAttribute("aria-valuemin", "0");track.setAttribute("aria-valuemax", "100");
       track.append(fill);section.append(label,track);segments.append(section);this.growthFills.push(fill);
     }
     this.growthRoot.append(this.growthCaption,segments);this.screenUi.root.append(this.growthRoot);
     this.healthBar.setAttribute("aria-label", i18n.t("effect.health")); this.staminaBar.setAttribute("aria-label", i18n.t("effect.stamina"));
     for (const [label, bar] of [["Health", this.healthBar], ["Stamina", this.staminaBar]] as const) {
-      const wrap = node("label", i18n.t(`effect.${label.toLowerCase()}`), `aquatic-vital ${label.toLowerCase()}`); wrap.append(bar); this.screenUi.meters.append(wrap);
+      const wrap = node("label", "", `aquatic-vital ${label.toLowerCase()}`); wrap.append(node('span',label==='Health'?'♥':'ϟ','vital-value'),bar); this.screenUi.meters.append(wrap);
     }
     this.dock = new HudDock(scene, i18n, { root:this.screenUi.root, growth:this.growthRoot, status:this.screenUi.status,
       inventory:this.equipment, details:this.screenUi.root.querySelector<HTMLDetailsElement>(".stage-details")!, hints,
       upgrade:onUpgrade, commands:this.screenUi.footer, advance:onAdvance });
-    this.screenUi.status.append(this.screenUi.meters);
+
     this.growthRoot.querySelector(".cell-growth-segments")!.before(this.goalText);
     this.w = scene.scale.width;
     this.h = scene.scale.height;
@@ -199,7 +200,7 @@ export class AquaticHud {
 
   /** The stamina gauge, bottom right: the bar, a mark at the share dash and breach need, and your pace. */
   stamina(cur: number, max: number, paceLabel: string, needShare: number, redBelow: number): void {
-    this.staminaBar.max = max; this.staminaBar.value = cur;
+    this.staminaBar.max = max; this.staminaBar.value = cur;this.staminaBar.parentElement!.querySelector('.vital-value')!.textContent=`${Math.ceil(cur)}/${Math.ceil(max)}`;
     this.staminaBar.parentElement?.classList.toggle("low", cur < redBelow);
     const g = this.gaugeGfx.clear();
     const w = 120, x = this.w - 8 - w, y = this.h - 14;
@@ -233,7 +234,7 @@ export class AquaticHud {
 
   /** The health bar, right under the numbers in the status block (2026-11-08): green, then yellow, then red. */
   health(cur: number, max: number): void {
-    this.healthBar.max = max; this.healthBar.value = cur;
+    this.healthBar.max = max; this.healthBar.value = cur;this.healthBar.parentElement!.querySelector('.vital-value')!.textContent=`${Math.ceil(cur)}/${Math.ceil(max)}`;
     this.healthBar.parentElement?.classList.toggle("low", cur / max <= .25);
     const g = this.healthGfx.clear();
     if (!this.statusText.visible) return;
@@ -413,13 +414,14 @@ export class AquaticHud {
     c.formDiets?.forEach((diet, n) => { this.growthDiets[n] = diet; });
     c.selections?.forEach(p => { this.growthDiets[p.form - 1] = p.diet; });
     this.growthDiets[c.form - 1] = c.diet;
+    this.growthRoot.style.setProperty('--proof-form-columns',[1,2,3,4].map(form=>`minmax(0,${form===c.form?1.35:1}fr)`).join(' '));
     this.growthFills.forEach((fill, n) => {
       const value = n < c.form - 1 ? 1 : n === c.form - 1 ? (c.form === AQ.forms.size.length ? 1 : Math.max(0, Math.min(1,c.food / need))) : 0;
       fill.style.width = `${value * 100}%`; fill.parentElement!.setAttribute("aria-valuenow", String(Math.round(value * 100)));
       const section = fill.parentElement!.parentElement!;
-      section.dataset.formDiet = this.growthDiets[n] ?? c.diet; section.classList.toggle("future", n >= c.form);
+      if(section.dataset.formDiet!==(this.growthDiets[n]??c.diet))section.dataset.formDiet=this.growthDiets[n]??c.diet; section.classList.toggle("future", n >= c.form);
       section.style.setProperty("--growth-color",DIET_COLORS[this.growthDiets[n] ?? c.diet]);section.classList.toggle("current",n === c.form-1);section.classList.toggle("complete",value===1);
-      section.querySelector(".growth-label")!.textContent = n === c.form-1 ? `${c.form} · ${Number.isFinite(need) ? `${Math.floor(c.food)}/${need}` : "✓"}` : this.i18n.t("cell.ui.form_label", { form:n+1 });
+      section.querySelector(".growth-label")!.textContent = n===c.form-1?(Number.isFinite(need)?`${Math.floor(c.food)}/${need}`:'✓'):value===1?'✓':'';
     });
   }
   private publish(): void {

@@ -1,6 +1,7 @@
 import { UpgradeTray } from '../upgradeTray';
 import { TouchMenuPause } from '../touchMenuPause';
 import { paintUpgradeCard } from '../upgradeCard';
+import { decorateIllustratedUpgrade } from '../illustratedHud';
 import { upgradeEffect } from './effectDescriptions';
 // Purpose: Responsive aquatic purchases; touch pauses the water; keyboard/controller purchases remain live.
 import type * as Phaser from "phaser";
@@ -16,7 +17,7 @@ export class AqUpgradePanel {
   private pause: TouchMenuPause;
   get touchPaused(): boolean { return this.isOpen && this.touchMode(); }
   isOpen = false;
-  constructor(scene: Phaser.Scene, private i18n: I18n, onClick: (s: AqStat) => void, private touchMode: () => boolean = () => false, private onToggle: () => void = () => {}) {
+  constructor(private scene: Phaser.Scene, private i18n: I18n, onClick: (s: AqStat) => void, private touchMode: () => boolean = () => false, private onToggle: () => void = () => {}) {
     this.pause = new TouchMenuPause(scene);
     scene.events.once("shutdown", () => this.pause.set(false));
     this.root = cellUi(scene, "cell-upgrades");
@@ -41,6 +42,7 @@ export class AqUpgradePanel {
       paintUpgradeCard(this.rows[n], s, this.i18n.t(`up.${s}`), c.ups[s], maxLevel(),
         cost === null ? this.i18n.t("up.max") : this.i18n.t(`up.cost_${AQ_PAID_WITH[s]}`, { n: cost }), upgradeEffect(c, s, this.i18n), cost !== null && pointsFor(c, s) >= cost, this.i18n.t("effect.bonus", { cap: maxLevel(), bonus: Math.max(0,c.ups[s]-maxLevel()) }), cost !== null && AQ_PAID_WITH[s] === "either" ? this.i18n.t("up.cost_either_short", { n: cost }) : undefined);
       this.rows[n].setAttribute("aria-pressed", String(n === this.index));
+      decorateIllustratedUpgrade(this.scene,this.rows[n],s);
     });
   }
 }
