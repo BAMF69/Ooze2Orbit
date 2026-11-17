@@ -12,7 +12,7 @@
 import { Log } from "../core/log";
 import { EXPORT_SLOTS, RUN_SLOT, packBundle, unpackBundle, unpackRun } from "../game/aquatic/runSave";
 import type { GameKey, Shell } from "./app";
-import { STAGE_SLOT, savedAt } from "../game/stageSaves";
+import { STAGE_SLOT, isSpaceSave, savedAt } from "../game/stageSaves";
 
 const LOG = "save";
 
@@ -23,7 +23,7 @@ const slotData = (shell: Shell, slot: string): unknown => {
 /** The stage to continue: the most recently saved of the aquatic run and the space campaign (null: neither). */
 export function latestRun(shell: Shell): GameKey | null {
   const aquatic = slotData(shell, RUN_SLOT), space = slotData(shell, STAGE_SLOT.space);
-  const runs: [GameKey, unknown, boolean][] = [["aquatic", aquatic, unpackRun(aquatic).run !== null], ["space", space, !!space]];
+  const runs: [GameKey, unknown, boolean][] = [["aquatic", aquatic, unpackRun(aquatic).run !== null], ["space", space, isSpaceSave(space)]];
   let best: GameKey | null = null, at = -1;
   for (const [key, raw, live] of runs) if (live && savedAt(raw) > at) { best = key; at = savedAt(raw); }
   return best;

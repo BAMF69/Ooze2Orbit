@@ -263,7 +263,7 @@ export function pause(shell: Shell): Screen {
       m.add(buttonItem(shell.i18n, "pause.resume", () => shell.resumeGame())).el,
       m.add(buttonItem(shell.i18n, "pause.settings", () => shell.push(settingsScreen(shell)))).el,
       m.add(buttonItem(shell.i18n, "menu.export", () => exportSaves(shell))).el, // from any stage's pause menu (BAMF69 2026-11-10)
-      m.add(buttonItem(shell.i18n, "menu.import", () => importSaves(shell, () => undefined))).el,
+      m.add(buttonItem(shell.i18n, "menu.import", () => importSaves(shell, () => shell.quitToTitle()))).el, // back to the title: a stage left running would write its old state over the imported saves
       m.add(buttonItem(shell.i18n, "pause.quit", () => shell.quitToTitle())).el,
     );
     p.append(list);

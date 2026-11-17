@@ -58,7 +58,6 @@ import { average, bodyWord, mulberry32, newPopulation, nextGeneration, type Popu
 import { revealFrom } from "./aquatic/reveal";
 import { action } from "./stageUi";
 import { RUN_SLOT, packRun, unpackRun, type AqRun } from "./aquatic/runSave";
-const stamp = (d: Record<string, unknown>) => ({ ...d, savedAt: Date.now() }); // the menu continues the most recent stage
 import { hitAt, makeRiver, newRiverBody, riverJump, riverStep, type RiverBody, type RiverRun, type RiverThing } from "./aquatic/river";
 import {
   AQ, AQ_KINDS, AQ_PAID_WITH, AQ_PARTS, AQ_STATS, KINDS, MAPS, RIVERS, SHARKS, SHARK_MIND, UNIQUE_PARTS, type AqKind, type AqPart, type AqStat, type KindTuning,
@@ -70,6 +69,8 @@ import { SisterView } from "./aquatic/sisterView";
 import { AqDivisionPicker } from "./aquatic/divisionPicker";
 import { AqUpgradePanel } from "./aquatic/upgradePanel";
 import { cameraBehind, hiddenThreat, project, viewOf, wrapAngle, type Camera } from "./aquatic/view";
+
+const stamp = (d: Record<string, unknown>) => ({ ...d, savedAt: Date.now() }); // the menu continues the most recent stage
 
 const LOG = "aquatic";
 const LINEAGE_SLOT = "lineage";

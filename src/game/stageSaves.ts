@@ -11,7 +11,7 @@
 //           reason instead of breaking the stage.
 // Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
 // ---------------------------------------------------------------------------
-import type { TemperamentKind } from "../core/lineage";
+import { TEMPERAMENTS, type TemperamentKind } from "../core/lineage";
 import { ESCORT_IDS, SYSTEMS, type Campaign } from "./space/campaign";
 import { HULL_IDS, PART_IDS } from "./space/fit";
 
@@ -25,6 +25,12 @@ const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
 /** When this save was made (0 if unknown or finished): the main menu continues the most recent stage. */
 export const savedAt = (raw: unknown): number => (isObj(raw) && raw.finished !== true ? num(raw.savedAt, 0, 1e15, 0) : 0);
+
+/** A space save the stage could load (the menu offers Continue only then): the right kind, this build's, with a ship. */
+export const isSpaceSave = (raw: unknown): boolean =>
+  isObj(raw) && raw.kind === STAGE_SLOT.space && typeof raw.v === "number" && raw.v <= STAGE_V && isObj(raw.campaign) && isObj((raw.campaign as Json).fit);
+
+const COUNTERS = ["battles", "wins", "losses", "refits", "escortsLost", "latticeStreak", "visitWins", "driftStreak", "bosses"] as const;
 
 export interface SpaceRun { campaign: Campaign; temper: Record<TemperamentKind, number> }
 
@@ -41,14 +47,25 @@ export function unpackSpace(raw: unknown, base: Campaign): { run: SpaceRun | nul
   const fit = c.fit as Json;
   if (!HULL_IDS.includes(fit.hull as never) || !Array.isArray(fit.parts) || !fit.parts.every((p) => PART_IDS.includes(p as never))) return { run: null, problems: ["space save has an unknown hull or part"] };
   const systems = SYSTEMS.map((s) => s.id);
+  const kind = (v: unknown, d: TemperamentKind): TemperamentKind => (TEMPERAMENTS.includes(v as TemperamentKind) ? (v as TemperamentKind) : d);
+  const makers = isObj(c.makers) ? c.makers : {}, leans = isObj(c.leans) ? c.leans : {}, learned = isObj(c.learned) ? c.learned : {};
+  const system = systems.includes(c.system as never) ? (c.system as Campaign["system"]) : "hearth";
   const campaign: Campaign = {
-    ...clone(base),
-    ...(clone(c) as Partial<Campaign>),
-    system: systems.includes(c.system as never) ? (c.system as Campaign["system"]) : "hearth",
+    ...clone(base), // fields a later build adds keep their fresh-campaign value
+    fit: { hull: fit.hull as Campaign["fit"]["hull"], parts: [...(fit.parts as Campaign["fit"]["parts"])] },
+    system,
     fleet: (Array.isArray(c.fleet) ? c.fleet : []).filter((e) => ESCORT_IDS.includes(e as never)) as Campaign["fleet"],
     credits: num(c.credits, 0, 1e9, base.credits),
-    learned: { ...base.learned, ...(isObj(c.learned) ? (clone(c.learned) as Campaign["learned"]) : {}) },
+    harshness: num(c.harshness, 0, 1, base.harshness),
+    makers: { home: kind(makers.home, base.makers.home), ally: kind(makers.ally, base.makers.ally) },
+    bossDown: c.bossDown === true,
+    latticeOpen: c.latticeOpen === true || system === "lattice", // a save made at the Lattice got there
+    flownFit: typeof c.flownFit === "string" ? c.flownFit : base.flownFit,
+    start: Array.isArray(c.start) ? c.start.filter((x): x is string => typeof x === "string").slice(0, 8) : base.start,
   };
+  for (const k of COUNTERS) campaign[k] = Math.floor(num(c[k], 0, 1e6, base[k]));
+  for (const k of TEMPERAMENTS) campaign.leans[k] = Math.floor(num(leans[k], 0, 1e6, 0));
+  for (const k of Object.keys(base.learned) as (keyof Campaign["learned"])[]) campaign.learned[k] = num(learned[k], 0, 1, base.learned[k]); // only the families this build knows
   const t = isObj(raw.temper) ? raw.temper : {};
   return { run: { campaign, temper: { cautious: num(t.cautious, 0, 1, 0), aggressive: num(t.aggressive, 0, 1, 0), adaptable: num(t.adaptable, 0, 1, 0) } }, problems: [] };
 }

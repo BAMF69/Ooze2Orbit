@@ -1,4 +1,13 @@
 # Playtest Log
+## 2026-11-16 — Review of PR #17 (not user approval)
+- Findings: importing a save file from a pause menu left the stage running, and its next autosave wrote the old state
+  back over the imported one; a debug start (`&boss`, `&world`) wrote over the real space save; the menu offered
+  Continue for any space save, readable or not; the space save's numbers were not checked.
+- Decisions: importing from a pause menu now returns to the title; debug starts do not save; Continue needs a
+  loadable save; every field of the space save is checked.
+- Carried over from the 2026-11-10 asks: food over upgrades in the cell stage (diet picks and food eaten outweigh
+  stat levels). The aquatic stage's weights are left for a decision: its daughter choices came later.
+
 ## 2026-11-13 — All-stage display rollout
 User says they like how all stages play and explicitly requested the cell display changes in aquatic,
 creature, civilization and space. Implemented shared fullscreen/safe bounds/rotation handling plus

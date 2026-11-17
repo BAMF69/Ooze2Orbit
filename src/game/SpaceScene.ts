@@ -129,7 +129,7 @@ export class SpaceScene extends Phaser.Scene {
     this.screenUi = new StageUi(this); this.commandsOpen = false;
     if (params.get("world") === "tidereach") this.c = { ...this.c, system: "tidereach" }; // debug: start at the allies' world
     if (params.has("boss")) this.c = { ...this.c, system: "lattice", latticeStreak: SPACE.boss.streak, latticeOpen: true }; // debug: the Mothership arrives
-    this.allowSave = !this.autoplay || params.has("save"); // &save: an autoplay run writes its save (smoke checks Continue)
+    this.allowSave = params.has("save") || (!this.autoplay && !params.has("boss") && !params.has("world")); // debug starts never touch your save; &save: an autoplay run writes one (smoke checks Continue)
     const resumed = (shell.takeContinue("space") || params.has("continue")) && this.resume(); // menu Continue: that system, all your progress
     this.notes = [];
     this.foeS.clear(); this.allyS.clear(); this.held.clear();
