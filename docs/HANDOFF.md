@@ -1,5 +1,13 @@
 # Handoff
 
+## Creature level generator (levelgen worktree, 2026-11-17)
+Branch `feat/creature-levelgen` from `feat/creature-remaster` (5a2f3a9). New Water worlds come from a
+progression graph (critical chain, loops, nursery, class trials keyed on the temperament class skill,
+stat-gated grotto vaults with fun parts), built from templates and solved by the real controller in tests.
+Existing v1 saves replay unchanged. Full status, tests and gaps: `docs/CREATURE_LEVELGEN.md` §10.
+Browser check: `npx vite --port 5186 --strictPort`, then `node tools/creature-levelgen-playtest.mjs`.
+Next: creature chat review of the Traits/health/damage changes in §8; new room templates; human playtest.
+
 ## Creature worktree update (2026-11-14)
 Creature gameplay work is isolated on `feat/creature-remaster` at the `fd0f29d` baseline.
 Approved procedural Water slice supersedes the six-room creature prototype. Post-playtest: physical

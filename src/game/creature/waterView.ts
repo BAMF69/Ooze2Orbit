@@ -42,6 +42,11 @@ export function drawWaterRoom(g: Phaser.GameObjects.Graphics, r: WaterRoom, e: E
     g.fillStyle(active ? 0x89c791 : 0xe9bd72).fillCircle(v.x, v.y - 14, 10);
     g.lineStyle(2, 0x243b3b).strokeCircle(v.x, v.y - 14, 10).lineBetween(v.x - 7, v.y - 14, v.x + 7, v.y - 14);
   }
+  if (spec.keyed) {
+    const k = spec.keyed, done = objective[k.opens];
+    g.lineStyle(3, done ? 0x94e0bc : k.opens === "keyOpen" ? 0xd99a6c : 0xb8a3e0).strokeRoundedRect(k.x - 14, k.y - 34, 28, 34, 6);
+    g.fillStyle(done ? 0x94e0bc : k.opens === "keyOpen" ? 0xd99a6c : 0xb8a3e0, 0.8).fillCircle(k.x, k.y - 17, 5);
+  }
   if (leftExit(r)) g.lineStyle(3, objective.open ? 0x94e0bc : 0xb47558).strokeRoundedRect(112, 204, 32, 36, 8);
   if (encounterKinds(r).length) {
     const rig = netRig(r), net = netFrame(r);

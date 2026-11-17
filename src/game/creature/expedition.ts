@@ -3,30 +3,36 @@
 // Notes: Persistent terrain differs from temporary weather. Unknown save fields survive all updates.
 // Authored: Written with Codex (GPT-6).
 import type { Garden, Traits, Climate } from "./generations";
+import { CLASS_SKILLS, type ClassSkill } from "./levelgen/keys";
+/** The class skill a lineage is born with: its dominant temperament at the creature reveal (keys never leave). */
+export const classFromTemperament = (t: { aggressive: number; cautious: number; adaptable: number }): ClassSkill =>
+  t.aggressive >= t.cautious && t.aggressive >= t.adaptable ? "roar" : t.cautious >= t.adaptable ? "burrow" : "tool";
+export const validClassSkills = (v: unknown): boolean => v === undefined || Array.isArray(v) && v.every(c => (CLASS_SKILLS as readonly string[]).includes(c as string));
 import { WATER, DIFFICULTIES, ADAPTATIONS, type Adaptation, type Difficulty } from "./waterWorld";
 export interface Expedition {
-  version: 1; seed: number; unlocked: Adaptation[]; completed: Difficulty[]; visited: number[];
+  /** 1: the frozen seed-v1 skeleton (replayed unchanged for old saves); 2: the graph-generated world (levelgen/world.ts). */
+  version: 1 | 2; seed: number; unlocked: Adaptation[]; completed: Difficulty[]; visited: number[];
   basinRaised: boolean; torrentDiverted: boolean; interventions: string[];
 }
-export const freshExpedition = (seed: number): Expedition => ({ version: 1, seed: seed >>> 0,
+export const freshExpedition = (seed: number, version: 1 | 2 = 2): Expedition => ({ version, seed: seed >>> 0,
   unlocked: [], completed: [], visited: [], basinRaised: false, torrentDiverted: false, interventions: [] });
 
 export function validExpedition(v: unknown): v is Expedition {
   if (!v || typeof v !== "object") return false;
   const e = v as Expedition;
-  return e.version === 1 && Number.isInteger(e.seed) && e.seed >= 0 && e.seed <= 0xffffffff &&
+  return (e.version === 1 || e.version === 2) && Number.isInteger(e.seed) && e.seed >= 0 && e.seed <= 0xffffffff &&
     typeof e.basinRaised === "boolean" && typeof e.torrentDiverted === "boolean" &&
     Array.isArray(e.unlocked) && e.unlocked.every(a => ADAPTATIONS.includes(a)) &&
     Array.isArray(e.completed) && e.completed.every(a => DIFFICULTIES.includes(a)) &&
-    Array.isArray(e.visited) && e.visited.every(id => Number.isInteger(id) && id >= 0 && id < 11) &&
+    Array.isArray(e.visited) && e.visited.every(id => Number.isInteger(id) && id >= 0 && (e.version === 2 || id < 11)) &&
     Array.isArray(e.interventions) && e.interventions.every(s => typeof s === "string");
 }
 
 /** A migrated Toy 2 garden retains stats/history. Only a genuinely new world takes aquatic starting parts. */
-export function attachExpedition(g: Garden, seed: number, aquaticParts: unknown): Garden {
-  if (g.expedition) return g;
+export function attachExpedition(g: Garden, seed: number, aquaticParts: unknown, classSkill?: ClassSkill): Garden {
+  if (g.expedition) return { ...g, traits: { ...g.traits, classSkills: g.traits.classSkills ?? (classSkill ? [classSkill] : undefined) } };
   const parts = Array.isArray(aquaticParts) ? aquaticParts.filter(p => typeof p === "string") : [];
-  return { ...g, expedition: freshExpedition(seed), traits: { ...g.traits,
+  return { ...g, expedition: freshExpedition(seed), traits: { ...g.traits, ...(classSkill ? { classSkills: [classSkill] } : {}),
     gills: g.traits.gills || parts.includes("gills"), fins: g.traits.fins || parts.includes("fins") || parts.includes("torrent") } };
 }
 export function levelLock(tier: Difficulty, t: Traits): string | null {

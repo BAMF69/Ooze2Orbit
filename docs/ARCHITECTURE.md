@@ -26,6 +26,12 @@ Engine-specific folder layout is documented in `docs/ENGINE.md`. Universal folde
 | `tests/` | Automated tests |
 | `.claude/` | Claude Code settings, skills, subagents |
 
+## Creature level generator (2026-11-17)
+`creature/levelgen/` owns Water generation: `roomSpec.ts` is the room model every consumer reads (one
+collision function), `legacyWater.ts` projects v1 rooms, `graph.ts`/`graphProblems.ts`/`lineageSim.ts` build
+and validate the progression graph, `templates.ts`/`world.ts` turn it into rooms, `solver.ts` drives the real
+controller for validation. Design and status: `docs/CREATURE_LEVELGEN.md`.
+
 ## Creature encounters (2026-11-15)
 Pure `creature/waterEncounters.ts` owns enemy perception/state timing, evasion/trap rules and
 vent timings. `waterChallenges.ts` owns shared collision/sight for submerged switchbacks.

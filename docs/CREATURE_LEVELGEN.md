@@ -1,7 +1,8 @@
 # Creature level generation: diagnosis, schema and invariants
 
 > Owner: the levelgen chat. Branch `feat/creature-levelgen`, based on `origin/feat/creature-remaster` at `5a2f3a9`.
-> Written 2026-11-16 after the design discussion with BAMF69. Status: **design document, no gameplay code yet.**
+> Written 2026-11-16 after the design discussion with BAMF69. Status (2026-11-17): **migration steps 0 to 3 built**;
+> see §10 for what is implemented, how it is tested and what is not yet done.
 > Read with `CREATURE_WATER_SLICE.md` (what is built), `CREATURE_HANDOFF.md` (validation so far) and
 > `HANDOFF_CONTRACT.md` (what the lineage file promises).
 
@@ -285,3 +286,50 @@ These touch files or contracts the creature chat or other stages own. Raise each
 4. Bonus vaults hold fun parts only in Water. One source per story key; revisit when Jungle adds cross-biome keys.
 
 Next step: migration step 0 (section 7), which changes no gameplay.
+
+## 10. Implementation status and handoff (2026-11-17)
+
+### What is built
+| Module (`src/game/creature/levelgen/`) | Role |
+|---|---|
+| `roomSpec.ts` | The room model and `specSolid`, the single collision test used by physics, view, bots and sight |
+| `legacyWater.ts` | The only place a v1 room ID is branched on: the frozen seed-v1 tables, projected into specs |
+| `keys.ts` | Key vocabulary, material table (critical materials open only with story keys or Gardener terrain), `keysOf` |
+| `graph.ts` | Progression graph: critical chain, drain-to-shaft loops in Medium and Hard, nursery, optional class trials and stat vaults |
+| `graphProblems.ts` | Graph invariants with named problems (identity, reciprocity, critical materials, critical chain, bonus isolation, loop, pacing, class triad, Gardener circularity, keys before gates, easy open) |
+| `lineageSim.ts` | Plays a lineage generation by generation, banking story keys as the game does |
+| `templates.ts` | One template per room role, grown from the eleven v1 rooms, each with a solution script |
+| `world.ts` | Graph to rooms: numbering, links, shaft openings, keyed controls, static validation, level entries |
+| `solver.ts` | Drives the real controller along a script with the scene's own control, keyed, pit and timer rules; the D+Shift bot |
+| `tuning.ts`, `rng.ts` | All generator numbers; deterministic integer PRNG |
+
+Scene: a garden whose expedition is version 1 replays its frozen skeleton unchanged; every new garden gets a
+version 2 graph world (`generateWaterV2`). The class skill comes from the dominant temperament at the reveal
+(Roar, Burrow, Tool use) and is stored on traits. Class doors and grotto shafts are keyed controls (E at them).
+Grotto vaults hold `fullArmor` or `iceBreath`, banked like gills and fins.
+
+### How it is tested
+| Claim | Evidence | Level |
+|---|---|---|
+| Step 0 changed no behavior | `creatureLegacyRooms.test.ts`: collision in every objective state plus every rule, 53 seeds, generated before the refactor | technically identical |
+| Graphs are valid and varied | `creatureLevelGraph.test.ts`: 501 seeds, 0 fallbacks, a broken-graph test per invariant, vault thresholds | technically reachable |
+| Seed 0 is the v1 world | `creatureLevelWorld.test.ts`: v1 golden records match, plus the new Hard loop | technically identical |
+| Generated rooms are solvable and returnable | Real controller solves every room of ten generated worlds along its script and returns | real controller |
+| Sprinting does not bypass | D+Shift blocked in every room of those ten worlds at maximum traits | real controller |
+| Keys gate correctly | Class doors and grotto shafts refuse a key-less lineage and open with the key, 60 seeds | real controller |
+| Arrivals are safe | Every shaft arrival lands outside geometry and on stable ground | real controller |
+| Saves | `creatureLevelSaves.test.ts`: v1 replay, v2 round trip, class skill persistence | unit |
+| Scene wiring | `tools/creature-levelgen-playtest.mjs` (dev server on 5186): v2 world, class door refuse/open, grotto refuse/open/climb into the vault, desktop and phone captures | browser, scene fixtures |
+| Fun | Not tested | needs human playtest |
+
+### Not yet done (honest gaps)
+- Enemies are not simulated by `solver.ts`; encounters keep their own tests. Generated rooms reuse the v1 enemy
+  placements per role, so net-only arena clears are covered by the existing encounter tests, not per seed.
+- Fun parts are discovered and banked but have no in-play ability yet, and daughters do not express them.
+- Agility, intellect, armor, the armor curve, tiered enemy damage and 1-health-per-3-vitality are designed
+  (§2) but not wired: they change `generations.ts`, `GEN` and `ENEMIES`, owned by the creature chat. Until
+  then, agility and intellect vaults cannot be opened, which is allowed (vaults are optional) but noted.
+- A daughter's later class skill is not offered yet; the reveal class is the only one granted.
+- Room geometry still comes from the v1 templates, so variety is topology, room order, branches, vaults and
+  class trials rather than new room shapes. New templates are the next content lever.
+- The lever label can overlap the net label in some lever positions (also true in v1).

@@ -11,8 +11,10 @@ import { writeStage, refreshLineage } from "../core/lineage";
 import { revealFrom } from "./aquatic/reveal";
 import { newBody, stepBody, boxHits, type Body } from "./creature/physics";
 import { GEN, evidence, edible, inherit, offspring, resumeGarden, newGarden, creatureSource, type Garden, type Heir, type Climate } from "./creature/generations";
-import { WATER, generateWater, levelStart, type Difficulty, type WaterWorld, type WaterRoom } from "./creature/waterWorld";
-import { attachExpedition, intervene, interventionLock, levelLock, weatherEvent, stepWeather, effectiveClimate, type Weather, type Intervention } from "./creature/expedition";
+import { WATER, generateWater, type Difficulty, type WaterWorld, type WaterRoom } from "./creature/waterWorld";
+import { generateWaterV2, levelEntry } from "./creature/levelgen/world";
+import { keysOf } from "./creature/levelgen/keys";
+import { attachExpedition, classFromTemperament, intervene, interventionLock, levelLock, weatherEvent, stepWeather, effectiveClimate, type Weather, type Intervention } from "./creature/expedition";
 import { stepWaterBody, inWater, waterline } from "./creature/waterPhysics";
 import { drawWaterRoom, type WaterFood } from "./creature/waterView";
 import { OVERWORLD, BIOME_PATHS, WATER_PATHS, hubSolid, nearLandmark } from "./creature/overworld";
@@ -20,7 +22,7 @@ import { drawHub, hubLabels } from "./creature/overworldView";
 import { AVATAR_ASSETS, avatarAssetsReady, queueAvatarAssets } from "./creature/avatarAssets";
 import { ENEMIES, ENCOUNTER, spawnEncounters, stepEnemy, biteDamage, evasion, reedCover, ventPhase, type WaterEnemy } from "./creature/waterEncounters";
 import { challengeSolid, clearWaterLine } from "./creature/waterChallenges";
-import { newObjective, newCargo, valves, drainedRoom, tickObjective, useValve, bankCargo, objectiveBarrier, canClaimSeal, emergencyRelease, type RoomObjective, type Cargo } from "./creature/waterObjectives";
+import { newObjective, newCargo, valves, useKeyed, drainedRoom, tickObjective, useValve, bankCargo, objectiveBarrier, canClaimSeal, emergencyRelease, type RoomObjective, type Cargo } from "./creature/waterObjectives";
 import { arenaRoom, activeThreat, encounterLock, sealedEncounter, guardedControl, CONTROL_SECONDS, advanceOperation, canIncapacitate, type Operation } from "./creature/waterCombatRooms";
 import { netRig, netFrame, useNet, netCatches } from "./creature/waterTraps";
 import { roomSpec } from "./creature/levelgen/roomSpec";
@@ -67,6 +69,7 @@ export class CreatureScene extends Phaser.Scene {
   private foodCache = false;
   private objective = newObjective();
   private cargo: Cargo = newCargo();
+  private classSkill: "roar" | "burrow" | "tool" = "roar";
   private message = "Four paths leave the nest. Water is the first playable biome.";
   constructor() { super("creature"); }
   preload(): void {
@@ -111,7 +114,8 @@ export class CreatureScene extends Phaser.Scene {
     const home = refreshLineage(prev)?.species[0];
     const source = creatureSource(prev, reveal.diet);
     const seed = this.requestedSeed();
-    this.garden = attachExpedition(resumeGarden(shell.saves.load("creature_generations").envelope?.data, reveal.diet, source), seed, home?.stages.aquatic?.parts);
+    this.classSkill = classFromTemperament(Object.fromEntries(reveal.rows.map(r => [r.kind, r.pct])) as { aggressive: number; cautious: number; adaptable: number });
+    this.garden = attachExpedition(resumeGarden(shell.saves.load("creature_generations").envelope?.data, reveal.diet, source), seed, home?.stages.aquatic?.parts, this.classSkill);
     this.buildWorld(); this.newLife(); this.close(); this.save();
     this.lineage = new LineagePanel(this);
     if (!new URLSearchParams(location.search).has("autoplay")) {
@@ -123,8 +127,10 @@ export class CreatureScene extends Phaser.Scene {
     const raw = new URLSearchParams(location.search).get("creatureSeed");
     return raw !== null && /^\d+$/.test(raw) && Number(raw) <= 0xffffffff ? Number(raw) : crypto.getRandomValues(new Uint32Array(1))[0];
   }
+  /** A version 1 save replays its frozen skeleton unchanged; every new world comes from the graph generator. */
   private buildWorld(): void {
-    this.world = generateWater(this.garden.expedition!.seed);
+    const e = this.garden.expedition!;
+    this.world = e.version === 1 ? generateWater(e.seed) : generateWaterV2(e.seed, this.garden.traits.classSkills ?? [this.classSkill]);
     if (this.world.fallback) Log.warn("creature", `Generator fallback: ${this.world.rejected.join("; ")}`);
     Log.info("creature", `Water world seed ${this.world.seed}, generator v${this.world.version}, G${this.garden.generation}`);
   }
@@ -159,6 +165,7 @@ export class CreatureScene extends Phaser.Scene {
     this.objective = old?.objective ? { ...old.objective } : newObjective();
     if (spec.verticalOpenFrom !== null && this.rooms.get(spec.verticalOpenFrom)?.objective.open) this.objective.verticalOpen = true;
     this.landmarks = valves(r).map((v, n) => this.add.text(v.x, v.y - 24, `${n + 1} · ${v.text.split(" · ").at(-1)}${guardedControl(r, n) ? " · E + stay 2s" : ""}`, { fontFamily: "monospace", fontSize: "10px", color: "#fff0bd", backgroundColor: "#172b2a", padding: { x: 3, y: 3 } }).setOrigin(0.5, 1).setDepth(7));
+    if (spec.keyed) this.landmarks.push(this.add.text(spec.keyed.x, spec.keyed.y - 40, spec.keyed.opens === "keyOpen" ? `E: ${r.name.toUpperCase()}\n${(spec.variant ?? "").replace("tool", "tool use").toUpperCase()} LINEAGE` : "E: GROTTO SHAFT", { fontFamily: "monospace", fontSize: "10px", color: "#f0d79c", align: "center", backgroundColor: "#172b2a" }).setOrigin(0.5, 1).setDepth(7));
     if (spec.leftHatch) this.landmarks.push(this.add.text(spec.leftHatch.x, spec.leftHatch.y - 40, "← ONWARD HATCH\nReturn after both controls", { fontFamily: "monospace", fontSize: "10px", color: "#bfe7d8", align: "center" }).setOrigin(0.5, 1).setDepth(7));
     if (arenaRoom(r)) this.landmarks.push(this.add.text(98, 194, "ENCOUNTER SEAL\nDefeat / subdue / trap", { fontFamily: "monospace", fontSize: "10px", color: "#ffcf91", align: "center" }).setOrigin(0.5, 1).setDepth(7));
     if (this.enemies.length || spawnEncounters(r).length) {
@@ -199,7 +206,7 @@ export class CreatureScene extends Phaser.Scene {
   private startLevel(tier: Difficulty): void {
     const lock = levelLock(tier, this.garden.traits);
     if (lock) { this.message = lock; return; }
-    this.travel(levelStart(tier), WATER.spawn); this.close();
+    this.travel(levelEntry(this.world, tier), WATER.spawn); this.close();
   }
   private changeTerrain(kind: Intervention): void {
     const lock = interventionLock(this.garden, kind);
@@ -228,7 +235,7 @@ export class CreatureScene extends Phaser.Scene {
         choices: [{ id: "cancel", label: "Keep this world", run: () => this.close() }, { id: "restart", label: "Replace creature world", run: () => {
           const old = this.garden, seed = (old.expedition!.seed + 0x9e3779b9) >>> 0;
           const prev = refreshLineage(shell.saves.load("lineage").envelope?.data);
-          this.garden = attachExpedition({ ...old, ...newGarden(old.traits.diet), expedition: undefined }, seed, prev?.species[0]?.stages.aquatic?.parts);
+          this.garden = attachExpedition({ ...old, ...newGarden(old.traits.diet), expedition: undefined }, seed, prev?.species[0]?.stages.aquatic?.parts, this.classSkill);
           this.buildWorld(); this.newLife(); this.save(); this.close();
         } }] };
       case "won": return { text: "WATER BIOME COMPLETE\n\nYou crossed the shallows, inherited aquatic adaptations and shaped the torrent with the Gardener.\n\nThis first-biome prototype ends at the Water crown. The full creature stage will open its final region after any two hard biomes. You can keep exploring or test the existing civilization handoff.",
@@ -237,7 +244,9 @@ export class CreatureScene extends Phaser.Scene {
       default: return { text: "", choices: [] };
     }
   }
-  private abilities(t = this.garden.traits): string { return [t.climb ? "claws" : "", t.gills ? "gills" : "", t.fins ? "swimming fins" : ""].filter(Boolean).join(", ") || "no special adaptations"; }
+  private abilities(t = this.garden.traits): string { return [t.climb ? "claws" : "", t.gills ? "gills" : "", t.fins ? "swimming fins" : "", ...(t.classSkills ?? []).map(c => c === "tool" ? "tool use" : c)].filter(Boolean).join(", ") || "no special adaptations"; }
+  /** What this creature can open: its traits as keys, plus the world's permanent Gardener terrain. */
+  private lineageKeys() { const t = this.garden.traits, e = this.garden.expedition!; return keysOf({ stats: { strength: t.strength, vitality: t.vitality }, gills: t.gills, fins: t.fins, climb: t.climb, classSkills: t.classSkills }, e); }
   private updateMenu(): void {
     const i = shell.input, content = this.menuContent();
     const left = i.takePress("move_left"), uiLeft = i.takePress("ui_left"), up = i.takePress("ui_up");
@@ -406,6 +415,9 @@ export class CreatureScene extends Phaser.Scene {
       }
       this.objective = valve.state; this.message = valve.message; return;
     }
+    // Class doors and grotto shafts open only for a lineage holding the key (levelgen/keys.ts material table).
+    const keyed = useKeyed(r, this.objective, x, this.body.y, this.lineageKeys());
+    if (keyed.used) { if (keyed.state !== this.objective) this.evidence.solves++; this.objective = keyed.state; this.message = keyed.message; return; }
     const hatch = roomSpec(r).leftHatch;
     if (hatch && Math.abs(x - hatch.x) < 28 && Math.abs(this.body.y - hatch.y) < 25) {
       if (this.objective.open) this.travel(r.right, WATER.spawn);
@@ -418,7 +430,10 @@ export class CreatureScene extends Phaser.Scene {
     if (r.reward && x > 550) {
       const had = this.garden.expedition!.unlocked.includes(r.reward);
       if (!had && !this.cargo.samples.includes(r.reward)) this.cargo.samples.push(r.reward);
-      this.message = had ? "This adaptation is already available to your daughters." : `${r.reward === "gills" ? "Gills" : "Swimming fins"} discovered! Your body stays the same; CARRY IT HOME ALIVE to bank it, then choose ${r.reward === "gills" ? "Tidefoot" : "Reedheart"}. Death or reloading loses carried samples.`;
+      const story = r.reward === "gills" || r.reward === "fins", label = { gills: "Gills", fins: "Swimming fins", fullArmor: "Full armor plating", iceBreath: "Ice breath" }[r.reward];
+      this.message = had ? "This adaptation is already available to your daughters." : story
+        ? `${label} discovered! Your body stays the same; CARRY IT HOME ALIVE to bank it, then choose ${r.reward === "gills" ? "Tidefoot" : "Reedheart"}. Death or reloading loses carried samples.`
+        : `${label} discovered in a hidden grotto! CARRY IT HOME ALIVE to bank it for your lineage. Death or reloading loses carried samples.`;
       if (!r.goal) return;
     }
     if (r.goal && x > 550) {
@@ -455,7 +470,7 @@ export class CreatureScene extends Phaser.Scene {
     }
     const t = this.garden.traits, e = this.garden.expedition!, weather = this.weather.remaining > 0 ? `${this.weather.climate} ${Math.ceil(this.weather.remaining)}s` : this.garden.climate;
     this.screenUi.setStatus(`G${this.garden.generation} · ${this.room === -1 ? "Overworld" : this.room === -2 ? "Water shoreline" : this.currentRoom.name} · HP ${this.hp}/${GEN.health + t.vitality} · Carrying ${this.cargo.samples.length + this.cargo.clears.length}${this.room >= 0 && this.objective.netArmed ? " · NET READY" : ""}${this.room >= 0 && sealedEncounter(this.objective) ? " · SEALED: " + this.enemies.filter(activeThreat).length + " threats" : ""}`,
-      `UNBANKED: ${[...this.cargo.samples, ...this.cargo.clears.map(t => t + " seal")].join(", ") || "none"}\nBring these to the nest alive. Death/reload loses unbanked cargo.\nSeed ${e.seed} · generator v${WATER.version}\n${t.diet} · STR ${t.strength} · VIT ${t.vitality} · ${this.abilities()}\nFood ${Math.max(0, Math.round(100 - this.hunger / WATER.hungerSeconds * 100))}% · Air ${Math.ceil(this.oxygen)}s · ${weather}\nBasin ${e.basinRaised ? "raised" : "low"} · torrent ${e.torrentDiverted ? "diverted" : "wild"}\nUnlocked for daughters: ${e.unlocked.join(", ") || "none"}\nCompleted: ${e.completed.join(", ") || "none"}\nA/D move · W/Space swim up · S swim down/hide · J/F bite · E use · U Gardener\n\n${this.garden.history.slice(-8).join("\n")}`);
+      `UNBANKED: ${[...this.cargo.samples, ...this.cargo.clears.map(t => t + " seal")].join(", ") || "none"}\nBring these to the nest alive. Death/reload loses unbanked cargo.\nSeed ${e.seed} · generator v${this.world.version}\n${t.diet} · STR ${t.strength} · VIT ${t.vitality} · ${this.abilities()}\nFood ${Math.max(0, Math.round(100 - this.hunger / WATER.hungerSeconds * 100))}% · Air ${Math.ceil(this.oxygen)}s · ${weather}\nBasin ${e.basinRaised ? "raised" : "low"} · torrent ${e.torrentDiverted ? "diverted" : "wild"}\nUnlocked for daughters: ${e.unlocked.join(", ") || "none"}\nCompleted: ${e.completed.join(", ") || "none"}\nA/D move · W/Space swim up · S swim down/hide · J/F bite · E use · U Gardener\n\n${this.garden.history.slice(-8).join("\n")}`);
     const view = this.cameras.main.worldView;
     const unseen = this.enemies.find(e => activeThreat(e) && Math.abs(e.x - this.body.x) < 180 && (e.x < view.left || e.x > view.right));
     const warning = this.enemies.find(e => activeThreat(e) && e.phase === "tell" && Math.abs(e.x - this.body.x) < 180);
