@@ -1,8 +1,20 @@
 # Handoff
 
-**Last updated:** 2026-11-16
+**Last updated:** 2026-11-17
 **Branch:** `feat/cell-division`. Previous baseline committed and pushed as fd0f29d. This snapshot includes the subsequent aquatic remaster, map rewards and organic HUD/input polish. Push only when asked.
 **Active:** Cell/aquatic upgrade and growth HUD polish, expanded effects in Details, and aquatic illustrated remaster. Creature/civilization may be developed in independent chats/worktrees; preserve their scope.
+
+## Approved illustrated HUD family (2026-11-17)
+- Cell and aquatic use complete painted surfaces for all three diets, native weighted Vollkorn text,
+  crisp symbols/meters, a tapered inset status panel and a centered 75% landscape progression strip.
+- Portrait stays shallow; upgrades scroll above the anchored strip. Touch menus pause while keyboard
+  and controller menus stay live. Aquatic depth, pace, breach, dash and acquired Shock retain bindings.
+- Final review: no added corner ornaments; raised kelp, dorsal-fin and armored-scute tab dividers
+  follow each aquatic diet's material. Gardener is a distinct painted pill, and notifications clear crests.
+- Current renderer: illustratedHud.ts/css plus illustratedHudSurfaces.json. The earlier component-frame
+  constructor is superseded. Use docs/art/HUD_ILLUSTRATED_FAMILY.md and its review captures as the contract.
+- Asset provenance A-0035, A-0037/A-0038 and A-0039; exact generation prompts and bundled OFL license included.
+- User authorized commit/push on 2026-11-17. Physical phone/controller checks remain outstanding.
 
 ## Aquatic crash and recovery polish (2026-11-16)
 - Fixed reported daughter-selection crashes: SisterView no longer draws legacy aparts overlays.

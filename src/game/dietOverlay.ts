@@ -1,6 +1,5 @@
 // Diet is authoritative; temperament shares keep their independent red/green/blue meaning.
-import './dietOverlay.css';
-import './paintedHud.css';
+import './hudDock.css';
 import type * as Phaser from 'phaser';
 import type { Diet } from './cell/tuning';
 let owner: DietOverlay | undefined;
@@ -15,5 +14,3 @@ export class DietOverlay {
     if (document.body.dataset.overlayDiet !== diet) document.body.dataset.overlayDiet = diet;
   }
 }
-
-import './hudTabs.css';

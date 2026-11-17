@@ -11,6 +11,10 @@ export function trackHudOcclusion(scene: Phaser.Scene, subject: () => Phaser.Gam
     document.querySelectorAll<HTMLElement>('.hud-dock,.upgrade-quarter,.dock-control-tray').forEach(menu => {
       if(!menu.classList.contains('hud-dock')&&menu.closest('.hud-dock')){menu.classList.remove('hud-occluded');return;}
       const r = menu.getBoundingClientRect();
+      menu.style.setProperty('--occlusion-x',`${(left+right)/2-r.left}px`);
+      menu.style.setProperty('--occlusion-y',`${(top+bottom)/2-r.top}px`);
+      menu.style.setProperty('--occlusion-rx',`${Math.max(35,(right-left)*.75)}px`);
+      menu.style.setProperty('--occlusion-ry',`${Math.max(35,(bottom-top)*.75)}px`);
       menu.classList.toggle('hud-occluded', !menu.hidden && r.width>0 && r.height>0 && left<r.right && right>r.left && top<r.bottom && bottom>r.top);
     });
   };

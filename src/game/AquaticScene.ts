@@ -328,8 +328,8 @@ export class AquaticScene extends Phaser.Scene {
     this.touch = new TouchControls(shell.input, [
       { label: shell.i18n.t("display.dash"), action: "dash" },
       { label: "Shock", action: "electric" },
-      { label: shell.i18n.t("display.jump"), action: "jump" },
-      { label: shell.i18n.t("touch.pace"), action: "pace" },
+      { label: shell.i18n.t("touch.breach"), description:shell.i18n.t("display.jump"), action: "jump" },
+      { label: shell.i18n.t("touch.pace_short"), description:shell.i18n.t("touch.pace"), action: "pace" },
       { label: shell.i18n.t("touch.rise"), action: "rise", group: "depth" },
       { label: shell.i18n.t("touch.sink"), action: "sink", group: "depth" },
     ]);

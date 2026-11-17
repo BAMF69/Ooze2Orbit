@@ -364,6 +364,8 @@
   "opt.scheme.touch": "Touchscreen",
   "opt.scheme.controller": "Controller",
   "cell.controls.dash": "Dash",
+  "touch.breach": "Breach",
+  "touch.pace_short": "Pace",
   "cell.controls.evolve": "Evolve",
   "cell.controls.keyboard_hint": "WASD / arrows · Move   E · Upgrades   Space / Q · Jet   Enter · Evolve",
   "cell.controls.controller_hint": "Stick / D-pad · Move   Triangle / Y · Upgrades   Cross / A · Jet / Evolve · R1 / RB · Jet",

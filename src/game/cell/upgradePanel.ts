@@ -1,6 +1,7 @@
 import { UpgradeTray } from '../upgradeTray';
 import { TouchMenuPause } from '../touchMenuPause';
 import { paintUpgradeCard } from '../upgradeCard';
+import { decorateIllustratedUpgrade } from '../illustratedHud';
 import { upgradeEffect } from './effectDescriptions';
 // Purpose: Responsive cell purchases. Touch pauses the pond; keyboard/controller purchases remain live.
 import type * as Phaser from "phaser";
@@ -19,7 +20,7 @@ export class UpgradePanel {
   private pause: TouchMenuPause;
   get touchPaused(): boolean { return this.isOpen && this.touchMode(); }
   isOpen = false;
-  constructor(scene: Phaser.Scene, private i18n: I18n, onClick: (stat: UpgradeStat) => void, private touchMode: () => boolean = () => false, private onToggle: () => void = () => {}) {
+  constructor(private scene: Phaser.Scene, private i18n: I18n, onClick: (stat: UpgradeStat) => void, private touchMode: () => boolean = () => false, private onToggle: () => void = () => {}) {
     this.pause = new TouchMenuPause(scene);
     scene.events.once("shutdown", () => this.pause.set(false));
     this.root = cellUi(scene, "cell-upgrades");
@@ -43,6 +44,7 @@ export class UpgradePanel {
       paintUpgradeCard(this.rows[i], s, this.i18n.t(`up.${s}`), c.ups[s], maxLevel(),
         cost === null ? this.i18n.t("up.max") : this.i18n.t(`up.cost_${pay}`, { n: cost }), upgradeEffect(c, s, this.i18n), cost !== null && c.points[pay] >= cost, this.i18n.t("effect.bonus", { cap: maxLevel(), bonus: Math.max(0,c.ups[s]-maxLevel()) }));
       this.rows[i].setAttribute("aria-pressed", String(i === this.index));
+      decorateIllustratedUpgrade(this.scene,this.rows[i],s);
     });
   }
 }

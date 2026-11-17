@@ -3,7 +3,7 @@
 // Authored: Written with Codex for Ooze2Orbit.
 import { CONTROL, stickDirections } from "../core/controlScheme";
 import type { ShellInput } from "./input";
-export interface TouchAction { label: string; action?: string; run?: () => void; group?: "depth" }
+export interface TouchAction { label: string; description?: string; action?: string; run?: () => void; group?: "depth" }
 export class TouchControls {
   readonly root = document.createElement("div");
   private stick = document.createElement("div");
@@ -19,6 +19,7 @@ export class TouchControls {
     const depth = document.createElement("div"); depth.className = "touch-depth";
     for (const [i, a] of actions.entries()) {
       const b = document.createElement("button"); b.textContent = a.label; b.dataset.touchAction = a.action ?? "menu";
+      b.title=a.description??a.label;b.setAttribute('aria-label',b.title);
       const source = `touch:button${i}`; this.sources.add(source);
       b.onpointerdown = e => {
         if (!this.active) return; e.preventDefault(); this.input.use("touch"); b.setPointerCapture(e.pointerId);
@@ -45,10 +46,11 @@ export class TouchControls {
   }
   private move(e: PointerEvent): void {
     const r = this.stick.getBoundingClientRect(), dx = e.clientX - r.left - r.width / 2, dy = e.clientY - r.top - r.height / 2;
-    const length = Math.hypot(dx, dy), scale = Math.min(1, CONTROL.stickRadius / (length || 1));
+    const radius=Math.min(CONTROL.stickRadius,Math.min(r.width,r.height)*.4);
+    const length = Math.hypot(dx, dy), scale = Math.min(1, radius / (length || 1));
     const x = dx * scale, y = dy * scale;
     this.knob.style.transform = `translate(${x}px, ${y}px)`;
-    this.input.hold("touch:stick", stickDirections(x / CONTROL.stickRadius, y / CONTROL.stickRadius));
+    this.input.hold("touch:stick", stickDirections(x / radius, y / radius));
   }
   private releaseStick(): void { this.pointer = null; this.input.releaseVirtual("touch:stick"); this.knob.style.transform = ""; }
   update(enabled: boolean): void {
