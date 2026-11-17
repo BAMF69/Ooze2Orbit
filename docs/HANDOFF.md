@@ -1,8 +1,68 @@
 # Handoff
 
 **Last updated:** 2026-11-16
-**Branch:** `feat/cell-division`. Previous baseline committed and pushed as fd0f29d. This snapshot includes the subsequent aquatic remaster, map rewards and organic HUD/input polish. Push only when asked.
+**Branch:** `feat/aquatic-avatar-development`, based on `feat/cell-division` at `9c9f2c0`. Previous baseline committed and pushed as fd0f29d. This snapshot includes the subsequent aquatic remaster, map rewards and organic HUD/input polish. Push only when asked.
 **Active:** Cell/aquatic upgrade and growth HUD polish, expanded effects in Details, and aquatic illustrated remaster. Creature/civilization may be developed in independent chats/worktrees; preserve their scope.
+
+## Repository publication (2026-11-17)
+The user authorized committing and pushing the aquatic avatar work to its own branch. Other stage branches remain separate.
+All 506 tests, type/shader checks, production build, and the in-game Diet developer-control check pass.
+Equipment attachment refinement is still deferred. Older uncommitted/shared-art notes below describe earlier snapshots.
+
+## Complete aquatic body forms (2026-11-16; current avatar worktree)
+- User deferred attachment tuning; continued body maturation instead. All three temperament families now have
+  four distinct forms and three independent diet palettes: 36 sheets / 432 poses. Mature adaptable form 3 retained.
+- New evolutionArt.ts/evolutionBodies.json/evolutionTextures.ts resolve family/form/diet and load relevant palettes
+  on demand. Soft 64 MiB atlas cache protects live references and retains ownership across scene restarts.
+- World player, sisters and daughter previews share body selection. Growth, thickness, stats, gameplay and saves remain intact.
+- New body-specific rigs are PROVISIONAL for equipment. Do not interpret finite socket coverage as validated attachment quality.
+  The old offline part lab remains a mature-adaptable review snapshot; body progression is in the new evolution gallery.
+- 506 tests, typecheck, 11 shaders, build, 184 game combinations, phone portrait/landscape and production GPU smoke pass.
+- Worktree feat/aquatic-avatar-development at base 9c9f2c0 remains uncommitted. Do not merge/push/publish.
+  See docs/art/AQUATIC_MATURATION.md. Earlier shared-form status below is historical.
+
+## Aquatic rig schema and inspection workbench (2026-11-16)
+- avatarRig.ts now owns named sockets and body-specific measured paths/landmarks. attachmentSchema.ts defines
+  all eight parts declaratively. attachmentCompiler.ts replaces coordinate-by-part logic; organPlacements.ts
+  is a compatibility export. World sprites and native previews use the same compiled contract.
+- Supported authored rig: mature adaptable, forms 3/4 (form 4 shared-art status explicit). Other families/forms
+  need their own authored rigs and are rejected by this compiler; their existing renderer remains intact.
+- Offline inspector: src/dev/avatarInspector.ts, tools/avatar_inspector.html, build_avatar_inspector.mjs.
+  Each part has its own checkbox, Solo, mount/animation descriptions and tiers where applicable. Front/side/
+  back views, pose stepping, actions, reduced motion, mount/label/bounds overlays, schema/setup downloads.
+- Gills/endurance/torrent artwork proxies and the tendril hinge-only limitation are labeled. Current ordinary
+  sockets are provisional bind positions; spine/tail are measured per pose. No new bitmap or save/HUD changes.
+- 503 tests, typecheck, 11 shaders, build and 184 game combinations pass. Offline workbench controls/exports
+  and mobile layout pass with zero errors/external requests. Details: docs/art/AQUATIC_RIG_SCHEMA.md.
+
+## Aquatic spine attachment follow-up (2026-11-16)
+- User requested tier III armor to bend/contort with side and back poses. spineArticulation.ts now samples
+  measured dorsal curves (avatarFrames.json/spines), with arc-length spacing and tangent orientation.
+- Side/back tiers I/II/III use 2/4/7 overlapping tapered scutes. Three atlas crops per scute bend internally;
+  world rendering accounts for nonuniform body scale. Native previews use the same crop/placement data.
+- No source bitmap changed. No per-frame texture generation. Pause/reduced motion and dash remain coherent.
+- 499 tests, typecheck, 11 shader checks, build, and the 184-combination browser fixture pass. The standalone
+  preview now has Next pose for inspecting curvature. tools/avatar_spine_review.mjs captures side/back detail.
+
+## Aquatic avatar representative slice (2026-11-16; isolated worktree)
+- Worktree: isolated Ooze2Orbit-avatar checkout.
+  Branch feat/aquatic-avatar-development, base 9c9f2c0. Remote feat/cell-division verified at the same commit.
+  Changes are local and uncommitted. Do not push, publish or merge without the user's request.
+- User approved dominant temperament percentages as the family selector, independently of diet/stats/equipment.
+  Aggressive is muscular/sharklike; cautious shelled/nautilus/turtle; adaptable now grows slender and feline,
+  with aquatic skin, narrow waist, webbed limbs and a long ribbon-finned tail. Broad mantle concepts superseded.
+- A-0035: family/form concept board plus mature adaptable three-diet, three-view swim/chomp sheets and organ atlas.
+  Forms 3/4 temporarily share the mature body. Juvenile art, distinct form-4 maturation and the other families'
+  production artwork remain future work. Do not describe this slice as the complete aquatic remaster.
+- New landmarkEquipment.ts and organPlacements.ts share illustrated organ atlas frames, never generate textures
+  per frame, remove swapped organs, and retain simulation-driven pause/reduced-motion behavior. Tiered fins/jaws/
+  plates change structure. Frame/eye/tail landmarks are in avatarFrames.json; originals are not pixel-edited.
+- Daughter cards/mitosis use the same body/organ placement contract. Sisters keep the shared illustrated renderer;
+  no legacy aparts path is restored. Stat mechanics, collision, saves and inherited thickness remain unchanged.
+- Shared-file integration note for HUD work: AquaticScene.ts changes only viewCamera(), adding a portrait-touch
+  avatarY clamp (.48). This keeps the player clear of observed touch-control/banner overlap. No HUD file changed.
+- Legacy equipment cache trims stale composites to 32 plus referenced textures. New source textures are renamed
+  into runtime atlases rather than uploaded twice. Read docs/art/AQUATIC_AVATAR_SLICE.md for prompts and scope.
 
 ## Aquatic crash and recovery polish (2026-11-16)
 - Fixed reported daughter-selection crashes: SisterView no longer draws legacy aparts overlays.

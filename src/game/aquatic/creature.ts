@@ -244,20 +244,15 @@ export function sharkTier(aggr: number): number {
 // ---- the body's look from all three temperaments (2026-11-08) -------------------------------------
 export type LookFamily = "aggressive" | "cautious" | "adaptable";
 
-/**
- * How strongly each temperament shapes the body now, 0..1: half from the lineage's temperament, the rest from how you
- * live this stage (attack and kills; defense, health and plates; speed, mobility and breaches).
- */
+/** Body family follows temperament shares directly; diet, purchases and kills cannot replace it. */
 export function lookScores(
-  temper: Record<LookFamily, number>, c: AqCreature, kills: number, breaches: number,
+  temper: Record<LookFamily, number>, _c: AqCreature, _kills: number, _breaches: number,
 ): Record<LookFamily, number> {
-  const s = AQ.shark, max = maxLevel();
-  const clamp = (v: number) => Math.max(0, Math.min(1, v));
-  return {
-    aggressive: aggression(temper.aggressive, c, kills),
-    cautious: clamp(s.fromLineage * temper.cautious + s.fromAttack * ((c.ups.defense + c.ups.health) / (2 * max)) + s.fromKills * (has(c, "plates") ? 1 : 0)),
-    adaptable: clamp(s.fromLineage * temper.adaptable + s.fromAttack * ((c.ups.speed + c.ups.mobility) / (2 * max)) + s.fromKills * Math.min(1, breaches / 10)),
-  };
+  const safe = (n: number) => Number.isFinite(n) ? Math.max(0, n) : 0;
+  const aggressive = safe(temper.aggressive), cautious = safe(temper.cautious), adaptable = safe(temper.adaptable);
+  const total = aggressive + cautious + adaptable;
+  return total > 0 ? { aggressive: aggressive / total, cautious: cautious / total, adaptable: adaptable / total }
+    : { aggressive: 0, cautious: 0, adaptable: 0 };
 }
 
 /**

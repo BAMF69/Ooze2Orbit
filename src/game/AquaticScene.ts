@@ -346,6 +346,7 @@ export class AquaticScene extends Phaser.Scene {
       setTemperament: (k, v) => this.adminTemper(k, v),
       goTo: (d) => this.adminGoTo(d),
       setForm: (n) => { this.me = { ...this.me, form: n }; this.me = { ...this.me, hp: maxHp(this.me) }; Log.info(LOG, `ADMIN form ${n}`); },
+      setDiet: (diet) => { this.me = { ...this.me, diet }; Log.info(LOG, `ADMIN diet ${diet}`); },
       addPoints: () => { this.me = { ...this.me, points: { algae: this.me.points.algae + 50, meat: this.me.points.meat + 50 } }; },
       toggleInvincible: () => { this.invincible = !this.invincible; Log.info(LOG, `ADMIN invincible ${this.invincible}`); },
     });
@@ -822,7 +823,7 @@ export class AquaticScene extends Phaser.Scene {
   }
 
   private adminState() {
-    return { temperament: { ...this.temper }, form: this.me.form, look: this.lookName, invincible: this.invincible };
+    return { temperament: { ...this.temper }, form: this.me.form, diet: this.me.diet, look: this.lookName, invincible: this.invincible };
   }
 
   /** Admin: set a temperament (not saved); aggressive drives the shark look at once. */
@@ -1787,7 +1788,9 @@ export class AquaticScene extends Phaser.Scene {
   private viewCamera() {
     const C = AQ.camera, h = this.scale.height;
     const maxBodyHeight = Math.max(1, Math.min(h * C.avatarMaxScreenShare, organicPlayBottom(h) * C.avatarMaxPlayShare));
-    return { ...C, back: Math.max(C.back, bodySize(this.me) * C.focal / maxBodyHeight) };
+    // Keep the organism above the portrait touch controls; the dock and control layout retain their owners.
+    const avatarY = shell.input.scheme === "touch" && this.scale.height > this.scale.width ? .48 : C.avatarY;
+    return { ...C, avatarY, back: Math.max(C.back, bodySize(this.me) * C.focal / maxBodyHeight) };
   }
 
   private drawAvatar(airborne: boolean): void {

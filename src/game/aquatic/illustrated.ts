@@ -1,3 +1,9 @@
+import { evolutionTextures, type EvolutionTextures } from './evolutionTextures';
+import { evolutionProfile, familyForLook } from './evolutionArt';
+import { bodyRig } from './avatarRig';
+import { ADAPTABLE_DIETS, illustratedBody, avatarTexture } from './avatarVisual';
+import { LandmarkEquipment } from './landmarkEquipment';
+import avatarFrames from './avatarFrames.json';
 import { playerPose, bodyWidth, type PlayerMotion } from './playerMotion';
 import { FOOD_KINDS, foodPulse, murkAlpha } from './ambientMotion';
 import { MOTION_RECTS } from './motionFrames';
@@ -24,11 +30,30 @@ export const AQ_SHEETS = [
 ];
 export const dietColumn = (diet: Diet): number => ['herbivore', 'carnivore', 'omnivore'].indexOf(diet);
 export function preloadAquaticArt(scene: Phaser.Scene): void {
+  if (!evolutionProfile('adaptable',3)) for (const diet of ADAPTABLE_DIETS) if (!scene.textures.exists(`aqAdaptable-${diet}HD`)) scene.load.image(`aqAdaptable-${diet}HDSource`, `assets/art/aquatic_adaptable_${diet}_motion_v1.png`);
+  if (!scene.textures.exists('aqOrgansHD')) scene.load.image('aqOrgansHDSource', 'assets/art/aquatic_player_organs_v1.png');
   for (const s of AQ_SHEETS) scene.load.image(`${s.key}Source`, `assets/art/${['jellyfish','eel'].includes(s.file)?`aquatic_${s.file}_motion_v2.png`:(s.file.startsWith('player_')||['deepmaw','shark','hammer','darter','finray','spinefish','shellback'].includes(s.file))?`aquatic_${s.file}_motion_v1.png`:`aquatic_${s.file}_hd_v1.png`}`);
   for (const map of ['pond', 'lake', 'coast']) scene.load.image(`aqWater-${map}`, `assets/art/aquatic_${map}_hd_v1.png`);
 }
 export function prepareAquaticArt(scene: Phaser.Scene): void {
   prepareWildlifeArt(scene);
+  if (!evolutionProfile('adaptable',3)) for (const diet of ADAPTABLE_DIETS) {
+    const key = `aqAdaptable-${diet}HD`;
+    if (scene.textures.exists(key)) continue;
+    const t = scene.textures.get(`${key}Source`);
+    scene.textures.renameTexture(`${key}Source`,key);
+    avatarFrames.bodies[diet].forEach(([x,y,w,h], i) => {
+      const [ox,oy] = avatarFrames.offsets[diet][i];
+      t?.add(i,0,x,y,w,h)?.setTrim(384,384,ox,oy,w,h);
+    });
+    t?.setFilter(Phaser.Textures.FilterMode.LINEAR);
+  }
+  if (!scene.textures.exists('aqOrgansHD')) {
+    const t = scene.textures.get('aqOrgansHDSource');
+    scene.textures.renameTexture('aqOrgansHDSource','aqOrgansHD');
+    avatarFrames.organs.forEach(([x,y,w,h], i) => t?.add(i,0,x,y,w,h));
+    t?.setFilter(Phaser.Textures.FilterMode.LINEAR);
+  }
   for (const s of AQ_SHEETS) {
     if (scene.textures.exists(s.key)) continue;
     const image = scene.textures.get(`${s.key}Source`).getSourceImage() as HTMLImageElement;
@@ -49,9 +74,10 @@ const PROPS: Record<string, number> = { algae: 0, plankton: 1, meat: 2, meatM: 2
 export type AqArtView = 'front' | 'side' | 'back';
 export function artView(direction: string): AqArtView { return direction.startsWith('front') ? 'front' : direction.startsWith('side') ? 'side' : 'back'; }
 export const viewRow = (view: AqArtView): number => ({ front: 0, side: 1, back: 2 })[view];
-interface Painted { swimAge:number; phase:number; biteSerial:number; biteAge:number; image: Phaser.GameObjects.Image; equipment?: Phaser.GameObjects.Image; shock?: Phaser.GameObjects.Graphics; halo?:Phaser.GameObjects.Ellipse; wake?:Phaser.GameObjects.Graphics; wasAirborne?:boolean; splashAge?:number }
+interface Painted { anatomy?: LandmarkEquipment; swimAge:number; phase:number; biteSerial:number; biteAge:number; image: Phaser.GameObjects.Image; equipment?: Phaser.GameObjects.Image; shock?: Phaser.GameObjects.Graphics; halo?:Phaser.GameObjects.Ellipse; wake?:Phaser.GameObjects.Graphics; wasAirborne?:boolean; splashAge?:number }
 export class AquaticIllustrations {
   private anchors: Phaser.GameObjects.Container;
+  private evolution:EvolutionTextures;
   private paintings = new Map<Phaser.GameObjects.Sprite, Painted>();
   private backdrop: Phaser.GameObjects.Image;
   private props: AtlasLayout;
@@ -59,12 +85,13 @@ export class AquaticIllustrations {
   private ambientClock=0;
   constructor(private scene: Phaser.Scene, private player: () => AqCreature, private water: () => { map: number; visible: boolean },
     private moving: () => boolean, private reduced: () => boolean, private rate: () => number = () => 1, private murkLeft:()=>number=()=>0,private playerMotion:()=>PlayerMotion=()=>({speed:0,dash:false,airborne:false,rising:false,stunned:false})) {
+    this.evolution=evolutionTextures(scene);
     this.murk=scene.add.graphics().setDepth(4000);
     this.anchors = scene.add.container(0, 0).setVisible(false);
     this.backdrop = scene.add.image(0, 0, 'aqWater-pond').setDepth(-9).setOrigin(0);
     this.props = scene.cache.json.get('aprops_layout') as AtlasLayout;
     scene.events.on('postupdate', this.update, this);
-    scene.events.once('shutdown', () => { scene.events.off('postupdate', this.update, this); this.paintings.clear(); });
+    scene.events.once('shutdown', () => { scene.events.off('postupdate', this.update, this); for (const entry of this.paintings.values()) entry.anatomy?.destroy(); this.paintings.clear(); });
   }
   private update(_time: number, delta: number): void {
     if(this.moving())this.ambientClock+=Math.min(delta,80)*this.rate();
@@ -91,8 +118,9 @@ export class AquaticIllustrations {
       if (atlas !== 'aswim' && atlas !== 'aprops' && !(atlas in FAUNA) && !(atlas in PREDATORS)) continue;
       this.paintings.set(obj, { swimAge:0,phase:this.paintings.size*113,biteSerial:0,biteAge:Infinity,image: this.scene.add.image(0, 0, 'aqHeroHD') }); this.anchors.add(obj);
     }
+    const usedEquipment = new Set<string>();
     for (const [spr, entry] of this.paintings) {
-      if (!spr.scene) { entry.image.destroy(); entry.equipment?.destroy(); entry.shock?.destroy(); entry.halo?.destroy(); entry.wake?.destroy(); this.paintings.delete(spr); continue; }
+      if (!spr.scene) { entry.image.destroy(); entry.anatomy?.destroy(); entry.equipment?.destroy(); entry.shock?.destroy(); entry.halo?.destroy(); entry.wake?.destroy(); this.paintings.delete(spr); continue; }
       const atlas = spr.texture.key, direction = spr.anims.currentAnim?.key.split(':')[2] ?? 'back';
       let view = artView(direction), row = viewRow(view);
       const body = spr.getData('aqBody') as AqCreature | undefined;
@@ -133,7 +161,13 @@ export class AquaticIllustrations {
       const pose=playerPose(motion,entry.biteAge,entry.swimAge,this.reduced(),row);
       if(atlas==='aswim'){
         if(isPlayer){row=pose.row;view=row===1?'side':row===0?'front':'back';}
-        texture=`aqPlayer-${body?.diet??this.player().diet}`;
+        const look=direction.slice(artView(direction).length);
+        if(body){
+          const ready=this.evolution.ensure(body,look);
+          const profile=evolutionProfile(familyForLook(look),body.form);
+          texture=ready??(profile?(entry.image.getData('aqAuthoredBody')?entry.image.texture.key:`aqPlayer-${body.diet}`):avatarTexture(body,look));
+          if(ready)entry.image.setData('aqAuthoredBody',true);
+        } else texture=`aqPlayer-${this.player().diet}`;
         frame=row*4+(isPlayer?pose.column:[0,1,2,1][Math.floor(entry.swimAge/160)%4]);
         if(this.reduced()&&!isPlayer)frame=row*4+1;
       }
@@ -199,13 +233,23 @@ export class AquaticIllustrations {
       if (atlas === 'aswim') {
         const c = body ?? { ...this.player(), parts: [], uniques: [] };
         const gearPose=isPlayer?pose.column:Number(frame)%4;
-        const key = equipmentTexture(this.scene, c, view, direction.slice(artView(direction).length),gearPose,isPlayer&&pose.state==='dash');
-        entry.equipment ??= this.scene.add.image(0, 0, key);
-        sync(entry.equipment, key, '__BASE', spr.depth + .02);
         const width=bodyWidth(c)*(isPlayer?pose.width:1),height=isPlayer?pose.height:1;
-        for(const layer of [entry.image,entry.equipment])layer.setDisplaySize(layer.displayWidth*width,layer.displayHeight*height).setRotation(layer.rotation+(isPlayer?pose.tilt:0));
-        entry.equipment.setX(entry.image.x+(this.reduced()?0:(pose.column===0?-1:pose.column===2?1:0)*entry.image.displayWidth*.025));
-        entry.equipment.setAlpha(spr.alpha*(this.reduced()?1:.9+.1*Math.sin(entry.swimAge/650)**2));
+        entry.image.setDisplaySize(entry.image.displayWidth*width,entry.image.displayHeight*height)
+          .setRotation(entry.image.rotation+(isPlayer?pose.tilt:0));
+        const look = direction.slice(artView(direction).length);
+        if (illustratedBody(c, look) && texture===avatarTexture(c,look)) {
+          entry.equipment?.setVisible(false);
+          entry.anatomy ??= new LandmarkEquipment(this.scene);
+          entry.anatomy.update(entry.image,c,view,gearPose,entry.swimAge,isPlayer&&pose.state==='dash',this.reduced(),bodyRig(familyForLook(look),c.form));
+        } else {
+          entry.anatomy?.hide();
+          const key = equipmentTexture(this.scene,c,view,look,gearPose,isPlayer&&pose.state==='dash');
+          usedEquipment.add(key);
+          entry.equipment ??= this.scene.add.image(0,0,key);
+          sync(entry.equipment,key,'__BASE',spr.depth+.02);
+          entry.equipment.setDisplaySize(entry.equipment.displayWidth*width,entry.equipment.displayHeight*height)
+            .setRotation(entry.image.rotation).setX(entry.image.x+(this.reduced()?0:(gearPose===0?-1:gearPose===2?1:0)*entry.image.displayWidth*.025));
+        }
         if(isPlayer){
           entry.image.setData('aqPlayerState',pose.state);
           if(this.moving()){
@@ -241,7 +285,14 @@ export class AquaticIllustrations {
           }
         }
 
-      } else entry.equipment?.setVisible(false);
+      } else { entry.equipment?.setVisible(false); entry.anatomy?.hide(); }
     }
+    for (const obj of this.scene.children.list) {
+      if (obj instanceof Phaser.GameObjects.Image || obj instanceof Phaser.GameObjects.Sprite) usedEquipment.add(obj.texture.key);
+    }
+    this.evolution.trim(new Set([...this.paintings.values()].map(entry=>entry.image.texture.key)));
+    const cached = this.scene.textures.getTextureKeys().filter(key => key.startsWith('aqEquipment:'));
+    let excess = cached.length - 32;
+    for (const key of cached) if (excess > 0 && !usedEquipment.has(key)) { this.scene.textures.remove(key); excess--; }
   }
 }

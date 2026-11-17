@@ -450,3 +450,44 @@ real eating/chomp, surface breach/re-entry, paused body/equipment frames, reduce
 and health-stat bulk. Inspected equipped dash and breach screenshots; reduced plate coverage and added
 curved shading to keep the diet body readable. Coast and river production GPU smokes passed.
 Asset paths and built-in imagegen prompt set: docs/art/AQUATIC_PLAYER.md.
+
+2026-11-16 — Aquatic avatar representative slice (A-0035), isolated feat/aquatic-avatar-development:
+497 tests, TypeScript and 11 shader checks pass; production aquatic autoplay reaches DRIVE_DONE without errors.
+Browser fixture checks 184 family/diet/form/view/organ/tier/daughter combinations, all motion priorities,
+part removal, reduced motion and touch-menu pose/organ-clock freezing. Four form3/form4 selections with toxic
+or electric parts preserve sister anatomy without an aparts lookup. Pond/lake/coast and river renderers checked.
+375x812 and 812x375 touch browser screenshots pass without errors; portrait framing moved the player clear of
+controls/banner after inspection. Initial oversized/floating equipment was reduced/repositioned; measured tail
+mounts now follow each pose. Final legacy composite cache has 32 entries; new organ atlas generates no per-frame
+textures. Interactive bare/tier I/II/III/toxic-electric preview and desktop/river/phone screenshots saved for review.
+Physical devices/controllers were not tested. Mature adaptable forms 3/4 share the initial sheet; this is a
+representative slice, not complete maturation artwork for all families. Details: docs/art/AQUATIC_AVATAR_SLICE.md.
+
+2026-11-16 — Aquatic spine attachment follow-up: 499 tests, TypeScript, all 11 shader checks and production build
+pass. Side/back scutes now follow measured per-pose dorsal curves rather than fixed row offsets. Tier III wraps
+seven tapered scutes down the spine; three cropped sections per scute deform around the local curve. Rotation
+and strip scales account for body proportions. No raster assets, simulation, save or HUD rules changed.
+The full browser fixture passes 184 combinations, including pause/reduced motion, swaps and daughter/sister
+inheritance, without page/console errors. Updated standalone preview adds Next pose and larger inspection views.
+
+2026-11-16 — Aquatic rig contract and attachment lab: 503 tests, TypeScript, 11 shaders and production build pass.
+All eight parts resolve through named body sockets/paths; missing rigs are explicitly rejected. Body-owned
+paths are reused with per-rig caches; game and native preview backends share the compiler. The 184-combination
+game fixture passes, including daughters/sisters, swaps, pause and reduced motion. Offline workbench QA verifies
+8 Solo/toggle controls, all tiers, hide/show all, three diets, supported forms, paused pose stepping, dash and
+reduced-motion chomp, overlays, complete schema/setup exports and mobile no-overflow layout. No page errors or
+external HTTP requests. Current rig/art coverage and provisional/shared attachments are labeled in the tool.
+
+2026-11-16 — Complete aquatic body maturation: 12 family/form profiles, 36 diet sheets, 432 measured poses.
+506 tests, TypeScript, 11 shader recipes and production build pass. Game fixture: 184 combinations, six motion
+states, touch pause/reduced motion, swaps and four daughter/sister inheritance cases. All maps and river pass.
+Form-4 cautious portrait and aggressive landscape GPU browser checks pass. Offline body gallery controls and
+375px layout pass. Production GPU boot smoke: 180 frames, no errors. Physical devices not tested.
+New equipment fits remain explicitly provisional, deferred at user's request. See docs/art/AQUATIC_MATURATION.md.
+Atlas stress/restart check: traversed all 12 profiles twice with an actual scene restart between passes;
+10 retained atlases / 62,901,120 bytes each pass, below the 64 MiB soft budget. No page errors.
+
+2026-11-17 — Aquatic developer panel adds a Diet row below Form. Minus/plus, left/right and Enter cycle
+all three diets. Live browser keyboard verification passed: herbivore/carnivore/omnivore body atlases update
+while form, stats, parts, tiers and other creature data remain unchanged with the panel open. TypeScript
+and all 11 shader checks pass. Changes remain local and uncommitted.

@@ -1,0 +1,332 @@
+[
+  {
+    "family": "aggressive",
+    "form": 1,
+    "diet": "herbivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "aggressive",
+    "form": 1,
+    "diet": "omnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "aggressive",
+    "form": 1,
+    "diet": "carnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "aggressive",
+    "form": 2,
+    "diet": "herbivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "aggressive",
+    "form": 2,
+    "diet": "omnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "aggressive",
+    "form": 2,
+    "diet": "carnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "aggressive",
+    "form": 3,
+    "diet": "herbivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "aggressive",
+    "form": 3,
+    "diet": "omnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "aggressive",
+    "form": 3,
+    "diet": "carnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "aggressive",
+    "form": 4,
+    "diet": "herbivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "aggressive",
+    "form": 4,
+    "diet": "omnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "aggressive",
+    "form": 4,
+    "diet": "carnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "adaptable",
+    "form": 1,
+    "diet": "herbivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "adaptable",
+    "form": 1,
+    "diet": "omnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "adaptable",
+    "form": 1,
+    "diet": "carnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "adaptable",
+    "form": 2,
+    "diet": "herbivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "adaptable",
+    "form": 2,
+    "diet": "omnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "adaptable",
+    "form": 2,
+    "diet": "carnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "adaptable",
+    "form": 4,
+    "diet": "herbivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "adaptable",
+    "form": 4,
+    "diet": "omnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "adaptable",
+    "form": 4,
+    "diet": "carnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "cautious",
+    "form": 1,
+    "diet": "herbivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "cautious",
+    "form": 1,
+    "diet": "omnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "cautious",
+    "form": 1,
+    "diet": "carnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "cautious",
+    "form": 2,
+    "diet": "herbivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "cautious",
+    "form": 2,
+    "diet": "omnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "cautious",
+    "form": 2,
+    "diet": "carnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "cautious",
+    "form": 3,
+    "diet": "herbivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "cautious",
+    "form": 3,
+    "diet": "omnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "cautious",
+    "form": 3,
+    "diet": "carnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "cautious",
+    "form": 4,
+    "diet": "herbivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "cautious",
+    "form": 4,
+    "diet": "omnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "family": "cautious",
+    "form": 4,
+    "diet": "carnivore",
+    "frames": 12,
+    "size": [
+      1448,
+      1086
+    ]
+  }
+]
