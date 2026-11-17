@@ -3,6 +3,8 @@
 > Every third-party or AI-assisted asset gets a row BEFORE it is used. Use `/asset-intake`.
 > Source of truth for credits screens, store disclosures, and license audits.
 > Where to find things: `docs/RESOURCES.md` (index into `docs/resources/`).
+> Painted art over 200 KB ships as `public/assets/art/<name>.webp`; rows naming a `.png` there mean that WebP, with the
+> full-quality PNG master in `assets_src/art_masters/` (ADR 0007, `python tools/art/compress_art.py`).
 
 | ID | Type | File(s) in repo | Source / URL | Author | License | Attribution text (if required) | AI-assisted? | Modified? | Date added | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|

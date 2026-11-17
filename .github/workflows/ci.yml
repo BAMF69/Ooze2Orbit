@@ -33,8 +33,11 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-        with:
-          lfs: true
+
+      # LFS without the PNG art masters (assets_src/art_masters/): the build ships their WebP copies, and skipping
+      # them keeps each run's LFS download (billed against the repo's monthly quota) small.
+      - name: Fetch LFS files the build needs
+        run: git lfs pull --exclude="assets_src/**"
 
       - uses: actions/setup-python@v5
         with:

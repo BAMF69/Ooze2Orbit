@@ -18,7 +18,7 @@ export class ModularHudFrame {
       const w=host.clientWidth,h=host.clientHeight,diet=document.body.dataset.overlayDiet as keyof typeof COMPONENTS;
       const spec=COMPONENTS[diet]??COMPONENTS.omnivore,signature=`${w}:${h}:${spec.key}`;
       if(w<1||h<1||signature===previous)return;previous=signature;
-      const url=new URL(`assets/art/hud_components_${spec.key}_v1.png`,document.baseURI).href;
+      const url=new URL(`assets/art/hud_components_${spec.key}_v1.webp`,document.baseURI).href;
       const root=el('svg',{viewBox:`0 0 ${w} ${h}`,width:'100%',height:'100%',overflow:'visible'}),defs=el('defs',{});
       const fill=el('linearGradient',{id:`${id}-fill`,x1:0,y1:0,x2:0,y2:1});
       fill.append(el('stop',{offset:0,'stop-color':'var(--diet-top)'}),el('stop',{offset:1,'stop-color':'var(--diet-bottom)'}));defs.append(fill);root.append(defs);
@@ -38,7 +38,7 @@ export class ModularHudFrame {
       line(`M 10 ${yPort-2} C 5 ${h*.45} 15 ${h*.56} 10 ${h-yPort+2}`);
       line(`M ${w-10} ${yPort-2} C ${w-5} ${h*.43} ${w-15} ${h*.58} ${w-10} ${h-yPort+2}`);
       // Each bridge uses a complete long painted rail, not a tiny repeated texture sample.
-      const railUrl=new URL(`assets/art/hud_rail_${spec.key}_v1.png`,document.baseURI).href;
+      const railUrl=new URL(`assets/art/hud_rail_${spec.key}_v1.webp`,document.baseURI).href;
       const railHeight=h<80?28:54;
       const rail=(left:number,right:number,y:number,flipX=false,flipY=false)=>{
         const width=right-left,group=el('g',{transform:`translate(${flipX?right:left} ${y}) scale(${flipX?-1:1} ${flipY?-1:1})`});

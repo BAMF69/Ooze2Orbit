@@ -265,7 +265,7 @@ export class AquaticScene extends Phaser.Scene {
 
   preload(): void {
     preloadAquaticArt(this);
-    this.load.image("cellEntryArt", "assets/art/cell_illustrated_v1.png");
+    this.load.image("cellEntryArt", "assets/art/cell_illustrated_v1.webp");
     for (const [key, [file, cell]] of Object.entries(FILES)) {
       this.load.spritesheet(key, `assets/art/${file}.png`, { frameWidth: cell, frameHeight: cell });
       this.load.json(`${key}_layout`, `assets/art/${file}.json`);

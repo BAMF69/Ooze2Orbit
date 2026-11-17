@@ -8,8 +8,8 @@ import type { HdWarsLayout } from "./hdLayout";
 
 export const CIV_ART = { source: "civHDSource", pieces: "civHDPieces", terrain: "civHDTerrain" };
 export function preloadCivArt(scene: Phaser.Scene): void {
-  scene.load.image(CIV_ART.source, "assets/art/civ_illustrated_hd_v1.png");
-  scene.load.image(CIV_ART.terrain, "assets/art/civ_terrain_hd_v1.png");
+  scene.load.image(CIV_ART.source, "assets/art/civ_illustrated_hd_v1.webp");
+  scene.load.image(CIV_ART.terrain, "assets/art/civ_terrain_hd_v1.webp");
 }
 export function prepareCivArt(scene: Phaser.Scene): void {
   if (!scene.textures.exists(CIV_ART.pieces)) {
