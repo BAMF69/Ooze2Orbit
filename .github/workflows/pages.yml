@@ -4,8 +4,8 @@
 #           (python tools/dev.py build -> dist/) and publishes dist/ at https://bamf69.github.io/Ooze2Orbit/.
 # Usage   : One-time, by hand: repo Settings -> Pages -> Source: "GitHub Actions". After that, push to main.
 #           Also runnable from the Actions tab (workflow_dispatch).
-# Notes   : vite.config.ts uses base "./", so the build works from the /Ooze2Orbit/ subfolder. LFS is checked out
-#           (sprites and sounds live in LFS). Tests gate the deploy; the shader check needs a headless browser and
+# Notes   : vite.config.ts uses base "./", so the build works from the /Ooze2Orbit/ subfolder. LFS is pulled
+#           without the PNG art masters (the build ships WebP). Tests gate the deploy; the shader check needs a headless browser and
 #           runs in ci.yml instead. Only one deploy at a time; a newer push cancels nothing mid-deploy.
 #           Action versions checked against their latest releases on 2026-11-07.
 # Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
@@ -32,8 +32,11 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
-        with:
-          lfs: true
+
+      # LFS without the PNG art masters (assets_src/art_masters/): the build ships their WebP copies, and skipping
+      # them keeps each run's LFS download (billed against the repo's monthly quota) small.
+      - name: Fetch LFS files the build needs
+        run: git lfs pull --exclude="assets_src/**"
 
       - uses: actions/setup-python@v7
         with:

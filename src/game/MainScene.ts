@@ -105,7 +105,7 @@ export class MainScene extends Phaser.Scene {
 
   preload(): void {
     for (const sheet of CELL_SHEETS) this.load.image(sheet.source, `assets/art/${sheet.file}`);
-    this.load.image("pondIllustrated", "assets/art/pond_illustrated_v1.png");
+    this.load.image("pondIllustrated", "assets/art/pond_illustrated_v1.webp");
     for (const [key, file] of [["player", "player_cell"], ["pond", "pond_cells"], ["props", "pond_props"]]) {
       this.load.spritesheet(key, `assets/art/${file}.png`, { frameWidth: 32, frameHeight: 32 });
       this.load.json(`${key}_layout`, `assets/art/${file}.json`);

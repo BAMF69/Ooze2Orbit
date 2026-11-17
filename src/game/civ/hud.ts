@@ -86,7 +86,7 @@ export class CivHud {
   private locale = "";
   private themeKey = "";
   constructor(scene: Phaser.Scene, private i18n: I18n, cb: CivHudCallbacks) {
-    this.root.style.setProperty("--civ-art", `url("${new URL("assets/art/civ_illustrated_hd_v1.png", document.baseURI).href}")`);
+    this.root.style.setProperty("--civ-art", `url("${new URL("assets/art/civ_illustrated_hd_v1.webp", document.baseURI).href}")`);
     const summary = node("summary"); put(summary, this.t("details")); this.details.append(summary, this.detailText);
     this.details.addEventListener("toggle", () => this.root.dispatchEvent(new Event("civ-detail-toggle")));
     const ore = node("div", "civ-hd-resource ore"), food = node("div", "civ-hd-resource food");

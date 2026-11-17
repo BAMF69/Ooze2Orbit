@@ -3,7 +3,7 @@
 import type { Shell } from "./app";
 import { el, tl } from "./ui";
 export function gameLogo(shell: Shell): HTMLImageElement {
-  const img = el("img", "game-logo"); img.src = "assets/art/ooze2orbit_logo_v1.png";
+  const img = el("img", "game-logo"); img.src = "assets/art/ooze2orbit_logo_v1.webp";
   img.alt = shell.i18n.t("game.title"); img.draggable = false; return img;
 }
 export function landing(root: HTMLElement, shell: Shell, start: () => void): void {

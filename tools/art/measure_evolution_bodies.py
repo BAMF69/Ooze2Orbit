@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image
 
 ROOT=Path(__file__).resolve().parents[2]
-ART=ROOT/'public/assets/art'
+ART=ROOT/'assets_src/art_masters'  # full-quality masters; the game loads their WebP copies
 FAMILIES=('aggressive','adaptable','cautious')
 DIETS=('herbivore','omnivore','carnivore')
 
@@ -136,14 +136,14 @@ def main():
     for family in FAMILIES:
         for form in range(1,5):
             if family=='adaptable' and form==3:
-                bodies={diet:{'key':f'aqAdaptable-{diet}HD','file':f'aquatic_adaptable_{diet}_motion_v1.png','rects':legacy['bodies'][diet],'offsets':legacy['offsets'][diet]} for diet in DIETS}
+                bodies={diet:{'key':f'aqAdaptable-{diet}HD','file':f'aquatic_adaptable_{diet}_motion_v1.webp','rects':legacy['bodies'][diet],'offsets':legacy['offsets'][diet]} for diet in DIETS}
                 rig=copy.deepcopy(template);rig['forms']={'3':{'label':'Mature adaptable','artStatus':'authored'}}
             else:
                 version=2 if family=='adaptable' and form==2 else 1
                 group={diet:measure(ART/f'aquatic_{family}_f{form}_{diet}_motion_v{version}.png') for diet in DIETS};align(group)
                 bodies={};tails={};spines={}
                 for diet,(a,items) in group.items():
-                    bodies[diet]={'key':f'aqBody-{family}-f{form}-{diet}HD','file':f'aquatic_{family}_f{form}_{diet}_motion_v{version}.png',
+                    bodies[diet]={'key':f'aqBody-{family}-f{form}-{diet}HD','file':f'aquatic_{family}_f{form}_{diet}_motion_v{version}.webp',
                                   'rects':[item['rect'] for item in items],'offsets':[item['offset'] for item in items]}
                     tails[diet],spines[diet]=tail_and_spines(a,items)
                     audit.append({'family':family,'form':form,'diet':diet,'frames':len(items),'size':[a.shape[1],a.shape[0]]})
