@@ -13,6 +13,7 @@ import { makeRng } from "./rng";
 import { buildRoom, climbScript, bonusThreshold, type Built, type Step } from "./templates";
 import type { Opening, StateCondition } from "./roomSpec";
 import { LEVELGEN } from "./tuning";
+import { layoutLevel, mapProblems } from "./mapLayout";
 import type { ClassSkill } from "./keys";
 
 export interface WorldV2 extends WaterWorld { version: 2; starts: Record<Difficulty, number>; graph: BiomeGraph; solutions: Record<number, Step[]> }
@@ -121,5 +122,7 @@ export function worldProblemsV2(w: WorldV2): string[] {
     if (s.keyed && s.controls.some(c => Math.abs(c.x - s.keyed!.x) < 40 && Math.abs(c.y - s.keyed!.y) < 30)) bad.add("control spacing");
   }
   for (const tier of TIERS) if (!rooms.some(r => r.tier === tier && (r.gate || r.current))) bad.add("Gardener crossing");
+  // The minimap must make sense: no overlapping rooms, doors between touching cells (mapLayout.ts).
+  for (const tier of TIERS) for (const p of mapProblems(layoutLevel(w, tier))) bad.add(p);
   return [...bad];
 }

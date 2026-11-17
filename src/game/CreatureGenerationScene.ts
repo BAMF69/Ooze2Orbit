@@ -16,6 +16,7 @@ import { generateWaterV2, levelEntry } from "./creature/levelgen/world";
 import { keysOf } from "./creature/levelgen/keys";
 import { currentAdvice, levelAdvice, heirNote, generationPlan } from "./creature/guidance";
 import { creatureIcon, equipmentRows } from "./creature/creatureIcons";
+import { minimapModel, drawMinimap } from "./creature/minimap";
 import { attachExpedition, classFromTemperament, intervene, interventionLock, levelLock, weatherEvent, stepWeather, effectiveClimate, type Weather, type Intervention } from "./creature/expedition";
 import { stepWaterBody, inWater, waterline } from "./creature/waterPhysics";
 import { drawWaterRoom, type WaterFood } from "./creature/waterView";
@@ -62,6 +63,10 @@ export class CreatureScene extends Phaser.Scene {
   private rack!: HTMLDivElement;
   private rackNote!: HTMLDivElement;
   private rackKey = "";
+  private minimap!: HTMLCanvasElement;
+  private minimapPanel!: HTMLDivElement;
+  private minimapKey = "";
+  private hudColumn!: HTMLDivElement;
   private hurt = 0;
   private bite = 0;
   private facing = 1;
@@ -96,7 +101,14 @@ export class CreatureScene extends Phaser.Scene {
     // Equipment rack in the top right, styled like the cell stage's (shared .cell-icon-rack classes, no CSS edits).
     this.rack = document.createElement("div"); this.rack.className = "cell-icon-rack creature-icon-rack";
     this.rackNote = document.createElement("div"); this.rackNote.className = "cell-icon-note"; this.rackNote.hidden = true;
-    this.screenUi.root.append(this.rack, this.rackNote);
+    // Top-right column: equipment rack, then the level minimap, then the tapped-icon note (no shared CSS edits).
+    const column = document.createElement("div");
+    Object.assign(column.style, { position: "absolute", right: "calc(var(--safe-right) + 12px)", top: "calc(var(--safe-top) + 60px)", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px", pointerEvents: "none" });
+    this.rack.style.position = "static"; this.rackNote.style.position = "static";
+    this.minimapPanel = document.createElement("div"); this.minimapPanel.className = "cell-icon-rack creature-minimap"; this.minimapPanel.style.position = "static";
+    this.minimapPanel.setAttribute("role", "img");
+    this.minimap = document.createElement("canvas"); this.minimap.style.display = "block"; this.minimapPanel.append(this.minimap);
+    column.append(this.rack, this.minimapPanel, this.rackNote); this.screenUi.root.append(column); this.hudColumn = column;
     if (avatarAssetsReady(this)) this.beginCreature();
     else {
       Log.warn("creature", `Creature textures not ready: ${AVATAR_ASSETS.map(a => `${a.key}:${this.textures.exists(a.key) ? this.textures.get(a.key).getFrameNames().length : "absent"}`).join(", ")}`);
@@ -470,6 +482,20 @@ export class CreatureScene extends Phaser.Scene {
       shell.saves.save("lineage", next as unknown as Parameters<typeof shell.saves.save>[1]); this.save(); this.open("won");
     } catch (err) { Log.warn("creature", String(err)); this.message = "Could not save the hero. Try claiming the crown again."; }
   }
+  /** Repaints the level minimap only when the room, explored rooms or banked rewards change; hidden in hubs. */
+  private drawMinimap(): void {
+    // Sit below the status line, which wraps on narrow phones, so the column never covers it.
+    const status = this.screenUi.root.querySelector(".stage-status")?.getBoundingClientRect();
+    const top = status && status.bottom > 0 ? `${Math.round(status.bottom + 6)}px` : "calc(var(--safe-top) + 60px)";
+    if (this.hudColumn.style.top !== top) this.hudColumn.style.top = top;
+    if (this.room < 0) { this.minimapPanel.hidden = true; this.minimapKey = ""; return; }
+    const e = this.garden.expedition!, tier = this.currentRoom.tier, key = JSON.stringify([this.room, tier, e.visited, e.unlocked]);
+    this.minimapPanel.hidden = false; if (key === this.minimapKey) return;
+    this.minimapKey = key;
+    const model = minimapModel(this.world, tier, e.visited, this.room, e.unlocked);
+    drawMinimap(this.minimap, model);
+    this.minimapPanel.setAttribute("aria-label", `Map of Water ${tier}: ${model.rooms.filter(r => r.state !== "adjoining").length} rooms explored, ${model.rooms.filter(r => r.state === "adjoining").length} unexplored next door.`);
+  }
   /** Rebuilds the equipment rack only when the traits or banked discoveries change. */
   private drawRack(): void {
     const rows = equipmentRows(this.garden.traits, this.garden.expedition!), key = JSON.stringify(rows);
@@ -492,7 +518,7 @@ export class CreatureScene extends Phaser.Scene {
     if (rows.banked.length) row("Banked", rows.banked, true);
   }
   private draw(): void {
-    this.drawRack();
+    this.drawRack(); this.drawMinimap();
     const g = this.gfx; g.clear();
     if (this.room < 0) drawHub(g, this.room === -2, this.garden.traits, this.garden.expedition!);
     else drawWaterRoom(g, this.currentRoom, this.roomWater(), this.food, this.trap, this.clock, this.foodCache, this.objective);

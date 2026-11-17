@@ -347,3 +347,16 @@ Changes (`creature/guidance.ts`, `creature/creatureIcons.ts`):
   class skill) and dimmed Banked discoveries; tapping an icon explains it.
 Tests: `creatureGuidance.test.ts`; `tools/creature-levelgen-playtest.mjs` checks each message and the rack in the
 real scene, desktop and phone.
+
+### Minimap (2026-11-17)
+`levelgen/mapLayout.ts` places each level's rooms on a grid from their real connections and checks the map is
+coherent: no two rooms share a cell, every door joins cells that touch on its side (with a matching return
+door), every room is reached, and each room's shape is connected. This runs in `worldProblemsV2`, so the
+generator rejects any seed whose map would not make sense. Drawing the map exposed one spatial quirk carried over
+from v1: a drain room links to the next shaft both through its right exit and through its floor drop. The shaft is
+therefore drawn as an L-shape that reaches under the drain, which is the only consistent single-screen reading.
+`creature/minimap.ts` shows explored rooms, the current room, dashed outlines for unexplored rooms that adjoin
+explored ones, door ticks, the goal once seen and uncollected rewards. It sits under the equipment rack, below the
+status line, and hides in the overworld and shoreline. Tests: `creatureMinimap.test.ts` (300 seeds coherent, a
+broken-map test per rule, generator rejection, contents) and the browser regression (shown in rooms, hidden in
+hubs, desktop and phone captures).
