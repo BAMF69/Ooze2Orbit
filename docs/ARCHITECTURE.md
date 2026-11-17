@@ -26,6 +26,22 @@ Engine-specific folder layout is documented in `docs/ENGINE.md`. Universal folde
 | `tests/` | Automated tests |
 | `.claude/` | Claude Code settings, skills, subagents |
 
+## Creature encounters (2026-11-15)
+Pure `creature/waterEncounters.ts` owns enemy perception/state timing, evasion/trap rules and
+vent timings. `waterChallenges.ts` owns shared collision/sight for submerged switchbacks.
+The registered scene applies intents/damage and displays short warnings; `waterView.ts`
+draws terrain/vent/cache. `tests/creatureEncounters.test.ts` protects counterplay and scenario
+pairs; existing Water traversal bots use actual collision through the new vertical routes.
+
+## Creature Water slice (2026-11-13)
+`CreatureGenerationScene.ts` remains registered as creature. Pure `creature/waterWorld.ts` owns
+seeded generation, validation and shared collision; `waterPhysics.ts` layers swimming/current on
+the existing controller. `expedition.ts` owns persistent discovery/Gardener rules and temporary
+weather; `waterView.ts` draws the prototype. Optional validated generation-save extensions retain
+existing export/import/source identity. No shell/core/other-stage code changes. Full rubric and
+module responsibilities: `docs/CREATURE_WATER_SLICE.md`; regression: `tests/creatureWater.test.ts`
+and current `tools/creature-stakes-playtest.mjs` / `tools/creature-depth-playtest.mjs`. Older Toy 1 table rows below describe inactive code.
+
 ## Key systems
 All-stage display adapters (ADR 0005): `core/viewport.ts` selects stage-specific camera sizes;
 `shell/viewport.ts` owns safe bounds and rotation notification. `game/stageUi.ts` owns native

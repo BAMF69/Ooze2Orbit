@@ -4,6 +4,15 @@
 **Branch:** `feat/cell-division`. Previous baseline committed and pushed as fd0f29d. This snapshot includes the subsequent aquatic remaster, map rewards and organic HUD/input polish. Push only when asked.
 **Active:** Cell/aquatic upgrade and growth HUD polish, expanded effects in Details, and aquatic illustrated remaster. Creature/civilization may be developed in independent chats/worktrees; preserve their scope.
 
+## Creature worktree update (2026-11-14)
+Creature gameplay work is isolated on `feat/creature-remaster` at the `fd0f29d` baseline.
+Approved procedural Water slice supersedes the six-room creature prototype. Post-playtest: physical
+walkable overworld/shoreline replace menu navigation; direct image loading plus sheet validation
+fix intermittent missing-avatar textures. See
+`docs/CREATURE_WATER_SLICE.md` for implemented scope and `docs/CREATURE_HANDOFF.md` for
+validation/local preview. User authorized committing/pushing this creature branch on 2026-11-15. Other stage entries below
+remain the shared baseline history.
+
 ## Aquatic crash and recovery polish (2026-11-16)
 - Fixed reported daughter-selection crashes: SisterView no longer draws legacy aparts overlays.
   AquaticIllustrations already owns complete equipment, including toxicTendrils and electricOrgan.
