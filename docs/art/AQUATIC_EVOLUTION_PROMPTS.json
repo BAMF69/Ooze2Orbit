@@ -1,0 +1,330 @@
+{
+  "common": "Production Ooze2Orbit 2D aquatic player sprite sheet, rich hand-illustrated HD cel shading, bold dark ink contours, saturated biological skin, sculpted highlights and restrained fine organic texture. Exactly ONE large purple cyclops eye, never two. This creature belongs to the original lineage in the reference board. Twelve separate full-body sprites, precisely FOUR columns by THREE rows. Row 1 FRONT facing camera (face visible, long body/tail receding behind); row 2 RIGHT-FACING SIDE; row 3 BACK viewed from behind, head at top and tail trailing down, NO visible eye. Columns: swim bend LEFT, NEUTRAL swim, swim bend RIGHT, open-mouth CHOMP. All four sprites per row have identical body scale and stable head center. Preserve complete silhouettes in EVERY cell with generous 20 percent transparent margins; no appendage touching outer edges or adjacent cells. Render subjects smaller to guarantee margins. All four poses are swimming or floating aquatic poses, not standing on ground. Actual transparent alpha, clean edges, no colored haze, shadows, scenery, checkerboard, labels, text, grid or equipment. Anatomical growth only; no equipped jaws, armor plates, extra organs or weapons. Keep naturally grown fins/shells, not manufactured items. Landscape 4:3 canvas.",
+  "records": [
+    {
+      "family": "aggressive",
+      "form": 1,
+      "diet": "omnivore",
+      "file": "aquatic_aggressive_f1_omnivore_motion_v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent game animation sheet. Input image is only the family maturation/style reference. FORM 1 larval shark-family cyclops. Juvenile with a compact soft-bodied head/trunk, relatively large purple eye, small swept dorsal ridge, small paired pectoral fin buds, a long simple muscular tail ending in a modest fork. It is an early aquatic organism, NOT an adult scaled down: no elbows, no walking limbs, no heavy natural armor, only small jaw feeding edges. Body is compact but already distinctly sharklike. OMNIVORE palette: amber/gold skin, teal webbing/fins, cream underside; keep the single purple eye. Diet palette does not determine temperament family.\nProduction Ooze2Orbit 2D aquatic player sprite sheet, rich hand-illustrated HD cel shading, bold dark ink contours, saturated biological skin, sculpted highlights and restrained fine organic texture. Exactly ONE large purple cyclops eye, never two. This creature belongs to the original lineage in the reference board. Twelve separate full-body sprites, precisely FOUR columns by THREE rows. Row 1 FRONT facing camera (face visible, long body/tail receding behind); row 2 RIGHT-FACING SIDE; row 3 BACK viewed from behind, head at top and tail trailing down, NO visible eye. Columns: swim bend LEFT, NEUTRAL swim, swim bend RIGHT, open-mouth CHOMP. All four sprites per row have identical body scale and stable head center. Preserve complete silhouettes in EVERY cell with generous 20 percent transparent margins; no appendage touching outer edges or adjacent cells. Render subjects smaller to guarantee margins. All four poses are swimming or floating aquatic poses, not standing on ground. Actual transparent alpha, clean edges, no colored haze, shadows, scenery, checkerboard, labels, text, grid or equipment. Anatomical growth only; no equipped jaws, armor plates, extra organs or weapons. Keep naturally grown fins/shells, not manufactured items. Landscape 4:3 canvas.",
+      "designBrief": "FORM 1 larval shark-family cyclops. Juvenile with a compact soft-bodied head/trunk, relatively large purple eye, small swept dorsal ridge, small paired pectoral fin buds, a long simple muscular tail ending in a modest fork. It is an early aquatic organism, NOT an adult scaled down: no elbows, no walking limbs, no heavy natural armor, only small jaw feeding edges. Body is compact but already distinctly sharklike.",
+      "sha256": "45710dad2dc6af4f5828985734d1d9ff1af952c97dc0c6d368da79f77f4933d3",
+      "generatedOriginal": "exec-1f95afc2-d3cc-4e68-a1ff-8c2fb1806ae4.png"
+    },
+    {
+      "family": "aggressive",
+      "form": 1,
+      "diet": "herbivore",
+      "file": "aquatic_aggressive_f1_herbivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Production diet variation of this exact aquatic sprite sheet. Preserve all twelve complete sprites, anatomy, maturity, proportions, family identity, poses and positions. Same FOUR columns (left swim bend, neutral, right swim bend, chomp), THREE rows (front, right-facing side, back). Exactly one purple cyclops eye on front/side and no eye on back. Change ONLY palette and feeding-mouth details to lime/leaf green skin and shell growth edges, dark botanical green markings, leaf-green membranes with pale yellow veins, cream belly; softer blunt feeding edges. Never change a protective hood into a shark fin or a slender body into a bulky fish. Keep original illustrated ink contours, rich cel shading, fine organic texture and sculpted highlights. Retain actual transparent alpha with clean edges and generous gutters around ALL tails, noses and paddles. No cropping, scenery, grid, labels, shadows, checkerboard, haze or new equipment.",
+      "sha256": "a803c8685227830b885afdea09cb7bf4c3e773459cbdfb88fc66309ea36c3ea0",
+      "generatedOriginal": "exec-ffa38a8a-5ee5-4749-9e99-45755cba565a.png"
+    },
+    {
+      "family": "aggressive",
+      "form": 1,
+      "diet": "carnivore",
+      "file": "aquatic_aggressive_f1_carnivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Production diet variation of this exact aquatic sprite sheet. Preserve all twelve complete sprites, anatomy, maturity, proportions, family identity, poses and positions. Same FOUR columns (left swim bend, neutral, right swim bend, chomp), THREE rows (front, right-facing side, back). Exactly one purple cyclops eye on front/side and no eye on back. Change ONLY palette and feeding-mouth details to coral red skin and shell growth edges, crimson markings, peach/salmon membranes, cream belly, modest ivory fangs at the mouth only. Never change a protective hood into a shark fin or a slender body into a bulky fish. Keep original illustrated ink contours, rich cel shading, fine organic texture and sculpted highlights. Retain actual transparent alpha with clean edges and generous gutters around ALL tails, noses and paddles. No cropping, scenery, grid, labels, shadows, checkerboard, haze or new equipment.",
+      "sha256": "885d035360a99b484c184aa4c31c934eb1db0381505eaf9c8d23be68bc789a78",
+      "generatedOriginal": "exec-f7ca2111-77d1-44db-a7c3-ce596a7fe6b1.png"
+    },
+    {
+      "family": "aggressive",
+      "form": 2,
+      "diet": "omnivore",
+      "file": "aquatic_aggressive_f2_omnivore_motion_v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent game animation sheet. Input image is only the family maturation/style reference. FORM 2 adolescent shark-family cyclops. Longer strong tapered trunk and developing muscular shoulders, larger swept dorsal fin, stronger forked tail, paired pectoral fins with thickening biological roots and small pelvic fins. No walking feet or adult elbows yet. More developed than a larva, less massive than the adult. Broad front head and muscular silhouette must contrast with slender adaptable. OMNIVORE palette: amber/gold skin, teal webbing/fins, cream underside; keep the single purple eye. Diet palette does not determine temperament family.\nProduction Ooze2Orbit 2D aquatic player sprite sheet, rich hand-illustrated HD cel shading, bold dark ink contours, saturated biological skin, sculpted highlights and restrained fine organic texture. Exactly ONE large purple cyclops eye, never two. This creature belongs to the original lineage in the reference board. Twelve separate full-body sprites, precisely FOUR columns by THREE rows. Row 1 FRONT facing camera (face visible, long body/tail receding behind); row 2 RIGHT-FACING SIDE; row 3 BACK viewed from behind, head at top and tail trailing down, NO visible eye. Columns: swim bend LEFT, NEUTRAL swim, swim bend RIGHT, open-mouth CHOMP. All four sprites per row have identical body scale and stable head center. Preserve complete silhouettes in EVERY cell with generous 20 percent transparent margins; no appendage touching outer edges or adjacent cells. Render subjects smaller to guarantee margins. All four poses are swimming or floating aquatic poses, not standing on ground. Actual transparent alpha, clean edges, no colored haze, shadows, scenery, checkerboard, labels, text, grid or equipment. Anatomical growth only; no equipped jaws, armor plates, extra organs or weapons. Keep naturally grown fins/shells, not manufactured items. Landscape 4:3 canvas.",
+      "designBrief": "FORM 2 adolescent shark-family cyclops. Longer strong tapered trunk and developing muscular shoulders, larger swept dorsal fin, stronger forked tail, paired pectoral fins with thickening biological roots and small pelvic fins. No walking feet or adult elbows yet. More developed than a larva, less massive than the adult. Broad front head and muscular silhouette must contrast with slender adaptable.",
+      "sha256": "274c8696c70778f239f2f6aac04bb79807d9758533c8e0c224f4985364eb75de",
+      "generatedOriginal": "exec-9c346fde-5287-4273-ae87-ac11912f6fa5.png"
+    },
+    {
+      "family": "aggressive",
+      "form": 2,
+      "diet": "herbivore",
+      "file": "aquatic_aggressive_f2_herbivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Production diet variation of this exact aquatic sprite sheet. Preserve all twelve complete sprites, anatomy, maturity, proportions, family identity, poses and positions. Same FOUR columns (left swim bend, neutral, right swim bend, chomp), THREE rows (front, right-facing side, back). Exactly one purple cyclops eye on front/side and no eye on back. Change ONLY palette and feeding-mouth details to lime/leaf green skin and shell growth edges, dark botanical green markings, leaf-green membranes with pale yellow veins, cream belly; softer blunt feeding edges. Never change a protective hood into a shark fin or a slender body into a bulky fish. Keep original illustrated ink contours, rich cel shading, fine organic texture and sculpted highlights. Retain actual transparent alpha with clean edges and generous gutters around ALL tails, noses and paddles. No cropping, scenery, grid, labels, shadows, checkerboard, haze or new equipment.",
+      "sha256": "87252978a12a0dea1122cfae118130ab13346e6d66ecbde7cc668ba569cf8c78",
+      "generatedOriginal": "exec-c958f9c7-4226-44c0-b075-d0ccd266a7e9.png"
+    },
+    {
+      "family": "aggressive",
+      "form": 2,
+      "diet": "carnivore",
+      "file": "aquatic_aggressive_f2_carnivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Production diet variation of this exact aquatic sprite sheet. Preserve all twelve complete sprites, anatomy, maturity, proportions, family identity, poses and positions. Same FOUR columns (left swim bend, neutral, right swim bend, chomp), THREE rows (front, right-facing side, back). Exactly one purple cyclops eye on front/side and no eye on back. Change ONLY palette and feeding-mouth details to coral red skin and shell growth edges, crimson markings, peach/salmon membranes, cream belly, modest ivory fangs at the mouth only. Never change a protective hood into a shark fin or a slender body into a bulky fish. Keep original illustrated ink contours, rich cel shading, fine organic texture and sculpted highlights. Retain actual transparent alpha with clean edges and generous gutters around ALL tails, noses and paddles. No cropping, scenery, grid, labels, shadows, checkerboard, haze or new equipment.",
+      "sha256": "6a74be639d0124041f808d163aed9e2b5d77b2e2d47b582f5ccc852ecaadd60d",
+      "generatedOriginal": "exec-0aab9d7c-90a6-4429-8e6a-43155ed2e768.png"
+    },
+    {
+      "family": "aggressive",
+      "form": 3,
+      "diet": "omnivore",
+      "file": "aquatic_aggressive_f3_omnivore_motion_v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent game animation sheet. Input image is only the family maturation/style reference. FORM 3 mature shark-family cyclops. Powerful muscular sharklike shoulders, thick tapered trunk, strong forked tail, swept dorsal ridges, large propulsive pectoral fins with muscular roots, small hind pelvic fins. Still completely aquatic; short fin appendages have NOT yet become the elbowed weight-bearing fin-limbs of form4. Natural skin ridges, not equipped plate armor. OMNIVORE palette: amber/gold skin, teal webbing/fins, cream underside; keep the single purple eye. Diet palette does not determine temperament family.\nProduction Ooze2Orbit 2D aquatic player sprite sheet, rich hand-illustrated HD cel shading, bold dark ink contours, saturated biological skin, sculpted highlights and restrained fine organic texture. Exactly ONE large purple cyclops eye, never two. This creature belongs to the original lineage in the reference board. Twelve separate full-body sprites, precisely FOUR columns by THREE rows. Row 1 FRONT facing camera (face visible, long body/tail receding behind); row 2 RIGHT-FACING SIDE; row 3 BACK viewed from behind, head at top and tail trailing down, NO visible eye. Columns: swim bend LEFT, NEUTRAL swim, swim bend RIGHT, open-mouth CHOMP. All four sprites per row have identical body scale and stable head center. Preserve complete silhouettes in EVERY cell with generous 20 percent transparent margins; no appendage touching outer edges or adjacent cells. Render subjects smaller to guarantee margins. All four poses are swimming or floating aquatic poses, not standing on ground. Actual transparent alpha, clean edges, no colored haze, shadows, scenery, checkerboard, labels, text, grid or equipment. Anatomical growth only; no equipped jaws, armor plates, extra organs or weapons. Keep naturally grown fins/shells, not manufactured items. Landscape 4:3 canvas.",
+      "sha256": "d3c7e9b817f0d59facf0af3fa9812b5f9bd96699eaccf879db696fac2549fc72",
+      "generatedOriginal": "exec-5d2428bb-6d5e-4c36-8d13-73daeda38e2b.png"
+    },
+    {
+      "family": "aggressive",
+      "form": 3,
+      "diet": "herbivore",
+      "file": "aquatic_aggressive_f3_herbivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Edit this exact twelve-pose aquatic animation sheet into its HERBIVORE DIET variation. Preserve ALL anatomy, body proportions, family silhouette, maturity, poses, cell positions, head centers, complete tails and limbs and exact one PURPLE cyclops eye. Do not change a sharklike or shelled or slender feline creature into another family. Change ONLY the surface palette and feeding-mouth details: lime/leaf green skin and shell growth edges, dark botanical green markings, leaf-green membranes with pale yellow veins, cream belly. Softer blunt feeding edges; retain all natural sharklike ridges or protective shell anatomy. Retain ink contours, rich illustrated cel shading and sculpted organic highlights. Same 4 columns by 3 rows: front, right-facing side, back; left bend, neutral, right bend, chomp. Preserve transparent alpha, generous clean transparent gutters, full complete silhouettes. No background, new anatomy, labels, text, scenery, equipment, haze or cropping.",
+      "sha256": "abb245a30e511865ccb2612768cae1e862917d05bd3897e0cfa65c96345fca27",
+      "generatedOriginal": "exec-e5431443-1c23-48dc-adc4-6fcd4be7319a.png"
+    },
+    {
+      "family": "aggressive",
+      "form": 3,
+      "diet": "carnivore",
+      "file": "aquatic_aggressive_f3_carnivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Edit this exact twelve-pose aquatic animation sheet into its CARNIVORE DIET variation. Preserve ALL anatomy, body proportions, family silhouette, maturity, poses, cell positions, head centers, complete tails and limbs and exact one PURPLE cyclops eye. Do not change a sharklike or shelled or slender feline creature into another family. Change ONLY the surface palette and feeding-mouth details: coral red skin and shell growth edges, deeper crimson markings, peach/salmon membranes with ivory veins, cream belly. Modest ivory feeding fangs at the mouth only. Retain ink contours, rich illustrated cel shading and sculpted organic highlights. Same 4 columns by 3 rows: front, right-facing side, back; left bend, neutral, right bend, chomp. Preserve transparent alpha, generous clean transparent gutters, full complete silhouettes. No background, new anatomy, labels, text, scenery, equipment, haze or cropping.",
+      "sha256": "296fafba7a5e7598d764614610d215ee2917bb8b5e3c1eceb6df49b90aba1a4e",
+      "generatedOriginal": "exec-05fb21da-cec6-4a5a-ac2c-dce4b48aed4f.png"
+    },
+    {
+      "family": "aggressive",
+      "form": 4,
+      "diet": "omnivore",
+      "file": "aquatic_aggressive_f4_omnivore_motion_v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent game animation sheet. Input image is ONLY the body-family and style reference, not a layout to preserve. FORM 4 amphibious precursor: the TOP RIGHT creature on the reference board. Muscular shark-inspired cyclops with broad powerful shoulders, tapered trunk, a substantial forked propulsive tail, swept dorsal ridges and four short weight-bearing fin-limbs with webbed paddle ends. Two forelimbs clearly have elbows and thick roots, two smaller hind supports develop from pelvic fins. It remains a swimming biological creature, poised to become a land animal. No humanoid, no metal, no animal fur. OMNIVORE diet colors amber/gold skin, teal fin membranes, cream underside. The shark family silhouette must remain clear even in this gold palette.\nProduction Ooze2Orbit 2D aquatic player sprite sheet, rich hand-illustrated HD cel shading, bold dark ink contours, saturated biological skin, sculpted highlights and restrained fine organic texture. Exactly ONE large purple cyclops eye, never two. This creature belongs to the original lineage in the reference board. Twelve separate full-body sprites, precisely FOUR columns by THREE rows. Row 1 FRONT facing camera (face visible, long body/tail receding behind); row 2 RIGHT-FACING SIDE; row 3 BACK viewed from behind, head at top and tail trailing down, NO visible eye. Columns: swim bend LEFT, NEUTRAL swim, swim bend RIGHT, open-mouth CHOMP. All four sprites per row have identical body scale and stable head center. Preserve complete silhouettes in EVERY cell with generous 20 percent transparent margins; no appendage touching outer edges or adjacent cells. Render subjects smaller to guarantee margins. All four poses are swimming or floating aquatic poses, not standing on ground. Actual transparent alpha, clean edges, no colored haze, shadows, scenery, checkerboard, labels, text, grid or equipment. Anatomical growth only; no equipped jaws, armor plates, extra organs or weapons. Keep naturally grown fins/shells, not manufactured items. Landscape 4:3 canvas.",
+      "sha256": "db4a31198978f163044151615b46beae4590f2cd0a740a954f32450a4bec6eda",
+      "generatedOriginal": "exec-4ed92d4b-9414-47a0-923d-71e77ef52c24.png"
+    },
+    {
+      "family": "aggressive",
+      "form": 4,
+      "diet": "herbivore",
+      "file": "aquatic_aggressive_f4_herbivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Edit this exact twelve-pose aquatic animation sheet into its HERBIVORE DIET variation. Preserve ALL anatomy, body proportions, family silhouette, maturity, poses, cell positions, head centers, complete tails and limbs and exact one PURPLE cyclops eye. Do not change a sharklike or shelled or slender feline creature into another family. Change ONLY the surface palette and feeding-mouth details: lime/leaf green skin and shell growth edges, dark botanical green markings, leaf-green membranes with pale yellow veins, cream belly. Softer blunt feeding edges; retain all natural sharklike ridges or protective shell anatomy. Retain ink contours, rich illustrated cel shading and sculpted organic highlights. Same 4 columns by 3 rows: front, right-facing side, back; left bend, neutral, right bend, chomp. Preserve transparent alpha, generous clean transparent gutters, full complete silhouettes. No background, new anatomy, labels, text, scenery, equipment, haze or cropping.",
+      "sha256": "6a22daa083ae7d62054df18038795b842dcaf9a96ad5830044bf34d3b57c7e0f",
+      "generatedOriginal": "exec-2ae959cc-a938-498f-876b-3d7a56fcab19.png"
+    },
+    {
+      "family": "aggressive",
+      "form": 4,
+      "diet": "carnivore",
+      "file": "aquatic_aggressive_f4_carnivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Edit this exact twelve-pose aquatic animation sheet into its CARNIVORE DIET variation. Preserve ALL anatomy, body proportions, family silhouette, maturity, poses, cell positions, head centers, complete tails and limbs and exact one PURPLE cyclops eye. Do not change a sharklike or shelled or slender feline creature into another family. Change ONLY the surface palette and feeding-mouth details: coral red skin and shell growth edges, deeper crimson markings, peach/salmon membranes with ivory veins, cream belly. Modest ivory feeding fangs at the mouth only. Retain ink contours, rich illustrated cel shading and sculpted organic highlights. Same 4 columns by 3 rows: front, right-facing side, back; left bend, neutral, right bend, chomp. Preserve transparent alpha, generous clean transparent gutters, full complete silhouettes. No background, new anatomy, labels, text, scenery, equipment, haze or cropping.",
+      "sha256": "24a7687239c913565606d34b7546971345184d0492ea16b234b56d415bf9a175",
+      "generatedOriginal": "exec-a8752c1c-8f30-4c4c-91d5-2e7935c67858.png"
+    },
+    {
+      "family": "adaptable",
+      "form": 1,
+      "diet": "omnivore",
+      "file": "aquatic_adaptable_f1_omnivore_motion_v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent game animation sheet. Input image is only the family maturation/style reference. FORM 1 larval adaptable cyclops. Tiny elongated graceful tadpolelike organism with a narrow flexible trunk, large relative single purple eye, thin sinuous ribbon-finned tail and two pairs of very small webbed limb buds. Clearly juvenile: no adult long legs, no bulky shoulder mantle, no broad fish body. The lineage will become feline but this earliest stage remains a simple smooth aquatic larva. No fur or mammalian ears. OMNIVORE palette: amber/gold skin, teal webbing/fins, cream underside; keep the single purple eye. Diet palette does not determine temperament family.\nProduction Ooze2Orbit 2D aquatic player sprite sheet, rich hand-illustrated HD cel shading, bold dark ink contours, saturated biological skin, sculpted highlights and restrained fine organic texture. Exactly ONE large purple cyclops eye, never two. This creature belongs to the original lineage in the reference board. Twelve separate full-body sprites, precisely FOUR columns by THREE rows. Row 1 FRONT facing camera (face visible, long body/tail receding behind); row 2 RIGHT-FACING SIDE; row 3 BACK viewed from behind, head at top and tail trailing down, NO visible eye. Columns: swim bend LEFT, NEUTRAL swim, swim bend RIGHT, open-mouth CHOMP. All four sprites per row have identical body scale and stable head center. Preserve complete silhouettes in EVERY cell with generous 20 percent transparent margins; no appendage touching outer edges or adjacent cells. Render subjects smaller to guarantee margins. All four poses are swimming or floating aquatic poses, not standing on ground. Actual transparent alpha, clean edges, no colored haze, shadows, scenery, checkerboard, labels, text, grid or equipment. Anatomical growth only; no equipped jaws, armor plates, extra organs or weapons. Keep naturally grown fins/shells, not manufactured items. Landscape 4:3 canvas.",
+      "sha256": "bb50f770b3acc2ecc2f8dca3d4048297a276647c5945a253569790b46576f0be",
+      "generatedOriginal": "exec-9f7bec3f-20da-46aa-b9a3-6faeb8d68352.png"
+    },
+    {
+      "family": "adaptable",
+      "form": 1,
+      "diet": "herbivore",
+      "file": "aquatic_adaptable_f1_herbivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Edit this exact twelve-pose aquatic animation sheet into its HERBIVORE DIET variation. Preserve ALL anatomy, body proportions, family silhouette, maturity, poses, cell positions, head centers, complete tails and limbs and exact one PURPLE cyclops eye. Do not change a sharklike or shelled or slender feline creature into another family. Change ONLY the surface palette and feeding-mouth details: lime/leaf green skin and shell growth edges, dark botanical green markings, leaf-green membranes with pale yellow veins, cream belly. Softer blunt feeding edges; retain all natural sharklike ridges or protective shell anatomy. Retain ink contours, rich illustrated cel shading and sculpted organic highlights. Same 4 columns by 3 rows: front, right-facing side, back; left bend, neutral, right bend, chomp. Preserve transparent alpha, generous clean transparent gutters, full complete silhouettes. No background, new anatomy, labels, text, scenery, equipment, haze or cropping.",
+      "sha256": "7ebd10d84f7f94648ac4f543d46258f44114d8f94f53083b7b1f1892aaa110ab",
+      "generatedOriginal": "exec-3a73b81d-684a-42b3-8985-a2f2aa582fe7.png"
+    },
+    {
+      "family": "adaptable",
+      "form": 1,
+      "diet": "carnivore",
+      "file": "aquatic_adaptable_f1_carnivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Edit this exact twelve-pose aquatic animation sheet into its CARNIVORE DIET variation. Preserve ALL anatomy, body proportions, family silhouette, maturity, poses, cell positions, head centers, complete tails and limbs and exact one PURPLE cyclops eye. Do not change a sharklike or shelled or slender feline creature into another family. Change ONLY the surface palette and feeding-mouth details: coral red skin and shell growth edges, deeper crimson markings, peach/salmon membranes with ivory veins, cream belly. Modest ivory feeding fangs at the mouth only. Retain ink contours, rich illustrated cel shading and sculpted organic highlights. Same 4 columns by 3 rows: front, right-facing side, back; left bend, neutral, right bend, chomp. Preserve transparent alpha, generous clean transparent gutters, full complete silhouettes. No background, new anatomy, labels, text, scenery, equipment, haze or cropping.",
+      "sha256": "9ca7019912f7c387e3351a40589cc97f3a703da6694e63ea76f4ce3a1c79175d",
+      "generatedOriginal": "exec-6d34ae6f-d64b-4e98-9953-7eb3647f5d33.png"
+    },
+    {
+      "family": "adaptable",
+      "form": 2,
+      "diet": "omnivore",
+      "file": "aquatic_adaptable_f2_omnivore_motion_v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent game animation sheet. Input image is only the family maturation/style reference. FORM 2 adolescent adaptable cyclops. Lithe elongated narrow-waisted smooth-skinned organism, small elegant head and purple cyclops eye, supple long ribbon-finned tail, four slim developing webbed paddles beginning to separate from the torso. Limbs are short and swept back for swimming, not yet the long articulated feline legs of form4. Preserve the graceful narrow silhouette and low smooth dorsal ribbon. No thick muscles, bulky mantle, fur or cat ears. OMNIVORE palette: amber/gold skin, teal webbing/fins, cream underside; keep the single purple eye. Diet palette does not determine temperament family.\nProduction Ooze2Orbit 2D aquatic player sprite sheet, rich hand-illustrated HD cel shading, bold dark ink contours, saturated biological skin, sculpted highlights and restrained fine organic texture. Exactly ONE large purple cyclops eye, never two. This creature belongs to the original lineage in the reference board. Twelve separate full-body sprites, precisely FOUR columns by THREE rows. Row 1 FRONT facing camera (face visible, long body/tail receding behind); row 2 RIGHT-FACING SIDE; row 3 BACK viewed from behind, head at top and tail trailing down, NO visible eye. Columns: swim bend LEFT, NEUTRAL swim, swim bend RIGHT, open-mouth CHOMP. All four sprites per row have identical body scale and stable head center. Preserve complete silhouettes in EVERY cell with generous 20 percent transparent margins; no appendage touching outer edges or adjacent cells. Render subjects smaller to guarantee margins. All four poses are swimming or floating aquatic poses, not standing on ground. Actual transparent alpha, clean edges, no colored haze, shadows, scenery, checkerboard, labels, text, grid or equipment. Anatomical growth only; no equipped jaws, armor plates, extra organs or weapons. Keep naturally grown fins/shells, not manufactured items. Landscape 4:3 canvas.",
+      "designBrief": "FORM 2 adolescent adaptable cyclops. Lithe elongated narrow-waisted smooth-skinned organism, small elegant head and purple cyclops eye, supple long ribbon-finned tail, four slim developing webbed paddles beginning to separate from the torso. Limbs are short and swept back for swimming, not yet the long articulated feline legs of form4. Preserve the graceful narrow silhouette and low smooth dorsal ribbon. No thick muscles, bulky mantle, fur or cat ears.",
+      "sha256": "3b3f76ad6bf7d349e6253bdf4dbb76afae1cc42f8b5045eef7d4eab409835407",
+      "generatedOriginal": "exec-b02e75b1-881c-4906-9aeb-ba4270108b62.png"
+    },
+    {
+      "family": "adaptable",
+      "form": 2,
+      "diet": "herbivore",
+      "file": "aquatic_adaptable_f2_herbivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Production diet variation of this exact aquatic sprite sheet. Preserve all twelve complete sprites, anatomy, maturity, proportions, family identity, poses and positions. Same FOUR columns (left swim bend, neutral, right swim bend, chomp), THREE rows (front, right-facing side, back). Exactly one purple cyclops eye on front/side and no eye on back. Change ONLY palette and feeding-mouth details to lime/leaf green skin and shell growth edges, dark botanical green markings, leaf-green membranes with pale yellow veins, cream belly; softer blunt feeding edges. Never change a protective hood into a shark fin or a slender body into a bulky fish. Keep original illustrated ink contours, rich cel shading, fine organic texture and sculpted highlights. Retain actual transparent alpha with clean edges and generous gutters around ALL tails, noses and paddles. No cropping, scenery, grid, labels, shadows, checkerboard, haze or new equipment.",
+      "sha256": "6311437af172daa53fa348ba66cfd4e6ad23fb0bf0627dc639e9436875adb721",
+      "generatedOriginal": "exec-b3fbbe67-00e2-4baa-853f-33506897f5bb.png"
+    },
+    {
+      "family": "adaptable",
+      "form": 2,
+      "diet": "carnivore",
+      "file": "aquatic_adaptable_f2_carnivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Production diet variation of this exact aquatic sprite sheet. Preserve all twelve complete sprites, anatomy, maturity, proportions, family identity, poses and positions. Same FOUR columns (left swim bend, neutral, right swim bend, chomp), THREE rows (front, right-facing side, back). Exactly one purple cyclops eye on front/side and no eye on back. Change ONLY palette and feeding-mouth details to coral red skin and shell growth edges, crimson markings, peach/salmon membranes, cream belly, modest ivory fangs at the mouth only. Never change a protective hood into a shark fin or a slender body into a bulky fish. Keep original illustrated ink contours, rich cel shading, fine organic texture and sculpted highlights. Retain actual transparent alpha with clean edges and generous gutters around ALL tails, noses and paddles. No cropping, scenery, grid, labels, shadows, checkerboard, haze or new equipment.",
+      "sha256": "b26f4398428341faf4c4e253b6ffaa555a5e9db4c6838ce6bfb946682aa22ab5",
+      "generatedOriginal": "exec-c344ac65-2025-4da3-b433-8603016ad171.png"
+    },
+    {
+      "family": "adaptable",
+      "form": 4,
+      "diet": "omnivore",
+      "file": "aquatic_adaptable_f4_omnivore_motion_v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent game animation sheet. Input image is ONLY the body-family and style reference, not a layout to preserve. FORM 4 amphibious precursor: the MIDDLE RIGHT creature on the reference board. Extremely SLENDER, graceful FELINE proportions: long flexible spine, noticeably narrow waist, small elegant head and one purple eye, four long thin articulated limbs with delicate webbed feet, long supple ribbon-finned tail. Smooth aquatic skin, no fur, no cat ears. Longer articulated limbs than the existing form3 swimming organism, but still held in a streamlined swimming posture. Avoid broad mantles, bulky shoulders, thick muscles, generic fish bodies and shark fins. OMNIVORE amber/gold skin, teal webs and small low dorsal ribbon, cream underside.\nProduction Ooze2Orbit 2D aquatic player sprite sheet, rich hand-illustrated HD cel shading, bold dark ink contours, saturated biological skin, sculpted highlights and restrained fine organic texture. Exactly ONE large purple cyclops eye, never two. This creature belongs to the original lineage in the reference board. Twelve separate full-body sprites, precisely FOUR columns by THREE rows. Row 1 FRONT facing camera (face visible, long body/tail receding behind); row 2 RIGHT-FACING SIDE; row 3 BACK viewed from behind, head at top and tail trailing down, NO visible eye. Columns: swim bend LEFT, NEUTRAL swim, swim bend RIGHT, open-mouth CHOMP. All four sprites per row have identical body scale and stable head center. Preserve complete silhouettes in EVERY cell with generous 20 percent transparent margins; no appendage touching outer edges or adjacent cells. Render subjects smaller to guarantee margins. All four poses are swimming or floating aquatic poses, not standing on ground. Actual transparent alpha, clean edges, no colored haze, shadows, scenery, checkerboard, labels, text, grid or equipment. Anatomical growth only; no equipped jaws, armor plates, extra organs or weapons. Keep naturally grown fins/shells, not manufactured items. Landscape 4:3 canvas.",
+      "sha256": "dec855ea4925368bda60e436dc8c049f67e108f38348a0168054ad8a22ccc3f1",
+      "generatedOriginal": "exec-66346498-6150-4686-af67-b5308ed2c9aa.png"
+    },
+    {
+      "family": "adaptable",
+      "form": 4,
+      "diet": "herbivore",
+      "file": "aquatic_adaptable_f4_herbivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Edit this exact twelve-pose aquatic animation sheet into its HERBIVORE DIET variation. Preserve ALL anatomy, body proportions, family silhouette, maturity, poses, cell positions, head centers, complete tails and limbs and exact one PURPLE cyclops eye. Do not change a sharklike or shelled or slender feline creature into another family. Change ONLY the surface palette and feeding-mouth details: lime/leaf green skin and shell growth edges, dark botanical green markings, leaf-green membranes with pale yellow veins, cream belly. Softer blunt feeding edges; retain all natural sharklike ridges or protective shell anatomy. Retain ink contours, rich illustrated cel shading and sculpted organic highlights. Same 4 columns by 3 rows: front, right-facing side, back; left bend, neutral, right bend, chomp. Preserve transparent alpha, generous clean transparent gutters, full complete silhouettes. No background, new anatomy, labels, text, scenery, equipment, haze or cropping.",
+      "sha256": "2d5d2c816e8d41d125eeb9042bb80afee33704df6d361a1e72d9de302e6fd4ed",
+      "generatedOriginal": "exec-2a0a5ccb-95f1-419b-b32c-3e112eb99b76.png"
+    },
+    {
+      "family": "adaptable",
+      "form": 4,
+      "diet": "carnivore",
+      "file": "aquatic_adaptable_f4_carnivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Edit this exact twelve-pose aquatic animation sheet into its CARNIVORE DIET variation. Preserve ALL anatomy, body proportions, family silhouette, maturity, poses, cell positions, head centers, complete tails and limbs and exact one PURPLE cyclops eye. Do not change a sharklike or shelled or slender feline creature into another family. Change ONLY the surface palette and feeding-mouth details: coral red skin and shell growth edges, deeper crimson markings, peach/salmon membranes with ivory veins, cream belly. Modest ivory feeding fangs at the mouth only. Retain ink contours, rich illustrated cel shading and sculpted organic highlights. Same 4 columns by 3 rows: front, right-facing side, back; left bend, neutral, right bend, chomp. Preserve transparent alpha, generous clean transparent gutters, full complete silhouettes. No background, new anatomy, labels, text, scenery, equipment, haze or cropping.",
+      "sha256": "b4a286977c1ffff6aeddac52c5a3c42c4fa4cea444dd62fc4d0e85993a3c08c7",
+      "generatedOriginal": "exec-58fc2250-35f4-444d-bbe5-5933c9626253.png"
+    },
+    {
+      "family": "cautious",
+      "form": 1,
+      "diet": "omnivore",
+      "file": "aquatic_cautious_f1_omnivore_motion_v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent game animation sheet. Input image is only the family maturation/style reference. FORM 1 juvenile cautious cyclops. Compact soft-bodied aquatic hatchling, round purple cyclops eye, small naturally grown protective hood/early low shell over upper back, four small rounded paddle buds and a short flexible tail. The hood is only a few soft continuous growth ridges, not a fully developed adult carapace. Turtle/nautilus influence already visible but vulnerable and simple. OMNIVORE palette: amber/gold skin, teal webbing/fins, cream underside; keep the single purple eye. Diet palette does not determine temperament family.\nProduction Ooze2Orbit 2D aquatic player sprite sheet, rich hand-illustrated HD cel shading, bold dark ink contours, saturated biological skin, sculpted highlights and restrained fine organic texture. Exactly ONE large purple cyclops eye, never two. This creature belongs to the original lineage in the reference board. Twelve separate full-body sprites, precisely FOUR columns by THREE rows. Row 1 FRONT facing camera (face visible, long body/tail receding behind); row 2 RIGHT-FACING SIDE; row 3 BACK viewed from behind, head at top and tail trailing down, NO visible eye. Columns: swim bend LEFT, NEUTRAL swim, swim bend RIGHT, open-mouth CHOMP. All four sprites per row have identical body scale and stable head center. Preserve complete silhouettes in EVERY cell with generous 20 percent transparent margins; no appendage touching outer edges or adjacent cells. Render subjects smaller to guarantee margins. All four poses are swimming or floating aquatic poses, not standing on ground. Actual transparent alpha, clean edges, no colored haze, shadows, scenery, checkerboard, labels, text, grid or equipment. Anatomical growth only; no equipped jaws, armor plates, extra organs or weapons. Keep naturally grown fins/shells, not manufactured items. Landscape 4:3 canvas.",
+      "designBrief": "FORM 1 juvenile cautious cyclops. Compact soft-bodied aquatic hatchling, round purple cyclops eye, small naturally grown protective hood/early low shell over upper back, four small rounded paddle buds and a short flexible tail. The hood is only a few soft continuous growth ridges, not a fully developed adult carapace. Turtle/nautilus influence already visible but vulnerable and simple.",
+      "sha256": "881603389bb2ac6ab7b05f3be1c230bc1a9283b313e9aa7a57e13ac9121c6f57",
+      "generatedOriginal": "exec-267dba36-4244-48bf-985a-1e2b9fe0fb00.png"
+    },
+    {
+      "family": "cautious",
+      "form": 1,
+      "diet": "herbivore",
+      "file": "aquatic_cautious_f1_herbivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Production diet variation of this exact aquatic sprite sheet. Preserve all twelve complete sprites, anatomy, maturity, proportions, family identity, poses and positions. Same FOUR columns (left swim bend, neutral, right swim bend, chomp), THREE rows (front, right-facing side, back). Exactly one purple cyclops eye on front/side and no eye on back. Change ONLY palette and feeding-mouth details to lime/leaf green skin and shell growth edges, dark botanical green markings, leaf-green membranes with pale yellow veins, cream belly; softer blunt feeding edges. Never change a protective hood into a shark fin or a slender body into a bulky fish. Keep original illustrated ink contours, rich cel shading, fine organic texture and sculpted highlights. Retain actual transparent alpha with clean edges and generous gutters around ALL tails, noses and paddles. No cropping, scenery, grid, labels, shadows, checkerboard, haze or new equipment.",
+      "sha256": "8862051aca69e70894a7778e33e005554c78296c5996d5e9d5e4ddcdc9e94337",
+      "generatedOriginal": "exec-d05955ac-b74b-49e4-bf4d-f7e01c933aaa.png"
+    },
+    {
+      "family": "cautious",
+      "form": 1,
+      "diet": "carnivore",
+      "file": "aquatic_cautious_f1_carnivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Production diet variation of this exact aquatic sprite sheet. Preserve all twelve complete sprites, anatomy, maturity, proportions, family identity, poses and positions. Same FOUR columns (left swim bend, neutral, right swim bend, chomp), THREE rows (front, right-facing side, back). Exactly one purple cyclops eye on front/side and no eye on back. Change ONLY palette and feeding-mouth details to coral red skin and shell growth edges, crimson markings, peach/salmon membranes, cream belly, modest ivory fangs at the mouth only. Never change a protective hood into a shark fin or a slender body into a bulky fish. Keep original illustrated ink contours, rich cel shading, fine organic texture and sculpted highlights. Retain actual transparent alpha with clean edges and generous gutters around ALL tails, noses and paddles. No cropping, scenery, grid, labels, shadows, checkerboard, haze or new equipment.",
+      "sha256": "aa6584a7b98a04363bf4d20196e3a3016013d011fa2bd11458a619cb1ff24d82",
+      "generatedOriginal": "exec-a5defb4a-1e05-4ad9-a719-f83fb6347b51.png"
+    },
+    {
+      "family": "cautious",
+      "form": 2,
+      "diet": "omnivore",
+      "file": "aquatic_cautious_f2_omnivore_motion_v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent game animation sheet. Input image is only the family maturation/style reference. FORM 2 adolescent cautious cyclops. Compact turtle/nautilus-inspired swimmer with a developing low domed natural carapace of three overlapping growth bands, protected but visible neck and purple eye, four broader webbed paddle limbs and a short muscular tail. Clearly more mature than the soft hood of form1 but lighter and less layered than the full adult shell. OMNIVORE palette: amber/gold skin, teal webbing/fins, cream underside; keep the single purple eye. Diet palette does not determine temperament family.\nProduction Ooze2Orbit 2D aquatic player sprite sheet, rich hand-illustrated HD cel shading, bold dark ink contours, saturated biological skin, sculpted highlights and restrained fine organic texture. Exactly ONE large purple cyclops eye, never two. This creature belongs to the original lineage in the reference board. Twelve separate full-body sprites, precisely FOUR columns by THREE rows. Row 1 FRONT facing camera (face visible, long body/tail receding behind); row 2 RIGHT-FACING SIDE; row 3 BACK viewed from behind, head at top and tail trailing down, NO visible eye. Columns: swim bend LEFT, NEUTRAL swim, swim bend RIGHT, open-mouth CHOMP. All four sprites per row have identical body scale and stable head center. Preserve complete silhouettes in EVERY cell with generous 20 percent transparent margins; no appendage touching outer edges or adjacent cells. Render subjects smaller to guarantee margins. All four poses are swimming or floating aquatic poses, not standing on ground. Actual transparent alpha, clean edges, no colored haze, shadows, scenery, checkerboard, labels, text, grid or equipment. Anatomical growth only; no equipped jaws, armor plates, extra organs or weapons. Keep naturally grown fins/shells, not manufactured items. Landscape 4:3 canvas.",
+      "designBrief": "FORM 2 adolescent cautious cyclops. Compact turtle/nautilus-inspired swimmer with a developing low domed natural carapace of three overlapping growth bands, protected but visible neck and purple eye, four broader webbed paddle limbs and a short muscular tail. Clearly more mature than the soft hood of form1 but lighter and less layered than the full adult shell.",
+      "sha256": "0c75e4ebb325ad79440bd116ad704861d9a5f6f3bce47f6d3b2c02baa5ba2d95",
+      "generatedOriginal": "exec-22829a2c-0c19-48ab-aec7-c14b60b01794.png"
+    },
+    {
+      "family": "cautious",
+      "form": 2,
+      "diet": "herbivore",
+      "file": "aquatic_cautious_f2_herbivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Production diet variation of this exact aquatic sprite sheet. Preserve all twelve complete sprites, anatomy, maturity, proportions, family identity, poses and positions. Same FOUR columns (left swim bend, neutral, right swim bend, chomp), THREE rows (front, right-facing side, back). Exactly one purple cyclops eye on front/side and no eye on back. Change ONLY palette and feeding-mouth details to lime/leaf green skin and shell growth edges, dark botanical green markings, leaf-green membranes with pale yellow veins, cream belly; softer blunt feeding edges. Never change a protective hood into a shark fin or a slender body into a bulky fish. Keep original illustrated ink contours, rich cel shading, fine organic texture and sculpted highlights. Retain actual transparent alpha with clean edges and generous gutters around ALL tails, noses and paddles. No cropping, scenery, grid, labels, shadows, checkerboard, haze or new equipment.",
+      "sha256": "3f37e4c7fbf92906ca272b5fe03b2add83119eb9affd9ae32f8ae4ff96193792",
+      "generatedOriginal": "exec-550c4b19-95e7-4d88-925a-394021df8372.png"
+    },
+    {
+      "family": "cautious",
+      "form": 2,
+      "diet": "carnivore",
+      "file": "aquatic_cautious_f2_carnivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Production diet variation of this exact aquatic sprite sheet. Preserve all twelve complete sprites, anatomy, maturity, proportions, family identity, poses and positions. Same FOUR columns (left swim bend, neutral, right swim bend, chomp), THREE rows (front, right-facing side, back). Exactly one purple cyclops eye on front/side and no eye on back. Change ONLY palette and feeding-mouth details to coral red skin and shell growth edges, crimson markings, peach/salmon membranes, cream belly, modest ivory fangs at the mouth only. Never change a protective hood into a shark fin or a slender body into a bulky fish. Keep original illustrated ink contours, rich cel shading, fine organic texture and sculpted highlights. Retain actual transparent alpha with clean edges and generous gutters around ALL tails, noses and paddles. No cropping, scenery, grid, labels, shadows, checkerboard, haze or new equipment.",
+      "sha256": "e35203adcbb5244a0336caf254320287a1248c3ee37879ec5107ae6f22ece629",
+      "generatedOriginal": "exec-01c8c4c0-8045-45a3-aa22-22272b3813b6.png"
+    },
+    {
+      "family": "cautious",
+      "form": 3,
+      "diet": "omnivore",
+      "file": "aquatic_cautious_f3_omnivore_motion_v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent game animation sheet. Input image is only the family maturation/style reference. FORM 3 mature cautious cyclops. Substantial compact turtle/nautilus-inspired aquatic body with a broad layered biological carapace, protected neck and purple eye, four strong swimming paddles and short thick tail. Shell is rich sculpted organic scutes with teal inset panels and gold growth edges; it remains largely rigid as paddle limbs flap and tail sweeps. Not yet the elbowed support limbs of form4. OMNIVORE palette: amber/gold skin, teal webbing/fins, cream underside; keep the single purple eye. Diet palette does not determine temperament family.\nProduction Ooze2Orbit 2D aquatic player sprite sheet, rich hand-illustrated HD cel shading, bold dark ink contours, saturated biological skin, sculpted highlights and restrained fine organic texture. Exactly ONE large purple cyclops eye, never two. This creature belongs to the original lineage in the reference board. Twelve separate full-body sprites, precisely FOUR columns by THREE rows. Row 1 FRONT facing camera (face visible, long body/tail receding behind); row 2 RIGHT-FACING SIDE; row 3 BACK viewed from behind, head at top and tail trailing down, NO visible eye. Columns: swim bend LEFT, NEUTRAL swim, swim bend RIGHT, open-mouth CHOMP. All four sprites per row have identical body scale and stable head center. Preserve complete silhouettes in EVERY cell with generous 20 percent transparent margins; no appendage touching outer edges or adjacent cells. Render subjects smaller to guarantee margins. All four poses are swimming or floating aquatic poses, not standing on ground. Actual transparent alpha, clean edges, no colored haze, shadows, scenery, checkerboard, labels, text, grid or equipment. Anatomical growth only; no equipped jaws, armor plates, extra organs or weapons. Keep naturally grown fins/shells, not manufactured items. Landscape 4:3 canvas.",
+      "sha256": "f772714138731618ca21130c910831e0ea988d0eae867656f251da40e0067812",
+      "generatedOriginal": "exec-486398cc-6999-44e0-a8b6-27665ab03758.png"
+    },
+    {
+      "family": "cautious",
+      "form": 3,
+      "diet": "herbivore",
+      "file": "aquatic_cautious_f3_herbivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Edit this exact twelve-pose aquatic animation sheet into its HERBIVORE DIET variation. Preserve ALL anatomy, body proportions, family silhouette, maturity, poses, cell positions, head centers, complete tails and limbs and exact one PURPLE cyclops eye. Do not change a sharklike or shelled or slender feline creature into another family. Change ONLY the surface palette and feeding-mouth details: lime/leaf green skin and shell growth edges, dark botanical green markings, leaf-green membranes with pale yellow veins, cream belly. Softer blunt feeding edges; retain all natural sharklike ridges or protective shell anatomy. Retain ink contours, rich illustrated cel shading and sculpted organic highlights. Same 4 columns by 3 rows: front, right-facing side, back; left bend, neutral, right bend, chomp. Preserve transparent alpha, generous clean transparent gutters, full complete silhouettes. No background, new anatomy, labels, text, scenery, equipment, haze or cropping.",
+      "sha256": "c73bb83541a4a8c67f04fc9eb1f25364f67197fd4d34af9e76cf0a8fec39f2f8",
+      "generatedOriginal": "exec-915a41ac-b4c8-4f7f-b02b-47b80c60ffc9.png"
+    },
+    {
+      "family": "cautious",
+      "form": 3,
+      "diet": "carnivore",
+      "file": "aquatic_cautious_f3_carnivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Edit this exact twelve-pose aquatic animation sheet into its CARNIVORE DIET variation. Preserve ALL anatomy, body proportions, family silhouette, maturity, poses, cell positions, head centers, complete tails and limbs and exact one PURPLE cyclops eye. Do not change a sharklike or shelled or slender feline creature into another family. Change ONLY the surface palette and feeding-mouth details: coral red skin and shell growth edges, deeper crimson markings, peach/salmon membranes with ivory veins, cream belly. Modest ivory feeding fangs at the mouth only. Retain ink contours, rich illustrated cel shading and sculpted organic highlights. Same 4 columns by 3 rows: front, right-facing side, back; left bend, neutral, right bend, chomp. Preserve transparent alpha, generous clean transparent gutters, full complete silhouettes. No background, new anatomy, labels, text, scenery, equipment, haze or cropping.",
+      "sha256": "424e104ec812b449806c68f2496f2699ca14e10a2bb65b73dfee8eae5b7cd371",
+      "generatedOriginal": "exec-201b65cd-7332-4465-ad98-c1f449a2638a.png"
+    },
+    {
+      "family": "cautious",
+      "form": 4,
+      "diet": "omnivore",
+      "file": "aquatic_cautious_f4_omnivore_motion_v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent game animation sheet. Input image is ONLY the body-family and style reference, not a layout to preserve. FORM 4 amphibious precursor: the BOTTOM RIGHT creature on the reference board. Protective turtle/nautilus-inspired cyclops with a substantial low domed segmented natural carapace, protected neck, four broad articulated paddle limbs that can begin supporting its weight, and a short substantial tail. Shell layers look naturally grown, continuous with skin; no equipped metal armor. Natural shell has teal inset panels and amber/sculpted growth edges, not decorative unrelated icons. One large purple cyclops eye visible only front/side. OMNIVORE diet amber/gold skin and shell growth edges, teal webbed fins, cream belly. Do not use herbivore green palette merely because family is cautious.\nProduction Ooze2Orbit 2D aquatic player sprite sheet, rich hand-illustrated HD cel shading, bold dark ink contours, saturated biological skin, sculpted highlights and restrained fine organic texture. Exactly ONE large purple cyclops eye, never two. This creature belongs to the original lineage in the reference board. Twelve separate full-body sprites, precisely FOUR columns by THREE rows. Row 1 FRONT facing camera (face visible, long body/tail receding behind); row 2 RIGHT-FACING SIDE; row 3 BACK viewed from behind, head at top and tail trailing down, NO visible eye. Columns: swim bend LEFT, NEUTRAL swim, swim bend RIGHT, open-mouth CHOMP. All four sprites per row have identical body scale and stable head center. Preserve complete silhouettes in EVERY cell with generous 20 percent transparent margins; no appendage touching outer edges or adjacent cells. Render subjects smaller to guarantee margins. All four poses are swimming or floating aquatic poses, not standing on ground. Actual transparent alpha, clean edges, no colored haze, shadows, scenery, checkerboard, labels, text, grid or equipment. Anatomical growth only; no equipped jaws, armor plates, extra organs or weapons. Keep naturally grown fins/shells, not manufactured items. Landscape 4:3 canvas.",
+      "sha256": "b789d5b1b5c729c264af4d751e5bc18d67ef805fc066798786eed2b6c7e48f51",
+      "generatedOriginal": "exec-54032a54-87e9-43b6-99a0-9540314f4605.png"
+    },
+    {
+      "family": "cautious",
+      "form": 4,
+      "diet": "herbivore",
+      "file": "aquatic_cautious_f4_herbivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Edit this exact twelve-pose aquatic animation sheet into its HERBIVORE DIET variation. Preserve ALL anatomy, body proportions, family silhouette, maturity, poses, cell positions, head centers, complete tails and limbs and exact one PURPLE cyclops eye. Do not change a sharklike or shelled or slender feline creature into another family. Change ONLY the surface palette and feeding-mouth details: lime/leaf green skin and shell growth edges, dark botanical green markings, leaf-green membranes with pale yellow veins, cream belly. Softer blunt feeding edges; retain all natural sharklike ridges or protective shell anatomy. Retain ink contours, rich illustrated cel shading and sculpted organic highlights. Same 4 columns by 3 rows: front, right-facing side, back; left bend, neutral, right bend, chomp. Preserve transparent alpha, generous clean transparent gutters, full complete silhouettes. No background, new anatomy, labels, text, scenery, equipment, haze or cropping.",
+      "sha256": "680de065ee5c5c0bb83cca73653db7cf094206e220f270c1287e9c5fda3b3989",
+      "generatedOriginal": "exec-674525b3-5c66-470b-81ce-774c54c7bd6e.png"
+    },
+    {
+      "family": "cautious",
+      "form": 4,
+      "diet": "carnivore",
+      "file": "aquatic_cautious_f4_carnivore_motion_v1.png",
+      "prompt": "Use case: identity-preserve. Edit this exact twelve-pose aquatic animation sheet into its CARNIVORE DIET variation. Preserve ALL anatomy, body proportions, family silhouette, maturity, poses, cell positions, head centers, complete tails and limbs and exact one PURPLE cyclops eye. Do not change a sharklike or shelled or slender feline creature into another family. Change ONLY the surface palette and feeding-mouth details: coral red skin and shell growth edges, deeper crimson markings, peach/salmon membranes with ivory veins, cream belly. Modest ivory feeding fangs at the mouth only. Retain ink contours, rich illustrated cel shading and sculpted organic highlights. Same 4 columns by 3 rows: front, right-facing side, back; left bend, neutral, right bend, chomp. Preserve transparent alpha, generous clean transparent gutters, full complete silhouettes. No background, new anatomy, labels, text, scenery, equipment, haze or cropping.",
+      "sha256": "21e90244f7d9cf3da65146cda74d21333c4dde1afe180b65ee530b2f3d7e1905",
+      "generatedOriginal": "exec-1299a1b5-a001-4e33-9259-66e44e1dd148.png"
+    }
+  ],
+  "corrections": [
+    {
+      "diet": "omnivore",
+      "prompt": "Correct this animation sheet while preserving the twelve poses, positions, dimensions, biological creature design and palette. The rightmost creature in the MIDDLE row (side-view chomp pose) is missing its eye. Add its single clearly visible purple cyclops eye above/behind its open mouth, matching the other side-view poses. All four side views must have a visible purple eye. Keep every fin and tail complete. Maintain four columns by three rows, front/side/back. Remove all colored haze and alpha noise around silhouettes; actual clean transparent background, no shadows or background. Keep the art within generous transparent margins.",
+      "generatedOriginal": "exec-67fef14a-c839-4327-9928-fa5ebce8dbb7.png",
+      "file": "aquatic_adaptable_f2_omnivore_motion_v2.png",
+      "sha256": "e267da86b078aafbed57b6be417b86552b92bde5bd66d13b19f11ec4787461e0"
+    },
+    {
+      "diet": "herbivore",
+      "prompt": "Correct this animation sheet while preserving the twelve poses, positions, dimensions, biological creature design and palette. The rightmost creature in the MIDDLE row (side-view chomp pose) is missing its eye. Add its single clearly visible purple cyclops eye above/behind its open mouth, matching the other side-view poses. All four side views must have a visible purple eye. Keep every fin and tail complete. Maintain four columns by three rows, front/side/back. Remove all colored haze and alpha noise around silhouettes; actual clean transparent background, no shadows or background. Keep the art within generous transparent margins.",
+      "generatedOriginal": "exec-4db9918f-0406-4f45-b4a7-95a94ed21eca.png",
+      "file": "aquatic_adaptable_f2_herbivore_motion_v2.png",
+      "sha256": "42b54e69a24bf74715027de4059acd70eaf784c7f71d6598e40c84e3a15127b8"
+    },
+    {
+      "diet": "carnivore",
+      "prompt": "Correct this animation sheet while preserving the twelve poses, positions, dimensions, biological creature design and palette. The rightmost creature in the MIDDLE row (side-view chomp pose) is missing its eye. Add its single clearly visible purple cyclops eye above/behind its open mouth, matching the other side-view poses. All four side views must have a visible purple eye. Keep every fin and tail complete. Maintain four columns by three rows, front/side/back. Remove all colored haze and alpha noise around silhouettes; actual clean transparent background, no shadows or background. Keep the art within generous transparent margins.",
+      "generatedOriginal": "exec-9a06a4d6-4df3-48ca-9029-7a6143e84cf2.png",
+      "file": "aquatic_adaptable_f2_carnivore_motion_v2.png",
+      "sha256": "0d1707ce0b3850ea1fd8a8a36bd6f0643c651cc8ef24c631fd4190cc3e6d258d"
+    }
+  ]
+}

@@ -12,6 +12,8 @@
 import * as Phaser from "phaser";
 import type { TemperamentKind } from "../../core/lineage";
 import { AQ } from "./tuning";
+import { DIETS } from "../cell/tuning";
+import type { Diet } from "./creature";
 
 const AQ_FORMS = AQ.forms.size.length; // form 4 added 2026-11-09
 
@@ -22,6 +24,7 @@ const DEST_NAME: Record<Destination, string> = { pond: "Pond", river1: "River 1"
 export interface AdminState {
   temperament: Record<TemperamentKind, number>; // 0..1
   form: number;
+  diet: Diet;
   look: string; // the body look now: its family and step, like aggressive 2
   invincible: boolean;
 }
@@ -30,12 +33,13 @@ export interface AdminActions {
   setTemperament(kind: TemperamentKind, value: number): void;
   goTo(dest: Destination): void;
   setForm(form: number): void;
+  setDiet(diet: Diet): void;
   addPoints(): void;
   toggleInvincible(): void;
 }
 
-type Row = "cautious" | "aggressive" | "adaptable" | "goto" | "form" | "points" | "invincible";
-const ROWS: readonly Row[] = ["cautious", "aggressive", "adaptable", "goto", "form", "points", "invincible"];
+type Row = "cautious" | "aggressive" | "adaptable" | "goto" | "form" | "diet" | "points" | "invincible";
+const ROWS: readonly Row[] = ["cautious", "aggressive", "adaptable", "goto", "form", "diet", "points", "invincible"];
 const DEPTH = 3200;
 
 const ROW_H = 17;
@@ -109,6 +113,8 @@ export class AdminPanel {
       if (accept) this.actions.goTo(DESTINATIONS[this.dest]);
     } else if (row === "form") {
       if (step) this.actions.setForm(Math.max(1, Math.min(AQ_FORMS, s.form + step)));
+    } else if (row === "diet") {
+      if (step || accept) this.actions.setDiet(DIETS[(DIETS.indexOf(s.diet) + (step || 1) + DIETS.length) % DIETS.length]);
     } else if (row === "invincible") {
       if (accept || step) this.actions.toggleInvincible();
     } else if (accept) this.actions.addPoints();
@@ -124,6 +130,7 @@ export class AdminPanel {
       adaptable: `Adaptable  ${pct("adaptable")}`,
       goto: `Go to      ${DEST_NAME[DESTINATIONS[this.dest]]}`,
       form: `Form       ${s.form}`,
+      diet: `Diet       ${s.diet}`,
       points: "+50 plant and +50 meat",
       invincible: `Invincible ${s.invincible ? "ON (no damage)" : "off"}`,
     };
