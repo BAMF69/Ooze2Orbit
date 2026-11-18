@@ -23,13 +23,13 @@ See `docs/HD_REMASTER.md`.
 - [ ] **Space Toy 1: refit because T0|▼| adapted** (built 2026-11-09; gameplay liked by user 2026-11-13): three systems, a hangar with two hulls and eight parts from two makers, real-time combat against patrols that hunt like gulpers, T0|▼| learning what you used after every battle with a readout, five wins to finish. **Toy 2 (2026-11-10):** slots and an icon hangar, turrets and homing missiles, a second friendly world (Tidereach), recruited escorts that fly themselves. **Toy 3 (2026-11-10):** wormhole jumps with next / previous keys and a clickable map, enemy waves on a countdown, auto-land, reverse and side thrusters, the ending is now three wins in a row at the Lattice then the Mothership | Done when: BAMF69 refits the ship because T0|▼| adapted, and wants another fight | Timebox: 2 sessions
 
 ## Next
+- [ ] **Civilization campaign** (BAMF69 2026-11-18, `docs/stages/04-civilization.md` "The campaign"): tower wars, tug-of-war and hero lane wars at easy, medium and hard (nine battles to finish); Footmen Frenzy optional; tower wars difficulty grows the field and adds random obstacles | Done when: BAMF69 has played one mode at all three difficulties and each step feels harder but fair
 - [x] **Civilization/creature Toy 2 initial playtest**: user reports liking how all stages play (2026-11-13); display rollout requested. Detailed balance tuning can follow device testing.
 - [ ] **Aquatic stage: vertical slice** (Toy done 2026-11-09) and **write the aquatic lineage** for the creature stage to read
 - [ ] **Cell stage: vertical slice** (Toy done 2026-11-08): fill `docs/VERTICAL_SLICE.md`; music, saves, first-time teaching, polish | Done when: the slice brief's "Done when" holds
 - [ ] **Cell stage ending: the pond floods** (from the parking lot): the bridge into the aquatic stage and its temperament reveal | Done when: finishing the cell stage leads into the aquatic stage
 
 ## Later
-- [ ] **Civilization battlefield modes** (BAMF69 2026-11-17, `docs/stages/04-civilization.md` "Battlefield modes"): shared frame, then hero lane wars, tug-of-war, frenzy, survival, stealth missions; the stage becomes a campaign of regions
 - [ ] **Space landing hub** (BAMF69 2026-11-17, `docs/stages/05-space.md` "Landing"): seed and guide new species as the Gardener, ruin dungeons and battlefield matches on planets; rewards are ship tech, blueprints and relics
 - [ ] **Remaining shared platform foundations**: local checkpoint/autosave adapters, offline readiness and other stage adapters after cell display/input testing. See `docs/PLATFORM_FOUNDATIONS.md`. Final art waits until prototypes prove fun.
 - [ ] 

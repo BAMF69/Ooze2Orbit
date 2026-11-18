@@ -1,5 +1,10 @@
 # Handoff
 
+## Civilization campaign spec (2026-11-18, docs only, branch `docs/civ-campaign`)
+BAMF69: finish the civilization stage by beating tower wars, tug-of-war (Castle Fight) and hero lane wars at easy,
+medium and hard; Footmen Frenzy optional; tower wars difficulty = bigger field with random obstacles. Spec:
+`docs/stages/04-civilization.md` "The campaign"; ROADMAP Next. An agent is being briefed to build it.
+
 ## Space hub and civilization modes design (2026-11-17, docs only, branch `docs/space-hub-civ-modes`)
 BAMF69 approved: space landings lead to seeding and guiding new species as the Gardener (indirect powers plus some
 direct control), ruin dungeons (creature levelgen) or battlefield matches; rewards are ship tech, blueprints and relics.
