@@ -18,6 +18,23 @@ Next: creature chat review of the Traits/health/damage changes in §8; new room 
 **Branch:** `feat/cell-division`. Previous baseline committed and pushed as fd0f29d. This snapshot includes the subsequent aquatic remaster, map rewards and organic HUD/input polish. Push only when asked.
 **Active:** Cell/aquatic upgrade and growth HUD polish, expanded effects in Details, and aquatic illustrated remaster. Creature/civilization may be developed in independent chats/worktrees; preserve their scope.
 
+## Aquatic attachment pass v3 (2026-11-17)
+
+- The lower jaw hinges at the painted chin in the front chomp pose. The swim seam and side silhouette use their own fits.
+- All twelve forms have authored surface roots for fins, gills, endurance, toxic tendrils and electric organs.
+  Fins preserve their mirror pivots, plates compress to fit shorter dorsal paths, and tendrils flex in three linked sections.
+- Gills and endurance use separate local illustrations. Mouth/tail and surface corrections live in
+  `attachmentFits.ts` and `surfaceAttachmentFits.ts`, outside the measurement generator.
+- See PLAYTEST_LOG.md for review setups and provisional cases. Build inspector v3 into a fresh output directory.
+
+## Aquatic attachment trial (2026-11-17)
+- The local integrated baseline includes avatar PR #18. The trial uses a detached worktree from main at `4157e20`.
+- The version 2 offline inspector loads all 36 runtime sheets on demand. Keep the historical inspector snapshot.
+- Jaws use authored mouth-seam and chomp fits. Torrent uses the actual painted fin with a larger gold pass,
+  built once per body sheet and accounted for in the atlas cache. See the attachment trial in PLAYTEST_LOG.md.
+- Mouth and tail corrections live in `attachmentFits.ts`, outside the regenerated measurement catalog.
+- Other equipment fits and the jaw/tail edge cases noted in the playtest log remain provisional.
+
 ## Approved illustrated HUD family (2026-11-17)
 - Cell and aquatic use complete painted surfaces for all three diets, native weighted Vollkorn text,
   crisp symbols/meters, a tapered inset status panel and a centered 75% landscape progression strip.
@@ -33,7 +50,7 @@ Next: creature chat review of the Traits/health/damage changes in §8; new room 
 ## Repository publication (2026-11-17)
 The user authorized committing and pushing the aquatic avatar work to its own branch. Other stage branches remain separate.
 All 506 tests, type/shader checks, production build, and the in-game Diet developer-control check pass.
-Equipment attachment refinement is still deferred. Older uncommitted/shared-art notes below describe earlier snapshots.
+This was the body-art baseline before the attachment trial above. Older uncommitted/shared-art notes below describe earlier snapshots.
 
 ## Complete aquatic body forms (2026-11-16; current avatar worktree)
 - User deferred attachment tuning; continued body maturation instead. All three temperament families now have

@@ -1,3 +1,5 @@
+import { surfacePoint } from './surfaceAttachmentFits';
+import { fittedMouthPoint } from './attachmentFits';
 import { evolutionProfile } from './evolutionArt';
 // Versioned body contract. Coordinates are presentation data, never gameplay or save state.
 import frames from './avatarFrames.json';
@@ -52,6 +54,9 @@ export function rigSocket(rig:BodyRig,c:AqCreature,view:AnatomyView,pose:number,
   const definition=rig.sockets[id];
   if(!definition)throw Error(`Rig ${rig.id} has no socket ${id}`);
   if(!rig.forms[c.form])throw Error(`Rig ${rig.id} has no form ${c.form}`);
+  const canonical=evolutionProfile(rig.family,c.form)?.rig===rig;
+  const authored=canonical?(fittedMouthPoint(rig,c,view,pose,id)??surfacePoint(rig,c,view,pose,id)):undefined;
+  if(authored)return authored;
   const row=view==='front'?0:view==='side'?1:2;
   const point=definition.source==='tail.fin'?rig.poseLandmarks['tail.fin'][c.diet]?.[row*4+pose]:definition.positions?.[view];
   if(!point)throw Error(`Socket ${id} is not visible in ${view}`);

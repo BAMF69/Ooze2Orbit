@@ -2,12 +2,12 @@
 
 ## Scope
 
-The first authored body contract is `aquatic.adaptable.mature.v1`, covering adaptable forms 3 and 4.
+At the original snapshot, the first authored body contract was `aquatic.adaptable.mature.v1`, covering adaptable forms 3 and 4.
 Form 4 explicitly uses provisional shared artwork. Juvenile, aggressive and cautious bodies continue using
 the existing renderer until their rigs are authored. Unsupported anatomy is rejected by the new compiler,
 not silently fitted with adaptable coordinates. No save format or gameplay capacity is changed.
 
-The offline `avatar-attachment-inspector.html` uses the same attachment compiler, schemas and canvas backend
+The current offline `avatar-attachment-inspector.html` selects all 36 runtime sheets and uses the same attachment compiler, schemas and canvas backend
 as native daughter previews. The world sprite backend consumes those same compiled attachment instances.
 The inspector is a development artifact, not a new HUD or an in-game equipment editor.
 
@@ -53,9 +53,11 @@ does not choose coordinates based on a part name.
 
 Each compiled instance identifies its part, logical organ, socket/path and deformation. Scute crop sections
 share one logical organ ID, so the inspector reports seven plates rather than 21 rendering strips.
-Toxic tendrils are honestly marked as hinge sway; a multi-joint chain primitive remains future work.
-The first schema uses the current single organ atlas. Gills, endurance and torrent are marked as shared-art
-proxies. Dedicated artwork and additional atlas banks can be introduced without changing the body sockets.
+Toxic tendrils pivot in three overlapping sections along a painted centerline. Jaws hinge at the lower
+midpoint in the front chomp. Canvas and world renderers share gill, endurance and teeth atlas frames.
+Torrent is derived from the actual tail pixels and cached with the body atlas. Authored mouth/tail and
+surface fits live in `attachmentFits.ts` and `surfaceAttachmentFits.ts`. The body measurement script
+can regenerate frame metadata without replacing those fits.
 
 ## Inspection workflow
 
@@ -70,7 +72,7 @@ proxies. Dedicated artwork and additional atlas banks can be introduced without 
    to review or hand off the anatomical contract separately from the artwork.
 
 The lab permits diagnostic overcapacity combinations and labels them. It never changes gameplay limits or
-loads the player's saves. Its only images are four embedded local PNG assets; it works offline.
+loads the player's saves. It embeds the runtime body and organ WebP sheets and decodes one body selection at a time. It works offline.
 
 ## Build and validation
 
