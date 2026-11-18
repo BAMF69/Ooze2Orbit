@@ -17,7 +17,7 @@
 import { newBody, type Body } from "../physics";
 import { stepWaterBody, inWater, waterlineAt } from "../waterPhysics";
 import { WATER, type WaterRoom } from "../waterWorld";
-import { newObjective, useValve, useKeyed, canClaimSeal, type RoomObjective } from "../waterObjectives";
+import { newObjective, useValve, useKeyed, canClaimSeal, canCollectReward, type RoomObjective } from "../waterObjectives";
 import { verticalArrival } from "../waterRoutes";
 import { guardedControl, CONTROL_SECONDS } from "../waterCombatRooms";
 import type { Expedition } from "../expedition";
@@ -140,7 +140,7 @@ export function searchRoom(r: WaterRoom, e: Expedition, t: Traits, keys: Readonl
         if (k.used && keyOf(k.state) !== lk) { reached.keyed = true; transitions++; layers.push({ o: k.state, starts: [n], timed: false }); }
       }
       if (s.leftHatch && o.open && Math.abs(n.x - s.leftHatch.x) < REACH.x && Math.abs(n.y - s.leftHatch.y) < REACH.y) { reached.hatch = true; if (target === "exit") layerExit = true; noteExit(n.frames); }
-      if (r.reward && n.x > goalX(g)) { reached.reward = true; if (target === "reward") layerExit = true; }
+      if (r.reward && n.x > goalX(g) && canCollectReward(o)) { reached.reward = true; if (target === "reward") layerExit = true; }
       if (r.goal && n.x > goalX(g) && canClaim && withinTimer(n.frames)) { reached.goal = true; if (target === "goal") layerExit = true; noteExit(n.frames); }
       const moves = wet ? [...WATER_MOVES, ...(n.y <= waterlineAt(r, e, n.x) + 8 ? BREACH_MOVES : [])] : GROUND_MOVES;
       for (const m of moves) {

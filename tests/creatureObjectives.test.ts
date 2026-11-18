@@ -83,3 +83,19 @@ describe("Water must be solved rather than sprinted through", () => {
     expect(g.expedition!.unlocked).toEqual([]);
   });
 });
+
+describe("Discoveries can only be studied once their room is solved (review finding 12)", () => {
+  it("refuses the sample while the lever is shut or an arena seal holds, and allows it once solved", async () => {
+    const { canCollectReward } = await import("../src/game/creature/waterObjectives");
+    const closed = newObjective();
+    expect(canCollectReward(closed)).toBe(false);
+    expect(canCollectReward({ ...closed, open: true, arenaActive: true, arenaCleared: false })).toBe(false);
+    expect(canCollectReward({ ...closed, open: true, arenaActive: true, arenaCleared: true })).toBe(true);
+    expect(canCollectReward({ ...closed, open: true })).toBe(true);
+  });
+  it("the body really can stand inside the old pickup zone with the exit wall shut, so the check is needed", () => {
+    const r = generateWater(0).rooms[2], b = newBody(500, WATER.floor), e = { ...freshExpedition(0), basinRaised: true };
+    for (let n = 0; n < 300; n++) stepWaterBody(b, r, e, newGarden().traits, { dir: 1, vertical: 0, jump: false, crouch: false, sprint: false }, 1 / 60, newObjective());
+    expect(b.x).toBeGreaterThan(550); expect(b.x).toBeLessThan(560);
+  });
+});

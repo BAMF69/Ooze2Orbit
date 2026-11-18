@@ -90,11 +90,22 @@ try {
   const advice = await page.evaluate(() => window.levelTest.scene.message);
   assert.match(advice, /no swimming fins/, 'current room explains missing fins');
   const rack = await page.evaluate(() => [...document.querySelectorAll('.creature-icon-rack [data-icon]')].map(b => b.dataset.icon));
+  const labels = await page.evaluate(() => [...document.querySelectorAll('.creature-icon-rack .icon-row-label')].map(l => getComputedStyle(l).display !== 'none' && l.getBoundingClientRect().width > 0 ? l.textContent : null));
+  assert.ok(labels.length && labels.every(Boolean), `rack row labels are visible: ${JSON.stringify(labels)}`);
   assert.ok(rack.includes('gills') && !rack.includes('fins'), `rack shows equipped gills only: ${rack}`);
   await shot(page, '05-current-guidance-and-rack');
   // Minimap: visible in rooms with explored + adjoining rooms, hidden in the hubs.
   const map = await page.evaluate(() => { const p = document.querySelector('.creature-minimap'); const c = p?.querySelector('canvas'); return { hidden: p?.hidden, w: c?.width ?? 0, label: p?.getAttribute('aria-label') }; });
   assert.ok(!map.hidden && map.w > 0, `minimap shown in a room: ${JSON.stringify(map)}`); assert.match(map.label, /Map of Water hard/);
+  // Review finding 12: the nursery sample cannot be taken with the lever shut, and can once it is open.
+  const pick = await page.evaluate(() => {
+    const { scene: c, shell } = window.levelTest, nursery = c.world.rooms.find(r => r.name === 'Ripplefin nursery');
+    c.close(); c.rooms.clear(); c.cargo = { samples: [], clears: [] }; c.garden.expedition.unlocked = []; c.enter(nursery.id, 552, 304);
+    shell.input.inject('interact'); c.update(0, 1000 / 60); const shut = [...c.cargo.samples];
+    c.objective.open = true; shell.input.inject('interact'); c.update(0, 1000 / 60);
+    return { shut, open: [...c.cargo.samples], message: c.message };
+  });
+  assert.deepEqual(pick.shut, [], 'no sample while the lever is shut'); assert.deepEqual(pick.open, ['fins'], `sample once solved: ${JSON.stringify(pick)}`);
   // Hard gate on the shoreline names the missing trait and the generation route.
   await page.evaluate(() => { const c = window.levelTest.scene; c.close(); c.enter(-2, 832); c.update(0, 1000 / 60); });
   assert.match(await page.evaluate(() => window.levelTest.scene.message), /Hard needs gills and swimming fins.*Reedheart/, 'Hard gate guidance');

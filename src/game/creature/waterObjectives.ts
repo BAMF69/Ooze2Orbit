@@ -23,6 +23,10 @@ export function objectiveBarrier(r: WaterRoom, o: RoomObjective, tx: number): bo
 }
 export const drainedRoom = (r: WaterRoom, o: RoomObjective): boolean => roomSpec(r).puzzle === "drain" && o.first && !o.open;
 export const canClaimSeal = (o: RoomObjective): boolean => o.open && o.remaining >= 0;
+/** A discovery can be studied only once its room is solved: its controls open and no arena seal holding. Before
+ *  2026-11-18 the pickup tested position alone, and the exit wall left the body close enough to take the sample
+ *  with the lever shut and the arena uncleared (review finding 12). */
+export const canCollectReward = (o: RoomObjective): boolean => o.open && !(o.arenaActive && !o.arenaCleared);
 export function emergencyRelease(r: WaterRoom, o: RoomObjective, x: number): RoomObjective {
   return roomSpec(r).puzzle === "pressure" && !o.open && x > emergencyX(roomGeometry(r)) ? { ...o, open: true, remaining: -1 } : o;
 }

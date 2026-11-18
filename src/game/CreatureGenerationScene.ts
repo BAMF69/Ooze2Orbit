@@ -29,7 +29,7 @@ import { RoomArt } from "./creature/roomArt";
 import { avatarDiet, avatarFamily, wornTraits, type AvatarFamily, type AvatarLook } from "./creature/avatarLook";
 import { ENEMIES, ENCOUNTER, spawnEncounters, stepEnemy, biteDamage, evasion, reedCover, ventPhase, type WaterEnemy } from "./creature/waterEncounters";
 import { challengeSolid, clearWaterLine } from "./creature/waterChallenges";
-import { newObjective, newCargo, valves, useKeyed, drainedRoom, tickObjective, useValve, bankCargo, objectiveBarrier, canClaimSeal, emergencyRelease, type RoomObjective, type Cargo } from "./creature/waterObjectives";
+import { newObjective, newCargo, valves, useKeyed, canCollectReward, drainedRoom, tickObjective, useValve, bankCargo, objectiveBarrier, canClaimSeal, emergencyRelease, type RoomObjective, type Cargo } from "./creature/waterObjectives";
 import { arenaRoom, activeThreat, encounterLock, sealedEncounter, guardedControl, CONTROL_SECONDS, advanceOperation, canIncapacitate, type Operation } from "./creature/waterCombatRooms";
 import { netRig, netFrame, useNet, netCatches } from "./creature/waterTraps";
 import { roomSpec, roomGeometry } from "./creature/levelgen/roomSpec";
@@ -488,6 +488,10 @@ export class CreatureScene extends Phaser.Scene {
     const arch = roomSpec(r).branchArchX;
     if (r.branch >= 0 && arch !== null && Math.abs(x - arch) < WATER.interactReach) { this.travel(r.branch, WATER.spawn); return; }
     if (r.reward && x > goalX(this.geom)) {
+      if (!canCollectReward(this.objective)) {
+        this.message = sealedEncounter(this.objective) ? "The discovery lies past the encounter seal. Defeat, subdue or net every threat first." : "The discovery is still out of reach. Open this room's marked lever or controls first.";
+        return;
+      }
       const had = this.garden.expedition!.unlocked.includes(r.reward);
       if (!had && !this.cargo.samples.includes(r.reward)) this.cargo.samples.push(r.reward);
       const story = r.reward === "gills" || r.reward === "fins", label = { gills: "Gills", fins: "Swimming fins", fullArmor: "Full armor plating", iceBreath: "Ice breath" }[r.reward];
@@ -537,7 +541,9 @@ export class CreatureScene extends Phaser.Scene {
     this.rackKey = key; this.rack.replaceChildren();
     const row = (title: string, items: typeof rows.equipped, dim: boolean) => {
       const r = document.createElement("div"); r.className = "cell-icon-row";
-      const label = document.createElement("span"); label.className = "icon-row-label"; label.textContent = title; r.append(label);
+      // The shared HUD dock stylesheet hides .icon-row-label for the cell and aquatic docks; the creature rack keeps
+      // its Equipped / Banked labels (BAMF69 2026-11-18), so they override that rule inline.
+      const label = document.createElement("span"); label.className = "icon-row-label"; label.textContent = title; label.style.setProperty("display", "inline", "important"); r.append(label);
       for (const it of items) {
         const b = document.createElement("button"); b.title = it.label; b.setAttribute("aria-label", it.label); b.dataset.icon = it.icon;
         Object.assign(b.style, { width: "40px", height: "40px", minHeight: "40px", padding: "4px", borderRadius: "10px", opacity: dim ? "0.55" : "1" });
@@ -545,7 +551,7 @@ export class CreatureScene extends Phaser.Scene {
         b.onclick = () => { this.rackNote.hidden = !this.rackNote.hidden && this.rackNote.textContent === it.label; this.rackNote.textContent = it.label; };
         r.append(b);
       }
-      if (!items.length) { const e = document.createElement("span"); e.className = "empty-icons"; e.textContent = "none yet"; r.append(e); }
+      if (!items.length) { const e = document.createElement("span"); e.className = "empty-icons"; e.textContent = "none yet"; e.style.setProperty("display", "inline", "important"); r.append(e); }
       this.rack.append(r);
     };
     row("Equipped", rows.equipped, false);
