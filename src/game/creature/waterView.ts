@@ -39,7 +39,7 @@ const inkCircle = (g: G, x: number, y: number, r: number, fill: number, line = 1
 /** A stick: ink underlay then colour, so it reads as an inked limb at any length. */
 const stick = (g: G, x0: number, y0: number, x1: number, y1: number, w: number, color: number) => { g.lineStyle(w + 2, INK).lineBetween(x0, y0, x1, y1); g.lineStyle(w, color).lineBetween(x0, y0, x1, y1); };
 
-function drawWood(g: G, kind: "sluice" | "barrier", x0: number, rows: number[]): void {
+function drawWood(g: G, kind: "sluice" | "barrier", x0: number, rows: number[], painted: boolean): void {
   const top = Math.min(...rows) * 16, bottom = (Math.max(...rows) + 1) * 16;
   if (kind === "sluice") {
     for (let i = 0; i < 3; i++) inkRect(g, x0 + i * 5.33, top, 5.33, bottom - top, i === 1 ? 0xa98a58 : 0x8e7046);
@@ -53,13 +53,24 @@ function drawWood(g: G, kind: "sluice" | "barrier", x0: number, rows: number[]):
     }
     for (let y = top + 50; y < bottom - 8; y += 100) inkRect(g, x0 - 2, y, 20, 5, 0xc99a6a);
   }
+  if (painted) {
+    for (const [offset, color] of [[2, 0xe2a743], [6, 0x795022], [10, 0xd19539], [14, 0x764522]])
+      g.lineStyle(1.2, color, 0.72).lineBetween(x0 + offset, top + 4, x0 + offset, bottom - 2);
+    for (let y = top + 9; y < bottom - 8; y += 17)
+      g.lineStyle(0.8, 0x5d3c27, 0.6).lineBetween(x0 + 4, y, x0 + 6, y + 7).lineBetween(x0 + 10, y + 4, x0 + 12, y + 10);
+  }
 }
 
-function drawReeds(g: G, x0: number, x1: number, tall = 0): void {
+function drawReeds(g: G, x0: number, x1: number, tall = 0, painted = false): void {
   for (let x = x0; x < x1; x += 5) {
     const h = 30 + tall + (x * 7) % 13, lean = ((x * 3) % 7) - 3;
     stick(g, x, 305, x + lean * 1.6, 304 - h, 1.8, (x / 5) % 2 ? 0x5f9a4e : 0x4b8350);
-    if (x % 15 === 0) { g.fillStyle(0x8a5a3a).fillEllipse(x + lean * 1.6, 304 - h + 3, 4, 9); g.lineStyle(0.9, INK).strokeEllipse(x + lean * 1.6, 304 - h + 3, 4, 9); }
+    if (painted) {
+      const tip = x + lean * 2.4;
+      g.fillStyle(0x182d20).fillTriangle(x - 3, 304, x + 5, 304, tip, 299 - h);
+      g.fillStyle(x % 3 ? 0x8da748 : 0xb0b657).fillTriangle(x - 1, 304, x + 2, 304, tip, 300 - h);
+    }
+    if (!painted && x % 15 === 0) { g.fillStyle(0x8a5a3a).fillEllipse(x + lean * 1.6, 304 - h + 3, 4, 9); g.lineStyle(0.9, INK).strokeEllipse(x + lean * 1.6, 304 - h + 3, 4, 9); }
   }
 }
 
@@ -107,7 +118,7 @@ function drawLever(g: G, x: number, ground: number, active: boolean): void {
   g.fillStyle(0xfff3cf).fillCircle(hx - 1.2, hy - 1.2, 1.3);
 }
 
-export function drawWaterRoom(g: G, r: WaterRoom, e: Expedition, food: WaterFood[], _trap: boolean, clock: number, cache: boolean, objective: RoomObjective): void {
+export function drawWaterRoom(g: G, r: WaterRoom, e: Expedition, food: WaterFood[], _trap: boolean, clock: number, cache: boolean, objective: RoomObjective, painted = false): void {
   const spec = roomSpec(r);
   // Light falling through top-route openings (decorative; the far background comes from RoomArt).
   const geo = roomGeometry(r), top = topEdgeY(geo), floor = floorY(geo);
@@ -119,10 +130,10 @@ export function drawWaterRoom(g: G, r: WaterRoom, e: Expedition, food: WaterFood
     const kind = woodColumn(r, e, objective, x, y);
     if (kind && terrainSolid(r, e, objective, x, y)) { const w = wood.get(x) ?? { kind, rows: [] }; w.rows.push(y); wood.set(x, w); }
   }
-  for (const [x, w] of wood) drawWood(g, w.kind, x * 16, w.rows);
+  for (const [x, w] of wood) drawWood(g, w.kind, x * 16, w.rows, painted);
 
-  drawReeds(g, r.cover, r.cover + 96);
-  for (const center of reedPatches(r).slice(1)) drawReeds(g, center - 28, center + 28, 4);
+  drawReeds(g, r.cover, r.cover + 96, 0, painted);
+  for (const center of reedPatches(r).slice(1)) drawReeds(g, center - 28, center + 28, 4, painted);
   for (const f of food) if (!f.taken) drawFood(g, f);
   for (const w of geo.water) drawWater(g, w, surfaceY(w, e.basinRaised));
   if (r.current) for (const w of geo.water) for (let x = w.x0 + 32; x < w.x1 - 4; x += 64) { stick(g, x + 16, 258, x, 258, 1.6, 0xd6f0f2); stick(g, x, 258, x + 5, 253, 1.6, 0xd6f0f2); }
@@ -158,6 +169,13 @@ export function drawWaterRoom(g: G, r: WaterRoom, e: Expedition, food: WaterFood
     const fx0 = net.x - 22, fx1 = net.x + 22, fy = net.y - 62;
     stick(g, fx0, net.y + 16, fx0, fy, 3, 0x8e7046); stick(g, fx1, net.y + 16, fx1, fy, 3, 0x8e7046); stick(g, fx0 - 4, fy, fx1 + 4, fy, 3, 0xa98a58);
     if (objective.netArmed) { for (let d = -18; d <= 18; d += 6) g.lineStyle(1, 0xf2ba63, 0.85).lineBetween(net.x + d, fy + 2, net.x + d, net.y + 14); for (let y = fy + 10; y < net.y + 14; y += 10) g.lineStyle(1, 0xf2ba63, 0.6).lineBetween(fx0 + 2, y, fx1 - 2, y); }
+    else if (painted && !objective.netCaught) {
+      for (let d = 0; d <= 40; d += 5) {
+        const x = fx0 + 2 + d, hang = 5 + Math.sin(d / 40 * Math.PI) * 10;
+        g.lineStyle(0.8, 0xd6aa56, 0.9).lineBetween(x, fy + 2, x, fy + hang);
+      }
+      g.lineStyle(1, 0xd6aa56, 0.9).lineBetween(fx0 + 2, fy + 5, net.x, fy + 14).lineBetween(net.x, fy + 14, fx1 - 2, fy + 5);
+    }
     else { g.fillStyle(objective.netCaught ? 0x8ed8ab : 0xb9c08a).fillRoundedRect(fx0 + 2, fy + 1, 40, 7, 3.5); g.lineStyle(1, INK).strokeRoundedRect(fx0 + 2, fy + 1, 40, 7, 3.5); }
   }
   for (const pit of spec.pits) {

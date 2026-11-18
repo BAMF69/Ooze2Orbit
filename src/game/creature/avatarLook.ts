@@ -30,12 +30,28 @@ export const WORN_STRIPS: readonly WornStrip[] = [
 ];
 
 export const bodyKey = (family: AvatarFamily, diet: AvatarDiet): string => `creatureHd_${family}_${diet}`;
-export const wornKey = (family: AvatarFamily): string => `creatureHd_${family}_worn`;
-export const bodyPath = (family: AvatarFamily, diet: AvatarDiet): string => `assets/art/creature_hd_${family}_${diet}_v${HD_AVATAR.version}.webp`;
-export const wornPath = (family: AvatarFamily): string => `assets/art/creature_hd_${family}_worn_v${HD_AVATAR.version}.webp`;
+const PAINTED_DIETS: Readonly<Record<AvatarFamily, readonly AvatarDiet[]>> = {
+  aggressive: ["herbivore", "carnivore", "omnivore"],
+  cautious: ["herbivore", "carnivore", "omnivore"],
+  adaptable: ["herbivore", "carnivore", "omnivore"],
+};
+export const paintedAvatar = (family: AvatarFamily, diet: AvatarDiet): boolean => PAINTED_DIETS[family].includes(diet);
+const paintedWornName = (family: AvatarFamily, diet: AvatarDiet): string =>
+  family === "aggressive" && diet === "carnivore" ? "aggressive_painted_worn" : family + "_" + diet + "_painted_worn";
+export const wornKey = (family: AvatarFamily, diet?: AvatarDiet): string => diet && paintedAvatar(family, diet) ? "creatureHd_" + paintedWornName(family, diet) : `creatureHd_${family}_worn`;
+export const bodyFrameCount = (family: AvatarFamily, diet: AvatarDiet): number => HD_AVATAR.frames + (paintedAvatar(family, diet) ? HD_AVATAR.bodyColumns : 0);
+export const bodyPath = (family: AvatarFamily, diet: AvatarDiet): string =>
+  `assets/art/creature_hd_${family}_${diet}_v${paintedAvatar(family, diet) ? 2 : HD_AVATAR.version}.webp`;
+export const wornPath = (family: AvatarFamily, diet?: AvatarDiet): string => diet && paintedAvatar(family, diet) ? "assets/art/creature_hd_" + paintedWornName(family, diet) + "_v1.webp" : `assets/art/creature_hd_${family}_worn_v${HD_AVATAR.version}.webp`;
 /** Frame index inside a family's worn atlas for strip `strip` and pose frame `frame` (0..19). */
 export const wornFrame = (strip: number, frame: number): number => strip * HD_AVATAR.frames + frame;
-export const wornFrameCount = (): number => WORN_STRIPS.length * HD_AVATAR.frames;
+export const PAINTED_SWIM_TRAITS = ["roar", "gills", "burrow"] as const;
+export const wornFrameCount = (painted = false): number =>
+  WORN_STRIPS.length * HD_AVATAR.frames + (painted ? PAINTED_SWIM_TRAITS.length * HD_AVATAR.bodyColumns : 0);
+export function paintedSwimWornFrame(strip: number, frame: number): number {
+  const trait = PAINTED_SWIM_TRAITS.findIndex(candidate => candidate === WORN_STRIPS[strip].trait);
+  return trait < 0 ? wornFrame(strip, frame) : wornFrameCount() + trait * HD_AVATAR.bodyColumns + frame % HD_AVATAR.bodyColumns;
+}
 
 /** Strongest temperament share; ties go aggressive, then cautious, then adaptable (as aquatic bodyLook). */
 export function avatarFamily(pct: Partial<Record<AvatarFamily, number>>): AvatarFamily {

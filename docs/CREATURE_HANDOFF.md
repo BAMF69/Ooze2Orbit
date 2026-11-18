@@ -3,6 +3,27 @@
 Updated 2026-11-15. Owner: this creature chat. Branch `feat/creature-remaster`, isolated sibling
 worktree `Ooze2Orbit-creature`, based on `fd0f29d`. User authorized committing and pushing this branch on 2026-11-15; no merge requested.
 
+## Painted Water opponents (2026-11-18)
+
+- Bristle charger, Reed ambusher, Needle swimmer and Canopy dropper now use the painted v2 atlases, based on their shipped silhouettes and the approved player art. Each atlas keeps the five phase rows and existing on-screen dimensions.
+- Bristle raises its quills, Reed raises its hooked forelimbs, Needle pitches up and opens its fins, and Canopy spreads its claws before dropping. Existing AI, collision, timing and danger indicators drive the phase changes.
+- To rebuild, run node assets_src/sprites/creature_hd/bakePaintedFoes.mjs <review-directory>. The review folder contains each original <kind>-painted-poses.png and the exact prompts.
+
+## Painted player roster (2026-11-18)
+
+- All nine family/diet combinations now use the illustrated Form 5 bodies derived from the approved aquatic Form 4 ancestry board. Each atlas has neutral, stride, jump, bite, crouch and inherited-fins swim art in the existing 32 px footprint. Family and diet selection stay independent.
+- Each painted variant loads its own worn atlas. Roar, gills and Burrow are fitted to the body silhouette, including separate swim frames. The other trait strips still originate from the shipped family atlases.
+- To rebuild one new variant, run node assets_src/sprites/creature_hd/bakePaintedShallows.mjs <review-directory> <family> <diet>. This reads <family>-<diet>-painted-poses.png in the review folder. The original coral Ridgejaw and room still use the command without family or diet. The raw sources and exact prompts are in the review folder.
+- Browser fixtures in Reed Shallows loaded each body and worn atlas, checked 24 populated frames at the 32 px footprint and entered the inherited swim pose. Enemy art is outside this pass.
+
+## Painted Reed Shallows slice (2026-11-18)
+
+- Use the approved illustrated boards as the visual target. The coral Ridgejaw runtime sheet is cut from the original generated neutral, run, bite and swim artwork. Jump and crouch use two matching generated poses. The 32 px footprint, existing pose timing, and inherited trait overlays still drive the avatar. A sixth atlas row plays when swimming with inherited fins.
+- In seed zero, Reed Shallows room 2 (room ID 1) uses a cleaned painted cavern behind rock autotiles sampled from the original painted scene. Live collision continues to generate the tile geometry. The art pass also styles live wood, reeds, net framing and compact HUD panels in this room.
+- Fitted Roar, gill and Burrow overlays are clipped to the painted body silhouette, with dedicated swim frames. The ceiling and floor use continuous room-position samples while remaining collision-driven.
+- Bake from the four original PNG sources in the creature review folder using node assets_src/sprites/creature_hd/bakePaintedShallows.mjs <review-directory>. Set O2O_ART_BROWSER=chrome to use installed Chrome. Original generation prompts are in that folder's imagegen-prompts.md.
+- Review on port 5197 with data-dir=creature-art-review-v2, creatureSeed=0, avatarFamily=aggressive, avatarDiet=carnivore, creatureArtReview=reed-shallows and autoplay. Select Creature.
+
 ## Danger, trap objectives and vertical routes (2026-11-15)
 User requested stronger enemies, charger stun, healthy-enemy trap alternatives, ceiling threats,
 pits, top/bottom pathways and spatially correct returns. Implemented in the isolated worktree:

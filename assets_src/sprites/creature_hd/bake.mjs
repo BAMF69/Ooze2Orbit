@@ -19,7 +19,7 @@ import { tileSvg, backgroundSvg, overworldBgSvg } from "./terrainArt.mjs";
 import { WATER_TILES, WATER_BG, OVERWORLD_BG, TERRAIN_MATERIALS } from "../../../src/game/creature/roomTiles.ts";
 import { FOE_HD, FOE_ART_PHASES } from "../../../src/game/creature/foeArt.ts";
 import { ambusherSvg, swimmerSvg, dropperSvg } from "./foesArt.mjs";
-import { HD_AVATAR, WORN_STRIPS, AVATAR_FAMILIES, AVATAR_DIETS, bodyPath, wornPath } from "../../../src/game/creature/avatarLook.ts";
+import { HD_AVATAR, WORN_STRIPS, AVATAR_FAMILIES, AVATAR_DIETS, bodyPath, paintedAvatar, wornPath } from "../../../src/game/creature/avatarLook.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const POSES = ["idle", "walk", "jump", "bite", "crouch"];
@@ -46,6 +46,7 @@ const page = await browser.newPage();
 const written = [];
 for (const family of AVATAR_FAMILIES) {
   for (const diet of AVATAR_DIETS) {
+    if (paintedAvatar(family, diet)) continue; // Rebuilt by bakePaintedShallows.mjs.
     const svgs = frameArgs().map(({ pose, frame }) => creatureSvg(family, diet, pose, {}, { frame, layer: "body" }));
     written.push(save(bodyPath(family, diet), await pack(page, svgs, HD_AVATAR.bodyColumns, HD_AVATAR.cell)));
   }
@@ -57,7 +58,7 @@ for (const family of AVATAR_FAMILIES) {
 // Water threats: 5 phases x 4 frames each (charger C-0105; ambusher, swimmer, dropper in its treatment).
 for (const [kind, draw] of [["charger", chargerSvg], ["ambusher", ambusherSvg], ["swimmer", swimmerSvg], ["dropper", dropperSvg]]) {
   const a = FOE_HD[kind];
-  written.push(save(a.path, await pack(page, FOE_ART_PHASES.flatMap(ph => [0, 1, 2, 3].map(f => draw(ph, f))), a.columns, a.cell)));
+  written.push(save(a.path.replace("_v2.webp", "_v1.webp"), await pack(page, FOE_ART_PHASES.flatMap(ph => [0, 1, 2, 3].map(f => draw(ph, f))), a.columns, a.cell)));
 }
 
 // Water room rock autotiles (C-0106): row = material x variant, column = exposed-side mask.

@@ -17,7 +17,7 @@ export type HdFoeKind = "charger" | "ambusher" | "swimmer" | "dropper";
 export interface FoeSheet { key: string; path: string; cell: number; display: number; frames: number; columns: number; originY: number; fps: number }
 
 const sheet = (kind: HdFoeKind, cell: number, display: number, originY: number): FoeSheet =>
-  ({ key: `creatureHd_${kind}`, path: `assets/art/creature_hd_${kind}_v1.webp`, cell, display, frames: 20, columns: 4, originY, fps: 8 });
+  ({ key: `creatureHd_${kind}`, path: `assets/art/creature_hd_${kind}_v2.webp`, cell, display, frames: 20, columns: 4, originY, fps: 8 });
 export const FOE_HD: Readonly<Record<HdFoeKind, FoeSheet>> = {
   charger: sheet("charger", 120, 40, 0.545),
   ambusher: sheet("ambusher", 96, 27, 0.5),

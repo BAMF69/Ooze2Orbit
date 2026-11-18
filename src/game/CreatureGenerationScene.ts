@@ -25,7 +25,7 @@ import { drawHub, hubLabels } from "./creature/overworldView";
 import { AVATAR_ASSETS, avatarAssetsReady, queueAvatarAssets } from "./creature/avatarAssets";
 import { AvatarView } from "./creature/avatarView";
 import { addFoeSprite, poseHdFoe } from "./creature/foeView";
-import { RoomArt } from "./creature/roomArt";
+import { RoomArt, usesPaintedShallows } from "./creature/roomArt";
 import { avatarDiet, avatarFamily, wornTraits, type AvatarFamily, type AvatarLook } from "./creature/avatarLook";
 import { ENEMIES, ENCOUNTER, spawnEncounters, stepEnemy, biteDamage, evasion, reedCover, ventPhase, type WaterEnemy } from "./creature/waterEncounters";
 import { challengeSolid, clearWaterLine } from "./creature/waterChallenges";
@@ -152,6 +152,12 @@ export class CreatureScene extends Phaser.Scene {
     this.classSkill = classFromTemperament(Object.fromEntries(reveal.rows.map(r => [r.kind, r.pct])) as { aggressive: number; cautious: number; adaptable: number });
     this.garden = attachExpedition(resumeGarden(shell.saves.load("creature_generations").envelope?.data, reveal.diet, source), seed, home?.stages.aquatic?.parts, this.classSkill);
     this.buildWorld(); this.newLife(); this.close(); this.save();
+    // An isolated, local art review opens the actual room renderer at the comparison position.
+    const review = new URLSearchParams(location.search);
+    if (import.meta.env.DEV && review.get("creatureArtReview") === "reed-shallows"
+      && review.get("data-dir") === "creature-art-review-v2" && this.garden.expedition?.seed === 0) {
+      this.enter(1, 320);
+    }
     this.lineage = new LineagePanel(this);
     if (!new URLSearchParams(location.search).has("autoplay")) {
       this.lineage.show(reveal, "Begin exploring"); this.screenUi.root.inert = true; shell.input.clearHeld();
@@ -227,7 +233,7 @@ export class CreatureScene extends Phaser.Scene {
     for (const op of spec.openings) if (op.label.always || this.objective.verticalOpen) this.landmarks.push(this.add.text((op.tiles[0] + op.tiles[1] + 1) * 8, op.side === "top" ? 104 : 312, op.label.text, { fontFamily: "monospace", fontSize: "10px", color: "#bfe7d8", align: "center" }).setOrigin(0.5, 0).setDepth(7));
     this.food = old?.food ?? r.food.map((x, n) => ({ x, meat: climate === "drought" ? n !== 0 : n === 3, taken: false }));
     this.enemies = (old?.foes ?? spawnEncounters(r)).map(foe => ({ ...foe,
-      sprite: addFoeSprite(this, foe), // HD charger sheet (creature-hd); other kinds keep genFoe
+      sprite: addFoeSprite(this, foe),
       label: this.add.text(foe.x, foe.y - 26, ENEMIES[foe.kind].name, { fontFamily: "monospace", fontSize: "11px", color: "#eef0d9", backgroundColor: "#12272bcc", padding: { x: 3, y: 2 } }).setOrigin(0.5, 1).setResolution(1).setDepth(6)
     }));
     this.message = spec.hint.priority ??
@@ -423,7 +429,8 @@ export class CreatureScene extends Phaser.Scene {
     const frame = POSE_START[pose] + (shell.settings.access.reduce_motion ? 0 : Math.floor(this.clock * 8) % 4);
     // Worn traits now show as body parts (creature-hd), replacing the old gills/claws tint.
     this.avatar.update({ ...this.incoming, worn: wornTraits(this.garden.traits) }, this.body.x, this.body.y - 16, frame,
-      this.facing < 0, 1 + this.garden.traits.vitality * 0.015, this.hurt > 0 ? 0.6 : 1);
+      this.facing < 0, 1 + this.garden.traits.vitality * 0.015, this.hurt > 0 ? 0.6 : 1,
+      pose !== "bite" && this.room >= 0 && !!this.garden.traits.fins && inWater(this.body, this.roomWater(), this.currentRoom));
     this.draw();
   }
   private stepEnemies(dt: number, crouch: boolean): void {
@@ -566,7 +573,8 @@ export class CreatureScene extends Phaser.Scene {
     const g = this.gfx; g.clear();
     if (this.room < 0) { this.roomArt.syncHub(this.room === -2); drawHub(g, this.room === -2, this.garden.traits, this.garden.expedition!); }
     else this.roomArt.sync(this.currentRoom, this.roomWater(), this.objective);
-    if (this.room >= 0) drawWaterRoom(g, this.currentRoom, this.roomWater(), this.food, this.trap, this.clock, this.foodCache, this.objective);
+    const painted = this.room >= 0 && usesPaintedShallows(this.currentRoom, this.roomWater());
+    if (this.room >= 0) drawWaterRoom(g, this.currentRoom, this.roomWater(), this.food, this.trap, this.clock, this.foodCache, this.objective, painted);
     for (const foe of this.enemies) if (foe.kind === "dropper" && activeThreat(foe)) {
       g.fillStyle(foe.phase === "tell" ? 0xe9b55e : 0x111e27, 0.65).fillEllipse(foe.x, 300, 46, 9);
       if (foe.phase === "tell") g.lineStyle(2, 0xe9b55e).strokeRect(foe.x - 22, 238, 44, 65);
