@@ -29,6 +29,8 @@ See `docs/HD_REMASTER.md`.
 - [ ] **Cell stage ending: the pond floods** (from the parking lot): the bridge into the aquatic stage and its temperament reveal | Done when: finishing the cell stage leads into the aquatic stage
 
 ## Later
+- [ ] **Civilization battlefield modes** (BAMF69 2026-11-17, `docs/stages/04-civilization.md` "Battlefield modes"): shared frame, then hero lane wars, tug-of-war, frenzy, survival, stealth missions; the stage becomes a campaign of regions
+- [ ] **Space landing hub** (BAMF69 2026-11-17, `docs/stages/05-space.md` "Landing"): seed and guide new species as the Gardener, ruin dungeons and battlefield matches on planets; rewards are ship tech, blueprints and relics
 - [ ] **Remaining shared platform foundations**: local checkpoint/autosave adapters, offline readiness and other stage adapters after cell display/input testing. See `docs/PLATFORM_FOUNDATIONS.md`. Final art waits until prototypes prove fun.
 - [ ] 
 
