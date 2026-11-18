@@ -9,7 +9,7 @@ import {
 } from "../src/game/creature/avatarLook";
 import { avatarAssetsReady, queueAvatarAssets, avatarSheets } from "../src/game/creature/avatarAssets";
 import { CHARGER_HD, chargerFrame, FOE_HD, HD_FOE_KINDS } from "../src/game/creature/foeArt";
-import { WATER_TILES, WATER_BG, REED_SHALLOWS_BG, REED_SHALLOWS_TILES, OVERWORLD_BG } from "../src/game/creature/roomTiles";
+import { WATER_TILES, WATER_BG, WATER_BACKDROPS, PAINTED_WATER_TILES, OVERWORLD_BG } from "../src/game/creature/roomTiles";
 
 describe("avatar family and diet", () => {
   it("takes the strongest temperament", () => {
@@ -88,7 +88,7 @@ describe("HD avatar loading", () => {
     const f = fixture(["genWalker", "genFoe"]);
     expect(avatarAssetsReady(f.scene, look)).toBe(false);
     queueAvatarAssets(f.scene, look);
-    expect(f.queued).toEqual([`${bodyKey(look.family, look.diet)}@96`, `${wornKey(look.family, look.diet)}@96`, ...HD_FOE_KINDS.map(k => `${FOE_HD[k].key}@${FOE_HD[k].cell}`), `${WATER_TILES.key}@48`, `${WATER_BG.key}@1280`, `${REED_SHALLOWS_TILES.key}@48`, `${REED_SHALLOWS_BG.key}@1280`, `${OVERWORLD_BG.key}@1280`]);
+    expect(f.queued).toEqual([`${bodyKey(look.family, look.diet)}@96`, `${wornKey(look.family, look.diet)}@96`, ...HD_FOE_KINDS.map(k => `${FOE_HD[k].key}@${FOE_HD[k].cell}`), `${WATER_TILES.key}@48`, `${WATER_BG.key}@1280`, `${PAINTED_WATER_TILES.key}@48`, ...Object.values(WATER_BACKDROPS).map(bg => `${bg.key}@1280`), `${OVERWORLD_BG.key}@1280`]);
   });
   it("rejects a worn atlas missing its last frame", () => {
     const keys = avatarSheets(look).map(a => a.key);
