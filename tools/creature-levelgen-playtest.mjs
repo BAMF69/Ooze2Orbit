@@ -80,7 +80,32 @@ try {
   for (let n = 0; n < 30; n++) await page.evaluate(() => window.levelTest.scene.update(0, 1000 / 60));
   assert.ok((await state(page)).y < 338, 'the arrival is stable ground');
   await shot(page, '03-hidden-grotto');
+  await page.evaluate(() => { const c = window.levelTest.scene; c.garden.expedition.visited.push(0, 1, 2, 3, 4); c.enter(1, 48); c.draw(); });
+  await shot(page, '09-minimap-explored-easy');
+  // Guidance (playtest 2026-11-17): a Reedheart lineage without fins in a diverted current room is told why.
+  await fixture(page, 9, { fins: false, gills: true });
+  await page.evaluate(() => { const c = window.levelTest.scene; c.garden.expedition.unlocked = ['gills']; });
+  // Without fins the current holds the creature at the water's edge, so step in and read the message.
+  await page.evaluate(() => { const { scene: c, shell } = window.levelTest; shell.input.hold('levelgen', ['move_right']); for (let n = 0; n < 240; n++) c.update(0, 1000 / 60); shell.input.clearHeld(); });
+  const advice = await page.evaluate(() => window.levelTest.scene.message);
+  assert.match(advice, /no swimming fins/, 'current room explains missing fins');
+  const rack = await page.evaluate(() => [...document.querySelectorAll('.creature-icon-rack [data-icon]')].map(b => b.dataset.icon));
+  assert.ok(rack.includes('gills') && !rack.includes('fins'), `rack shows equipped gills only: ${rack}`);
+  await shot(page, '05-current-guidance-and-rack');
+  // Minimap: visible in rooms with explored + adjoining rooms, hidden in the hubs.
+  const map = await page.evaluate(() => { const p = document.querySelector('.creature-minimap'); const c = p?.querySelector('canvas'); return { hidden: p?.hidden, w: c?.width ?? 0, label: p?.getAttribute('aria-label') }; });
+  assert.ok(!map.hidden && map.w > 0, `minimap shown in a room: ${JSON.stringify(map)}`); assert.match(map.label, /Map of Water hard/);
+  // Hard gate on the shoreline names the missing trait and the generation route.
+  await page.evaluate(() => { const c = window.levelTest.scene; c.close(); c.enter(-2, 832); c.update(0, 1000 / 60); });
+  assert.match(await page.evaluate(() => window.levelTest.scene.message), /Hard needs gills and swimming fins.*Reedheart/, 'Hard gate guidance');
+  assert.equal(await page.evaluate(() => document.querySelector('.creature-minimap').hidden), true, 'minimap hidden on the shoreline');
+  await shot(page, '06-hard-gate-guidance');
+  // Nest daughter screen: both banked, neither expressed: plan two generations.
+  await page.evaluate(() => { const c = window.levelTest.scene; Object.assign(c.garden.traits, { gills: false, fins: false }); c.garden.expedition.unlocked = ['gills', 'fins']; c.heirs = []; c.enter(-1, 112); c.explored = true; c.endLife('Nest fixture.'); c.mode = 'heir'; c.draw(); });
+  assert.match(await page.evaluate(() => document.body.innerText), /PLAN YOUR LINEAGE/, 'daughter screen plans the generations');
+  await shot(page, '07-daughter-plan');
   const phone = await open({ width: 390, height: 844 }); await fixture(phone, 11); await shot(phone, '04-phone-class-door');
+  await fixture(phone, 9, { fins: true, gills: true }); await shot(phone, '08-phone-rack');
   assert.deepEqual(errors, []);
   console.log('Levelgen browser regression: v2 world, class door refuse/open, grotto shaft refuse/open/climb, desktop + phone captures, no page errors');
 } finally { await browser.close(); }

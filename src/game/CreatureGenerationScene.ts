@@ -14,6 +14,9 @@ import { GEN, evidence, edible, inherit, offspring, resumeGarden, newGarden, cre
 import { WATER, generateWater, type Difficulty, type WaterWorld, type WaterRoom } from "./creature/waterWorld";
 import { generateWaterV2, levelEntry } from "./creature/levelgen/world";
 import { keysOf } from "./creature/levelgen/keys";
+import { currentAdvice, levelAdvice, heirNote, generationPlan } from "./creature/guidance";
+import { creatureIcon, equipmentRows } from "./creature/creatureIcons";
+import { minimapModel, drawMinimap } from "./creature/minimap";
 import { attachExpedition, classFromTemperament, intervene, interventionLock, levelLock, weatherEvent, stepWeather, effectiveClimate, type Weather, type Intervention } from "./creature/expedition";
 import { stepWaterBody, inWater, waterline } from "./creature/waterPhysics";
 import { drawWaterRoom, type WaterFood } from "./creature/waterView";
@@ -65,6 +68,14 @@ export class CreatureScene extends Phaser.Scene {
   private hp = GEN.health;
   private hunger = 0;
   private oxygen = WATER.oxygenSeconds as number;
+  private wasWet = false;
+  private rack!: HTMLDivElement;
+  private rackNote!: HTMLDivElement;
+  private rackKey = "";
+  private minimap!: HTMLCanvasElement;
+  private minimapPanel!: HTMLDivElement;
+  private minimapKey = "";
+  private hudColumn!: HTMLDivElement;
   private hurt = 0;
   private bite = 0;
   private facing = 1;
@@ -97,6 +108,17 @@ export class CreatureScene extends Phaser.Scene {
     this.ready = false;
     this.screenUi = new StageUi(this);
     this.screenUi.root.classList.add("creature-expedition");
+    // Equipment rack in the top right, styled like the cell stage's (shared .cell-icon-rack classes, no CSS edits).
+    this.rack = document.createElement("div"); this.rack.className = "cell-icon-rack creature-icon-rack";
+    this.rackNote = document.createElement("div"); this.rackNote.className = "cell-icon-note"; this.rackNote.hidden = true;
+    // Top-right column: equipment rack, then the level minimap, then the tapped-icon note (no shared CSS edits).
+    const column = document.createElement("div");
+    Object.assign(column.style, { position: "absolute", right: "calc(var(--safe-right) + 12px)", top: "calc(var(--safe-top) + 60px)", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px", pointerEvents: "none" });
+    this.rack.style.position = "static"; this.rackNote.style.position = "static";
+    this.minimapPanel = document.createElement("div"); this.minimapPanel.className = "cell-icon-rack creature-minimap"; this.minimapPanel.style.position = "static";
+    this.minimapPanel.setAttribute("role", "img");
+    this.minimap = document.createElement("canvas"); this.minimap.style.display = "block"; this.minimapPanel.append(this.minimap);
+    column.append(this.rack, this.minimapPanel, this.rackNote); this.screenUi.root.append(column); this.hudColumn = column;
     if (avatarAssetsReady(this, this.incoming)) this.beginCreature();
     else {
       Log.warn("creature", `Creature textures not ready: ${AVATAR_ASSETS.map(a => `${a.key}:${this.textures.exists(a.key) ? this.textures.get(a.key).getFrameNames().length : "absent"}`).join(", ")}`);
@@ -204,7 +226,7 @@ export class CreatureScene extends Phaser.Scene {
     }));
     this.message = spec.hint.priority ??
       (r.gate && !e.basinRaised ? "A sealed log sluice blocks the passage. Open the Gardener lens and raise the basin." :
-      r.current && !e.torrentDiverted ? "The torrent overpowers even fins. The Gardener must divert its headwaters." : spec.hint.fallback);
+      currentAdvice(r, this.garden.traits, e) ?? spec.hint.fallback);
   }
   private travel(id: number, x: number, y: number = WATER.floor, facing: number = x > 500 ? -1 : 1, vy = 0): void { this.remember(); this.enter(id, x, y, facing, vy); shell.input.clearPresses(); }
   private retreat(): void { this.travel(-1, OVERWORLD.nest); this.close(); }
@@ -229,7 +251,7 @@ export class CreatureScene extends Phaser.Scene {
   }
   private startLevel(tier: Difficulty): void {
     const lock = levelLock(tier, this.garden.traits);
-    if (lock) { this.message = lock; return; }
+    if (lock) { this.message = levelAdvice(tier, this.garden.traits, this.garden.expedition!) ?? lock; return; }
     this.travel(levelEntry(this.world, tier), WATER.spawn); this.close();
   }
   private changeTerrain(kind: Intervention): void {
@@ -251,10 +273,10 @@ export class CreatureScene extends Phaser.Scene {
           ...(["flood", "drought"] as Climate[]).map(climate => ({ id: climate, label: climate === "flood" ? "Call rain · 60s" : "Call drought · 60s", run: () => { this.weather = weatherEvent(climate); this.message = `${climate === "flood" ? "Rain" : "Drought"} begins. Its clock runs only during exploration.`; this.close(); } })), back] };
       case "climate": return { text: `${this.message}\n\nTHE NEXT GENERATION\n\nChoose its background climate. Drought favors meat and biting (+1 damage); flood favors plants, slower predators and hiding. Temporary Gardener weather can override this during exploration.\n\nTerrain changes and discovered adaptations survive either choice.`,
         choices: (["drought", "flood"] as Climate[]).map(climate => ({ id: climate, label: climate === "flood" ? "Flood · shelter and plants" : "Drought · meat and stronger bites", run: () => { this.climate = climate; this.open("heir"); } })) };
-      case "heir": return { text: `CHOOSE YOUR DAUGHTER · generation ${this.garden.generation + 1}\n\n` + this.heirs.map(h => `${h.name}: STR ${h.traits.strength} · VIT ${h.traits.vitality} · ${this.abilities(h.traits)}\n${h.cause}`).join("\n\n"),
+      case "heir": { const plan = generationPlan(this.garden); return { text: `CHOOSE YOUR DAUGHTER · generation ${this.garden.generation + 1}\n\n${plan ? plan + "\n\n" : ""}` + this.heirs.map(h => { const note = heirNote(h, this.garden); return `${h.name}: STR ${h.traits.strength} · VIT ${h.traits.vitality} · ${this.abilities(h.traits)}${note ? "\n" + note : ""}\n${h.cause}`; }).join("\n\n"),
         choices: this.heirs.map((h, n) => ({ id: `heir${n}`, label: h.name, run: () => {
           this.garden = inherit(this.garden, h, this.climate); this.save(); this.newLife(); this.close();
-        } })) };
+        } })) }; }
       case "newworld": return { text: "START A DIFFERENT WORLD?\n\nThis replaces this creature checkpoint, its generations and Water discoveries. Your incoming aquatic lineage remains. The new world gets a different seed. Export your save first if you want to keep both worlds.",
         choices: [{ id: "cancel", label: "Keep this world", run: () => this.close() }, { id: "restart", label: "Replace creature world", run: () => {
           const old = this.garden, seed = (old.expedition!.seed + 0x9e3779b9) >>> 0;
@@ -314,13 +336,17 @@ export class CreatureScene extends Phaser.Scene {
         }
       } else {
         const path = WATER_PATHS.find(p => nearLandmark(this.body.x, p.x));
-        this.message = path ? levelLock(path.tier, this.garden.traits) || `E: enter ${path.name} · ${path.tier}${this.garden.expedition!.completed.includes(path.tier) ? " · completed" : ""}.` : "Explore the Water shoreline. Three cave trails lead to Easy, Medium and Hard. Walk left to return to the nest.";
+        this.message = path ? levelLock(path.tier, this.garden.traits) && (levelAdvice(path.tier, this.garden.traits, this.garden.expedition!) ?? levelLock(path.tier, this.garden.traits)) || `E: enter ${path.name} · ${path.tier}${this.garden.expedition!.completed.includes(path.tier) ? " · completed" : ""}.` : "Explore the Water shoreline. Three cave trails lead to Easy, Medium and Hard. Walk left to return to the nest.";
         if (i.takePress("interact")) { if (path) this.startLevel(path.tier); else if (this.body.x < 100) this.travel(-1, BIOME_PATHS[0].x, WATER.floor, -1); }
         if (this.room === -2 && this.body.x < 20) this.travel(-1, BIOME_PATHS[0].x, WATER.floor, -1);
       }
     } else {
       this.weather = stepWeather(this.weather, dt); this.hunger += dt; this.objective = tickObjective(this.objective, dt);
       const r = this.currentRoom;
+      // Entering the water of a current room explains exactly what is missing to swim upstream.
+      const wet = inWater(this.body, this.roomWater());
+      if (wet && !this.wasWet) { const advice = currentAdvice(r, this.garden.traits, this.garden.expedition!); if (advice) this.message = advice; }
+      this.wasWet = wet;
       const wasSealed = sealedEncounter(this.objective);
       this.objective = encounterLock(r, this.objective, this.enemies, this.body.x);
       if (!wasSealed && sealedEncounter(this.objective)) this.message = "Encounter sealed! Defeat all threats, or rig and arm the net, then lure attacks through it, or fight/subdue. Evasion does not break this seal.";
@@ -481,7 +507,43 @@ export class CreatureScene extends Phaser.Scene {
       shell.saves.save("lineage", next as unknown as Parameters<typeof shell.saves.save>[1]); this.save(); this.open("won");
     } catch (err) { Log.warn("creature", String(err)); this.message = "Could not save the hero. Try claiming the crown again."; }
   }
+  /** Repaints the level minimap only when the room, explored rooms or banked rewards change; hidden in hubs. */
+  private drawMinimap(): void {
+    // Sit below the status line, which wraps on narrow phones, so the column never covers it.
+    const status = this.screenUi.root.querySelector(".stage-status")?.getBoundingClientRect();
+    const top = status && status.bottom > 0 ? `${Math.round(status.bottom + 6)}px` : "calc(var(--safe-top) + 60px)";
+    if (this.hudColumn.style.top !== top) this.hudColumn.style.top = top;
+    if (this.room < 0) { this.minimapPanel.hidden = true; this.minimapKey = ""; return; }
+    const e = this.garden.expedition!, tier = this.currentRoom.tier, key = JSON.stringify([this.room, tier, e.visited, e.unlocked]);
+    this.minimapPanel.hidden = false; if (key === this.minimapKey) return;
+    this.minimapKey = key;
+    const model = minimapModel(this.world, tier, e.visited, this.room, e.unlocked);
+    drawMinimap(this.minimap, model);
+    this.minimapPanel.setAttribute("aria-label", `Map of Water ${tier}: ${model.rooms.filter(r => r.state !== "adjoining").length} rooms explored, ${model.rooms.filter(r => r.state === "adjoining").length} unexplored next door.`);
+  }
+  /** Rebuilds the equipment rack only when the traits or banked discoveries change. */
+  private drawRack(): void {
+    const rows = equipmentRows(this.garden.traits, this.garden.expedition!), key = JSON.stringify(rows);
+    if (key === this.rackKey) return;
+    this.rackKey = key; this.rack.replaceChildren();
+    const row = (title: string, items: typeof rows.equipped, dim: boolean) => {
+      const r = document.createElement("div"); r.className = "cell-icon-row";
+      const label = document.createElement("span"); label.className = "icon-row-label"; label.textContent = title; r.append(label);
+      for (const it of items) {
+        const b = document.createElement("button"); b.title = it.label; b.setAttribute("aria-label", it.label); b.dataset.icon = it.icon;
+        Object.assign(b.style, { width: "40px", height: "40px", minHeight: "40px", padding: "4px", borderRadius: "10px", opacity: dim ? "0.55" : "1" });
+        b.append(creatureIcon(it.icon));
+        b.onclick = () => { this.rackNote.hidden = !this.rackNote.hidden && this.rackNote.textContent === it.label; this.rackNote.textContent = it.label; };
+        r.append(b);
+      }
+      if (!items.length) { const e = document.createElement("span"); e.className = "empty-icons"; e.textContent = "none yet"; r.append(e); }
+      this.rack.append(r);
+    };
+    row("Equipped", rows.equipped, false);
+    if (rows.banked.length) row("Banked", rows.banked, true);
+  }
   private draw(): void {
+    this.drawRack(); this.drawMinimap();
     const g = this.gfx; g.clear();
     if (this.room < 0) { this.roomArt.syncHub(this.room === -2); drawHub(g, this.room === -2, this.garden.traits, this.garden.expedition!); }
     else this.roomArt.sync(this.currentRoom, this.roomWater(), this.objective);

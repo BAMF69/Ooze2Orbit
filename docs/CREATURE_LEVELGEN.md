@@ -333,3 +333,30 @@ Grotto vaults hold `fullArmor` or `iceBreath`, banked like gills and fins.
 - Room geometry still comes from the v1 templates, so variety is topology, room order, branches, vaults and
   class trials rather than new room shapes. New templates are the next content lever.
 - The lever label can overlap the net label in some lever positions (also true in v1).
+
+### Playtest follow-up (2026-11-17, BAMF69 seeds pt7 and pt15)
+Reports: Hard stayed locked after choosing Reedheart; a Reedheart lineage could not swim upstream. Both reproduced
+as missing traits, not broken levels: a daughter adds one adaptation and keeps the others, Reedheart only
+expresses fins when the nursery sample was banked, and upstream swimming needs fins and a diverted torrent.
+Changes (`creature/guidance.ts`, `creature/creatureIcons.ts`):
+- Current rooms say exactly what is missing (fins, diversion, or both) on entry and on stepping into the water.
+- Locked Medium/Hard entrances name the missing trait and the route, including "this takes two generations".
+- Daughter cards say whether she will express gills or fins, or not because the sample was never carried home.
+- The daughter screen opens with a lineage plan when banked adaptations still need more generations.
+- An equipment rack in the top right, styled like the cell stage's, shows Equipped traits (gills, fins, claws,
+  class skill) and dimmed Banked discoveries; tapping an icon explains it.
+Tests: `creatureGuidance.test.ts`; `tools/creature-levelgen-playtest.mjs` checks each message and the rack in the
+real scene, desktop and phone.
+
+### Minimap (2026-11-17)
+`levelgen/mapLayout.ts` places each level's rooms on a grid from their real connections and checks the map is
+coherent: no two rooms share a cell, every door joins cells that touch on its side (with a matching return
+door), every room is reached, and each room's shape is connected. This runs in `worldProblemsV2`, so the
+generator rejects any seed whose map would not make sense. Drawing the map exposed one spatial quirk carried over
+from v1: a drain room links to the next shaft both through its right exit and through its floor drop. The shaft is
+therefore drawn as an L-shape that reaches under the drain, which is the only consistent single-screen reading.
+`creature/minimap.ts` shows explored rooms, the current room, dashed outlines for unexplored rooms that adjoin
+explored ones, door ticks, the goal once seen and uncollected rewards. It sits under the equipment rack, below the
+status line, and hides in the overworld and shoreline. Tests: `creatureMinimap.test.ts` (300 seeds coherent, a
+broken-map test per rule, generator rejection, contents) and the browser regression (shown in rooms, hidden in
+hubs, desktop and phone captures).
