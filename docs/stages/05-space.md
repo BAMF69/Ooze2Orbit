@@ -248,6 +248,30 @@ BAMF69: "jumping between stars feels clumsy and unsatisfying"; "the space stage 
 - Autosaves on landing, arriving in a system, after every battle and every refit; Continue restores the whole campaign
   in that star system (a fight in progress starts over). Smoke: `&save` lets an autoplay run write it, `?continue`.
 
+
+## Illustrated flight slice (2026-11-17)
+
+The Seedpod, Tidewright Skiff and Shard use approved illustrated art at the existing flight sprite dimensions.
+The Seedpod is the interim Hearth appearance. Reserve its layered shell-ceramic design for cautious spacefaring
+civilizations once separate temperament hull families exist. Diet remains separate. The Driftfield background
+is scenic. Projectile trails and HUD surfaces are presentation only.
+
+When Auto detects touch or Settings selects Touch, the Helm pad turns with horizontal drag and applies forward
+thrust with upward drag. On Thrusters, swipe sideways and hold to strafe, or swipe down and hold for reverse.
+Release to stop thrust. Fire and Brake support independent fingers. Map, Commands, Details and rotation retain
+their pause paths. Gesture capture clears on release, cancellation, pause, focus loss, resize and mode changes.
+
+This slice keeps the existing outfitter, viewport framing, combat, equipment, save and lineage rules.
+The full refit layout and temperament-specific ship families are later work.
+
+## Remaining illustration pass
+
+Flight and the existing outfitter now share illustrated variants for all four hulls, all three T0 enemies,
+the two docking worlds, and all eleven equipment parts. Spineling retains the Seedpod hull it uses in combat.
+The Lattice has its own distant geometric backdrop. Planet and ship art stays at the prototype's world-space
+dimensions. The visible dock structures are landmarks on the existing land points. The parts use their current
+slots and prices, and no hangar interaction, combat rule, or save format changes with the art.
+
 ## Open questions
 | Question | Why it matters |
 |---|---|
