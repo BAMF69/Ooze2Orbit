@@ -18,7 +18,7 @@ import { currentAdvice, levelAdvice, heirNote, generationPlan } from "./creature
 import { creatureIcon, equipmentRows } from "./creature/creatureIcons";
 import { minimapModel, drawMinimap } from "./creature/minimap";
 import { attachExpedition, classFromTemperament, intervene, interventionLock, levelLock, weatherEvent, stepWeather, effectiveClimate, type Weather, type Intervention } from "./creature/expedition";
-import { stepWaterBody, inWater, waterlineAt } from "./creature/waterPhysics";
+import { stepWaterBody, inWater, isSubmerged, waterlineAt } from "./creature/waterPhysics";
 import { drawWaterRoom, type WaterFood } from "./creature/waterView";
 import { OVERWORLD, BIOME_PATHS, WATER_PATHS, hubSolid, nearLandmark } from "./creature/overworld";
 import { drawHub, hubLabels } from "./creature/overworldView";
@@ -37,6 +37,7 @@ import { rightEdgeX, leftEdgeX, bottomEdgeY, goalX, regionAt, type RoomGeometry 
 import { verticalArrival, horizontalReturn, pitRoom } from "./creature/waterRoutes";
 import { StageUi, action, type StageAction } from "./stageUi";
 import { LineagePanel } from "./lineagePanel";
+import { CreatureHud } from "./creature/hud";
 interface Foe extends WaterEnemy { sprite: Phaser.GameObjects.Sprite; label: Phaser.GameObjects.Text }
 interface RoomLife { food: WaterFood[]; foes: WaterEnemy[]; trap: boolean; cache: boolean; objective: RoomObjective }
 interface Choice { id: string; label: string; run: () => void }
@@ -60,6 +61,7 @@ export class CreatureScene extends Phaser.Scene {
   private ready = false;
   private debugEncounters = new URLSearchParams(location.search).has("debug");
   private screenUi!: StageUi;
+  private creatureHud!: CreatureHud;
   private lineage!: LineagePanel;
   private mode: Mode = "play";
   private selection = 0;
@@ -109,11 +111,13 @@ export class CreatureScene extends Phaser.Scene {
     this.ready = false;
     this.screenUi = new StageUi(this);
     this.screenUi.root.classList.add("creature-expedition");
+    this.creatureHud = new CreatureHud(this, this.screenUi);
     // Equipment rack in the top right, styled like the cell stage's (shared .cell-icon-rack classes, no CSS edits).
     this.rack = document.createElement("div"); this.rack.className = "cell-icon-rack creature-icon-rack";
     this.rackNote = document.createElement("div"); this.rackNote.className = "cell-icon-note"; this.rackNote.hidden = true;
     // Top-right column: equipment rack, then the level minimap, then the tapped-icon note (no shared CSS edits).
     const column = document.createElement("div");
+    column.className = "creature-hud-column";
     Object.assign(column.style, { position: "absolute", right: "calc(var(--safe-right) + 12px)", top: "calc(var(--safe-top) + 60px)", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px", pointerEvents: "none" });
     this.rack.style.position = "static"; this.rackNote.style.position = "static";
     this.minimapPanel = document.createElement("div"); this.minimapPanel.className = "cell-icon-rack creature-minimap"; this.minimapPanel.style.position = "static";
@@ -316,8 +320,9 @@ export class CreatureScene extends Phaser.Scene {
   }
   update(_time: number, delta: number): void {
     if (!this.ready) { if (avatarAssetsReady(this, this.incoming)) this.beginCreature(); else return; }
-    if (shell.topId !== "play") return;
+    if (shell.topId !== "play") { this.creatureHud.suspend(); return; }
     if (this.lineage.isOpen) {
+      this.creatureHud.suspend();
       if (shell.input.takePress("ui_accept") || shell.input.takePress("interact")) {
         this.lineage.hide(); this.screenUi.root.inert = false; shell.input.clearHeld(); this.draw();
       }
@@ -367,7 +372,7 @@ export class CreatureScene extends Phaser.Scene {
       if (!wasSealed && sealedEncounter(this.objective)) this.message = "Encounter sealed! Defeat all threats, or rig and arm the net, then lure attacks through it, or fight/subdue. Evasion does not break this seal.";
       stepWaterBody(this.body, r, this.roomWater(), this.garden.traits, { dir,
         vertical: this.stun > 0 ? 0 : Number(crouch) - Number(i.isDown("move_up") || i.isDown("jump")), jump, crouch, stunned: this.stun > 0, braced: !!this.operation && !dir && !crouch && !i.isDown("move_up") && !jump, sprint: i.isDown("pace") }, dt, this.objective);
-      const underwater = inWater(this.body, this.roomWater(), r) && this.body.y - this.body.h > waterlineAt(r, this.roomWater(), this.body.x);
+      const underwater = isSubmerged(this.body, this.roomWater(), r);
       this.oxygen = underwater && !this.garden.traits.gills ? Math.max(0, this.oxygen - dt) : WATER.oxygenSeconds;
       if (this.oxygen === 0 && this.hurt === 0) { this.hp--; this.hurt = GEN.damageGrace; this.message = "Out of breath! Swim up or return. Gills must be inherited by a daughter."; }
       if ((attack || altAttack) && this.bite === 0) {
@@ -584,7 +589,16 @@ export class CreatureScene extends Phaser.Scene {
       g.lineStyle(2, 0xffae72).lineBetween(e.x, e.y, e.x + e.facing * 80, e.y + e.aimY * 80);
     }
     const t = this.garden.traits, e = this.garden.expedition!, weather = this.weather.remaining > 0 ? `${this.weather.climate} ${Math.ceil(this.weather.remaining)}s` : this.garden.climate;
-    this.screenUi.setStatus(`G${this.garden.generation} · ${this.room === -1 ? "Overworld" : this.room === -2 ? "Water shoreline" : roomLabel(this.currentRoom, this.garden.expedition?.seed)} · HP ${this.hp}/${GEN.health + t.vitality} · Carrying ${this.cargo.samples.length + this.cargo.clears.length}${this.room >= 0 && this.objective.netArmed ? " · NET READY" : ""}${this.room >= 0 && sealedEncounter(this.objective) ? " · SEALED: " + this.enemies.filter(activeThreat).length + " threats" : ""}`,
+    const where = this.room === -1 ? 'Overworld' : this.room === -2 ? 'Water shoreline' : roomLabel(this.currentRoom, e.seed);
+    this.creatureHud.update({ hp:this.hp, maxHp:GEN.health+t.vitality,
+      food:Math.max(0,Math.round(100-this.hunger/WATER.hungerSeconds*100)), air:this.oxygen, airMax:WATER.oxygenSeconds,
+      submerged:this.room>=0&&isSubmerged(this.body,this.roomWater(),this.currentRoom), gills:!!t.gills,
+      cargo:this.cargo.samples.length+this.cargo.clears.length, diet:t.diet,
+      generation:this.garden.generation, location:where,
+      roomIdentity:this.room>=0?`Room ${this.room} · ${this.currentRoom.tier} · seed ${e.seed}`:where,
+      netReady:this.room>=0&&this.objective.netArmed, sealedThreats:this.room>=0&&sealedEncounter(this.objective)?this.enemies.filter(activeThreat).length:undefined,
+      available:this.mode==='play'&&!this.lineage.isOpen&&shell.topId==='play' });
+    this.screenUi.setStatus(`G${this.garden.generation} · ${where} · HP ${this.hp}/${GEN.health + t.vitality} · Carrying ${this.cargo.samples.length + this.cargo.clears.length}${this.room >= 0 && this.objective.netArmed ? " · NET READY" : ""}${this.room >= 0 && sealedEncounter(this.objective) ? " · SEALED: " + this.enemies.filter(activeThreat).length + " threats" : ""}`,
       `UNBANKED: ${[...this.cargo.samples, ...this.cargo.clears.map(t => t + " seal")].join(", ") || "none"}\nBring these to the nest alive. Death/reload loses unbanked cargo.\nSeed ${e.seed} · generator v${this.world.version}\n${t.diet} · STR ${t.strength} · VIT ${t.vitality} · ${this.abilities()}\nFood ${Math.max(0, Math.round(100 - this.hunger / WATER.hungerSeconds * 100))}% · Air ${Math.ceil(this.oxygen)}s · ${weather}\nBasin ${e.basinRaised ? "raised" : "low"} · torrent ${e.torrentDiverted ? "diverted" : "wild"}\nUnlocked for daughters: ${e.unlocked.join(", ") || "none"}\nCompleted: ${e.completed.join(", ") || "none"}\nA/D move · W/Space swim up · S swim down/hide · J/F bite · E use · U Gardener\n\n${this.garden.history.slice(-8).join("\n")}`);
     const view = this.cameras.main.worldView;
     const unseen = this.enemies.find(e => activeThreat(e) && Math.abs(e.x - this.body.x) < 180 && (e.x < view.left || e.x > view.right));
@@ -592,7 +606,7 @@ export class CreatureScene extends Phaser.Scene {
     this.screenUi.setMessage(this.stun > 0 ? `STUNNED · ${this.stun.toFixed(1)}s` : this.operation ? `OPERATING: ${Math.floor(this.operation.elapsed / CONTROL_SECONDS * 100)}% · stay still; guards interrupt.` : this.room >= 0 && this.objective.remaining > 0 ? `PRESSURE GATE: ${Math.ceil(this.objective.remaining)}s · cross the vent or rearm the wheel.` : warning ? `${ENEMIES[warning.kind].name} is preparing an attack! Change height or get behind it; strike during recovery.` : unseen && !shell.input.isDown("move_down") ? `Predator approaching from the ${unseen.x < this.body.x ? "left" : "right"}.` : this.message);
     const actions: StageAction[] = [action("use", "interact", "Use / study"), action("jump", "jump", "Jump"), action("bite", "attack", "Bite"),
       { id: "gardener", label: "Gardener", run: () => this.open("gardener") }, { id: "journal", label: "Journal", run: () => this.open("journal") }];
-    this.screenUi.actions(actions);
+    this.creatureHud.actions(actions);
     if (this.mode === "play") this.screenUi.hide();
     else {
       const content = this.menuContent(); this.selection = Math.min(this.selection, content.choices.length - 1);
