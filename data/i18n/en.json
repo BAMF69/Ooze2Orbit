@@ -513,5 +513,10 @@
  "civ.hd.notice.worker_blocked": "Cannot train: more ore is needed, or this worker type is at capacity.",
  "civ.hd.notice.send_blocked": "More ore and food are needed to send creatures.",
  "menu.continue_aquatic": "Continue (aquatic stage)",
- "menu.continue_space": "Continue (space stage)"
+ "menu.continue_space": "Continue (space stage)",
+ "display.render_quality": "Graphics quality",
+ "opt.quality.auto": "Auto (recommended)",
+ "opt.quality.performance": "Performance",
+ "opt.quality.high": "High",
+ "opt.quality.ultra": "Ultra"
 }

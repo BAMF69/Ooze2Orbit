@@ -1,3 +1,4 @@
+import {RENDER_QUALITIES} from '../core/renderQuality';
 // ---------------------------------------------------------------------------
 // settingsScreen.ts
 // Purpose : The settings screen: sections Display, Audio, Controls, Accessibility, Language, one row per
@@ -136,6 +137,7 @@ function section(c: Ctx, tab: (typeof TABS)[number]): void {
   const { shell } = c;
   switch (tab) {
     case "display":
+      choiceRow(c,"display.render_quality",RENDER_QUALITIES,s=>s.display.render_quality,(s,v)=>(s.display.render_quality=v),v=>`opt.quality.${v}`);
       choiceRow(c, "display.mode", DISPLAY_MODES, (s) => s.display.mode, (s, v) => (s.display.mode = v), (v) => `opt.mode.${v}`, () => shell.applyDisplayMode());
       choiceRow(c, "display.frame_cap", FRAME_CAPS, (s) => s.display.frame_cap as (typeof FRAME_CAPS)[number], (s, v) => (s.display.frame_cap = v),
         (v) => (v === 0 ? "opt.frame_cap.0" : ["opt.fps", { n: v }]));
