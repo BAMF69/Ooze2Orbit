@@ -3,7 +3,7 @@
 // Purpose : Entry point. Creates the Phaser game with the project's scenes and hands it to the shell
 //           (title, menus, settings, pause, subtitles: src/shell/).
 // Usage   : Loaded by index.html (<script type="module" src="/src/main.ts">).
-// Notes   : 640x360 baseline; shell viewport adapts each stage to safe bounds. Pixel-art filtering retained.
+// Notes   : 640x360 baseline; shell viewport adapts each stage to safe bounds. High-density draw targets retain logical gameplay coordinates.
 //           The shell is imported first: its crash hook (crash file + Log.error, which `dev.py smoke` fails
 //           on) is in place before anything else runs. Phaser's keyboard and gamepad plugins are off because
 //           the shell's input layer (src/shell/input.ts) reads both for menus and scenes alike.
@@ -25,7 +25,9 @@ export const game = new Phaser.Game({
   width: 640,
   height: 360,
   backgroundColor: "#1d2b53",
-  pixelArt: true,
+  pixelArt: false,
+  antialias: true,
+  roundPixels: false,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   input: { keyboard: false, gamepad: false },
   scene: [BackdropScene, MainScene, AquaticScene, CreatureScene, CivScene, SpaceScene, JuiceScene], // the first one starts on its own; the shell runs the others
