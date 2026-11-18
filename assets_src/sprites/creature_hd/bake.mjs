@@ -38,7 +38,8 @@ async function pack(page, svgs, columns, cell) {
     return c.toDataURL("image/png");
   }, { svgs, columns, cell });
 }
-const save = (rel, dataUrl) => { const out = join(ROOT, "public", rel); writeFileSync(out, Buffer.from(dataUrl.split(",")[1], "base64")); return out; };
+// Sheets are written as full-quality PNG masters; `python tools/art/compress_art.py` then ships them as WebP (main's art rule).
+const save = (rel, dataUrl) => { const out = join(ROOT, "assets_src", "art_masters", rel.split("/").pop().replace(/\.webp$/, ".png")); writeFileSync(out, Buffer.from(dataUrl.split(",")[1], "base64")); return out; };
 
 const browser = await chromium.launch();
 const page = await browser.newPage();

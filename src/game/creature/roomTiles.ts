@@ -13,10 +13,10 @@ export type TerrainMaterial = "floor" | "ledge" | "ceiling";
 export const TERRAIN_MATERIALS: readonly TerrainMaterial[] = ["floor", "ledge", "ceiling"];
 export const ROOM_COLS = 40, ROOM_ROWS = 23;
 /** 48 px cells (16 px tiles at 3x); 16 columns (one per mask), rows = material x variant. */
-export const WATER_TILES = { key: "creatureHd_waterTiles", path: "assets/art/creature_hd_water_tiles_v1.png", cell: 48, tile: 16, columns: 16, variants: 2 } as const;
-export const WATER_BG = { key: "creatureHd_waterBg", path: "assets/art/creature_hd_water_bg_v1.png", width: 1280, height: 720 } as const;
+export const WATER_TILES = { key: "creatureHd_waterTiles", path: "assets/art/creature_hd_water_tiles_v1.webp", cell: 48, tile: 16, columns: 16, variants: 2 } as const;
+export const WATER_BG = { key: "creatureHd_waterBg", path: "assets/art/creature_hd_water_bg_v1.webp", width: 1280, height: 720 } as const;
 /** Open-air forest backdrop for the walkable overworld (the Water shoreline reuses WATER_BG). */
-export const OVERWORLD_BG = { key: "creatureHd_overworldBg", path: "assets/art/creature_hd_overworld_bg_v1.png", width: 1280, height: 720 } as const;
+export const OVERWORLD_BG = { key: "creatureHd_overworldBg", path: "assets/art/creature_hd_overworld_bg_v1.webp", width: 1280, height: 720 } as const;
 
 export const tileIndex = (material: TerrainMaterial, variant: number, mask: number): number =>
   (TERRAIN_MATERIALS.indexOf(material) * WATER_TILES.variants + variant) * WATER_TILES.columns + mask;

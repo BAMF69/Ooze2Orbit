@@ -1,7 +1,7 @@
 // Purpose: Creature HD Water terrain: autotile masks, wood exclusion, and art-equals-collision on real rooms.
 // Authored: Written with Claude (Opus 5.5) for BAMF69.
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { sheetSize } from "./helpers/artSize";
 import { roomTileGrid, tileIndex, tileCount, materialAt, ROOM_COLS, ROOM_ROWS, WATER_TILES, WATER_BG } from "../src/game/creature/roomTiles";
 import { terrainSolid, woodColumn } from "../src/game/creature/waterView";
 import { generateWater } from "../src/game/creature/waterWorld";
@@ -67,7 +67,7 @@ describe("hub terrain follows hub collision", () => {
 });
 
 describe("baked terrain sheets", () => {
-  const size = (rel: string) => { const b = readFileSync(`public/${rel}`); expect(b.subarray(1, 4).toString()).toBe("PNG"); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };
+  const size = sheetSize;
   it("tileset slices into every material x variant x mask", () => {
     expect(size(WATER_TILES.path)).toEqual([WATER_TILES.columns * WATER_TILES.cell, tileCount() / WATER_TILES.columns * WATER_TILES.cell]);
   });

@@ -31,8 +31,8 @@ export const WORN_STRIPS: readonly WornStrip[] = [
 
 export const bodyKey = (family: AvatarFamily, diet: AvatarDiet): string => `creatureHd_${family}_${diet}`;
 export const wornKey = (family: AvatarFamily): string => `creatureHd_${family}_worn`;
-export const bodyPath = (family: AvatarFamily, diet: AvatarDiet): string => `assets/art/creature_hd_${family}_${diet}_v${HD_AVATAR.version}.png`;
-export const wornPath = (family: AvatarFamily): string => `assets/art/creature_hd_${family}_worn_v${HD_AVATAR.version}.png`;
+export const bodyPath = (family: AvatarFamily, diet: AvatarDiet): string => `assets/art/creature_hd_${family}_${diet}_v${HD_AVATAR.version}.webp`;
+export const wornPath = (family: AvatarFamily): string => `assets/art/creature_hd_${family}_worn_v${HD_AVATAR.version}.webp`;
 /** Frame index inside a family's worn atlas for strip `strip` and pose frame `frame` (0..19). */
 export const wornFrame = (strip: number, frame: number): number => strip * HD_AVATAR.frames + frame;
 export const wornFrameCount = (): number => WORN_STRIPS.length * HD_AVATAR.frames;

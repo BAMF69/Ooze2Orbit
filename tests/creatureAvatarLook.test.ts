@@ -1,7 +1,7 @@
 // Purpose: Creature HD avatar: family/diet/worn-trait selection, sheet layout, and HD loader validation.
 // Authored: Written with Claude (Opus 5.5) for BAMF69.
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { sheetSize } from "./helpers/artSize";
 import type * as Phaser from "phaser";
 import {
   avatarFamily, avatarDiet, wornTraits, avatarLook, lookStrips, lookKey, WORN_STRIPS, HD_AVATAR, AVATAR_FAMILIES, AVATAR_DIETS,
@@ -50,12 +50,7 @@ describe("worn traits", () => {
   });
 });
 
-/** PNG width/height straight from the IHDR chunk (no image dependency). */
-function pngSize(rel: string): [number, number] {
-  const b = readFileSync(`public/${rel}`);
-  expect(b.subarray(1, 4).toString()).toBe("PNG"); // an LFS pointer file would fail here: run `git lfs pull`
-  return [b.readUInt32BE(16), b.readUInt32BE(20)];
-}
+const pngSize = sheetSize; // name kept for the assertions below
 describe("baked HD sheets match the layout the game slices", () => {
   for (const f of AVATAR_FAMILIES) {
     for (const d of AVATAR_DIETS) it(`${f} ${d} body`, () => {
