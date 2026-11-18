@@ -111,7 +111,9 @@ export function worldProblemsV2(w: WorldV2): string[] {
     for (let x = WATER.spawn; x <= exitX; x += 4) for (const tx of [Math.floor((x - 7) / 16), Math.floor((x + 6.999) / 16)])
       if (roomSolid({ ...r, platforms: s.base.platforms ? r.platforms : [], tunnel: false }, true, tx, g.floorRow - 2, g) || roomSolid(r, true, tx, g.floorRow - 1, g)) bad.add("body clearance");
     if (r.food.length < 4 || r.food.some(x => x < 96 || x > g.width - 80 || x % 16) || new Set(r.food).size !== r.food.length) bad.add("food spacing");
-    if (s.enemies.some(e => e.x < 352 || e.x > g.width - 80) || s.enemies.length > (r.tier === "easy" ? 1 : r.tier === "medium" ? 2 : 3)) bad.add("encounter safety");
+    // No enemy at the entrance or past the exit; anywhere between is allowed (the old x >= 352 rule forced every
+    // threat into the right third of the room: review finding 9).
+    if (s.enemies.some(e => e.x < 160 || e.x > g.width - 80) || s.enemies.length > (r.tier === "easy" ? 1 : r.tier === "medium" ? 2 : 3)) bad.add("encounter safety");
     for (const op of s.openings) {
       const dest = byId.get(op.to.room); if (!dest || !dest.spec) { bad.add("arrival safety"); continue; }
       if (!dest.spec.openings.some(back => back.to.room === r.id && back.side !== op.side)) bad.add("return routes");

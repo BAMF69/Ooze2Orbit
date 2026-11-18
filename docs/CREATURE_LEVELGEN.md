@@ -245,6 +245,27 @@ test that feeds a deliberately broken input and expects its named problem (SOP-1
 16. **Determinism**: same seed and version give identical fingerprints; pinned fingerprints for seed 0 and a
     handful of others.
 
+### How far each invariant is proved (2026-11-18)
+Levels: **graph** (checked on the progression graph), **search** (search solver, `levelgen/search.ts`, real controller
+moves over real collision, every reachable route), **script** (one hand-written route through the real controller),
+**human** (played and judged). No invariant has reached **human** yet.
+
+| # | Level | Notes |
+|---|---|---|
+| 1, 2, 7 | graph | sound |
+| 3 | graph | lets one daughter express both adaptations (review finding 5); sphere search in step 1.6 |
+| 4 | graph | checks only that a class door exists (finding 4); variant stability in step 1.6 |
+| 5 | graph + map | reciprocity plus minimap coherence (`mapLayout.ts`) |
+| 6, 8 | graph | cannot fail today (finding 6); step 1.6 |
+| 9 | graph | trusts a field the generator sets (finding 3); real cycles in step 1.6 |
+| 10 | graph | allows 3 same-role rooms in a row, no recovery rule (finding 6); step 1.6 |
+| 11 | search + script | arrivals land on stable ground; static check skips swimmers and tell range (finding 7) |
+| 12 | search | minimum traits per tier; basin low, raised, raised and diverted; controls, keyed doors and seals as layered states; pressure expiry not searched |
+| 13 | search | enemy-ignoring player fails every room that demands a solution; D+Shift still also by script |
+| 14 | search | net reachable and lurable for every enemy, guards lurable, dodge lanes, pit crossings, net-only arenas; the guard "opening" is the net, not a line-of-sight break |
+| 15 | search | crossings within 75 % of the timer at base movement (agility is not wired yet); expiry return not searched |
+| 16 | tests | pinned fingerprints |
+
 ## 6. Tunables (one module)
 `creature/levelgen/tuning.ts`: stat cap and skill thresholds (30 / 20 / 30), bonus tiers (8 / 16 / 24), expressed
 part cap (3), seed mapping, armor curve (12, 4, 0.75), damage growth (0.11), health per vitality (3), room counts
@@ -382,3 +403,33 @@ routes, water physics, enemy bounds, arena sealing, the scene camera and exits, 
 rock tile layer, the tiling backdrop and the room view read it. Evidence: `creatureRoomSize.test.ts` (a generated room
 stretched to two screens: bounds, walls, seal, water, enemy limits, latch, a real-controller solve, D+Shift failing)
 and the browser regression walking that room with the camera following. Level: real controller, not human play.
+
+**Step 1.5 (done, uncommitted).** `levelgen/search.ts` is a search-based room solver in the platform-graph style:
+settled body positions are nodes, short input moves (walks, held and short jumps, sprint jumps, swims, breach jumps)
+are edges simulated through the real controller over the real collision, and controls, keyed doors and seals change
+the objective state in layers. It needs no hand-written script, so stitched rooms can be validated. `whatIsMissing`
+names the smallest missing ability or Gardener state. `levelgen/relations.ts` holds the §3.4 relation rules (net
+reachable and lurable for every enemy, guards lurable, dropper dodge lanes, pit crossings, net-only arenas, branch
+reasons) and a threat-zone model. Collision is now cached per room state (`specSolid`), and pits read the room's floor row.
+
+The search found and fixed four real problems, all approved or within the agreed rules:
+- **Breach-hop exploit:** chained breach jumps beat every Hard current with no fins and no diversion, skipping Hard's
+  critical lock. Fix (BAMF69's choice): no breach against a current the body cannot out-swim (`waterPhysics.ts`).
+- **Unguarded guarded relay:** the Hard shaft's relay had no guard within the 76 px interrupt radius; the first
+  swimmer now patrols beside it, between the relay and the net.
+- **Untrappable drain guard:** the Medium drain's ambusher lunged 84 px but stood about 104 px from the net; guarded
+  drain rooms now put the net between both guards.
+- **No net-only finale:** the Hard finale's swimmer stood beyond one lunge of the net; it now patrols within reach.
+The validator's enemy x-range (x >= 352, review finding 9) was replaced by "not at the entrance, not past the exit",
+which the relay guard needed.
+
+Evidence (`tests/creatureSearch.test.ts`; default 12 seeds in the unit suite, full sweep with `LEVELGEN_SEEDS=120`):
+120 seeds, 166 distinct rooms, all solved and returned at minimum traits in every Gardener state they declare, and
+none solved without their requirement; no current passable without fins; no relation problem; the enemy-ignoring
+player fails all 43 rooms that demand a solution. Broken rooms are rejected (unreachable control, walled exit, too-
+short timer, each relation rule), and the missing state is named. Seed 0 still matches the v1 goldens once the loop and
+the four placement fixes are reverted (`creatureLevelWorld.test.ts`). Level: search, not human play.
+
+Open for BAMF69: in 76 of 102 open rooms (no seal, no watched control) a player can avoid every threat zone. The
+original design keeps some rooms open to stealth and evasion, but the review cites "enemies that can always be
+ignored" as rejected; the right share is a design call.

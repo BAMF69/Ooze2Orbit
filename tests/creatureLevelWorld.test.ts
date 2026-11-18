@@ -22,17 +22,27 @@ const world = (seed: number) => { const w = generateWaterV2(seed); return { w, e
 const allKeys = (): Set<Key> => new Set<Key>([...keysOf({ stats: { strength: 30, vitality: 30, agility: 30, intellect: 30, armor: 30 }, gills: true, fins: true, classSkills: ["roar", "burrow", "tool"] }, { basinRaised: true, torrentDiverted: true })]);
 
 describe("Generated Water worlds", () => {
-  it("seed 0 rebuilds the eleven v1 rooms by the v1 golden records, plus the new Hard drain-to-shaft loop", () => {
+  it("seed 0 rebuilds the eleven v1 rooms, differing only by the deliberate loop and threat-placement fixes", () => {
     const golden = JSON.parse(readFileSync(new URL("../data/golden/creatureLegacyRooms.json", import.meta.url), "utf8"))["0"] as Record<string, string>;
     const w = generateWaterV2(0), v1 = generateWater(0);
     expect(w.rooms.map(r => r.id)).toEqual(v1.rooms.map(r => r.id)); expect(w.starts).toEqual({ easy: 0, medium: 4, hard: 7 });
-    for (const r of w.rooms) if (r.id !== 8 && r.id !== 9) expect(hash(roomRecord(w.rooms, r)), `room ${r.id} ${r.name}`).toBe(golden[String(r.id)]);
-    // Hard now loops like Medium: the only difference from v1 in rooms 8 and 9 is the shaft between them.
+    expect(w.rooms.map(r => [r.left, r.right, r.branch])).toEqual(v1.rooms.map(r => [r.left, r.right, r.branch]));
+    // Hard now loops like Medium: a shaft between the drain (8) and the next shaft (9).
     expect(w.rooms[8].spec!.openings.map(o => [o.side, o.to.room, o.when])).toEqual([["bottom", 9, "open"]]);
     expect(w.rooms[9].spec!.openings.map(o => [o.side, o.to.room, o.when])).toEqual([["top", 8, "verticalOpen"]]);
     expect(w.rooms[9].spec!.verticalOpenFrom).toBe(8);
-    for (const id of [8, 9]) { const stripped = { ...w.rooms[id], spec: { ...w.rooms[id].spec!, openings: [], verticalOpenFrom: null, collision: w.rooms[id].spec!.collision.filter(c => !c.when) } }; expect(hash(roomRecord(w.rooms, stripped)), `room ${id} without the loop`).toBe(golden[String(id)]); }
-    expect(w.rooms.map(r => [r.left, r.right, r.branch])).toEqual(v1.rooms.map(r => [r.left, r.right, r.branch]));
+    // Search-found relation fixes (2026-11-18): guarded drain nets sit between both guards; the Hard shaft relay has a
+    // guard in range; the Hard finale's swimmer is within one lunge of the net. Nothing else differs from v1.
+    const changed = w.rooms.filter(r => JSON.stringify(r.spec!.enemies) !== JSON.stringify(roomSpec(v1.rooms[r.id]).enemies) || r.spec!.net.frame.x !== roomSpec(v1.rooms[r.id]).net.frame.x).map(r => r.id);
+    expect(changed).toEqual([4, 8, 9, 10]);
+    for (const r of w.rooms) {
+      const v = roomSpec(v1.rooms[r.id]), s = r.spec!;
+      const loop = r.id === 8 || r.id === 9; // the only rooms whose shafts are new
+      const reverted = { ...r, spec: { ...s, enemies: v.enemies, reeds: v.reeds, net: v.net, openings: loop ? [] : s.openings,
+        verticalOpenFrom: loop ? null : s.verticalOpenFrom, collision: loop ? s.collision.filter(c => !c.when) : s.collision } };
+      if (r.id <= 3 || r.id === 6 || r.id === 7) expect(hash(roomRecord(w.rooms, r)), `room ${r.id} unchanged`).toBe(golden[String(r.id)]);
+      expect(hash(roomRecord(w.rooms, reverted)), `room ${r.id} ${r.name} with the deliberate changes reverted`).toBe(golden[String(r.id)]);
+    }
   });
   it("validates 300 seeds without fallback, with varied room counts, vaults and class trials", () => {
     const shapes = new Set<string>(); let vaults = 0, trials = 0, rooms = 0;
