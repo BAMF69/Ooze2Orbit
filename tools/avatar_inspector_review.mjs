@@ -2,6 +2,7 @@
 import {chromium} from 'playwright';
 import {resolve} from 'node:path';
 import {readFileSync,writeFileSync} from 'node:fs';
+const catalog=JSON.parse(readFileSync(new URL('../src/game/aquatic/evolutionBodies.json',import.meta.url),'utf8'));
 const out=resolve(process.argv[2]||'build/avatar-inspector'),browser=await chromium.launch();
 const errors=[],requests=[];
 try{
@@ -40,11 +41,40 @@ try{
   await page.locator('#action').selectOption('chomp');await page.getByRole('checkbox',{name:'Reduced motion',exact:true}).check();
   await page.waitForFunction(()=>document.querySelector('canvas[data-view=front]').dataset.pose==='3');
   await page.getByRole('checkbox',{name:'Reduced motion',exact:true}).uncheck();
-  for(const diet of ['herbivore','omnivore','carnivore'])await page.locator('#diet').selectOption(diet);
-  await page.locator('#form').selectOption('4');
-  if(!(await page.locator('#form-note').textContent()).includes('shares'))throw Error('Form 4 provisional art is not identified');
+  await page.locator('#markers').uncheck();
+  await page.getByRole('button',{name:'Hide all',exact:true}).click();
+  await page.locator('#action').selectOption('idle');
+  const distinctBodies=new Set();
+  for(const profile of Object.values(catalog.profiles)){
+    await page.locator('#family').selectOption(profile.family);
+    await page.locator('#form').selectOption(String(profile.form));
+    for(const [diet,sheet] of Object.entries(profile.bodies)){
+      await page.locator('#diet').selectOption(diet);
+      await page.waitForFunction(file=>document.getElementById('readout').dataset.sheet===file,sheet.file);
+      distinctBodies.add(await front.evaluate(canvas=>canvas.toDataURL()));
+    }
+    if(!(await page.locator('#form-note').textContent()).includes(profile.attachmentStatus))throw Error('Body fit status omitted');
+  }
+  if(distinctBodies.size!==36)throw Error('Runtime profiles did not render 36 distinct bodies');
   await page.getByRole('button',{name:'Show all',exact:true}).click();
   await page.waitForFunction(()=>document.getElementById('readout').dataset.selected.split(',').length===8);
+  let equippedFrames=0;
+  for(const profile of Object.values(catalog.profiles)){
+    await page.locator('#family').selectOption(profile.family);
+    await page.locator('#form').selectOption(String(profile.form));
+    for(const [diet,sheet] of Object.entries(profile.bodies)){
+      await page.locator('#diet').selectOption(diet);
+      await page.locator('#action').selectOption('idle');
+      await page.waitForFunction(file=>document.getElementById('readout').dataset.sheet===file&&
+        document.querySelector('canvas[data-view=front]').dataset.pose==='1',sheet.file);
+      for(const pose of ['2','3','0','1']){
+        await page.getByRole('button',{name:'Next pose',exact:true}).click();
+        await page.waitForFunction(pose=>[...document.querySelectorAll('canvas[data-view]')].every(c=>
+          c.dataset.pose===pose&&Number(c.dataset.layers)>0),pose);
+        equippedFrames+=3;
+      }
+    }
+  }
   if(!(await page.locator('#capacity').textContent()).includes('overcapacity'))throw Error('Inspection capacity is unclear');
   await page.getByRole('button',{name:'Reset',exact:true}).click();
   await page.getByRole('checkbox',{name:'Mount labels',exact:true}).check();
@@ -64,6 +94,6 @@ try{
   await page.screenshot({path:resolve(out,'avatar-inspector-phone.png')});
   if(requests.length)throw Error('Offline inspector made external requests');if(errors.length)throw Error(errors.join('\n'));
   writeFileSync(resolve(out,'avatar-inspector-report.json'),JSON.stringify({individualParts:outcomes,tiers:true,pause:true,step:true,dash:true,reducedChomp:true,
-    diets:3,forms:[3,4],hideAll:true,showAll:true,schemaExport:true,setupExport:true,externalRequests:requests.length,errors},null,2));
+    diets:3,forms:[1,2,3,4],families:3,distinctBodies:distinctBodies.size,equippedFrames,hideAll:true,showAll:true,schemaExport:true,setupExport:true,externalRequests:requests.length,errors},null,2));
   console.log('Attachment inspector passed: 8 solo/toggle controls, tiers, pause/step, actions, diets/forms, overlays, exports and mobile layout.');
 }finally{await browser.close();}
