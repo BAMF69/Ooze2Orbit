@@ -77,6 +77,7 @@ export class AquaticHud {
   private panelTexts: Phaser.GameObjects.Text[] = [];
   private toastLeft = 0;
   private pulse = 0;
+  private spotlightInert: HTMLElement[] = [];
   private w: number;
   private h: number;
 
@@ -343,12 +344,38 @@ export class AquaticHud {
     this.line(x + w - 12, y + h - 18, this.i18n.t("aq.reveal_continue"), SMALL).setOrigin(1, 0);
   }
 
+  showRockslidePrompt(form: number): void {
+    const { root, modal } = this.screenUi;
+    const gardener = root.querySelector<HTMLButtonElement>(".dock-gardener")!;
+    const status = gardener.closest<HTMLElement>(".dock-status-group")!;
+    this.spotlightInert = [
+      ...Array.from(root.children).filter((child): child is HTMLElement =>
+        child instanceof HTMLElement && child !== modal && child !== status),
+      ...status.querySelectorAll<HTMLElement>("button, summary"),
+    ].filter(element => element !== gardener && !element.inert);
+    for (const element of this.spotlightInert) element.inert = true;
+    root.classList.add("rockslide-spotlight");
+    modal.classList.remove("stage-sheet");
+    modal.classList.add("rockslide-prompt");
+    this.screenUi.show(this.i18n.t("aq.rockslide_prompt", { n: form }));
+    gardener.focus({ preventScroll: true });
+  }
+
+  clearRockslidePrompt(): void {
+    for (const element of this.spotlightInert) element.inert = false;
+    this.spotlightInert = [];
+    this.screenUi.root.classList.remove("rockslide-spotlight");
+    this.screenUi.modal.classList.remove("rockslide-prompt");
+  }
+
   /** Toy 3: the lens. Water temperature, your kin's thickness (one bar each, sorted), the latest causes. */
   showLens(tempC: number, tMin: number, tMax: number, kin: readonly number[], causes: readonly string[], generation: number, effects: readonly string[] = []): void {
     this.screenUi.modal.classList.add("stage-sheet");
     if (this.screenUi) {
       this.screenUi.show(`${this.i18n.t("aq.lens_title")}\n${this.i18n.t("aq.water", { t: Math.round(tempC) })} · ${this.i18n.t("aq.generation", { n: generation })}\nPopulation ${kin.length} · Average thickness ${Math.round(kin.reduce((a, b) => a + b, 0) / Math.max(1, kin.length) * 100)}%\n\n${effects.join("\n")}\n\n${causes.slice(-3).reverse().join("\n\n")}`, [
-        action("cold", "ui_left", this.i18n.t("display.colder")), action("warm", "ui_right", this.i18n.t("display.warmer")), action("generation", "ui_accept", this.i18n.t("display.generation")), action("return", "lens", this.i18n.t("display.close"))]); return;
+        action("cold", "ui_left", this.i18n.t("aq.lens_cold")), action("mild", "interact", this.i18n.t("aq.lens_mild")),
+        action("warm", "ui_right", this.i18n.t("aq.lens_warm")), action("generation", "ui_accept", this.i18n.t("display.generation")),
+        action("return", "lens", this.i18n.t("display.close"))]); return;
     }
     this.clearPanel();
     const w = 250, x = this.w - w - 8, y = 8, h = this.h - 16;

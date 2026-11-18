@@ -5,9 +5,8 @@
 //           1. The body your kin evolve (thickness, 0 slender .. 1 thick) is a real trait you inherit: thick bodies
 //              have more health and shrug off bites but swim slower; slender bodies swim and turn faster but have
 //              less health.
-//           2. The water's temperature changes the lake now: warm water grows more food but makes the hunters faster
-//              and keener; cold water starves the lake and slows everyone, hunters and prey, and your stamina comes
-//              back slower.
+//           2. Warm water grows more plants and restores stamina faster, while helping hunters pursue you.
+//              Cold water slows hunters and prey, cuts hunter sight, and reduces plant growth and stamina recovery.
 // Usage   : const b = bodyTraits(thickness); maxHp x b.hp; bite x b.bite; speed x b.speed; turn x b.turn
 //           const w = waterEffects(tempC); food regrowth x w.food; hunter speed x w.hunterSpeed; ...
 //           describeBody(thickness), describeWater(tempC): one line each for the HUD and the lens
@@ -61,7 +60,7 @@ export function waterEffects(tempC: number): WaterEffects {
     hunterSpeed: 1 + g.hunterSpeedWarm * warm - g.hunterSpeedCold * cold,
     hunterSight: 1 + g.hunterSightWarm * warm - g.hunterSightCold * cold,
     preySpeed: 1 - g.preySpeedCold * cold,
-    staminaRegen: 1 - g.staminaCold * cold,
+    staminaRegen: 1 + g.staminaWarm * warm - g.staminaCold * cold,
   };
 }
 
@@ -83,7 +82,7 @@ export function describeBody(thickness: number): string {
 /** One line on what the water is doing to the lake right now. */
 export function describeWater(tempC: number): string {
   const w = waterEffects(tempC);
-  if (Math.abs(w.food - 1) < 0.02 && Math.abs(w.hunterSpeed - 1) < 0.02) return "mild: a balanced lake";
-  if (w.food > 1) return `warm: ${pct(w.food)} more food, hunters ${pct(w.hunterSpeed)} faster and keener`;
-  return `cold: ${pct(w.food)} less food, everyone ${pct(w.hunterSpeed)} slower, stamina refills ${pct(w.staminaRegen)} slower`;
+  if (w.food === 1) return "mild (adaptable): normal food, hunter behavior and stamina recovery";
+  if (w.food > 1) return `warm (aggressive): ${pct(w.food)} more plant growth, ${pct(w.staminaRegen)} faster stamina recovery, ${pct(w.hunterSpeed)} faster hunters with ${pct(w.hunterSight)} more sight range`;
+  return `cold (cautious): ${pct(w.hunterSpeed)} slower hunters with ${pct(w.hunterSight)} less sight range, ${pct(w.food)} less plant growth, ${pct(w.preySpeed)} slower prey and ${pct(w.staminaRegen)} slower stamina recovery`;
 }

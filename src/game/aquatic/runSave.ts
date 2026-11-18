@@ -31,6 +31,7 @@ const MAX_CAUSES = 20;
 
 export interface AqRun {
   sisters?: SisterColony;
+  rockslide?: boolean; // the river mouth on the saved map has been opened
   map: number; // index into MAPS
   me: AqCreature;
   tempC: number;
@@ -92,6 +93,7 @@ export function readAqCreature(raw: unknown): AqCreature {
 export function packRun(r: AqRun): Json {
   return {
     ...(r.sisters ? { sisters: JSON.parse(JSON.stringify(r.sisters)) } : {}),
+    ...(r.rockslide ? { rockslide: true } : {}),
     kind: "aquatic_run", v: RUN_V, map: r.map, tempC: r.tempC, kills: r.kills, deaths: r.deaths, breaches: r.breaches,
     me: { ...r.me, points: { ...r.me.points }, ups: { ...r.me.ups }, parts: [...r.me.parts], uniques: [...r.me.uniques] },
     pop: { generation: r.pop.generation, thickness: [...r.pop.thickness] },
@@ -117,6 +119,7 @@ export function unpackRun(raw: unknown): { run: AqRun | null; problems: string[]
   return {
     run: {
       ...(isObj(raw.sisters) ? { sisters: readSisterColony(raw.sisters, readAqCreature) } : {}),
+        ...(raw.rockslide === true ? { rockslide: true } : {}),
       map: int(raw.map, 0, MAPS.length - 1, 0), me, pop, temper,
       tempC: num(raw.tempC, AQ.lens.tempMin, AQ.lens.tempMax, AQ.lens.tempStart),
       causes: (Array.isArray(raw.causes) ? raw.causes : []).filter((c): c is string => typeof c === "string").slice(-MAX_CAUSES),
