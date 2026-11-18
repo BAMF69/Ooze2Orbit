@@ -74,7 +74,19 @@ function drawReeds(g: G, x0: number, x1: number, tall = 0, painted = false): voi
   }
 }
 
-function drawWater(g: G, w: WaterRegion, line: number): void {
+/** Recessed stone end posts mark the water boundary without adding collision. */
+function drawWaterEnd(g: G, x: number, line: number): void {
+  const top = line - 4, bottom = WATER.floor;
+  g.fillStyle(0x172e2d).fillRoundedRect(x - 4, top, 8, bottom - top, 2);
+  g.fillStyle(0x405e4e).fillRect(x - 3, top + 3, 5, bottom - top - 3);
+  g.fillStyle(0x64806a).fillRect(x - 3, top + 3, 1.5, bottom - top - 4);
+  g.lineStyle(0.8, 0x273f36).lineBetween(x - 3, top + 8, x + 1, top + 12);
+  for (let y = top + 21; y < bottom - 5; y += 13)
+    g.lineStyle(0.8, 0x284538).lineBetween(x - 2, y + 3, x + 2, y);
+  g.fillStyle(0x819657).fillRoundedRect(x - 3, top + 1, 6, 3.5, 1);
+}
+
+function drawWater(g: G, w: WaterRegion, line: number, painted: boolean): void {
   const depth = WATER.floor - line, span = w.x1 - w.x0;
   g.fillStyle(0x4fb6c9, 0.42).fillRect(w.x0, line, span, depth);
   g.fillStyle(0x1f6a80, 0.35).fillRect(w.x0, line + depth * 0.45, span, depth * 0.55);
@@ -82,6 +94,7 @@ function drawWater(g: G, w: WaterRegion, line: number): void {
   for (let x = w.x0; x < w.x1; x += 8) g.lineTo(x + 8, line + ((x / 8) % 2 ? 1.2 : -1.2));
   g.strokePath();
   for (let x = w.x0 + 18; x < w.x1 - 4; x += 38) g.lineStyle(0.9, 0xd9f6fa, 0.6).lineBetween(x, line + 6, x + 12, line + 6);
+  if (painted) { drawWaterEnd(g, w.x0, line); drawWaterEnd(g, w.x1, line); }
 }
 
 function drawFood(g: G, f: WaterFood): void {
@@ -135,7 +148,7 @@ export function drawWaterRoom(g: G, r: WaterRoom, e: Expedition, food: WaterFood
   drawReeds(g, r.cover, r.cover + 96, 0, painted);
   for (const center of reedPatches(r).slice(1)) drawReeds(g, center - 28, center + 28, 4, painted);
   for (const f of food) if (!f.taken) drawFood(g, f);
-  for (const w of geo.water) drawWater(g, w, surfaceY(w, e.basinRaised));
+  for (const w of geo.water) drawWater(g, w, surfaceY(w, e.basinRaised), painted);
   if (r.current) for (const w of geo.water) for (let x = w.x0 + 32; x < w.x1 - 4; x += 64) { stick(g, x + 16, 258, x, 258, 1.6, 0xd6f0f2); stick(g, x, 258, x + 5, 253, 1.6, 0xd6f0f2); }
   if (r.branch !== -1) { // nursery branch: a vine-framed cave mouth
     g.fillStyle(0x0a1a1e).fillRoundedRect(112, 254, 28, 50, { tl: 14, tr: 14, bl: 0, br: 0 });

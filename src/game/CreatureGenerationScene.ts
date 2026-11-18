@@ -25,7 +25,7 @@ import { drawHub, hubLabels } from "./creature/overworldView";
 import { AVATAR_ASSETS, avatarAssetsReady, queueAvatarAssets } from "./creature/avatarAssets";
 import { AvatarView } from "./creature/avatarView";
 import { addFoeSprite, poseHdFoe } from "./creature/foeView";
-import { RoomArt, usesPaintedShallows } from "./creature/roomArt";
+import { RoomArt } from "./creature/roomArt";
 import { avatarDiet, avatarFamily, wornTraits, type AvatarFamily, type AvatarLook } from "./creature/avatarLook";
 import { ENEMIES, ENCOUNTER, spawnEncounters, stepEnemy, biteDamage, evasion, reedCover, ventPhase, type WaterEnemy } from "./creature/waterEncounters";
 import { challengeSolid, clearWaterLine } from "./creature/waterChallenges";
@@ -573,8 +573,7 @@ export class CreatureScene extends Phaser.Scene {
     const g = this.gfx; g.clear();
     if (this.room < 0) { this.roomArt.syncHub(this.room === -2); drawHub(g, this.room === -2, this.garden.traits, this.garden.expedition!); }
     else this.roomArt.sync(this.currentRoom, this.roomWater(), this.objective);
-    const painted = this.room >= 0 && usesPaintedShallows(this.currentRoom, this.roomWater());
-    if (this.room >= 0) drawWaterRoom(g, this.currentRoom, this.roomWater(), this.food, this.trap, this.clock, this.foodCache, this.objective, painted);
+    if (this.room >= 0) drawWaterRoom(g, this.currentRoom, this.roomWater(), this.food, this.trap, this.clock, this.foodCache, this.objective, true);
     for (const foe of this.enemies) if (foe.kind === "dropper" && activeThreat(foe)) {
       g.fillStyle(foe.phase === "tell" ? 0xe9b55e : 0x111e27, 0.65).fillEllipse(foe.x, 300, 46, 9);
       if (foe.phase === "tell") g.lineStyle(2, 0xe9b55e).strokeRect(foe.x - 22, 238, 44, 65);

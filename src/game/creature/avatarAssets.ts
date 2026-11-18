@@ -7,7 +7,7 @@
 import type * as Phaser from "phaser";
 import { HD_AVATAR, paintedAvatar, bodyFrameCount, bodyKey, bodyPath, wornKey, wornPath, wornFrameCount, type AvatarLook } from "./avatarLook";
 import { FOE_HD, HD_FOE_KINDS } from "./foeArt";
-import { WATER_TILES, WATER_BG, OVERWORLD_BG, REED_SHALLOWS_BG, REED_SHALLOWS_TILES, paintedTileCount, tileCount } from "./roomTiles";
+import { WATER_TILES, WATER_BG, OVERWORLD_BG, WATER_BACKDROPS, PAINTED_WATER_TILES, paintedAtlasCount, tileCount } from "./roomTiles";
 
 export interface AvatarSheet { key: string; path: string; frames: number; size: number; height?: number }
 export const AVATAR_ASSETS: readonly AvatarSheet[] = [
@@ -24,8 +24,8 @@ export function avatarSheets(look?: Pick<AvatarLook, "family" | "diet">): Avatar
     ...HD_FOE_KINDS.map(k => ({ key: FOE_HD[k].key, path: FOE_HD[k].path, frames: FOE_HD[k].frames, size: FOE_HD[k].cell })),
     { key: WATER_TILES.key, path: WATER_TILES.path, frames: tileCount(), size: WATER_TILES.cell },
     { key: WATER_BG.key, path: WATER_BG.path, frames: 1, size: WATER_BG.width, height: WATER_BG.height },
-    { key: REED_SHALLOWS_TILES.key, path: REED_SHALLOWS_TILES.path, frames: paintedTileCount(), size: REED_SHALLOWS_TILES.cell },
-    { key: REED_SHALLOWS_BG.key, path: REED_SHALLOWS_BG.path, frames: 1, size: REED_SHALLOWS_BG.width, height: REED_SHALLOWS_BG.height },
+    { key: PAINTED_WATER_TILES.key, path: PAINTED_WATER_TILES.path, frames: paintedAtlasCount(), size: PAINTED_WATER_TILES.cell },
+    ...Object.values(WATER_BACKDROPS).map(bg => ({ key: bg.key, path: bg.path, frames: 1, size: bg.width, height: bg.height })),
     { key: OVERWORLD_BG.key, path: OVERWORLD_BG.path, frames: 1, size: OVERWORLD_BG.width, height: OVERWORLD_BG.height }];
 }
 

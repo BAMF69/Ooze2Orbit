@@ -2,9 +2,10 @@
 // Authored: Written with Claude (Opus 5.5) for BAMF69.
 import { describe, it, expect } from "vitest";
 import { sheetSize } from "./helpers/artSize";
-import { roomTileGrid, tileIndex, tileCount, materialAt, ROOM_COLS, ROOM_ROWS, WATER_TILES, WATER_BG } from "../src/game/creature/roomTiles";
+import { roomTileGrid, tileIndex, tileCount, materialAt, ROOM_COLS, ROOM_ROWS, WATER_TILES, WATER_BG, PAINTED_WATER_TILES, WATER_BACKDROPS, paintedAtlasCount, paintedSurfaceTile, paintedVariantAt } from "../src/game/creature/roomTiles";
 import { terrainSolid, woodColumn } from "../src/game/creature/waterView";
 import { generateWater } from "../src/game/creature/waterWorld";
+import { roomGeometry } from "../src/game/creature/levelgen/roomSpec";
 import { generateWaterV2 } from "../src/game/creature/levelgen/world";
 import { freshExpedition } from "../src/game/creature/expedition";
 import { newObjective, type RoomObjective } from "../src/game/creature/waterObjectives";
@@ -43,10 +44,16 @@ function expectArtMatchesCollision(rooms: Parameters<typeof terrainSolid>[0][], 
   const states: [boolean, RoomObjective][] = [[false, newObjective()], [true, newObjective()], [true, { ...newObjective(), first: true, open: true, arenaActive: true }]];
   for (const room of rooms) for (const [raised, o] of states) {
     const e = { ...freshExpedition(0), basinRaised: raised };
-    const g = roomTileGrid((x, y) => terrainSolid(room, e, o, x, y), (x, y) => woodColumn(room, e, o, x, y) !== null);
-    for (let y = 0; y < ROOM_ROWS; y++) for (let x = 0; x < ROOM_COLS; x++) {
-      const want = terrainSolid(room, e, o, x, y) && woodColumn(room, e, o, x, y) === null;
-      if ((at(g, x, y) >= 0) !== want) throw new Error(`${label} room ${room.id} raised=${raised} (${x},${y}): art ${at(g, x, y)} vs solid ${want}`);
+    const { cols, rows } = roomGeometry(room);
+    const solid = (x: number, y: number) => terrainSolid(room, e, o, x, y);
+    const wood = (x: number, y: number) => woodColumn(room, e, o, x, y) !== null;
+    const g = roomTileGrid(solid, wood, cols, rows, true);
+    const rock = (x: number, y: number) => x < 0 || y < 0 || x >= cols || y >= rows || solid(x, y) && !wood(x, y);
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+      const index = g[y * cols + x];
+      const mask = Number(!rock(x, y - 1)) | Number(!rock(x + 1, y)) * 2 | Number(!rock(x, y + 1)) * 4 | Number(!rock(x - 1, y)) * 8;
+      const want = rock(x, y) ? tileIndex(materialAt(y), paintedVariantAt(x, y), mask, PAINTED_WATER_TILES.variants) : -1;
+      if (index !== want) throw new Error(`${label} room ${room.id} raised=${raised} (${x},${y}): art ${index} vs expected ${want}`);
     }
   }
 }
@@ -70,6 +77,19 @@ describe("baked terrain sheets", () => {
   const size = sheetSize;
   it("tileset slices into every material x variant x mask", () => {
     expect(size(WATER_TILES.path)).toEqual([WATER_TILES.columns * WATER_TILES.cell, tileCount() / WATER_TILES.columns * WATER_TILES.cell]);
+  });
+  it("ships the modular atlas and all three 2x Water backdrops", () => {
+    const { columns, cell, path } = PAINTED_WATER_TILES;
+    expect(size(path)).toEqual([columns * cell, Math.ceil(paintedAtlasCount() / columns) * cell]);
+    for (const bg of Object.values(WATER_BACKDROPS)) expect(size(bg.path)).toEqual([bg.width, bg.height]);
+  });
+  it("uses all four deterministic rock variants in wide rooms", () => {
+    const row = Array.from({ length: 200 }, (_, x) => paintedVariantAt(x, 10));
+    expect(paintedSurfaceTile(199, 22)).toBe(paintedAtlasCount() - 1);
+    expect(paintedSurfaceTile(40, 22)).toBe(paintedSurfaceTile(0, 22));
+    expect(new Set(row)).toEqual(new Set([0, 1, 2, 3]));
+    expect(Array.from({ length: 200 }, (_, x) => paintedVariantAt(x, 10))).toEqual(row);
+    expect(Array.from({ length: 200 }, (_, x) => paintedVariantAt(x, 11))).not.toEqual(row);
   });
   it("background is the 2x frame", () => expect(size(WATER_BG.path)).toEqual([WATER_BG.width, WATER_BG.height]));
 });
