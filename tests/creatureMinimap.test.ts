@@ -18,13 +18,15 @@ describe("Minimap layout", () => {
       expect(m.rooms.size).toBe(w.rooms.filter(r => r.tier === t).length);
     } }
     for (const t of TIERS) expect(mapProblems(layoutLevel(generateWater(0), t))).toEqual([]);
-    expect(lShapes).toBeGreaterThan(300);
-    console.log(`Minimap: ${levels} generated levels coherent, ${lShapes} L-shaped shafts under a drain`);
+    expect(lShapes).toBeGreaterThan(550); // one channel in every Medium and Hard level
+    console.log(`Minimap: ${levels} generated levels coherent, ${lShapes} multi-cell channels`);
   });
-  it("draws the drain's floor drop into the shaft as an L reaching under the drain", () => {
+  it("draws the channel as one room under the chain, from the drain's floor to the finale's hatch", () => {
     const m = layoutLevel(generateWaterV2(0), "medium");
-    expect(m.rooms.get(5)).toEqual([{ x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }]);
-    expect(m.doors.find(d => d.from === 4 && d.side === "bottom")).toMatchObject({ a: { x: 0, y: 0 }, b: { x: 0, y: 1 } });
+    expect(m.rooms.get(11)).toEqual([{ x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }]);
+    expect(m.doors.find(d => d.from === 4 && d.side === "bottom")).toMatchObject({ to: 11, a: { x: 0, y: 0 }, b: { x: 0, y: 1 } });
+    expect(m.doors.find(d => d.from === 6 && d.side === "bottom")).toMatchObject({ to: 11, a: { x: 2, y: 0 }, b: { x: 2, y: 1 } });
+    expect(m.rooms.get(5)).toEqual([{ x: 1, y: 0 }]); // the shaft is one screen again
   });
   const broken: [string, (m: MapLayout) => void][] = [
     ["map overlap", m => { const [a, b] = [...m.rooms.keys()]; m.rooms.set(b, [{ ...m.rooms.get(a)![0] }]); }],

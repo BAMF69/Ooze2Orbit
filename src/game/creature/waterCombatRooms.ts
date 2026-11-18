@@ -2,12 +2,13 @@
 import type { WaterRoom } from "./waterWorld";
 import type { RoomObjective } from "./waterObjectives";
 import { ENEMIES, type WaterEnemy } from "./waterEncounters";
-import { roomSpec } from "./levelgen/roomSpec";
+import { roomSpec, roomGeometry } from "./levelgen/roomSpec";
+import { goalX } from "./levelgen/geometry";
 export const arenaRoom = (r: WaterRoom): boolean => roomSpec(r).sealed;
 export const activeThreat = (e: WaterEnemy): boolean => e.hp > 0 && !e.incapacitated;
 export function encounterLock(r: WaterRoom, o: RoomObjective, enemies: WaterEnemy[], x: number): RoomObjective {
   if (!arenaRoom(r) || o.arenaCleared) return o;
-  if (!o.arenaActive && (x <= 96 || x >= 550)) return o;
+  if (!o.arenaActive && (x <= 96 || x >= goalX(roomGeometry(r)))) return o; // the entrance warning and the goal stay outside the seal
   return { ...o, arenaActive: true, arenaCleared: enemies.every(e => !activeThreat(e)) };
 }
 export const sealedEncounter = (o: RoomObjective): boolean => !!o.arenaActive && !o.arenaCleared;

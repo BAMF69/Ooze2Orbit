@@ -20,7 +20,9 @@
       "Bash(ls:*)",
       "Bash(cat:*)",
       "Bash(grep:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npx vitest run)",
+      "Bash(npx tsc --noEmit)"
     ],
     "ask": [
       "Bash(python tools/dev.py *ship*)",

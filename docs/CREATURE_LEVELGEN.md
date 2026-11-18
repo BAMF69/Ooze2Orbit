@@ -230,10 +230,15 @@ test that feeds a deliberately broken input and expects its named problem (SOP-1
 8. **Bonus isolation**: removing every bonus branch leaves the critical path intact; no critical placement sits
    behind a stat gate.
 9. **Loop**: at least one cycle per level; the goal is not a leaf of a pure chain.
-10. **Pacing**: no two consecutive critical rooms of the same role; no more than two `sealedArena`/`trapEncounter`
-    in a row; a `recovery` within three rooms of every Hard spike.
+10. **Pacing**: no four consecutive critical rooms of the same role; no more than two sealed rooms
+    (`sealedArena`/`trapEncounter`) in a row; a `recovery` (a food cache room) within three rooms of every Hard spike.
+    Amended 2026-11-18 from "no two of the same role": Easy teaches the sluice lever twice (a plain lever, then the
+    gated one that demands the Gardener) before its arena, and a fourth-room Easy adds a third. Teaching by
+    repetition is the point of Easy, so three in a row is allowed; four is rejected.
 11. **Arrivals**: every exit has a destination entrance on the corresponding side, a spawn position with standing
-    clearance, no enemy within tell range of it, no pit beneath it, and no bounce-back.
+    clearance, no pit beneath it, and no bounce-back. Tell range, stated as time: no enemy (swimmers included) within
+    60 px, and every enemy that can detect the arrival gives at least 1.2 s (its tell plus its approach at full speed)
+    before it can strike.
 12. **Physical solvability**: the controller bots solve each room in every relevant `RoomState` (controls unsolved
     and solved, seal active and cleared, pressure live and expired, basin low and raised, torrent wild and diverted)
     at the minimum traits the graph allows there, and return to the entrance afterwards.
@@ -244,6 +249,28 @@ test that feeds a deliberately broken input and expects its named problem (SOP-1
     return but no reward.
 16. **Determinism**: same seed and version give identical fingerprints; pinned fingerprints for seed 0 and a
     handful of others.
+
+### How far each invariant is proved (2026-11-18)
+Levels: **graph** (checked on the progression graph), **search** (search solver, `levelgen/search.ts`, real controller
+moves over real collision, every reachable route), **script** (one hand-written route through the real controller),
+**human** (played and judged). No invariant has reached **human** yet.
+
+| # | Level | Notes |
+|---|---|---|
+| 1, 2, 7 | graph | sound |
+| 3 | graph | sphere search: one expressed adaptation per daughter; 3 generations to Hard for every class (step 1.6) |
+| 4 | graph + world | each class door's variant must be one of the lineage's classes; built from its first class, so adding a class never changes it (step 1.6) |
+| 5 | graph + map | reciprocity; the map is the ManiaMap layout and must show every real link on its side |
+| 6 | graph | checks where each Gardener control is placed (nest menu today, which is always reachable); a room placement must be reachable without its own effect (step 1.6) |
+| 8 | graph | removing branches keeps the chain; no story key in a vault (broken-input tests; the generator never produces either) |
+| 9 | graph + search | counted from the edges (cyclomatic number), so parallel edges count 0; Medium and Hard each have a channel cycle, solved by the real controller and the search (step 1.6) |
+| 10 | graph | §5 amended (three same-role allowed, reason stated); a food cache within three rooms of each Hard spike (step 1.6) |
+| 11 | search + script + world | arrivals land on stable ground; static check uses `specSolid`, includes swimmers and the tell-range time (step 1.6) |
+| 12 | search | minimum traits per tier; basin low, raised, raised and diverted; controls, keyed doors and seals as layered states; pressure expiry not searched |
+| 13 | search | enemy-ignoring player fails every room that demands a solution; D+Shift still also by script |
+| 14 | search | net reachable and lurable for every enemy, guards lurable, dodge lanes, pit crossings, net-only arenas; the guard "opening" is the net, not a line-of-sight break |
+| 15 | search | crossings within 75 % of the timer at base movement (agility is not wired yet); expiry return not searched |
+| 16 | tests | pinned fingerprints |
 
 ## 6. Tunables (one module)
 `creature/levelgen/tuning.ts`: stat cap and skill thresholds (30 / 20 / 30), bonus tiers (8 / 16 / 24), expressed
@@ -295,9 +322,10 @@ Next step: migration step 0 (section 7), which changes no gameplay.
 | `roomSpec.ts` | The room model and `specSolid`, the single collision test used by physics, view, bots and sight |
 | `legacyWater.ts` | The only place a v1 room ID is branched on: the frozen seed-v1 tables, projected into specs |
 | `keys.ts` | Key vocabulary, material table (critical materials open only with story keys or Gardener terrain), `keysOf` |
-| `graph.ts` | Progression graph: critical chain, drain-to-shaft loops in Medium and Hard, nursery, optional class trials and stat vaults |
+| `graph.ts` | Progression graph: critical chain, an underchannel cycle in Medium and Hard, nursery, optional class trials and stat vaults; lays each level out with ManiaMap |
+| `maniamap.ts` | ManiaMap port (BSD-3, ADR 0008): multi-cell room templates, door alignment, configuration spaces, layout with cycle insertion |
 | `graphProblems.ts` | Graph invariants with named problems (identity, reciprocity, critical materials, critical chain, bonus isolation, loop, pacing, class triad, Gardener circularity, keys before gates, easy open) |
-| `lineageSim.ts` | Plays a lineage generation by generation, banking story keys as the game does |
+| `lineageSim.ts` | Sphere search: plays a lineage generation by generation, one expressed adaptation per daughter |
 | `templates.ts` | One template per room role, grown from the eleven v1 rooms, each with a solution script |
 | `world.ts` | Graph to rooms: numbering, links, shaft openings, keyed controls, static validation, level entries |
 | `solver.ts` | Drives the real controller along a script with the scene's own control, keyed, pit and timer rules; the D+Shift bot |
@@ -313,7 +341,7 @@ Grotto vaults hold `fullArmor` or `iceBreath`, banked like gills and fins.
 |---|---|---|
 | Step 0 changed no behavior | `creatureLegacyRooms.test.ts`: collision in every objective state plus every rule, 53 seeds, generated before the refactor | technically identical |
 | Graphs are valid and varied | `creatureLevelGraph.test.ts`: 501 seeds, 0 fallbacks, a broken-graph test per invariant, vault thresholds | technically reachable |
-| Seed 0 is the v1 world | `creatureLevelWorld.test.ts`: v1 golden records match, plus the new Hard loop | technically identical |
+| Seed 0 is the v1 world | `creatureLevelWorld.test.ts`: v1 golden records match once the deliberate loop and threat-placement changes are reverted; two channels added | technically identical |
 | Generated rooms are solvable and returnable | Real controller solves every room of ten generated worlds along its script and returns | real controller |
 | Sprinting does not bypass | D+Shift blocked in every room of those ten worlds at maximum traits | real controller |
 | Keys gate correctly | Class doors and grotto shafts refuse a key-less lineage and open with the key, 60 seeds | real controller |
@@ -360,3 +388,79 @@ explored ones, door ticks, the goal once seen and uncollected rewards. It sits u
 status line, and hides in the overworld and shoreline. Tests: `creatureMinimap.test.ts` (300 seeds coherent, a
 broken-map test per rule, generator rejection, contents) and the browser regression (shown in rooms, hidden in
 hubs, desktop and phone captures).
+
+### Independent review and the large-room plan (2026-11-18)
+An independent review of origin/main 4dca05c found that several proofs show less than their names say: physical
+validation follows hand-written scripts at maximum traits in one Gardener state; the D+Shift check cannot see enemies;
+the loop and class-triad invariants trust fields the generator sets itself; the lineage simulator lets one daughter
+express both adaptations (real minimum to Hard is 3 generations, not 2); some invariants can never fail; variety is
+low; enemies are forced to the right third of every room. It also confirmed that the Easy reward can be taken before
+its arena is cleared (the pickup tests x > 550 while the exit wall leaves the body at about x 553); fixed at
+BAMF69's request in f32bbae (`canCollectReward`). BAMF69's answers: Gardener stays a free global toggle for now; port ManiaMap's room
+model with attribution.
+
+Agreed order: step 1 size-agnostic engine; step 1.5 search-based solver with a threat model and the §3.4 relation
+rules; step 1.6 foundation fixes (real cycles, stable class variants, sphere search, pacing, Gardener circularity,
+specSolid in validation, no enemy x-range, ManiaMap multi-cell rooms); step 2 segment stitcher; steps 3 and 4 as before.
+
+**Step 1 (done, 7ab42fc).** Rooms carry a geometry (`levelgen/geometry.ts`): tile size, open band, water regions,
+enemy bounds, and derived exits, exit wall, seal walls, goal zone, pressure latch and shaft edges. `V1_GEOMETRY`
+reproduces the one-screen numbers, so existing rooms are byte-identical (golden fingerprints). Collision, objectives,
+routes, water physics, enemy bounds, arena sealing, the scene camera and exits, the solver, the static validator, the
+rock tile layer, the tiling backdrop and the room view read it. Evidence: `creatureRoomSize.test.ts` (a generated room
+stretched to two screens: bounds, walls, seal, water, enemy limits, latch, a real-controller solve, D+Shift failing)
+and the browser regression walking that room with the camera following. Level: real controller, not human play.
+
+**Step 1.5 (done, uncommitted).** `levelgen/search.ts` is a search-based room solver in the platform-graph style:
+settled body positions are nodes, short input moves (walks, held and short jumps, sprint jumps, swims, breach jumps)
+are edges simulated through the real controller over the real collision, and controls, keyed doors and seals change
+the objective state in layers. It needs no hand-written script, so stitched rooms can be validated. `whatIsMissing`
+names the smallest missing ability or Gardener state. `levelgen/relations.ts` holds the §3.4 relation rules (net
+reachable and lurable for every enemy, guards lurable, dropper dodge lanes, pit crossings, net-only arenas, branch
+reasons) and a threat-zone model. Collision is now cached per room state (`specSolid`), and pits read the room's floor row.
+
+The search found and fixed four real problems, all approved or within the agreed rules:
+- **Breach-hop exploit:** chained breach jumps beat every Hard current with no fins and no diversion, skipping Hard's
+  critical lock. Fix (BAMF69's choice): no breach against a current the body cannot out-swim (`waterPhysics.ts`).
+- **Unguarded guarded relay:** the Hard shaft's relay had no guard within the 76 px interrupt radius; the first
+  swimmer now patrols beside it, between the relay and the net.
+- **Untrappable drain guard:** the Medium drain's ambusher lunged 84 px but stood about 104 px from the net; guarded
+  drain rooms now put the net between both guards.
+- **No net-only finale:** the Hard finale's swimmer stood beyond one lunge of the net; it now patrols within reach.
+The validator's enemy x-range (x >= 352, review finding 9) was replaced by "not at the entrance, not past the exit",
+which the relay guard needed.
+
+Evidence (`tests/creatureSearch.test.ts`; default 12 seeds in the unit suite, full sweep with `LEVELGEN_SEEDS=120`):
+120 seeds, 166 distinct rooms, all solved and returned at minimum traits in every Gardener state they declare, and
+none solved without their requirement; no current passable without fins; no relation problem; the enemy-ignoring
+player fails all 43 rooms that demand a solution. Broken rooms are rejected (unreachable control, walled exit, too-
+short timer, each relation rule), and the missing state is named. Seed 0 still matches the v1 goldens once the loop and
+the four placement fixes are reverted (`creatureLevelWorld.test.ts`). Level: search, not human play.
+
+**Step 1.6 (done, uncommitted).** Foundation fixes, each with a deliberately broken input rejected by name:
+- **Real cycles (finding 3).** `levelgen/maniamap.ts` is a 2D TypeScript port of ManiaMap's room model and layout
+  (BSD-3, notice in the file and in `THIRD_PARTY_LICENSES.md`, which ships in `dist/`; ADR 0008): rooms are grids of
+  map cells with doors on any side of any cell, placed so doors meet and no cells overlap, with cycles closed by
+  inserting a room between two placed rooms. Medium and Hard now have an **underchannel**, a room 3 or 4 screens
+  wide under the chain, from the drain's floor (opens with the drain's controls) to a hatch behind the finale's exit
+  wall (opens once the seal is claimed): a shortcut home after the finale. The old drain-to-shaft second edge is gone.
+  Each hatch is opened by the room above it (`Edge.openedBy`), so the channel never bypasses the shaft's sluice.
+  Loops are counted from the edges. The graph's layout is the minimap's model (`WorldV2.maps`), and the validator
+  requires the map to show every real link on its side.
+- **Class doors (finding 4).** A door is built for the lineage's first class (class skills are only appended), so a
+  second class leaves every door unchanged; the graph and world checks reject a door for a class the lineage lacks.
+- **Sphere search (finding 5).** `sphereSearch` replaces the simulator: one sphere per generation, the next daughter
+  expresses one found story key, all choices searched. Seed 0: G1 Easy finds gills and fins, G2 expresses one and
+  opens Medium, G3 expresses the other and reaches Hard's seal: 3 generations (every class, 8 seeds).
+- **Pacing and Gardener (finding 6).** §5 amended with its reason; Hard spikes need a food cache within three rooms;
+  Gardener controls carry a placement (`BiomeGraph.gardener`, the nest menu today) checked for reachability.
+- **Validator (finding 7).** Floor clearance through `specSolid` in the solved state (switchback rooms excepted: the
+  search proves their dive route); arrival safety includes swimmers and the tell-range time. World connectivity is a
+  search over every link, not a walk along right exits.
+
+The chain itself still runs left to right because every template has its exits on the left and right; the model,
+the map and the validator no longer assume it. Mirrored templates and new shapes come with the stitcher (step 2).
+
+Open for BAMF69: in 76 of 102 open rooms (no seal, no watched control) a player can avoid every threat zone. The
+original design keeps some rooms open to stealth and evasion, but the review cites "enemies that can always be
+ignored" as rejected; the right share is a design call.

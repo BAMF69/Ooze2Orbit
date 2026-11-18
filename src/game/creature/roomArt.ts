@@ -18,6 +18,7 @@ import type { RoomObjective } from "./waterObjectives";
 import { roomTileGrid, ROOM_COLS, ROOM_ROWS, WATER_TILES, WATER_BG, OVERWORLD_BG } from "./roomTiles";
 import { terrainSolid, woodColumn } from "./waterView";
 import { OVERWORLD, hubSolid } from "./overworld";
+import { roomGeometry } from "./levelgen/roomSpec";
 
 const TIER_TINT = { easy: 0xffffff, medium: 0xc9d6e6, hard: 0xd9cfe8 } as const;
 const HUB_COLS = OVERWORLD.width / 16;
@@ -26,15 +27,15 @@ const HUB_COLS = OVERWORLD.width / 16;
 class RockLayer {
   readonly layer: Phaser.Tilemaps.TilemapLayer;
   private last: number[] = [];
-  constructor(scene: Phaser.Scene, private readonly cols: number, name: string) {
-    const map = scene.make.tilemap({ tileWidth: WATER_TILES.cell, tileHeight: WATER_TILES.cell, width: cols, height: ROOM_ROWS });
+  constructor(scene: Phaser.Scene, readonly cols: number, name: string, readonly rows: number = ROOM_ROWS) {
+    const map = scene.make.tilemap({ tileWidth: WATER_TILES.cell, tileHeight: WATER_TILES.cell, width: cols, height: rows });
     const tileset = map.addTilesetImage("rock", WATER_TILES.key, WATER_TILES.cell, WATER_TILES.cell, 0, 0);
-    const layer = tileset && map.createBlankLayer(name, tileset, 0, 0, cols, ROOM_ROWS, WATER_TILES.cell, WATER_TILES.cell);
+    const layer = tileset && map.createBlankLayer(name, tileset, 0, 0, cols, rows, WATER_TILES.cell, WATER_TILES.cell);
     if (!layer) throw new Error(`RoomArt: could not create the ${name} rock layer (tileset texture missing?)`);
     this.layer = layer.setScale(WATER_TILES.tile / WATER_TILES.cell).setDepth(-2);
   }
   sync(solid: (x: number, y: number) => boolean, special: (x: number, y: number) => boolean, label: string): void {
-    const grid = roomTileGrid(solid, special, this.cols);
+    const grid = roomTileGrid(solid, special, this.cols, this.rows);
     let changed = 0;
     for (let i = 0; i < grid.length; i++) {
       if (grid[i] === this.last[i]) continue;
@@ -45,18 +46,22 @@ class RockLayer {
     if (changed) Log.debug("creature-room", `${label}: ${changed} tiles updated`);
     this.last = grid;
   }
+  destroy(): void { this.layer.tilemap.destroy(); }
 }
 
 export class RoomArt {
-  private readonly bg: Phaser.GameObjects.Image;
+  private readonly bg: Phaser.GameObjects.TileSprite;
   private readonly hubBg: Phaser.GameObjects.TileSprite;
-  private readonly room: RockLayer;
+  private room: RockLayer;
+  private readonly scene: Phaser.Scene;
   private readonly hub: RockLayer;
   private hubKey = "";
 
   constructor(scene: Phaser.Scene) {
     for (const k of [WATER_BG.key, OVERWORLD_BG.key]) scene.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
-    this.bg = scene.add.image(0, 0, WATER_BG.key).setOrigin(0, 0).setScale(640 / WATER_BG.width).setDepth(-3);
+    this.scene = scene;
+    // Tiling backdrop: one copy at v1 size (640x360 shows the 1280x720 art at half scale), repeats across wider rooms.
+    this.bg = scene.add.tileSprite(0, 0, 640, 360, WATER_BG.key).setOrigin(0, 0).setTileScale(640 / WATER_BG.width).setDepth(-3);
     this.hubBg = scene.add.tileSprite(0, 0, OVERWORLD.width, 360, OVERWORLD_BG.key).setOrigin(0, 0).setTileScale(640 / OVERWORLD_BG.width).setDepth(-3);
     this.room = new RockLayer(scene, ROOM_COLS, "waterRock");
     this.hub = new RockLayer(scene, HUB_COLS, "hubRock");
@@ -66,6 +71,11 @@ export class RoomArt {
   sync(r: WaterRoom, e: Expedition, o: RoomObjective): void {
     this.show(false);
     this.bg.setTint(TIER_TINT[r.tier]);
+    const g = roomGeometry(r);
+    if (this.bg.width !== g.width || this.bg.height !== g.height) this.bg.setSize(g.width, g.height);
+    if (this.room.cols !== g.cols || this.room.rows !== g.rows) { // a room of another size gets its own layer
+      this.room.destroy(); this.room = new RockLayer(this.scene, g.cols, "waterRock", g.rows); this.show(false);
+    }
     this.room.sync((x, y) => terrainSolid(r, e, o, x, y), (x, y) => woodColumn(r, e, o, x, y) !== null, `room ${r.id}`);
   }
 

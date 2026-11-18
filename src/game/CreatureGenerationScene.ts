@@ -18,7 +18,7 @@ import { currentAdvice, levelAdvice, heirNote, generationPlan } from "./creature
 import { creatureIcon, equipmentRows } from "./creature/creatureIcons";
 import { minimapModel, drawMinimap } from "./creature/minimap";
 import { attachExpedition, classFromTemperament, intervene, interventionLock, levelLock, weatherEvent, stepWeather, effectiveClimate, type Weather, type Intervention } from "./creature/expedition";
-import { stepWaterBody, inWater, waterline } from "./creature/waterPhysics";
+import { stepWaterBody, inWater, waterlineAt } from "./creature/waterPhysics";
 import { drawWaterRoom, type WaterFood } from "./creature/waterView";
 import { OVERWORLD, BIOME_PATHS, WATER_PATHS, hubSolid, nearLandmark } from "./creature/overworld";
 import { drawHub, hubLabels } from "./creature/overworldView";
@@ -29,10 +29,11 @@ import { RoomArt } from "./creature/roomArt";
 import { avatarDiet, avatarFamily, wornTraits, type AvatarFamily, type AvatarLook } from "./creature/avatarLook";
 import { ENEMIES, ENCOUNTER, spawnEncounters, stepEnemy, biteDamage, evasion, reedCover, ventPhase, type WaterEnemy } from "./creature/waterEncounters";
 import { challengeSolid, clearWaterLine } from "./creature/waterChallenges";
-import { newObjective, newCargo, valves, useKeyed, drainedRoom, tickObjective, useValve, bankCargo, objectiveBarrier, canClaimSeal, emergencyRelease, type RoomObjective, type Cargo } from "./creature/waterObjectives";
+import { newObjective, newCargo, valves, useKeyed, canCollectReward, drainedRoom, tickObjective, useValve, bankCargo, objectiveBarrier, canClaimSeal, emergencyRelease, type RoomObjective, type Cargo } from "./creature/waterObjectives";
 import { arenaRoom, activeThreat, encounterLock, sealedEncounter, guardedControl, CONTROL_SECONDS, advanceOperation, canIncapacitate, type Operation } from "./creature/waterCombatRooms";
 import { netRig, netFrame, useNet, netCatches } from "./creature/waterTraps";
-import { roomSpec } from "./creature/levelgen/roomSpec";
+import { latched, roomSpec, roomGeometry, roomLabel } from "./creature/levelgen/roomSpec";
+import { rightEdgeX, leftEdgeX, bottomEdgeY, goalX, regionAt, type RoomGeometry } from "./creature/levelgen/geometry";
 import { verticalArrival, horizontalReturn, pitRoom } from "./creature/waterRoutes";
 import { StageUi, action, type StageAction } from "./stageUi";
 import { LineagePanel } from "./lineagePanel";
@@ -187,6 +188,8 @@ export class CreatureScene extends Phaser.Scene {
     this.weather = { climate: this.garden.climate, remaining: 0 }; this.enter(-1, OVERWORLD.nest);
   }
   private get currentRoom(): WaterRoom { return this.roomById(this.room); }
+  /** Geometry of the current Water room (one v1 screen unless the room is larger). */
+  private get geom(): RoomGeometry { return roomGeometry(this.currentRoom); }
   private roomById(id: number): WaterRoom { return this.world.rooms.find(r => r.id === id)!; }
   private remember(): void {
     if (this.room < 0) return;
@@ -195,8 +198,10 @@ export class CreatureScene extends Phaser.Scene {
   private enter(id: number, x: number, y: number = WATER.floor, facing: number = x > 500 ? -1 : 1, vy = 0): void {
     this.operation = null;
     this.landmarks.forEach(label => label.destroy()); this.landmarks = [];
-    const width = id === -1 ? OVERWORLD.width : id === -2 ? OVERWORLD.waterWidth : WATER.width;
-    this.cameras.main.setBounds(0, 0, width, 360);
+    // Hubs scroll across their own width; a Water room across its geometry (one screen for v1 rooms).
+    const g = id >= 0 ? roomGeometry(this.roomById(id)) : null;
+    const width = id === -1 ? OVERWORLD.width : id === -2 ? OVERWORLD.waterWidth : g!.width;
+    this.cameras.main.setBounds(0, 0, width, g?.height ?? 360);
     if (id < 0) this.landmarks = hubLabels(id === -2).map(p => this.add.text(p.x, p.y, p.text,
       { fontFamily: "monospace", fontSize: "10px", color: "#ecedd4", align: "center", backgroundColor: "#132b2bcc", padding: { x: 5, y: 4 } }).setOrigin(0.5, 0).setResolution(2).setDepth(6));
     this.room = id; this.enemies.forEach(e => { e.sprite.destroy(); e.label.destroy(); }); this.enemies = [];
@@ -210,6 +215,7 @@ export class CreatureScene extends Phaser.Scene {
     this.trap = old?.trap ?? false; this.foodCache = old?.cache ?? false;
     this.objective = old?.objective ? { ...old.objective } : newObjective();
     if (spec.verticalOpenFrom !== null && this.rooms.get(spec.verticalOpenFrom)?.objective.open) this.objective.verticalOpen = true;
+    if (spec.farOpenFrom != null) this.objective.farOpen = latched(this.rooms.get(spec.farOpenFrom)?.objective); // a channel's finale hatch
     this.landmarks = valves(r).map((v, n) => this.add.text(v.x, v.y - 24, `${n + 1} · ${v.text.split(" · ").at(-1)}${guardedControl(r, n) ? " · E + stay 2s" : ""}`, { fontFamily: "monospace", fontSize: "10px", color: "#fff0bd", backgroundColor: "#172b2a", padding: { x: 3, y: 3 } }).setOrigin(0.5, 1).setDepth(7));
     if (spec.keyed) this.landmarks.push(this.add.text(spec.keyed.x, spec.keyed.y - 40, spec.keyed.opens === "keyOpen" ? `E: ${r.name.toUpperCase()}\n${(spec.variant ?? "").replace("tool", "tool use").toUpperCase()} LINEAGE` : "E: GROTTO SHAFT", { fontFamily: "monospace", fontSize: "10px", color: "#f0d79c", align: "center", backgroundColor: "#172b2a" }).setOrigin(0.5, 1).setDepth(7));
     if (spec.leftHatch) this.landmarks.push(this.add.text(spec.leftHatch.x, spec.leftHatch.y - 40, "← ONWARD HATCH\nReturn after both controls", { fontFamily: "monospace", fontSize: "10px", color: "#bfe7d8", align: "center" }).setOrigin(0.5, 1).setDepth(7));
@@ -318,7 +324,10 @@ export class CreatureScene extends Phaser.Scene {
     this.clock += dt; this.hurt = Math.max(0, this.hurt - dt); this.bite = Math.max(0, this.bite - dt);
     const dir = this.stun > 0 ? 0 : Number(i.isDown("move_right")) - Number(i.isDown("move_left")), crouch = this.stun === 0 && i.isDown("move_down");
     const jump = i.takePress("jump") && this.stun === 0; if (jump) this.evidence.jumps++;
-    const attack = i.takePress("attack") && this.stun === 0, altAttack = i.takePress("sink") && this.stun === 0;
+    // F bites too: it was the old default of "sink"; the aquatic remaster gave F to "electric" (Shock) and moved sink to
+    // C, which left the creature stage's "J/F bite" without F (BAMF69 2026-11-18). Both presses are taken every frame.
+    const sinkPress = i.takePress("sink"), shockPress = i.takePress("electric");
+    const attack = i.takePress("attack") && this.stun === 0, altAttack = (sinkPress || shockPress) && this.stun === 0;
     if (dir) this.facing = dir;
     if (this.room < 0) {
       if ((attack || altAttack) && this.bite === 0) this.bite = GEN.biteCooldown;
@@ -344,7 +353,7 @@ export class CreatureScene extends Phaser.Scene {
       this.weather = stepWeather(this.weather, dt); this.hunger += dt; this.objective = tickObjective(this.objective, dt);
       const r = this.currentRoom;
       // Entering the water of a current room explains exactly what is missing to swim upstream.
-      const wet = inWater(this.body, this.roomWater());
+      const wet = inWater(this.body, this.roomWater(), r);
       if (wet && !this.wasWet) { const advice = currentAdvice(r, this.garden.traits, this.garden.expedition!); if (advice) this.message = advice; }
       this.wasWet = wet;
       const wasSealed = sealedEncounter(this.objective);
@@ -352,7 +361,7 @@ export class CreatureScene extends Phaser.Scene {
       if (!wasSealed && sealedEncounter(this.objective)) this.message = "Encounter sealed! Defeat all threats, or rig and arm the net, then lure attacks through it, or fight/subdue. Evasion does not break this seal.";
       stepWaterBody(this.body, r, this.roomWater(), this.garden.traits, { dir,
         vertical: this.stun > 0 ? 0 : Number(crouch) - Number(i.isDown("move_up") || i.isDown("jump")), jump, crouch, stunned: this.stun > 0, braced: !!this.operation && !dir && !crouch && !i.isDown("move_up") && !jump, sprint: i.isDown("pace") }, dt, this.objective);
-      const underwater = inWater(this.body, this.roomWater()) && this.body.y - this.body.h > waterline(this.roomWater());
+      const underwater = inWater(this.body, this.roomWater(), r) && this.body.y - this.body.h > waterlineAt(r, this.roomWater(), this.body.x);
       this.oxygen = underwater && !this.garden.traits.gills ? Math.max(0, this.oxygen - dt) : WATER.oxygenSeconds;
       if (this.oxygen === 0 && this.hurt === 0) { this.hp--; this.hurt = GEN.damageGrace; this.message = "Out of breath! Swim up or return. Gills must be inherited by a daughter."; }
       if ((attack || altAttack) && this.bite === 0) {
@@ -391,15 +400,15 @@ export class CreatureScene extends Phaser.Scene {
       if (i.takePress("interact") && this.stun === 0) this.interact();
       // Interact can change room/mode; never continue operating on its previous room.
       if (this.mode === "play" && this.room === r.id) {
-        if (this.body.x > 625) r.right >= 0 ? this.travel(r.right, WATER.spawn) : this.message = "E claims the goal. Turn back through the rooms and shoreline to reach the nest alive.";
-        else if (this.body.x < 20) {
+        if (this.body.x > rightEdgeX(this.geom)) r.right >= 0 ? this.travel(r.right, WATER.spawn) : this.message = "E claims the goal. Turn back through the rooms and shoreline to reach the nest alive.";
+        else if (this.body.x < leftEdgeX(this.geom)) {
           if (r.left >= 0) { const a = horizontalReturn(r, this.roomById(r.left)); this.travel(a.room, a.x, a.y, a.facing); }
           else this.travel(-2, WATER_PATHS.find(p => p.tier === r.tier)!.x, WATER.floor, -1);
         }
         if (this.room === r.id) {
           const arrival = verticalArrival(r, this.body.x, this.body.y, this.objective);
           if (arrival) this.travel(arrival.room, arrival.x, arrival.y, arrival.facing, arrival.vy);
-          else if (pitRoom(r) && this.body.y > 338) {
+          else if (pitRoom(r) && this.body.y > bottomEdgeY(this.geom)) {
             this.hp -= 3; this.hurt = GEN.damageGrace; this.stun = 0.5; this.operation = null;
             this.body = newBody(spec.pits[0].recoverX, WATER.floor); this.message = "Spiked pit! Lost 3 health. Jump across the marked gap; the recovery ledge is at its near side.";
           }
@@ -419,16 +428,20 @@ export class CreatureScene extends Phaser.Scene {
   }
   private stepEnemies(dt: number, crouch: boolean): void {
     const r = this.currentRoom, flood = this.climateNow() === "flood";
+    // A swimmer keeps to the water it spawned in; land enemies to the room's enemy bounds.
+    const g = this.geom;
     for (const [lane, e] of this.enemies.entries()) {
       e.sprite.setVisible(e.hp > 0); e.label.setVisible(e.hp > 0); if (e.hp <= 0) continue;
       if (e.incapacitated) { if (!poseHdFoe(e.sprite, e, this.clock, shell.settings.access.reduce_motion)) e.sprite.setTint(0x86959b).setAlpha(0.55).setAngle(80); e.label.setPosition(e.trapped ? netFrame(r).x - 36 : e.x, e.trapped ? 232 + lane * 16 : e.y - 26 - lane * 18).setText(e.trapped ? "NETTED" : "SUBDUED"); continue; }
       const reeds = reedCover(r, this.body.x);
+      const swim = regionAt(g, e.home) ?? g.water[0];
       // S steers a swimmer down; it is not universal invisibility in open water.
-      const hidden = crouch && (flood || reeds) && (!inWater(this.body, this.roomWater()) || reeds && this.body.y > 285);
+      const hidden = crouch && (flood || reeds) && (!inWater(this.body, this.roomWater(), r) || reeds && this.body.y > 285);
       const hit = stepEnemy(e, { x: this.body.x, y: this.body.y - 16, hidden: hidden || !clearWaterLine(r, this.garden.expedition!.basinRaised, e.x, e.y, this.body.x, this.body.y - 16, this.objective),
-        submerged: this.body.y - this.body.h > waterline(this.roomWater()) }, dt, flood,
-        r.gate && !this.garden.expedition!.basinRaised ? r.gateX + 28 : e.kind === "swimmer" ? 152 : 72,
-        (x, y) => boxHits(x, y + 8, 16, 16, (tx, ty) => objectiveBarrier(r, this.objective, tx) || challengeSolid(r, this.garden.expedition!.basinRaised, tx, ty, this.objective)));
+        submerged: this.body.y - this.body.h > waterlineAt(r, this.roomWater(), this.body.x) }, dt, flood,
+        r.gate && !this.garden.expedition!.basinRaised ? r.gateX + 28 : e.kind === "swimmer" ? swim.x0 + 8 : g.enemyMinX,
+        (x, y) => boxHits(x, y + 8, 16, 16, (tx, ty) => objectiveBarrier(r, this.objective, tx) || challengeSolid(r, this.garden.expedition!.basinRaised, tx, ty, this.objective)),
+        { maxX: g.enemyMaxX, swimMaxX: swim.x1 - 8 });
       if (netCatches(r, this.objective, e)) {
         e.incapacitated = true; e.trapped = true; this.objective.netArmed = false; this.objective.netCaught = (this.objective.netCaught ?? 0) + 1;
         this.evidence.solves++; this.message = "Net immobilized a healthy threat! No bite required. E at the frame rearms it for another enemy.";
@@ -478,7 +491,11 @@ export class CreatureScene extends Phaser.Scene {
     // Entrance rigging is handled first; the adjacent nursery arch remains a separate route.
     const arch = roomSpec(r).branchArchX;
     if (r.branch >= 0 && arch !== null && Math.abs(x - arch) < WATER.interactReach) { this.travel(r.branch, WATER.spawn); return; }
-    if (r.reward && x > 550) {
+    if (r.reward && x > goalX(this.geom)) {
+      if (!canCollectReward(this.objective)) {
+        this.message = sealedEncounter(this.objective) ? "The discovery lies past the encounter seal. Defeat, subdue or net every threat first." : "The discovery is still out of reach. Open this room's marked lever or controls first.";
+        return;
+      }
       const had = this.garden.expedition!.unlocked.includes(r.reward);
       if (!had && !this.cargo.samples.includes(r.reward)) this.cargo.samples.push(r.reward);
       const story = r.reward === "gills" || r.reward === "fins", label = { gills: "Gills", fins: "Swimming fins", fullArmor: "Full armor plating", iceBreath: "Ice breath" }[r.reward];
@@ -487,7 +504,7 @@ export class CreatureScene extends Phaser.Scene {
         : `${label} discovered in a hidden grotto! CARRY IT HOME ALIVE to bank it for your lineage. Death or reloading loses carried samples.`;
       if (!r.goal) return;
     }
-    if (r.goal && x > 550) {
+    if (r.goal && x > goalX(this.geom)) {
       const released = emergencyRelease(r, this.objective, x);
       if (released !== this.objective) { this.objective = released; this.message = "Pressure expired. Emergency latch opens the return route, but not the seal. Go back to recharge the lower control and reset the raised wheel."; return; }
       if (this.enemies.some(e => activeThreat(e) && !e.passed)) { this.message = "Clear the goal by fighting, subduing, passing unseen, or rigging a net and luring threats through it."; return; }
@@ -528,7 +545,9 @@ export class CreatureScene extends Phaser.Scene {
     this.rackKey = key; this.rack.replaceChildren();
     const row = (title: string, items: typeof rows.equipped, dim: boolean) => {
       const r = document.createElement("div"); r.className = "cell-icon-row";
-      const label = document.createElement("span"); label.className = "icon-row-label"; label.textContent = title; r.append(label);
+      // The shared HUD dock stylesheet hides .icon-row-label for the cell and aquatic docks; the creature rack keeps
+      // its Equipped / Banked labels (BAMF69 2026-11-18), so they override that rule inline.
+      const label = document.createElement("span"); label.className = "icon-row-label"; label.textContent = title; label.style.setProperty("display", "inline", "important"); r.append(label);
       for (const it of items) {
         const b = document.createElement("button"); b.title = it.label; b.setAttribute("aria-label", it.label); b.dataset.icon = it.icon;
         Object.assign(b.style, { width: "40px", height: "40px", minHeight: "40px", padding: "4px", borderRadius: "10px", opacity: dim ? "0.55" : "1" });
@@ -536,7 +555,7 @@ export class CreatureScene extends Phaser.Scene {
         b.onclick = () => { this.rackNote.hidden = !this.rackNote.hidden && this.rackNote.textContent === it.label; this.rackNote.textContent = it.label; };
         r.append(b);
       }
-      if (!items.length) { const e = document.createElement("span"); e.className = "empty-icons"; e.textContent = "none yet"; r.append(e); }
+      if (!items.length) { const e = document.createElement("span"); e.className = "empty-icons"; e.textContent = "none yet"; e.style.setProperty("display", "inline", "important"); r.append(e); }
       this.rack.append(r);
     };
     row("Equipped", rows.equipped, false);
@@ -557,7 +576,7 @@ export class CreatureScene extends Phaser.Scene {
       g.lineStyle(2, 0xffae72).lineBetween(e.x, e.y, e.x + e.facing * 80, e.y + e.aimY * 80);
     }
     const t = this.garden.traits, e = this.garden.expedition!, weather = this.weather.remaining > 0 ? `${this.weather.climate} ${Math.ceil(this.weather.remaining)}s` : this.garden.climate;
-    this.screenUi.setStatus(`G${this.garden.generation} · ${this.room === -1 ? "Overworld" : this.room === -2 ? "Water shoreline" : this.currentRoom.name} · HP ${this.hp}/${GEN.health + t.vitality} · Carrying ${this.cargo.samples.length + this.cargo.clears.length}${this.room >= 0 && this.objective.netArmed ? " · NET READY" : ""}${this.room >= 0 && sealedEncounter(this.objective) ? " · SEALED: " + this.enemies.filter(activeThreat).length + " threats" : ""}`,
+    this.screenUi.setStatus(`G${this.garden.generation} · ${this.room === -1 ? "Overworld" : this.room === -2 ? "Water shoreline" : roomLabel(this.currentRoom, this.garden.expedition?.seed)} · HP ${this.hp}/${GEN.health + t.vitality} · Carrying ${this.cargo.samples.length + this.cargo.clears.length}${this.room >= 0 && this.objective.netArmed ? " · NET READY" : ""}${this.room >= 0 && sealedEncounter(this.objective) ? " · SEALED: " + this.enemies.filter(activeThreat).length + " threats" : ""}`,
       `UNBANKED: ${[...this.cargo.samples, ...this.cargo.clears.map(t => t + " seal")].join(", ") || "none"}\nBring these to the nest alive. Death/reload loses unbanked cargo.\nSeed ${e.seed} · generator v${this.world.version}\n${t.diet} · STR ${t.strength} · VIT ${t.vitality} · ${this.abilities()}\nFood ${Math.max(0, Math.round(100 - this.hunger / WATER.hungerSeconds * 100))}% · Air ${Math.ceil(this.oxygen)}s · ${weather}\nBasin ${e.basinRaised ? "raised" : "low"} · torrent ${e.torrentDiverted ? "diverted" : "wild"}\nUnlocked for daughters: ${e.unlocked.join(", ") || "none"}\nCompleted: ${e.completed.join(", ") || "none"}\nA/D move · W/Space swim up · S swim down/hide · J/F bite · E use · U Gardener\n\n${this.garden.history.slice(-8).join("\n")}`);
     const view = this.cameras.main.worldView;
     const unseen = this.enemies.find(e => activeThreat(e) && Math.abs(e.x - this.body.x) < 180 && (e.x < view.left || e.x > view.right));

@@ -1,6 +1,7 @@
 // Purpose: Browser regression for graph-generated Water worlds in the REAL scene: a fresh garden gets a version 2
 //          world; a class door refuses the wrong lineage and opens for the right one; a grotto shaft opens for a
-//          vitality lineage and its top shaft arrives in the vault room; desktop and phone screenshots.
+//          vitality lineage and its top shaft arrives in the vault room; the finale's hatch drops into the underchannel,
+//          which crosses under the shaft and climbs into the drain; desktop and phone screenshots.
 // Usage  : start a dev server on 5186 (npx vite --port 5186 --strictPort), then node tools/creature-levelgen-playtest.mjs
 // Notes  : Uses scene/input fixtures like creature-stakes-playtest.mjs. Proves wiring, not fun or balance.
 import { chromium } from 'playwright';
@@ -49,7 +50,7 @@ const state = page => page.evaluate(() => { const c = window.levelTest.scene; re
 const shot = async (page, name) => { await page.evaluate(() => window.levelTest.game.loop.wake()); await page.waitForTimeout(150); await page.screenshot({ path: `${out}/${name}.png` }); await page.evaluate(() => window.levelTest.game.loop.sleep()); };
 try {
   const page = await open({ width: 1440, height: 900 });
-  const s0 = await state(page); assert.equal(s0.version, 2, 'fresh garden plays a graph-generated world'); assert.equal(s0.rooms, 13);
+  const s0 = await state(page); assert.equal(s0.version, 2, 'fresh garden plays a graph-generated world'); assert.equal(s0.rooms, 15); // 13 rooms plus the Medium and Hard underchannels
   // Class door (room 11, built for this lineage's class). The wrong class is refused; the right one opens it.
   await fixture(page, 11, { classSkills: [] });
   const door = (await state(page)).keyed; assert.equal(door.opens, 'keyOpen');
@@ -90,11 +91,22 @@ try {
   const advice = await page.evaluate(() => window.levelTest.scene.message);
   assert.match(advice, /no swimming fins/, 'current room explains missing fins');
   const rack = await page.evaluate(() => [...document.querySelectorAll('.creature-icon-rack [data-icon]')].map(b => b.dataset.icon));
+  const labels = await page.evaluate(() => [...document.querySelectorAll('.creature-icon-rack .icon-row-label')].map(l => getComputedStyle(l).display !== 'none' && l.getBoundingClientRect().width > 0 ? l.textContent : null));
+  assert.ok(labels.length && labels.every(Boolean), `rack row labels are visible: ${JSON.stringify(labels)}`);
   assert.ok(rack.includes('gills') && !rack.includes('fins'), `rack shows equipped gills only: ${rack}`);
   await shot(page, '05-current-guidance-and-rack');
   // Minimap: visible in rooms with explored + adjoining rooms, hidden in the hubs.
   const map = await page.evaluate(() => { const p = document.querySelector('.creature-minimap'); const c = p?.querySelector('canvas'); return { hidden: p?.hidden, w: c?.width ?? 0, label: p?.getAttribute('aria-label') }; });
   assert.ok(!map.hidden && map.w > 0, `minimap shown in a room: ${JSON.stringify(map)}`); assert.match(map.label, /Map of Water hard/);
+  // Review finding 12: the nursery sample cannot be taken with the lever shut, and can once it is open.
+  const pick = await page.evaluate(() => {
+    const { scene: c, shell } = window.levelTest, nursery = c.world.rooms.find(r => r.name === 'Ripplefin nursery');
+    c.close(); c.rooms.clear(); c.cargo = { samples: [], clears: [] }; c.garden.expedition.unlocked = []; c.enter(nursery.id, 552, 304);
+    shell.input.inject('interact'); c.update(0, 1000 / 60); const shut = [...c.cargo.samples];
+    c.objective.open = true; shell.input.inject('interact'); c.update(0, 1000 / 60);
+    return { shut, open: [...c.cargo.samples], message: c.message };
+  });
+  assert.deepEqual(pick.shut, [], 'no sample while the lever is shut'); assert.deepEqual(pick.open, ['fins'], `sample once solved: ${JSON.stringify(pick)}`);
   // Hard gate on the shoreline names the missing trait and the generation route.
   await page.evaluate(() => { const c = window.levelTest.scene; c.close(); c.enter(-2, 832); c.update(0, 1000 / 60); });
   assert.match(await page.evaluate(() => window.levelTest.scene.message), /Hard needs gills and swimming fins.*Reedheart/, 'Hard gate guidance');
@@ -104,8 +116,46 @@ try {
   await page.evaluate(() => { const c = window.levelTest.scene; Object.assign(c.garden.traits, { gills: false, fins: false }); c.garden.expedition.unlocked = ['gills', 'fins']; c.heirs = []; c.enter(-1, 112); c.explored = true; c.endLife('Nest fixture.'); c.mode = 'heir'; c.draw(); });
   assert.match(await page.evaluate(() => document.body.innerText), /PLAN YOUR LINEAGE/, 'daughter screen plans the generations');
   await shot(page, '07-daughter-plan');
+  // Step 1 (size-agnostic rooms): a generated lever room stretched to two screens scrolls, draws and exits correctly.
+  await page.evaluate(() => {
+    const c = window.levelTest.scene, r = c.world.rooms[1], width = 1280;
+    c.world.rooms[1] = { ...r, spec: { ...r.spec, geometry: { cols: 80, rows: 23, width, height: 360, openTop: 6, floorRow: 19,
+      water: [{ x0: 144, x1: width - 96, low: 288, raised: 224 }], enemyMinX: 72, enemyMaxX: width - 60 } } };
+    c.close(); c.rooms.clear(); c.enter(1, 48); c.enemies.forEach(e => { e.incapacitated = true; });
+  });
+  await page.evaluate(() => { const { scene: c, shell } = window.levelTest; shell.input.hold('levelgen', ['move_right', 'pace']); for (let n = 0; n < 600 && c.body.x < 1000; n++) c.update(0, 1000 / 60); shell.input.clearHeld(); for (let n = 0; n < 60; n++) c.update(0, 1000 / 60); });
+  await page.evaluate(() => window.levelTest.game.loop.wake()); await page.waitForTimeout(400); // camera follow runs in Phaser's loop
+  const wide = await page.evaluate(() => { const c = window.levelTest.scene, cam = c.cameras.main; return { x: c.body.x, scroll: cam.scrollX, bounds: cam.getBounds().width, room: c.room }; });
+  assert.ok(wide.x > 900 && wide.room === 1, `walked into the second screen: ${JSON.stringify(wide)}`);
+  assert.ok(wide.scroll > 300 && wide.bounds === 1280, `camera follows across the wide room: ${JSON.stringify(wide)}`);
+  await page.evaluate(() => window.levelTest.game.loop.sleep());
+  await shot(page, '10-two-screen-room');
+  // Step 1.6 loop: once the Medium seal is claimed, the hatch behind the exit wall drops into the underchannel; the
+  // channel crosses under the shaft and its near climb rises into the (solved) drain chamber.
+  const loop = await page.evaluate(() => {
+    const { scene: c } = window.levelTest, w = c.world, finale = w.rooms.find(r => r.tier === 'medium' && r.goal), drain = w.rooms.find(r => r.tier === 'medium' && r.spec.puzzle === 'drain');
+    const channel = w.rooms.find(r => r.tier === 'medium' && r.spec.puzzle === 'channel');
+    c.close(); c.rooms.clear(); c.rooms.set(drain.id, { objective: { first: true, open: true, remaining: 0 } });
+    c.enter(finale.id, 592, 280); c.objective = { ...c.objective, first: true, open: true, remaining: 0 }; c.enemies.forEach(e => { e.incapacitated = true; });
+    for (let n = 0; n < 240 && c.room === finale.id; n++) c.update(0, 1000 / 60);
+    return { room: c.room, channel: channel.id, drain: drain.id, farOpen: c.objective.farOpen, verticalOpen: c.objective.verticalOpen, width: channel.spec.geometry.width };
+  });
+  assert.equal(loop.room, loop.channel, `the claimed finale's hatch drops into the underchannel: ${JSON.stringify(loop)}`);
+  assert.ok(loop.farOpen && loop.verticalOpen, 'both channel hatches open (finale claimed, drain solved)');
+  await shot(page, '11-underchannel-arrival');
+  let risen = loop.channel, tries = 0;
+  while (risen === loop.channel && tries++ < 4) {
+    for (const [x, y, leap] of [[404, 304, false], [368, 240, true], [320, 176, true], [320, 60, true]]) {
+      try { risen = await drive(page, x, y, leap); } catch { break; }
+      if (risen !== loop.channel) break;
+    }
+  }
+  console.log(`underchannel climb attempts: ${tries}`);
+  assert.equal(risen, loop.drain, 'the near climb rises into the drain chamber');
+  await page.evaluate(() => { const c = window.levelTest.scene; c.garden.expedition.visited.push(4, 5, 6, 13); c.draw(); });
+  await shot(page, '12-drain-after-shortcut-minimap');
   const phone = await open({ width: 390, height: 844 }); await fixture(phone, 11); await shot(phone, '04-phone-class-door');
   await fixture(phone, 9, { fins: true, gills: true }); await shot(phone, '08-phone-rack');
   assert.deepEqual(errors, []);
-  console.log('Levelgen browser regression: v2 world, class door refuse/open, grotto shaft refuse/open/climb, desktop + phone captures, no page errors');
+  console.log('Levelgen browser regression: v2 world, class door refuse/open, grotto shaft refuse/open/climb, underchannel shortcut, desktop + phone captures, no page errors');
 } finally { await browser.close(); }
