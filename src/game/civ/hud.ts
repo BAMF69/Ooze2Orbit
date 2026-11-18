@@ -6,6 +6,8 @@ import { foodIncome, income, towerCost, type Battle } from "./wars";
 import { SENDS, TOWERS, WAR, type SendKind, type TowerKind } from "./warsTuning";
 import { civTheme, type CivTemperament } from "./theme";
 import "./controls.css";
+import { laterSurface } from "../laterHudSurfaces";
+import "./illustratedHud.css";
 
 export type CivSelection = "hero" | "builder" | "summons" | "workers";
 export type CivMenu = "towers" | "workers" | "summons" | "hero";
@@ -85,6 +87,7 @@ export class CivHud {
   private lastDetails = "";
   private locale = "";
   private themeKey = "";
+  private surfaces: (() => void)[] = [];
   constructor(scene: Phaser.Scene, private i18n: I18n, cb: CivHudCallbacks) {
     this.root.style.setProperty("--civ-art", `url("${new URL("assets/art/civ_illustrated_hd_v1.webp", document.baseURI).href}")`);
     const summary = node("summary"); put(summary, this.t("details")); this.details.append(summary, this.detailText);
@@ -100,6 +103,7 @@ export class CivHud {
       const b = this.button(`select-${role}`, role === "workers" ? "farmer" : role, () => cb.select(role));
       b.setAttribute("role", "tab"); b.id = `civ-tab-${role}`; b.setAttribute("aria-controls", "civ-command-page");
       this.roleButtons.set(role, b); this.roles.append(b);
+      this.surfaces.push(laterSurface(b, role));
     }
     this.dock.append(this.roles, this.menu, this.selectionText, this.notice);
     this.menu.id = "civ-command-page"; this.menu.setAttribute("role", "tabpanel"); this.menu.setAttribute("aria-label", this.t("commands"));
@@ -122,6 +126,7 @@ export class CivHud {
     this.resultSpace = this.button("space", "summons", () => cb.space()); put(this.resultSpace.lastElementChild as HTMLElement, this.t("continue_space"));
     resultButtons.append(rematch, this.resultSpace); resultPanel.append(this.resultTitle, this.resultBody, resultButtons); this.result.append(resultPanel);
     this.notice.setAttribute("role", "status"); this.root.append(this.header, this.details, this.dock, this.result);
+    this.surfaces.push(laterSurface(this.dock, "window"));
     document.body.append(this.root); scene.events.once("shutdown", () => this.destroy());
   }
   private t(key: string, args: Record<string, unknown> = {}): string { return this.i18n.t(`civ.hd.${key}`, args); }
@@ -147,9 +152,9 @@ export class CivHud {
   get bounds(): { top: number; bottom: number; right?: number } {
     const top = this.header.getBoundingClientRect().bottom + 10;
     const dock = this.dock.getBoundingClientRect();
-    const lateral = window.innerHeight <= 480 && window.innerWidth > window.innerHeight;
-    return { top, bottom: lateral ? window.innerHeight - 12 : dock.top - 10,
-      ...(lateral ? { right: dock.left - 12 } : {}) };
+    // Crests project above the tab bases. Keep both mazes clear of that silhouette.
+    const crest = Number.parseFloat(getComputedStyle(this.root).getPropertyValue('--civ-crest-clear')) || 42;
+    return { top, bottom: dock.top - crest };
   }
 
   update(b: Battle, state: CivHudState): void {
@@ -169,6 +174,7 @@ export class CivHud {
       for (const [key, value] of Object.entries(civTheme(state.temperament))) this.root.style.setProperty(`--civ-${key}`, value);
     }
     const page = state.menu ?? "hero";
+    this.root.dataset.role = state.selection;
     this.dock.classList.toggle("stage-modal", state.commandFocus && state.scheme === "controller");
     this.menu.setAttribute("aria-labelledby", `civ-tab-${state.selection}`);
     this.roles.setAttribute("aria-label", this.t("commands"));
@@ -186,10 +192,11 @@ export class CivHud {
     put(this.economy.label, this.t("income_goal", { own: income(b, 0).toFixed(1), need: need.toFixed(1) })); this.economy.track.value = Math.min(1, income(b, 0) / need);
     for (const meter of [this.base, this.rival, this.economy]) meter.track.setAttribute("aria-label", meter.label.textContent!);
     for (const [role, button] of this.roleButtons) {
-      put(button.lastElementChild as HTMLElement, `${state.scheme === "keyboard" ? `${["hero", "builder", "summons", "workers"].indexOf(role) + 1} ` : ""}${this.t(role)}`);
+      put(button.querySelector<HTMLElement>(".civ-hd-button-label")!, this.t(role === "workers" ? "workers_tab" : role));
+      button.title = `${["hero", "builder", "summons", "workers"].indexOf(role) + 1} · ${this.t(role)}`;
       if (role === "hero") {
         const frame = state.diet === "herbivore" ? 4 : state.diet === "carnivore" ? 5 : 6;
-        (button.firstElementChild as HTMLElement).style.backgroundPosition = `${frame % 4 * 100 / 3}% ${Math.floor(frame / 4) * 100 / 3}%`;
+        button.querySelector<HTMLElement>(".civ-hd-icon")!.style.backgroundPosition = `${frame % 4 * 100 / 3}% ${Math.floor(frame / 4) * 100 / 3}%`;
       }
       button.setAttribute("aria-pressed", String(role === state.selection)); button.setAttribute("aria-selected", String(role === state.selection)); button.disabled = ended || this.detailsOpen;
     }
@@ -212,7 +219,8 @@ export class CivHud {
     put(back.lastElementChild as HTMLElement, this.t("back"));
     for (const tower of Object.keys(TOWERS) as TowerKind[]) {
       const spec = TOWERS[tower], cost = towerCost(b, tower);
-      this.paintCard(tower, this.t(tower), this.t(`tower_${tower}`, { damage: spec.damage, range: spec.range, seconds: spec.cooldown, slow: spec.slow }), this.t("ore_cost", { n: cost }), ended || side.ore < cost, tower === selection);
+      this.paintCard(tower, this.t(tower), this.t(`tower_short_${tower}`), this.t("ore_cost", { n: cost }), ended || side.ore < cost, tower === selection);
+      this.cards.get(tower)!.button.title = `${this.t(tower)}. ${this.t(`tower_${tower}`, { damage: spec.damage, range: spec.range, seconds: spec.cooldown, slow: spec.slow })}. ${this.t("ore_cost", { n: cost })}`;
     }
     for (const worker of ["gatherer", "builder", "farmer"] as const) {
       const cost = worker === "gatherer" ? WAR.gatherCost : worker === "farmer" ? WAR.farmerCost : WAR.builderCost;
@@ -238,5 +246,5 @@ export class CivHud {
     put(this.resultBody, this.t(b.status === "fallen" ? "fallen_body" : state.saveReady === false ? "notice.save_failed" : "victory_body")); this.resultSpace.hidden = b.status === "fallen"; this.resultSpace.disabled = state.saveReady === false;
     this.dock.inert = ended || this.detailsOpen; this.menu.inert = this.detailsOpen; this.header.inert = ended;
   }
-  destroy(): void { this.root.remove(); }
+  destroy(): void { this.surfaces.forEach(dispose => dispose()); this.root.remove(); }
 }

@@ -3,7 +3,7 @@ import { chromium } from "playwright";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { HD_AVATAR, WORN_STRIPS, PAINTED_SWIM_TRAITS, wornFrameCount, wornPath } from "../../../src/game/creature/avatarLook.ts";
-import { WATER_TILES, REED_SHALLOWS_BG, PAINTED_ROCK_ROWS, ROOM_COLS } from "../../../src/game/creature/roomTiles.ts";
+import { WATER_TILES, WATER_BG, ROOM_COLS } from "../../../src/game/creature/roomTiles.ts";
 
 const sources = process.argv[2];
 if (!sources) throw new Error("Pass the directory containing the approved PNG sources.");
@@ -186,7 +186,7 @@ try {
     const [backdrop, backdropDraw] = canvas(bg.width, bg.height);
     backdropDraw.drawImage(cave, 0, 0, bg.width, bg.height);
     return [body, stone, backdrop, worn].map(exportImage);
-  }, { inputs, cell: HD_AVATAR.cell, columns: HD_AVATAR.bodyColumns, tile: WATER_TILES.cell, bg: REED_SHALLOWS_BG, terrainRows: PAINTED_ROCK_ROWS, roomCols: ROOM_COLS, traits: WORN_STRIPS.map(s => s.trait), wornCols: HD_AVATAR.wornColumns, frameCount: HD_AVATAR.frames, paintedWornCount: wornFrameCount(true), fittedTraits: PAINTED_SWIM_TRAITS, original, family });
+  }, { inputs, cell: HD_AVATAR.cell, columns: HD_AVATAR.bodyColumns, tile: WATER_TILES.cell, bg: WATER_BG, terrainRows: [0, 1, 2, 3, 4, 5, 19, 20, 21, 22], roomCols: ROOM_COLS, traits: WORN_STRIPS.map(s => s.trait), wornCols: HD_AVATAR.wornColumns, frameCount: HD_AVATAR.frames, paintedWornCount: wornFrameCount(true), fittedTraits: PAINTED_SWIM_TRAITS, original, family });
   const names = original
     ? ["creature_hd_aggressive_carnivore_v2", "creature_hd_reed_shallows_tiles_v1", "creature_hd_reed_shallows_bg_v1", "creature_hd_aggressive_painted_worn_v1"]
     : ["creature_hd_" + family + "_" + diet + "_v2", "creature_hd_" + family + "_" + diet + "_painted_worn_v1"];
