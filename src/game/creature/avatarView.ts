@@ -11,7 +11,7 @@
 // ---------------------------------------------------------------------------
 import * as Phaser from "phaser";
 import { Log } from "../../core/log";
-import { HD_AVATAR, bodyKey, wornKey, wornFrame, lookStrips, lookKey, type AvatarLook } from "./avatarLook";
+import { HD_AVATAR, bodyKey, wornKey, wornFrame, lookStrips, lookKey, paintedAvatar, paintedSwimWornFrame, WORN_STRIPS, type AvatarLook } from "./avatarLook";
 
 export class AvatarView {
   readonly anchor: Phaser.GameObjects.Sprite;
@@ -29,7 +29,7 @@ export class AvatarView {
     const key = lookKey(look);
     if (key === this.key) return;
     this.key = key;
-    const body = bodyKey(look.family, look.diet), worn = wornKey(look.family);
+    const body = bodyKey(look.family, look.diet), worn = wornKey(look.family, look.diet);
     for (const k of [body, worn]) {
       if (!this.scene.textures.exists(k)) { Log.error("creature-avatar", `Missing HD sheet ${k}; avatarAssetsReady should have blocked this`); continue; }
       this.scene.textures.get(k).setFilter(Phaser.Textures.FilterMode.LINEAR);
@@ -44,12 +44,14 @@ export class AvatarView {
   }
 
   /** Same frame index as the legacy walker grid (POSE_START + 0..3); scale is the old 32 px scale factor. */
-  update(look: AvatarLook, x: number, y: number, frame: number, flip: boolean, scale: number, alpha: number): void {
+  update(look: AvatarLook, x: number, y: number, frame: number, flip: boolean, scale: number, alpha: number, swimmingWithFins = false): void {
     this.apply(look);
     const s = scale * HD_AVATAR.display / HD_AVATAR.cell;
-    this.anchor.setPosition(x, y).setFrame(frame).setFlipX(flip).setScale(s).setAlpha(alpha);
+    const swim = swimmingWithFins && paintedAvatar(look.family, look.diet);
+    const bodyFrame = swim ? HD_AVATAR.frames + frame % HD_AVATAR.bodyColumns : frame;
+    this.anchor.setPosition(x, y).setFrame(bodyFrame).setFlipX(flip).setScale(s).setAlpha(alpha);
     for (const o of [...this.back, ...this.front])
-      o.sprite.setPosition(x, y).setFrame(wornFrame(o.strip, frame)).setFlipX(flip).setScale(s).setAlpha(alpha);
+      o.sprite.setVisible(!swim || WORN_STRIPS[o.strip].trait !== "fins").setPosition(x, y).setFrame(swim ? paintedSwimWornFrame(o.strip, frame) : wornFrame(o.strip, frame)).setFlipX(flip).setScale(s).setAlpha(alpha);
   }
 
   destroy(): void {

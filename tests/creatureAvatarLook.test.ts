@@ -5,11 +5,11 @@ import { sheetSize } from "./helpers/artSize";
 import type * as Phaser from "phaser";
 import {
   avatarFamily, avatarDiet, wornTraits, avatarLook, lookStrips, lookKey, WORN_STRIPS, HD_AVATAR, AVATAR_FAMILIES, AVATAR_DIETS,
-  bodyPath, wornPath, wornFrameCount, bodyKey, wornKey,
+  bodyPath, bodyFrameCount, paintedAvatar, paintedSwimWornFrame, wornPath, wornFrameCount, bodyKey, wornKey,
 } from "../src/game/creature/avatarLook";
 import { avatarAssetsReady, queueAvatarAssets, avatarSheets } from "../src/game/creature/avatarAssets";
 import { CHARGER_HD, chargerFrame, FOE_HD, HD_FOE_KINDS } from "../src/game/creature/foeArt";
-import { WATER_TILES, WATER_BG, OVERWORLD_BG } from "../src/game/creature/roomTiles";
+import { WATER_TILES, WATER_BG, REED_SHALLOWS_BG, REED_SHALLOWS_TILES, OVERWORLD_BG } from "../src/game/creature/roomTiles";
 
 describe("avatar family and diet", () => {
   it("takes the strongest temperament", () => {
@@ -54,7 +54,11 @@ const pngSize = sheetSize; // name kept for the assertions below
 describe("baked HD sheets match the layout the game slices", () => {
   for (const f of AVATAR_FAMILIES) {
     for (const d of AVATAR_DIETS) it(`${f} ${d} body`, () => {
-      expect(pngSize(bodyPath(f, d))).toEqual([HD_AVATAR.bodyColumns * HD_AVATAR.cell, Math.ceil(HD_AVATAR.frames / HD_AVATAR.bodyColumns) * HD_AVATAR.cell]);
+      expect(pngSize(bodyPath(f, d))).toEqual([HD_AVATAR.bodyColumns * HD_AVATAR.cell, Math.ceil(bodyFrameCount(f, d) / HD_AVATAR.bodyColumns) * HD_AVATAR.cell]);
+      if (paintedAvatar(f, d)) {
+        expect(pngSize(wornPath(f, d))).toEqual([HD_AVATAR.wornColumns * HD_AVATAR.cell,
+          Math.ceil(wornFrameCount(true) / HD_AVATAR.wornColumns) * HD_AVATAR.cell]);
+      }
     });
     it(`${f} worn atlas`, () => {
       expect(pngSize(wornPath(f))).toEqual([HD_AVATAR.wornColumns * HD_AVATAR.cell, Math.ceil(wornFrameCount() / HD_AVATAR.wornColumns) * HD_AVATAR.cell]);
@@ -62,8 +66,17 @@ describe("baked HD sheets match the layout the game slices", () => {
   }
 });
 
+it("includes fitted throat, gill and burrow overlays for every painted swim frame", () => {
+  const look = { family: "aggressive", diet: "carnivore" } as const;
+  const sheet = avatarSheets(look).find(a => a.key === wornKey(look.family, look.diet));
+  expect(sheet?.frames).toBe(192);
+  expect(pngSize(wornPath(look.family, look.diet))).toEqual([768, 2304]);
+  expect([2, 6, 3].flatMap(strip => [8, 9, 10, 11].map(frame => paintedSwimWornFrame(strip, frame))))
+    .toEqual([180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191]);
+});
+
 describe("HD avatar loading", () => {
-  const look = { family: "adaptable", diet: "carnivore" } as const;
+  const look = { family: "cautious", diet: "omnivore" } as const;
   function fixture(ready: string[], missing: Record<string, number> = {}) {
     const queued: string[] = [], removed: string[] = [];
     const scene = { textures: { exists: (key: string) => ready.includes(key),
@@ -75,14 +88,14 @@ describe("HD avatar loading", () => {
     const f = fixture(["genWalker", "genFoe"]);
     expect(avatarAssetsReady(f.scene, look)).toBe(false);
     queueAvatarAssets(f.scene, look);
-    expect(f.queued).toEqual([`${bodyKey("adaptable", "carnivore")}@96`, `${wornKey("adaptable")}@96`, ...HD_FOE_KINDS.map(k => `${FOE_HD[k].key}@${FOE_HD[k].cell}`), `${WATER_TILES.key}@48`, `${WATER_BG.key}@1280`, `${OVERWORLD_BG.key}@1280`]);
+    expect(f.queued).toEqual([`${bodyKey(look.family, look.diet)}@96`, `${wornKey(look.family, look.diet)}@96`, ...HD_FOE_KINDS.map(k => `${FOE_HD[k].key}@${FOE_HD[k].cell}`), `${WATER_TILES.key}@48`, `${WATER_BG.key}@1280`, `${REED_SHALLOWS_TILES.key}@48`, `${REED_SHALLOWS_BG.key}@1280`, `${OVERWORLD_BG.key}@1280`]);
   });
   it("rejects a worn atlas missing its last frame", () => {
     const keys = avatarSheets(look).map(a => a.key);
-    const f = fixture(keys, { [wornKey("adaptable")]: wornFrameCount() - 1 });
+    const f = fixture(keys, { [wornKey(look.family, look.diet)]: wornFrameCount(true) - 1 });
     expect(avatarAssetsReady(f.scene, look)).toBe(false);
     queueAvatarAssets(f.scene, look);
-    expect(f.removed).toEqual([wornKey("adaptable")]);
+    expect(f.removed).toEqual([wornKey(look.family, look.diet)]);
   });
   it("is ready when every sheet is complete", () => {
     const f = fixture(avatarSheets(look).map(a => a.key));
