@@ -55,6 +55,10 @@ export interface RoomSpec {
   geometry?: RoomGeometry;
 }
 
+/** The exact room, for playtest reports (BAMF69 2026-11-18): "Room 5 · Drowned galleries 2 · medium shaft · seed 7". */
+export const roomLabel = (r: WaterRoom, seed?: number): string =>
+  `Room ${r.id} · ${r.name} · ${r.tier} ${roomSpec(r).puzzle}${seed === undefined ? "" : ` · seed ${seed}`}`;
+
 const cache = new WeakMap<WaterRoom, RoomSpec>();
 export function roomSpec(r: WaterRoom): RoomSpec {
   if (r.spec) return r.spec;

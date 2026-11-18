@@ -11,7 +11,7 @@ import { challengeSolid, switchback } from "./waterChallenges";
 import { hasVent, ventPhase, encounterKinds, reedPatches } from "./waterEncounters";
 import type { Expedition } from "./expedition";
 import { roomGeometry } from "./levelgen/roomSpec";
-import { topEdgeY, floorY, surfaceY, exitTile, sealTiles, type WaterRegion } from "./levelgen/geometry";
+import { topEdgeY, floorY, surfaceY, exitTile, sealTiles, controlAnchor, type WaterRegion } from "./levelgen/geometry";
 import { valves, leftExit, objectiveBarrier, type RoomObjective } from "./waterObjectives";
 import { netRig, netFrame } from "./waterTraps";
 import { roomSpec } from "./levelgen/roomSpec";
@@ -90,6 +90,14 @@ function surfaceBelow(r: WaterRoom, e: Expedition, o: RoomObjective, x: number, 
   return WATER.floor;
 }
 
+/** Where the view draws a control (exported for tests: the drawing must sit inside the control's use band). */
+export const controlPlacement = (r: WaterRoom, e: Expedition, o: RoomObjective, v: { x: number; y: number }): { ground: number; hanging: boolean } =>
+  controlAnchor(roomGeometry(r), v.y, surfaceBelow(r, e, o, v.x, v.y));
+function ceilingAbove(r: WaterRoom, e: Expedition, o: RoomObjective, x: number, y: number): number {
+  const tx = Math.floor(x / 16);
+  for (let ty = Math.floor((y - 24) / 16); ty >= 0; ty--) if (terrainSolid(r, e, o, tx, ty)) return (ty + 1) * 16;
+  return roomGeometry(r).openTop * 16;
+}
 function drawLever(g: G, x: number, ground: number, active: boolean): void {
   // Base stands on the surface; the handle tips over (and turns green) once used.
   inkRect(g, x - 7, ground - 6, 14, 6, 0x6c5a3c);
@@ -130,7 +138,11 @@ export function drawWaterRoom(g: G, r: WaterRoom, e: Expedition, food: WaterFood
     g.fillStyle(r.reward === "gills" ? 0x89c7ca : 0x9bd292).fillEllipse(geo.width - 64, 282, 18, 24); g.lineStyle(1.2, INK).strokeEllipse(geo.width - 64, 282, 18, 24);
   }
   if (r.goal) { g.lineStyle(5, INK).strokeEllipse(geo.width - 40, 287, 24, 32); g.lineStyle(3, 0xe4be71).strokeEllipse(geo.width - 40, 287, 24, 32); }
-  for (const [n, v] of valves(r).entries()) drawLever(g, v.x, surfaceBelow(r, e, objective, v.x, v.y), objective.open || n === 0 && objective.first);
+  for (const [n, v] of valves(r).entries()) {
+    const a = controlPlacement(r, e, objective, v);
+    if (a.hanging) stick(g, v.x, ceilingAbove(r, e, objective, v.x, v.y), v.x, a.ground - 6, 1.6, 0x5d6b5f); // chain to the relay
+    drawLever(g, v.x, a.ground, objective.open || n === 0 && objective.first);
+  }
   if (spec.keyed) { // class door or grotto shaft: an inked stone frame with a seal
     const k = spec.keyed, done = objective[k.opens], c = done ? 0x94e0bc : k.opens === "keyOpen" ? 0xd99a6c : 0xb8a3e0;
     g.lineStyle(5, INK).strokeRoundedRect(k.x - 14, k.y - 34, 28, 34, 6); g.lineStyle(3, c).strokeRoundedRect(k.x - 14, k.y - 34, 28, 34, 6);

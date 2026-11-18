@@ -32,7 +32,7 @@ import { challengeSolid, clearWaterLine } from "./creature/waterChallenges";
 import { newObjective, newCargo, valves, useKeyed, canCollectReward, drainedRoom, tickObjective, useValve, bankCargo, objectiveBarrier, canClaimSeal, emergencyRelease, type RoomObjective, type Cargo } from "./creature/waterObjectives";
 import { arenaRoom, activeThreat, encounterLock, sealedEncounter, guardedControl, CONTROL_SECONDS, advanceOperation, canIncapacitate, type Operation } from "./creature/waterCombatRooms";
 import { netRig, netFrame, useNet, netCatches } from "./creature/waterTraps";
-import { latched, roomSpec, roomGeometry } from "./creature/levelgen/roomSpec";
+import { latched, roomSpec, roomGeometry, roomLabel } from "./creature/levelgen/roomSpec";
 import { rightEdgeX, leftEdgeX, bottomEdgeY, goalX, regionAt, type RoomGeometry } from "./creature/levelgen/geometry";
 import { verticalArrival, horizontalReturn, pitRoom } from "./creature/waterRoutes";
 import { StageUi, action, type StageAction } from "./stageUi";
@@ -324,7 +324,10 @@ export class CreatureScene extends Phaser.Scene {
     this.clock += dt; this.hurt = Math.max(0, this.hurt - dt); this.bite = Math.max(0, this.bite - dt);
     const dir = this.stun > 0 ? 0 : Number(i.isDown("move_right")) - Number(i.isDown("move_left")), crouch = this.stun === 0 && i.isDown("move_down");
     const jump = i.takePress("jump") && this.stun === 0; if (jump) this.evidence.jumps++;
-    const attack = i.takePress("attack") && this.stun === 0, altAttack = i.takePress("sink") && this.stun === 0;
+    // F bites too: it was the old default of "sink"; the aquatic remaster gave F to "electric" (Shock) and moved sink to
+    // C, which left the creature stage's "J/F bite" without F (BAMF69 2026-11-18). Both presses are taken every frame.
+    const sinkPress = i.takePress("sink"), shockPress = i.takePress("electric");
+    const attack = i.takePress("attack") && this.stun === 0, altAttack = (sinkPress || shockPress) && this.stun === 0;
     if (dir) this.facing = dir;
     if (this.room < 0) {
       if ((attack || altAttack) && this.bite === 0) this.bite = GEN.biteCooldown;
@@ -573,7 +576,7 @@ export class CreatureScene extends Phaser.Scene {
       g.lineStyle(2, 0xffae72).lineBetween(e.x, e.y, e.x + e.facing * 80, e.y + e.aimY * 80);
     }
     const t = this.garden.traits, e = this.garden.expedition!, weather = this.weather.remaining > 0 ? `${this.weather.climate} ${Math.ceil(this.weather.remaining)}s` : this.garden.climate;
-    this.screenUi.setStatus(`G${this.garden.generation} · ${this.room === -1 ? "Overworld" : this.room === -2 ? "Water shoreline" : this.currentRoom.name} · HP ${this.hp}/${GEN.health + t.vitality} · Carrying ${this.cargo.samples.length + this.cargo.clears.length}${this.room >= 0 && this.objective.netArmed ? " · NET READY" : ""}${this.room >= 0 && sealedEncounter(this.objective) ? " · SEALED: " + this.enemies.filter(activeThreat).length + " threats" : ""}`,
+    this.screenUi.setStatus(`G${this.garden.generation} · ${this.room === -1 ? "Overworld" : this.room === -2 ? "Water shoreline" : roomLabel(this.currentRoom, this.garden.expedition?.seed)} · HP ${this.hp}/${GEN.health + t.vitality} · Carrying ${this.cargo.samples.length + this.cargo.clears.length}${this.room >= 0 && this.objective.netArmed ? " · NET READY" : ""}${this.room >= 0 && sealedEncounter(this.objective) ? " · SEALED: " + this.enemies.filter(activeThreat).length + " threats" : ""}`,
       `UNBANKED: ${[...this.cargo.samples, ...this.cargo.clears.map(t => t + " seal")].join(", ") || "none"}\nBring these to the nest alive. Death/reload loses unbanked cargo.\nSeed ${e.seed} · generator v${this.world.version}\n${t.diet} · STR ${t.strength} · VIT ${t.vitality} · ${this.abilities()}\nFood ${Math.max(0, Math.round(100 - this.hunger / WATER.hungerSeconds * 100))}% · Air ${Math.ceil(this.oxygen)}s · ${weather}\nBasin ${e.basinRaised ? "raised" : "low"} · torrent ${e.torrentDiverted ? "diverted" : "wild"}\nUnlocked for daughters: ${e.unlocked.join(", ") || "none"}\nCompleted: ${e.completed.join(", ") || "none"}\nA/D move · W/Space swim up · S swim down/hide · J/F bite · E use · U Gardener\n\n${this.garden.history.slice(-8).join("\n")}`);
     const view = this.cameras.main.worldView;
     const unseen = this.enemies.find(e => activeThreat(e) && Math.abs(e.x - this.body.x) < 180 && (e.x < view.left || e.x > view.right));

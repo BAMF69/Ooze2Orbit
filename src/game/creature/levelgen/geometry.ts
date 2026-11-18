@@ -50,3 +50,12 @@ export const arrivalMaxX = (g: RoomGeometry): number => g.width - 24;
 /** The water region containing x, if any. */
 export const regionAt = (g: RoomGeometry, x: number): WaterRegion | undefined => g.water.find(w => x >= w.x0 && x <= w.x1);
 export const surfaceY = (w: WaterRegion, raised: boolean): number => raised ? w.raised : w.low;
+
+/** A control is usable with the body's feet within this many pixels of its point (waterObjectives.ts useValve). */
+export const CONTROL_REACH_Y = 25;
+/** Where a control is drawn: on the surface beneath it when standing there reaches it, otherwise hanging at its own
+ *  point. Until 2026-11-18 every lever was drawn on the surface below, so the mid-water shaft relay (y 228) appeared on
+ *  the floor (y 304), out of reach of where it was drawn (BAMF69 playtest, seed 7). */
+export function controlAnchor(_g: RoomGeometry, y: number, surface: number): { ground: number; hanging: boolean } {
+  return surface - y < CONTROL_REACH_Y ? { ground: surface, hanging: false } : { ground: y + 6, hanging: true };
+}
