@@ -273,6 +273,7 @@ COLORBLIND = ["none", "protanopia", "deuteranopia", "tritanopia"]
 SUB_SIZES = ["small", "medium", "large", "xl"]
 GLYPH_SETS = ["auto", "keyboard", "xbox", "playstation", "generic"]
 DISPLAY_MODES = ["windowed", "fullscreen", "borderless"]
+RENDER_QUALITIES = ["auto", "performance", "high", "ultra"]
 FRAME_CAPS = [0, 30, 60, 120, 144, 240]
 CONSENT = ["unset", "yes", "no"]
 
@@ -291,7 +292,7 @@ DEFAULT_BINDINGS = {
 
 DEFAULT_SETTINGS = {
     "version": 1,
-    "display": {"mode": "windowed", "vsync": True, "frame_cap": 0, "resolution": [1920, 1080], "ui_scale": 1.0},
+    "display": {"render_quality": "auto", "mode": "windowed", "vsync": True, "frame_cap": 0, "resolution": [1920, 1080], "ui_scale": 1.0},
     "audio": {"master": 1.0, "music": 0.8, "sfx": 1.0, "ui": 1.0, "voice": 1.0, "mono": False},
     "language": "en",
     "access": {"text_scale": 1.0, "subtitles": True, "subtitle_size": "medium", "subtitle_background": 0.6,
@@ -304,7 +305,7 @@ DEFAULT_SETTINGS = {
 
 # per field: ("num", lo, hi) | ("bool",) | ("enum", values) | ("res",) | ("lang",); the default comes from above
 SCHEMA = {
-    "display": {"mode": ("enum", DISPLAY_MODES), "vsync": ("bool",), "frame_cap": ("enum", FRAME_CAPS),
+    "display": {"render_quality": ("enum", RENDER_QUALITIES), "mode": ("enum", DISPLAY_MODES), "vsync": ("bool",), "frame_cap": ("enum", FRAME_CAPS),
                 "resolution": ("res",), "ui_scale": ("num", 0.75, 2.0)},
     "audio": {k: ("num", 0.0, 1.0) for k in ("master", "music", "sfx", "ui", "voice")},
     "access": {"text_scale": ("num", 0.75, 2.0), "subtitles": ("bool",), "subtitle_size": ("enum", SUB_SIZES),
@@ -771,6 +772,9 @@ def build_shell():
         ("not json", "{volume: loud"),
         ("an array", "[1, 2]"),
         ("all defaults", json.dumps(DEFAULT_SETTINGS)),
+        *[("graphics quality " + quality, json.dumps({"display": {"render_quality": quality}}))
+          for quality in RENDER_QUALITIES],
+        ("invalid graphics quality", json.dumps({"display": {"render_quality": "invalid"}})),
         ("clamps and types", json.dumps({"audio": {"master": 1.5, "music": -0.2, "sfx": "loud", "mono": 1},
                                          "access": {"text_scale": 3, "difficulty": "nightmare",
                                                     "shake_scale": 0.25, "reduce_motion": True},
