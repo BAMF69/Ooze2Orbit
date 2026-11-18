@@ -360,3 +360,25 @@ explored ones, door ticks, the goal once seen and uncollected rewards. It sits u
 status line, and hides in the overworld and shoreline. Tests: `creatureMinimap.test.ts` (300 seeds coherent, a
 broken-map test per rule, generator rejection, contents) and the browser regression (shown in rooms, hidden in
 hubs, desktop and phone captures).
+
+### Independent review and the large-room plan (2026-11-18)
+An independent review of origin/main 4dca05c found that several proofs show less than their names say: physical
+validation follows hand-written scripts at maximum traits in one Gardener state; the D+Shift check cannot see enemies;
+the loop and class-triad invariants trust fields the generator sets itself; the lineage simulator lets one daughter
+express both adaptations (real minimum to Hard is 3 generations, not 2); some invariants can never fail; variety is
+low; enemies are forced to the right third of every room. It also confirmed that the Easy reward can be taken before
+its arena is cleared (the pickup tests x > 550 while the exit wall leaves the body at about x 553); not fixed yet,
+pending BAMF69 (scene logic). BAMF69's answers: Gardener stays a free global toggle for now; port ManiaMap's room
+model with attribution.
+
+Agreed order: step 1 size-agnostic engine; step 1.5 search-based solver with a threat model and the §3.4 relation
+rules; step 1.6 foundation fixes (real cycles, stable class variants, sphere search, pacing, Gardener circularity,
+specSolid in validation, no enemy x-range, ManiaMap multi-cell rooms); step 2 segment stitcher; steps 3 and 4 as before.
+
+**Step 1 (done, 7ab42fc).** Rooms carry a geometry (`levelgen/geometry.ts`): tile size, open band, water regions,
+enemy bounds, and derived exits, exit wall, seal walls, goal zone, pressure latch and shaft edges. `V1_GEOMETRY`
+reproduces the one-screen numbers, so existing rooms are byte-identical (golden fingerprints). Collision, objectives,
+routes, water physics, enemy bounds, arena sealing, the scene camera and exits, the solver, the static validator, the
+rock tile layer, the tiling backdrop and the room view read it. Evidence: `creatureRoomSize.test.ts` (a generated room
+stretched to two screens: bounds, walls, seal, water, enemy limits, latch, a real-controller solve, D+Shift failing)
+and the browser regression walking that room with the camera following. Level: real controller, not human play.
