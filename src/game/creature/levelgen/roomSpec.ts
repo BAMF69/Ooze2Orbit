@@ -13,6 +13,9 @@ import type { EnemyKind } from "../waterEncounters";
 import type { RoomObjective } from "../waterObjectives";
 import { legacySpec } from "./legacyWater";
 import type { Key } from "./keys";
+import { V1_GEOMETRY, type RoomGeometry } from "./geometry";
+/** The room's size and water, v1 one-screen numbers unless the room says otherwise. */
+export const roomGeometry = (r: WaterRoom): RoomGeometry => roomSpec(r).geometry ?? V1_GEOMETRY;
 
 export interface Point { x: number; y: number }
 /** Inclusive tile rectangle; -99/99 stand for "to the edge" so bounds rules read naturally. */
@@ -42,6 +45,8 @@ export interface RoomSpec {
   returnArrival: { x: number; y: number; facing: number } | null; arriveFromRight: { x: number; y: number; facing: number };
   branchArchX: number | null; hint: { priority: string | null; fallback: string };
   keyed: KeyedControl | null; variant?: string;
+  /** Room size and water; absent means one v1 screen (levelgen/geometry.ts V1_GEOMETRY). */
+  geometry?: RoomGeometry;
 }
 
 const cache = new WeakMap<WaterRoom, RoomSpec>();
@@ -68,7 +73,7 @@ export function specSolid(r: WaterRoom, raised: boolean, x: number, y: number, o
     if (!met(rule.when, o) || rule.unless && met(rule.unless, o)) continue;
     if (inRect(rule, x, y)) return rule.solid;
   }
-  return roomSolid({ ...r, platforms: s.base.platforms ? r.platforms : [], tunnel: r.tunnel && s.base.tunnel, gate: r.gate && s.base.gate }, raised, x, y);
+  return roomSolid({ ...r, platforms: s.base.platforms ? r.platforms : [], tunnel: r.tunnel && s.base.tunnel, gate: r.gate && s.base.gate }, raised, x, y, s.geometry ?? V1_GEOMETRY);
 }
 // ---------------------------------------------------------------------------
 // Footer: debug with `?debug` in the scene (enemy ranges) or by printing roomSpec(room) in a test.

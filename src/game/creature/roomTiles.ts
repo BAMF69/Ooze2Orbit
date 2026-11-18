@@ -29,11 +29,11 @@ const variantAt = (x: number, y: number): number => ((x * 7 + y * 13) >>> 0) % 3
  * Tile indices, row-major, -1 where there is no rock. `solid` is the collision test; `special` marks solid
  * cells drawn as wood instead (they are excluded and count as exposed edges for neighbouring rock).
  */
-export function roomTileGrid(solid: (x: number, y: number) => boolean, special: (x: number, y: number) => boolean = () => false, cols = ROOM_COLS): number[] {
+export function roomTileGrid(solid: (x: number, y: number) => boolean, special: (x: number, y: number) => boolean = () => false, cols = ROOM_COLS, rows = ROOM_ROWS): number[] {
   const rock = (x: number, y: number): boolean =>
-    x < 0 || y < 0 || x >= cols || y >= ROOM_ROWS ? true : solid(x, y) && !special(x, y);
+    x < 0 || y < 0 || x >= cols || y >= rows ? true : solid(x, y) && !special(x, y);
   const out: number[] = [];
-  for (let y = 0; y < ROOM_ROWS; y++) for (let x = 0; x < cols; x++) {
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
     if (!rock(x, y) || x < 0) { out.push(-1); continue; }
     const mask = (rock(x, y - 1) ? 0 : 1) | (rock(x + 1, y) ? 0 : 2) | (rock(x, y + 1) ? 0 : 4) | (rock(x - 1, y) ? 0 : 8);
     out.push(tileIndex(materialAt(y), variantAt(x, y), mask));

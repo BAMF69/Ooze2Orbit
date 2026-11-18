@@ -5,23 +5,26 @@
 import { completeLevel, discover } from "./expedition";
 import type { Garden } from "./generations";
 import type { Adaptation, Difficulty, WaterRoom } from "./waterWorld";
-import { roomSpec } from "./levelgen/roomSpec";
+import { roomSpec, roomGeometry } from "./levelgen/roomSpec";
+import { sealTiles, exitTile, emergencyX } from "./levelgen/geometry";
 import { holds, type Key } from "./levelgen/keys";
 export interface RoomObjective { first: boolean; open: boolean; remaining: number; arenaActive?: boolean; arenaCleared?: boolean;
   rigging?: boolean; netArmed?: boolean; netCaught?: number; verticalOpen?: boolean; keyOpen?: boolean; bonusOpen?: boolean }
 export interface Cargo { samples: Adaptation[]; clears: Difficulty[] }
 export interface Valve { x: number; y: number; text: string }
-export const SEAL_TILES = [3, 35] as const, EXIT_TILE = 35;
 export const newObjective = (): RoomObjective => ({ first: false, open: false, remaining: 0 });
 export const newCargo = (): Cargo => ({ samples: [], clears: [] });
 export const valves = (r: WaterRoom): Valve[] => roomSpec(r).controls.map(({ x, y, text }) => ({ x, y, text }));
 export const leftExit = (r: WaterRoom): boolean => roomSpec(r).leftHatch !== null;
-export const objectiveBarrier = (r: WaterRoom, o: RoomObjective, tx: number): boolean =>
-  !!o.arenaActive && !o.arenaCleared && (tx === SEAL_TILES[0] || tx === SEAL_TILES[1]) || tx === EXIT_TILE && (leftExit(r) || !o.open);
+/** Seal walls while an arena is active, and the right exit wall until the room is solved (or always, for a left hatch). */
+export function objectiveBarrier(r: WaterRoom, o: RoomObjective, tx: number): boolean {
+  const g = roomGeometry(r), [sealL, sealR] = sealTiles(g);
+  return !!o.arenaActive && !o.arenaCleared && (tx === sealL || tx === sealR) || tx === exitTile(g) && (leftExit(r) || !o.open);
+}
 export const drainedRoom = (r: WaterRoom, o: RoomObjective): boolean => roomSpec(r).puzzle === "drain" && o.first && !o.open;
 export const canClaimSeal = (o: RoomObjective): boolean => o.open && o.remaining >= 0;
 export function emergencyRelease(r: WaterRoom, o: RoomObjective, x: number): RoomObjective {
-  return roomSpec(r).puzzle === "pressure" && !o.open && x > 565 ? { ...o, open: true, remaining: -1 } : o;
+  return roomSpec(r).puzzle === "pressure" && !o.open && x > emergencyX(roomGeometry(r)) ? { ...o, open: true, remaining: -1 } : o;
 }
 export function tickObjective(o: RoomObjective, dt: number): RoomObjective {
   if (o.remaining <= 0) return o;

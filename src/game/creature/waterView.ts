@@ -10,7 +10,8 @@ import { WATER, type WaterRoom } from "./waterWorld";
 import { challengeSolid, switchback } from "./waterChallenges";
 import { hasVent, ventPhase, encounterKinds, reedPatches } from "./waterEncounters";
 import type { Expedition } from "./expedition";
-import { waterline } from "./waterPhysics";
+import { roomGeometry } from "./levelgen/roomSpec";
+import { topEdgeY, floorY, surfaceY, exitTile, sealTiles, type WaterRegion } from "./levelgen/geometry";
 import { valves, leftExit, objectiveBarrier, type RoomObjective } from "./waterObjectives";
 import { netRig, netFrame } from "./waterTraps";
 import { roomSpec } from "./levelgen/roomSpec";
@@ -25,8 +26,9 @@ export const terrainSolid = (r: WaterRoom, e: Expedition, o: RoomObjective, x: n
 /** Solid cells drawn as wood rather than rock: the log sluice and the exit/arena barriers, between the
  *  ceiling (row 6, y=96) and the floor (row 19, y=304). Rock above and below stays rock. */
 export function woodColumn(r: WaterRoom, e: Expedition, o: RoomObjective, x: number, y: number): "sluice" | "barrier" | null {
-  if (y < WATER.ceiling / 16 || y >= WATER.floor / 16) return null;
-  if (x === 35 || x === 3 && o.arenaActive && !o.arenaCleared) return "barrier";
+  const geo = roomGeometry(r), [sealL] = sealTiles(geo);
+  if (y < geo.openTop || y >= geo.floorRow) return null;
+  if (x === exitTile(geo) || x === sealL && o.arenaActive && !o.arenaCleared) return "barrier";
   if (r.gate && !e.basinRaised && x === r.gateX / 16) return "sluice";
   return null;
 }
@@ -61,14 +63,14 @@ function drawReeds(g: G, x0: number, x1: number, tall = 0): void {
   }
 }
 
-function drawWater(g: G, line: number): void {
-  const depth = WATER.floor - line;
-  g.fillStyle(0x4fb6c9, 0.42).fillRect(144, line, 400, depth);
-  g.fillStyle(0x1f6a80, 0.35).fillRect(144, line + depth * 0.45, 400, depth * 0.55);
-  g.lineStyle(1.4, 0xbfeaf0, 0.95).beginPath(); g.moveTo(144, line);
-  for (let x = 144; x < 544; x += 8) g.lineTo(x + 8, line + ((x / 8) % 2 ? 1.2 : -1.2));
+function drawWater(g: G, w: WaterRegion, line: number): void {
+  const depth = WATER.floor - line, span = w.x1 - w.x0;
+  g.fillStyle(0x4fb6c9, 0.42).fillRect(w.x0, line, span, depth);
+  g.fillStyle(0x1f6a80, 0.35).fillRect(w.x0, line + depth * 0.45, span, depth * 0.55);
+  g.lineStyle(1.4, 0xbfeaf0, 0.95).beginPath(); g.moveTo(w.x0, line);
+  for (let x = w.x0; x < w.x1; x += 8) g.lineTo(x + 8, line + ((x / 8) % 2 ? 1.2 : -1.2));
   g.strokePath();
-  for (let x = 162; x < 540; x += 38) g.lineStyle(0.9, 0xd9f6fa, 0.6).lineBetween(x, line + 6, x + 12, line + 6);
+  for (let x = w.x0 + 18; x < w.x1 - 4; x += 38) g.lineStyle(0.9, 0xd9f6fa, 0.6).lineBetween(x, line + 6, x + 12, line + 6);
 }
 
 function drawFood(g: G, f: WaterFood): void {
@@ -84,7 +86,7 @@ function drawFood(g: G, f: WaterFood): void {
 /** Top of the first solid tile at or below a control's interaction point, so its base stands on real ground. */
 function surfaceBelow(r: WaterRoom, e: Expedition, o: RoomObjective, x: number, y: number): number {
   const tx = Math.floor(x / 16);
-  for (let ty = Math.floor((y - 8) / 16); ty < 23; ty++) if (terrainSolid(r, e, o, tx, ty)) return ty * 16;
+  for (let ty = Math.floor((y - 8) / 16); ty < roomGeometry(r).rows; ty++) if (terrainSolid(r, e, o, tx, ty)) return ty * 16;
   return WATER.floor;
 }
 
@@ -100,11 +102,12 @@ function drawLever(g: G, x: number, ground: number, active: boolean): void {
 export function drawWaterRoom(g: G, r: WaterRoom, e: Expedition, food: WaterFood[], _trap: boolean, clock: number, cache: boolean, objective: RoomObjective): void {
   const spec = roomSpec(r);
   // Light falling through top-route openings (decorative; the far background comes from RoomArt).
-  for (let x = 0; x < 40; x++) if (!terrainSolid(r, e, objective, x, 0) && !terrainSolid(r, e, objective, x, 5))
-    g.fillStyle(0xd8f0c8, 0.07).fillTriangle(x * 16 - 2, 96, x * 16 + 18, 96, x * 16 + 8 + (x < 20 ? 40 : -40), 304);
+  const geo = roomGeometry(r), top = topEdgeY(geo), floor = floorY(geo);
+  for (let x = 0; x < geo.cols; x++) if (!terrainSolid(r, e, objective, x, 0) && !terrainSolid(r, e, objective, x, geo.openTop - 1))
+    g.fillStyle(0xd8f0c8, 0.07).fillTriangle(x * 16 - 2, top, x * 16 + 18, top, x * 16 + 8 + (x < geo.cols / 2 ? 40 : -40), floor);
   // Wooden columns (sluice, barriers) in place of the rock tiles RoomArt leaves out.
   const wood = new Map<number, { kind: "sluice" | "barrier"; rows: number[] }>();
-  for (let y = 0; y < 23; y++) for (let x = 0; x < 40; x++) {
+  for (let y = 0; y < geo.rows; y++) for (let x = 0; x < geo.cols; x++) {
     const kind = woodColumn(r, e, objective, x, y);
     if (kind && terrainSolid(r, e, objective, x, y)) { const w = wood.get(x) ?? { kind, rows: [] }; w.rows.push(y); wood.set(x, w); }
   }
@@ -113,8 +116,8 @@ export function drawWaterRoom(g: G, r: WaterRoom, e: Expedition, food: WaterFood
   drawReeds(g, r.cover, r.cover + 96);
   for (const center of reedPatches(r).slice(1)) drawReeds(g, center - 28, center + 28, 4);
   for (const f of food) if (!f.taken) drawFood(g, f);
-  drawWater(g, waterline(e));
-  if (r.current) for (let x = 176; x < 540; x += 64) { stick(g, x + 16, 258, x, 258, 1.6, 0xd6f0f2); stick(g, x, 258, x + 5, 253, 1.6, 0xd6f0f2); }
+  for (const w of geo.water) drawWater(g, w, surfaceY(w, e.basinRaised));
+  if (r.current) for (const w of geo.water) for (let x = w.x0 + 32; x < w.x1 - 4; x += 64) { stick(g, x + 16, 258, x, 258, 1.6, 0xd6f0f2); stick(g, x, 258, x + 5, 253, 1.6, 0xd6f0f2); }
   if (r.branch !== -1) { // nursery branch: a vine-framed cave mouth
     g.fillStyle(0x0a1a1e).fillRoundedRect(112, 254, 28, 50, { tl: 14, tr: 14, bl: 0, br: 0 });
     g.lineStyle(4, INK).strokeRoundedRect(110, 252, 32, 52, { tl: 15, tr: 15, bl: 0, br: 0 });
@@ -122,11 +125,11 @@ export function drawWaterRoom(g: G, r: WaterRoom, e: Expedition, food: WaterFood
     for (const [x, y] of [[111, 268], [118, 254], [134, 254], [141, 266]]) { g.fillStyle(0xa9d68a).fillEllipse(x, y, 5, 8); g.lineStyle(0.8, INK).strokeEllipse(x, y, 5, 8); }
   }
   if (r.reward && !e.unlocked.includes(r.reward)) { // adaptation discovery: a glowing sample
-    g.fillStyle(0xe8d38e, 0.18 + 0.06 * Math.sin(clock * 3)).fillCircle(576, 282, 22);
-    g.lineStyle(3, INK).strokeCircle(576, 282, 16); g.lineStyle(2, 0xe8d38e).strokeCircle(576, 282, 16);
-    g.fillStyle(r.reward === "gills" ? 0x89c7ca : 0x9bd292).fillEllipse(576, 282, 18, 24); g.lineStyle(1.2, INK).strokeEllipse(576, 282, 18, 24);
+    g.fillStyle(0xe8d38e, 0.18 + 0.06 * Math.sin(clock * 3)).fillCircle(geo.width - 64, 282, 22);
+    g.lineStyle(3, INK).strokeCircle(geo.width - 64, 282, 16); g.lineStyle(2, 0xe8d38e).strokeCircle(geo.width - 64, 282, 16);
+    g.fillStyle(r.reward === "gills" ? 0x89c7ca : 0x9bd292).fillEllipse(geo.width - 64, 282, 18, 24); g.lineStyle(1.2, INK).strokeEllipse(geo.width - 64, 282, 18, 24);
   }
-  if (r.goal) { g.lineStyle(5, INK).strokeEllipse(600, 287, 24, 32); g.lineStyle(3, 0xe4be71).strokeEllipse(600, 287, 24, 32); }
+  if (r.goal) { g.lineStyle(5, INK).strokeEllipse(geo.width - 40, 287, 24, 32); g.lineStyle(3, 0xe4be71).strokeEllipse(geo.width - 40, 287, 24, 32); }
   for (const [n, v] of valves(r).entries()) drawLever(g, v.x, surfaceBelow(r, e, objective, v.x, v.y), objective.open || n === 0 && objective.first);
   if (spec.keyed) { // class door or grotto shaft: an inked stone frame with a seal
     const k = spec.keyed, done = objective[k.opens], c = done ? 0x94e0bc : k.opens === "keyOpen" ? 0xd99a6c : 0xb8a3e0;

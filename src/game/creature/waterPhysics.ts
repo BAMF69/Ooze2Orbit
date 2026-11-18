@@ -9,13 +9,23 @@ import { challengeSolid } from "./waterChallenges";
 import type { Expedition } from "./expedition";
 import type { Traits } from "./generations";
 import { drainedRoom, objectiveBarrier, type RoomObjective } from "./waterObjectives";
-export const waterline = (e: Expedition): number => e.basinRaised ? 224 : 288;
-export function inWater(b: Body, e: Expedition): boolean { return b.x >= 144 && b.x <= 544 && b.y > waterline(e); }
+import { roomGeometry } from "./levelgen/roomSpec";
+import { V1_GEOMETRY, regionAt, surfaceY, type RoomGeometry } from "./levelgen/geometry";
+/** The v1 surface height (one water region); rooms with their own water use waterlineAt. */
+export const waterline = (e: Expedition): number => surfaceY(V1_GEOMETRY.water[0], e.basinRaised);
+const geom = (room?: WaterRoom): RoomGeometry => room ? roomGeometry(room) : V1_GEOMETRY;
+/** Surface height of the water at x in this room (or of its first region when x is outside every region). */
+export const waterlineAt = (room: WaterRoom | undefined, e: Expedition, x: number): number => {
+  const g = geom(room); return surfaceY(regionAt(g, x) ?? g.water[0] ?? V1_GEOMETRY.water[0], e.basinRaised);
+};
+export function inWater(b: Body, e: Expedition, room?: WaterRoom): boolean {
+  const w = regionAt(geom(room), b.x); return !!w && b.y > surfaceY(w, e.basinRaised);
+}
 export function stepWaterBody(b: Body, room: WaterRoom, e: Expedition, traits: Traits,
   intent: { dir: number; vertical: number; jump: boolean; crouch: boolean; sprint: boolean; braced?: boolean; stunned?: boolean }, dt: number, objective?: RoomObjective): void {
   if (objective && drainedRoom(room, objective)) e = { ...e, basinRaised: false };
-  const wet = inWater(b, e), speed = traits.fins ? WATER.finSpeed : WATER.swimSpeed;
-  const breach = wet && intent.jump && b.y <= waterline(e) + 8;
+  const wet = inWater(b, e, room), speed = traits.fins ? WATER.finSpeed : WATER.swimSpeed, line = waterlineAt(room, e, b.x);
+  const breach = wet && intent.jump && b.y <= line + 8;
   b.h = intent.crouch && !wet ? CR.body.crouchH : CR.body.h;
   let dir = intent.dir, wantedSpeed: number = intent.crouch ? CR.move.crouchSpeed : intent.sprint ? CR.move.sprintSpeed : CR.move.runSpeed;
   if (wet && !intent.stunned) {
@@ -29,5 +39,5 @@ export function stepWaterBody(b: Body, room: WaterRoom, e: Expedition, traits: T
   stepBody(b, { dir, speed: wantedSpeed, jump: intent.jump && !wet }, dt, (x, y) =>
     !!objective && objectiveBarrier(room, objective, x) || challengeSolid(room, e.basinRaised, x, y, objective));
   // Swimming at the surface must not oscillate between falling and full jumping.
-  if (wet && !breach && b.x >= 144 && b.x <= 544 && b.y < waterline(e) + 2) { b.y = waterline(e) + 2; b.vy = 0; }
+  if (wet && !breach && regionAt(geom(room), b.x) && b.y < waterlineAt(room, e, b.x) + 2) { b.y = waterlineAt(room, e, b.x) + 2; b.vy = 0; }
 }

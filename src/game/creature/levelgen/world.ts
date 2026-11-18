@@ -14,6 +14,7 @@ import { buildRoom, climbScript, bonusThreshold, type Built, type Step } from ".
 import type { Opening, StateCondition } from "./roomSpec";
 import { LEVELGEN } from "./tuning";
 import { layoutLevel, mapProblems } from "./mapLayout";
+import { V1_GEOMETRY, arrivalMinX, arrivalMaxX, topEdgeY, floorY } from "./geometry";
 import type { ClassSkill } from "./keys";
 
 export interface WorldV2 extends WaterWorld { version: 2; starts: Record<Difficulty, number>; graph: BiomeGraph; solutions: Record<number, Step[]> }
@@ -103,18 +104,19 @@ export function worldProblemsV2(w: WorldV2): string[] {
     if (!goal || id !== -1) bad.add("connected paths");
   }
   for (const r of rooms) {
-    const s = r.spec!;
+    const s = r.spec!, g = s.geometry ?? V1_GEOMETRY, exitX = g.width - (WATER.width - WATER.exit);
     if (r.right !== -1 && byId.get(r.right)?.left !== r.id) bad.add("return routes");
     if (r.left !== -1 && !byId.has(r.left)) bad.add("return routes");
     if (r.gateX % 16 || r.gateX < 256 || r.gateX > 400 || r.platforms.some(p => p.x % 16 || p.y % 16 || p.width % 16)) bad.add("lattice geometry");
-    for (let x = WATER.spawn; x <= WATER.exit; x += 4) for (const tx of [Math.floor((x - 7) / 16), Math.floor((x + 6.999) / 16)])
-      if (roomSolid({ ...r, platforms: s.base.platforms ? r.platforms : [], tunnel: false }, true, tx, 17) || roomSolid(r, true, tx, 18)) bad.add("body clearance");
-    if (r.food.length < 4 || r.food.some(x => x < 96 || x > 560 || x % 16) || new Set(r.food).size !== r.food.length) bad.add("food spacing");
-    if (s.enemies.some(e => e.x < 352 || e.x > 560) || s.enemies.length > (r.tier === "easy" ? 1 : r.tier === "medium" ? 2 : 3)) bad.add("encounter safety");
+    for (let x = WATER.spawn; x <= exitX; x += 4) for (const tx of [Math.floor((x - 7) / 16), Math.floor((x + 6.999) / 16)])
+      if (roomSolid({ ...r, platforms: s.base.platforms ? r.platforms : [], tunnel: false }, true, tx, g.floorRow - 2, g) || roomSolid(r, true, tx, g.floorRow - 1, g)) bad.add("body clearance");
+    if (r.food.length < 4 || r.food.some(x => x < 96 || x > g.width - 80 || x % 16) || new Set(r.food).size !== r.food.length) bad.add("food spacing");
+    if (s.enemies.some(e => e.x < 352 || e.x > g.width - 80) || s.enemies.length > (r.tier === "easy" ? 1 : r.tier === "medium" ? 2 : 3)) bad.add("encounter safety");
     for (const op of s.openings) {
       const dest = byId.get(op.to.room); if (!dest || !dest.spec) { bad.add("arrival safety"); continue; }
       if (!dest.spec.openings.some(back => back.to.room === r.id && back.side !== op.side)) bad.add("return routes");
-      if (op.to.x < 24 || op.to.x > 616 || op.to.y < 96 || op.to.y > 304) bad.add("arrival safety");
+      const dg = dest.spec.geometry ?? V1_GEOMETRY;
+      if (op.to.x < arrivalMinX(dg) || op.to.x > arrivalMaxX(dg) || op.to.y < topEdgeY(dg) || op.to.y > floorY(dg)) bad.add("arrival safety");
       // No spawn damage: nothing may stand on the arrival point itself (tell ranges are the player's problem, as in v1).
       if (dest.spec.enemies.some(e => e.kind !== "swimmer" && Math.abs(e.x - op.to.x) < 60 && Math.abs(e.y - op.to.y) < 60)) bad.add("arrival safety");
     }

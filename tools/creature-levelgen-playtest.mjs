@@ -104,6 +104,20 @@ try {
   await page.evaluate(() => { const c = window.levelTest.scene; Object.assign(c.garden.traits, { gills: false, fins: false }); c.garden.expedition.unlocked = ['gills', 'fins']; c.heirs = []; c.enter(-1, 112); c.explored = true; c.endLife('Nest fixture.'); c.mode = 'heir'; c.draw(); });
   assert.match(await page.evaluate(() => document.body.innerText), /PLAN YOUR LINEAGE/, 'daughter screen plans the generations');
   await shot(page, '07-daughter-plan');
+  // Step 1 (size-agnostic rooms): a generated lever room stretched to two screens scrolls, draws and exits correctly.
+  await page.evaluate(() => {
+    const c = window.levelTest.scene, r = c.world.rooms[1], width = 1280;
+    c.world.rooms[1] = { ...r, spec: { ...r.spec, geometry: { cols: 80, rows: 23, width, height: 360, openTop: 6, floorRow: 19,
+      water: [{ x0: 144, x1: width - 96, low: 288, raised: 224 }], enemyMinX: 72, enemyMaxX: width - 60 } } };
+    c.close(); c.rooms.clear(); c.enter(1, 48); c.enemies.forEach(e => { e.incapacitated = true; });
+  });
+  await page.evaluate(() => { const { scene: c, shell } = window.levelTest; shell.input.hold('levelgen', ['move_right', 'pace']); for (let n = 0; n < 600 && c.body.x < 1000; n++) c.update(0, 1000 / 60); shell.input.clearHeld(); for (let n = 0; n < 60; n++) c.update(0, 1000 / 60); });
+  await page.evaluate(() => window.levelTest.game.loop.wake()); await page.waitForTimeout(400); // camera follow runs in Phaser's loop
+  const wide = await page.evaluate(() => { const c = window.levelTest.scene, cam = c.cameras.main; return { x: c.body.x, scroll: cam.scrollX, bounds: cam.getBounds().width, room: c.room }; });
+  assert.ok(wide.x > 900 && wide.room === 1, `walked into the second screen: ${JSON.stringify(wide)}`);
+  assert.ok(wide.scroll > 300 && wide.bounds === 1280, `camera follows across the wide room: ${JSON.stringify(wide)}`);
+  await page.evaluate(() => window.levelTest.game.loop.sleep());
+  await shot(page, '10-two-screen-room');
   const phone = await open({ width: 390, height: 844 }); await fixture(phone, 11); await shot(phone, '04-phone-class-door');
   await fixture(phone, 9, { fins: true, gills: true }); await shot(phone, '08-phone-rack');
   assert.deepEqual(errors, []);
