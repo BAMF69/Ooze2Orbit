@@ -195,17 +195,39 @@ the autobattler were considered and **dropped** (BAMF69 2026-11-17) in favor of 
 | Mode | Reference | Core idea | Aggressive way | Cautious way | Build order *(Claude's pick)* |
 |---|---|---|---|---|---|
 | **Tower wars** (built) | Line Tower Wars, Legion TD | Your maze against their sends, your sends against their maze | Destroy their base | Out-earn them about 5 to 1 | Done |
-| **Hero lane wars** | Hero Line Wars | Your hero holds a lane while you send units at the enemy hero | Kill their hero and base | Outlast their sends and out-earn them | 1st: tower wars plus the hero, nearly free |
-| **Tug-of-war** | Castle Fight | Build structures that spawn units on their own; the units march and fight without orders | Push the front to their base | Hold the line while your economy grows | 2nd: pure spawners, no unit control |
-| **Frenzy** | Footmen Frenzy | Bases spawn units on a timer; you level the hero and choose upgrades, often in teams | Break the enemy bases | Hold yours longest | 3rd: adds teams and hero upgrades |
+| **Hero lane wars** (required, 2026-11-18) | Hero Line Wars | Your hero holds a lane while you send units at the enemy hero | Kill their hero and base | Outlast their sends and out-earn them | 1st: tower wars plus the hero, nearly free |
+| **Tug-of-war** (required, 2026-11-18) | Castle Fight | Build structures that spawn units on their own; the units march and fight without orders | Push the front to their base | Hold the line while your economy grows | 2nd: pure spawners, no unit control |
+| **Frenzy** (optional, 2026-11-18) | Footmen Frenzy | Bases spawn units on a timer; you level the hero and choose upgrades, often in teams | Break the enemy bases | Hold yours longest | 4th, after the required three |
 | **Survival** (BAMF69 2026-11-17) | Hero Siege | The hero and defenses hold out against waves that keep growing | Hunt down the wave spawners | Survive every wave | 4th |
 | **Stealth mission** (BAMF69 2026-11-17) | Sheep Tag (the hide-and-hunt idea) | The hero slips through a guarded settlement to reach a goal | Strike the target and fight out | Reach it unseen | 5th: reuses the creature stage's readable stealth |
 
 ### Where the modes appear
-- **Civilization stage:** a campaign across the planet's regions, each in a set mode *(Claude's pick: the first
-  region is tower wars, then a new mode per region, so each one is taught before it is mixed)*. Whether the order is
-  fixed or partly random is still open.
+- **Civilization stage:** a campaign (below).
 - **Space stage:** guiding other species' civilizations as the Gardener (`docs/stages/05-space.md`, "Landing").
+
+### The campaign *(BAMF69 2026-11-18)*
+- **To finish the stage, beat three modes at three difficulties each:** tower wars, tug-of-war (Castle Fight) and hero
+  lane wars, each on **easy, medium and hard**. Nine required battles.
+- **Frenzy (Footmen Frenzy) is optional:** a side battle with its own reward, not needed to finish *(Claude's pick:
+  it opens once the three easy battles are won, and its reward is an extra technology for the space stage)*.
+- **Survival and stealth missions** stay in the design for later (space landings, a future campaign update); they are
+  not part of this campaign.
+- **Order** *(Claude's pick)*: all three easies first (tower wars, then tug-of-war, then hero lane wars), then the
+  mediums, then the hards. Each mode is taught at easy before any mode gets harder. Within a difficulty, the player
+  plays the battles in the set order (the player does not pick modes, 2026-11-17).
+- **Tower wars difficulty grows the battlefield** (BAMF69 2026-11-18): each difficulty is a **bigger playfield with
+  random obstacles** that can get in the way of the maze. *(Claude's picks: easy is today's 11x7 maze with no or few
+  obstacles, medium about 15x9, hard about 19x11; obstacles are seeded per battle, placed before building starts, and
+  never close the path from entry to exit.)* The rival's waves and defenses scale too.
+- **Tug-of-war and hero lane wars difficulty** *(Claude's pick, to tune)*: a stronger, smarter rival with a bigger
+  economy and faster escalation; hard adds a second lane where the mode supports it.
+- **Campaign progress saves between battles**, so the player can stop after any battle and Continue *(Claude's pick;
+  Toy 2 has no mid-match save, which can stay)*.
+- **What goes to the space stage** *(Claude's pick)*: the victory type is the win method used most across the
+  campaign (enemy base destroyed vs. out-earned); technology heritage is the most-used towers, spawners and sends
+  across all battles.
+- **Every mode and difficulty can also be launched on its own** *(Claude's pick)*, so space-stage contested worlds can
+  reuse them (`docs/stages/05-space.md`, "Landing").
 
 ## The Gardener's levers *(the Gardener rule, BAMF69 2026-11-10; levers are Claude's picks)*
 
@@ -269,7 +291,7 @@ The space stage (built) reads the old victory types (conquest, trade, faith); it
 ## Open questions
 | Question | Why it matters |
 |---|---|
-| How many regions in the campaign, and is the order fixed or partly random? (BAMF69 2026-11-17: a campaign, the player does not pick modes) | The stage's length |
+| Tug-of-war and hero lane wars: what exactly makes medium and hard harder? (Claude's pick above, to tune) | The campaign's difficulty curve |
 | What does each new mode need that tower wars lacks (teams, spawners, hero upgrades, guard AI)? | Build cost per mode |
 | What happens if your base falls? *(Claude's pick: you lose that battle with a setback and fight again)* | Pillar 1: no game over for the Gardener |
 | Which resources, exactly? | Fewer is easier to read |
