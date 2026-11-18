@@ -25,7 +25,7 @@ const e = { ...freshExpedition(0), basinRaised: true, torrentDiverted: true }, t
 
 describe("Size-agnostic rooms", () => {
   it("defaults every one-screen room to the v1 numbers", () => {
-    for (const r of w.rooms) expect(roomGeometry(r)).toBe(V1_GEOMETRY);
+    for (const r of w.rooms) if (r.spec!.puzzle !== "channel") expect(roomGeometry(r)).toBe(V1_GEOMETRY);
     expect([exitTile(V1_GEOMETRY), rightEdgeX(V1_GEOMETRY), goalX(V1_GEOMETRY), bottomEdgeY(V1_GEOMETRY)]).toEqual([35, 625, 550, 338]);
   });
   it("scales collision bounds, the exit wall and the arena seal with the room", () => {

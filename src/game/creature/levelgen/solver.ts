@@ -11,7 +11,7 @@
 import { newBody, type Body } from "../physics";
 import { stepWaterBody, inWater, waterlineAt } from "../waterPhysics";
 import { WATER, type WaterRoom } from "../waterWorld";
-import { newObjective, useValve, useKeyed, tickObjective, canClaimSeal, type RoomObjective } from "../waterObjectives";
+import { newObjective, initialObjective, useValve, useKeyed, tickObjective, canClaimSeal, type RoomObjective } from "../waterObjectives";
 import { verticalArrival } from "../waterRoutes";
 import type { Expedition } from "../expedition";
 import type { Traits } from "../generations";
@@ -24,7 +24,7 @@ export interface RunResult { ok: boolean; step: number; reason: string; frames: 
 const DT = 1 / 60, FRAMES_PER_STEP = 1800;
 
 const REACH = { x: 28, y: 25 }; // useValve / useKeyed proximity (waterObjectives.ts)
-export function runScript(r: WaterRoom, e: Expedition, script: Step[], traits: Traits, keys: ReadonlySet<Key>, start: { x: number; y: number } = { x: WATER.spawn, y: WATER.floor }, objective = newObjective()): RunResult {
+export function runScript(r: WaterRoom, e: Expedition, script: Step[], traits: Traits, keys: ReadonlySet<Key>, start: { x: number; y: number } = roomSpec(r).start ?? { x: WATER.spawn, y: WATER.floor }, objective = initialObjective(r)): RunResult {
   const s = roomSpec(r), g = roomGeometry(r), b = newBody(start.x, start.y); let o = objective, frames = 0, falls = 0; const log: string[] = [];
   const fail = (step: number, reason: string): RunResult => ({ ok: false, step, reason, frames, falls, objective: o, body: b, log });
   const settled = (): boolean => (b.onGround || inWater(b, e, r)) && Math.abs(b.vx) < 25; // momentum would carry the next move
@@ -59,7 +59,8 @@ export function runScript(r: WaterRoom, e: Expedition, script: Step[], traits: T
     if (step.use === "hatch") { if (!s.leftHatch || !o.open || Math.abs(b.x - s.leftHatch.x) >= REACH.x || Math.abs(b.y - s.leftHatch.y) >= REACH.y) return fail(i, `hatch not usable at ${b.x.toFixed(0)},${b.y.toFixed(0)} open=${o.open}`); }
     if (step.use === "reward" && !(r.reward && b.x > goalX(g))) return fail(i, "reward not in reach");
     // Past the exit wall of a goal room the player claims the seal, which latches a timed gate open (scene interact()).
-    if (step.use === "right" && r.goal && canClaimSeal(o)) { o = { ...o, remaining: 0 }; log.push("seal claimed"); }
+    if ((step.use === "right" || step.use === "claim") && r.goal && canClaimSeal(o)) { o = { ...o, remaining: 0 }; log.push("seal claimed"); }
+    if (step.use === "claim" && !(r.goal && b.x > goalX(g) && o.open)) return fail(i, `seal not claimable at ${b.x.toFixed(0)} open=${o.open}`);
     // Leaving through the top and coming back arrives at the shaft's top entry; stand in for the branch visit.
     if (step.use === "top") { b.y = 100; b.vy = 0; b.vx = 0; }
   }

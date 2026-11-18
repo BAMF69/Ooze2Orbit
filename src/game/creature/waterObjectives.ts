@@ -9,15 +9,19 @@ import { roomSpec, roomGeometry } from "./levelgen/roomSpec";
 import { sealTiles, exitTile, emergencyX } from "./levelgen/geometry";
 import { holds, type Key } from "./levelgen/keys";
 export interface RoomObjective { first: boolean; open: boolean; remaining: number; arenaActive?: boolean; arenaCleared?: boolean;
-  rigging?: boolean; netArmed?: boolean; netCaught?: number; verticalOpen?: boolean; keyOpen?: boolean; bonusOpen?: boolean }
+  rigging?: boolean; netArmed?: boolean; netCaught?: number; verticalOpen?: boolean; keyOpen?: boolean; bonusOpen?: boolean; farOpen?: boolean }
 export interface Cargo { samples: Adaptation[]; clears: Difficulty[] }
 export interface Valve { x: number; y: number; text: string }
 export const newObjective = (): RoomObjective => ({ first: false, open: false, remaining: 0 });
+/** The state a lone check (search, script) starts a room in. A channel is only ever entered through an open hatch, so
+ *  both of its hatches start open there; in play the scene derives them from the rooms above (verticalOpenFrom, farOpenFrom). */
+export const initialObjective = (r: WaterRoom): RoomObjective => roomSpec(r).puzzle === "channel" ? { ...newObjective(), verticalOpen: true, farOpen: true } : newObjective();
 export const newCargo = (): Cargo => ({ samples: [], clears: [] });
 export const valves = (r: WaterRoom): Valve[] => roomSpec(r).controls.map(({ x, y, text }) => ({ x, y, text }));
 export const leftExit = (r: WaterRoom): boolean => roomSpec(r).leftHatch !== null;
 /** Seal walls while an arena is active, and the right exit wall until the room is solved (or always, for a left hatch). */
 export function objectiveBarrier(r: WaterRoom, o: RoomObjective, tx: number): boolean {
+  if (roomSpec(r).puzzle === "channel") return false; // no exit wall: a channel is closed by its own end walls
   const g = roomGeometry(r), [sealL, sealR] = sealTiles(g);
   return !!o.arenaActive && !o.arenaCleared && (tx === sealL || tx === sealR) || tx === exitTile(g) && (leftExit(r) || !o.open);
 }

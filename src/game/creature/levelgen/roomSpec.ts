@@ -20,8 +20,10 @@ export const roomGeometry = (r: WaterRoom): RoomGeometry => roomSpec(r).geometry
 export interface Point { x: number; y: number }
 /** Inclusive tile rectangle; -99/99 stand for "to the edge" so bounds rules read naturally. */
 export interface TileRect { x0: number; x1: number; y0: number; y1: number }
-export type Puzzle = "lever" | "drain" | "shaft" | "pressure";
-export type StateCondition = "open" | "verticalOpen" | "keyOpen" | "bonusOpen";
+export type Puzzle = "lever" | "drain" | "shaft" | "pressure" | "channel";
+/** farOpen: a channel's far hatch, open while the room above it is solved (step 1.6 loops). */
+/** latched: open with no timer running, i.e. a finale whose seal is claimed (or emergency-released). */
+export type StateCondition = "open" | "verticalOpen" | "keyOpen" | "bonusOpen" | "farOpen" | "latched";
 export interface Control { x: number; y: number; text: string; guarded: boolean }
 export interface EnemySpawn { kind: EnemyKind; x: number; y: number }
 /** Extra collision over the base room. `stateOnly` rules exist only when an objective state is supplied;
@@ -42,6 +44,10 @@ export interface RoomSpec {
   pits: Pit[]; switchback: boolean;
   collision: CollisionRule[]; base: { platforms: boolean; tunnel: boolean; gate: boolean };
   openings: Opening[]; verticalOpenFrom: number | null;
+  /** Room whose solved state opens this room's "farOpen" openings (a channel's hatch under the finale). */
+  farOpenFrom?: number | null;
+  /** Where a search or script starts when the room is not entered from its left edge (a channel: its drain drop). */
+  start?: Point;
   returnArrival: { x: number; y: number; facing: number } | null; arriveFromRight: { x: number; y: number; facing: number };
   branchArchX: number | null; hint: { priority: string | null; fallback: string };
   keyed: KeyedControl | null; variant?: string;
@@ -57,7 +63,8 @@ export function roomSpec(r: WaterRoom): RoomSpec {
 }
 const inRect = (q: TileRect, x: number, y: number): boolean => x >= q.x0 && x <= q.x1 && y >= q.y0 && y <= q.y1;
 const met = (when: StateCondition | undefined, o: RoomObjective | undefined): boolean =>
-  !when || (when === "open" ? !!o?.open : when === "verticalOpen" ? !!o?.verticalOpen : when === "keyOpen" ? !!o?.keyOpen : !!o?.bonusOpen);
+  !when || (when === "open" ? !!o?.open : when === "verticalOpen" ? !!o?.verticalOpen : when === "keyOpen" ? !!o?.keyOpen : when === "farOpen" ? !!o?.farOpen : when === "latched" ? latched(o) : !!o?.bonusOpen);
+export const latched = (o: RoomObjective | undefined): boolean => !!o?.open && o.remaining <= 0;
 export const conditionMet = met;
 export const openingRect = (op: Opening): TileRect => ({ x0: op.tiles[0], x1: op.tiles[1], y0: op.side === "top" ? -99 : 19, y1: op.side === "top" ? 5 : 99 });
 
@@ -68,8 +75,8 @@ export function specSolid(r: WaterRoom, raised: boolean, x: number, y: number, o
   const s = roomSpec(r), g = s.geometry ?? V1_GEOMETRY;
   if (x < -2 || y < -2 || x > g.cols + 1 || y > g.rows + 1) return specSolidRaw(r, raised, x, y, o);
   // Everything the rules read: raised water, state flags, and the rule list sizes (a spec edited later re-keys).
-  const bits = (raised ? 1 : 0) | (o ? 2 : 0) | (o?.open ? 4 : 0) | (o?.verticalOpen ? 8 : 0) | (o?.keyOpen ? 16 : 0) | (o?.bonusOpen ? 32 : 0);
-  const key = ((s.collision.length * 64 + s.openings.length) * 16 + s.pits.length) * 64 + bits; // numeric: built per query
+  const bits = (raised ? 1 : 0) | (o ? 2 : 0) | (o?.open ? 4 : 0) | (o?.verticalOpen ? 8 : 0) | (o?.keyOpen ? 16 : 0) | (o?.bonusOpen ? 32 : 0) | (o?.farOpen ? 64 : 0) | (latched(o) ? 128 : 0);
+  const key = ((s.collision.length * 64 + s.openings.length) * 16 + s.pits.length) * 256 + bits; // numeric: built per query
   let rooms = solidCache.get(r); if (!rooms) { rooms = new Map(); solidCache.set(r, rooms); }
   const w = g.cols + 4, h = g.rows + 4;
   let grid = rooms.get(key);

@@ -17,6 +17,11 @@ export const LEVELGEN = {
   /** Rooms on the critical chain per difficulty: [min, max]. Branches and vaults come on top. */
   chain: { easy: [3, 4], medium: [3, 4], hard: [4, 5] } as Record<"easy" | "medium" | "hard", [number, number]>,
   branches: { nursery: 1, vaultChance: 0.6 }, // Easy always has the nursery; vaults are optional per level
-  pacing: { maxSameRole: 3, maxSpikesInRow: 2 }, // no four same-role rooms or three sealed rooms in a row
+  // No four same-role rooms or three sealed rooms in a row; a food cache within three rooms of every Hard spike.
+  // Three same-role rooms are allowed because Easy teaches the lever twice before its arena (CREATURE_LEVELGEN.md §5).
+  pacing: { maxSameRole: 3, maxSpikesInRow: 2, recoveryWithin: 3 },
+  // An arrival gives the player this many seconds before any enemy that detects it can strike (its tell plus its
+  // approach at full speed): invariant 11's tell range, as time rather than distance.
+  arrivalReaction: 1.2,
   lineage: { maxGenerations: 20 }, // the simulator gives up after this many generations without a goal
 } as const;

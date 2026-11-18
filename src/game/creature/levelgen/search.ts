@@ -17,7 +17,7 @@
 import { newBody, type Body } from "../physics";
 import { stepWaterBody, inWater, waterlineAt } from "../waterPhysics";
 import { WATER, type WaterRoom } from "../waterWorld";
-import { newObjective, useValve, useKeyed, canClaimSeal, canCollectReward, type RoomObjective } from "../waterObjectives";
+import { initialObjective, useValve, useKeyed, canClaimSeal, canCollectReward, type RoomObjective } from "../waterObjectives";
 import { verticalArrival } from "../waterRoutes";
 import { guardedControl, CONTROL_SECONDS } from "../waterCombatRooms";
 import type { Expedition } from "../expedition";
@@ -54,7 +54,7 @@ const GROUND_MOVES: Move[] = [
 const WATER_MOVES: Move[] = [-1, 0, 1].flatMap(dir => [-1, 0, 1].filter(v => dir !== 0 || v !== 0).map(vertical => ({ dir, vertical, jump: false, sprint: false, frames: 14, hold: false })));
 const BREACH_MOVES: Move[] = [-1, 0, 1].flatMap(dir => [false, true].filter(s => dir !== 0 || !s).map(sprint => ({ dir, vertical: -1, jump: true, sprint, frames: 90, hold: true })));
 
-const keyOf = (o: RoomObjective): string => [o.first, o.open, o.keyOpen, o.bonusOpen, o.verticalOpen, o.arenaActive && !o.arenaCleared].map(Number).join("");
+const keyOf = (o: RoomObjective): string => [o.first, o.open, o.keyOpen, o.bonusOpen, o.verticalOpen, o.farOpen, o.arenaActive && !o.arenaCleared].map(Number).join("");
 
 /** One move from a stopped body; returns where it settles, or an exit event. */
 function simulate(r: WaterRoom, g: RoomGeometry, e: Expedition, t: Traits, o: RoomObjective, from: Node, m: Move, avoid?: (x: number, y: number) => boolean):
@@ -94,12 +94,12 @@ function simulate(r: WaterRoom, g: RoomGeometry, e: Expedition, t: Traits, o: Ro
 
 /** Search one room. Layers are objective states; each layer is a frame-weighted search over settled positions. */
 export function searchRoom(r: WaterRoom, e: Expedition, t: Traits, keys: ReadonlySet<Key>, opt: SearchOptions = {}): SearchResult {
-  const s = roomSpec(r), g = roomGeometry(r), maxNodes = opt.maxNodes ?? 6000, slack = opt.timerSlack ?? 0.25;
+  const s = roomSpec(r), g = roomGeometry(r), maxNodes = (opt.maxNodes ?? 6000) * Math.max(1, g.cols / 40), slack = opt.timerSlack ?? 0.25;
   const reached: SearchResult["reached"] = { right: false, left: false, hatch: false, goal: false, reward: false, openings: [], controls: [], keyed: false };
   const reasons: string[] = [], positions: { x: number; y: number }[] = []; let pitFalls = 0, nodes = 0, framesToExit: number | null = null, returned = false;
-  const start0 = opt.start ?? { x: WATER.spawn, y: WATER.floor };
+  const start0 = opt.start ?? s.start ?? { x: WATER.spawn, y: WATER.floor };
   // A sealed arena closes behind the player: without handling its threats, the seal is up.
-  const initial: RoomObjective = { ...newObjective(), ...(s.sealed && !opt.threatsHandled ? { arenaActive: true, arenaCleared: false } : s.sealed ? { arenaActive: true, arenaCleared: true } : {}) };
+  const initial: RoomObjective = { ...initialObjective(r), ...(s.sealed && !opt.threatsHandled ? { arenaActive: true, arenaCleared: false } : s.sealed ? { arenaActive: true, arenaCleared: true } : {}) };
   const layers: { o: RoomObjective; starts: Node[]; timed: boolean }[] = [{ o: initial, starts: [{ ...start0, frames: 0 }], timed: false }];
   const seenLayers = new Set<string>();
   let finalLeft = false;
@@ -118,7 +118,8 @@ export function searchRoom(r: WaterRoom, e: Expedition, t: Traits, keys: Readonl
     for (const st of layer.starts) { const settled = simulate(r, g, e, t, o, st, { dir: 0, vertical: 0, jump: false, sprint: false, frames: 1, hold: false }); if (settled.node) push(settled.node); }
     let layerLeft = false, layerExit = false, transitions = 0;
     // What solves this room: the seal for goal rooms, the sample for branch rooms, otherwise the onward exit.
-    const target: "goal" | "reward" | "exit" = r.goal ? "goal" : r.reward && s.returnArrival ? "reward" : "exit";
+    // A channel has no exit of its own: it is solved when every hatch it joins can be reached (and so returned through).
+    const target: "goal" | "reward" | "exit" | "openings" = r.goal ? "goal" : r.reward && s.returnArrival ? "reward" : s.puzzle === "channel" ? "openings" : "exit";
     // A layer ends early once it changes the room's state (the next layer re-explores under the new collision), or once
     // it has both solved the room and found the way back; otherwise it explores everything reachable.
     while (frontier.length && nodes < maxNodes * (seenLayers.size) && !(transitions > 0 && opt.exhaustive !== true) && !(layerExit && layerLeft)) {
@@ -147,7 +148,12 @@ export function searchRoom(r: WaterRoom, e: Expedition, t: Traits, keys: Readonl
         const res = simulate(r, g, e, t, o, n, m, opt.avoid);
         if (res.exit === "left") { reached.left = true; layerLeft = true; continue; }
         if (res.exit === "right") { if (withinTimer(n.frames + m.frames)) { reached.right = true; if (target === "exit") layerExit = true; noteExit(n.frames + m.frames); } else reasons.push("timer too short"); continue; }
-        if (res.opening !== undefined) { if (!reached.openings.includes(res.opening)) reached.openings.push(res.opening); if (s.returnArrival) layerLeft = true; continue; }
+        if (res.opening !== undefined) {
+          if (!reached.openings.includes(res.opening)) reached.openings.push(res.opening);
+          if (s.returnArrival) layerLeft = true;
+          if (target === "openings" && s.openings.every(op => reached.openings.includes(op.to.room))) layerExit = layerLeft = true;
+          continue;
+        }
         if (res.pit) { pitFalls++; push({ x: s.pits[0].recoverX, y: WATER.floor, frames: n.frames + m.frames + 30 }); continue; }
         if (res.node) push(res.node);
       }
@@ -159,8 +165,8 @@ export function searchRoom(r: WaterRoom, e: Expedition, t: Traits, keys: Readonl
     function noteExit(frames: number): void { const f = frames - layer.starts[0].frames; framesToExit = framesToExit === null ? f : Math.min(framesToExit, f); }
   }
   const exitReached = reached.right || reached.hatch;
-  const solved = r.goal ? reached.goal : r.reward && s.returnArrival ? reached.reward : exitReached;
-  if (!solved) reasons.push(r.goal ? "goal unreachable" : r.reward ? "reward unreachable" : "exit unreachable");
+  const solved = r.goal ? reached.goal : r.reward && s.returnArrival ? reached.reward : s.puzzle === "channel" ? s.openings.every(op => reached.openings.includes(op.to.room)) : exitReached;
+  if (!solved) reasons.push(r.goal ? "goal unreachable" : r.reward ? "reward unreachable" : s.puzzle === "channel" ? "hatch unreachable" : "exit unreachable");
   if (solved && !returned && !(r.reward && s.returnArrival && finalLeft)) reasons.push("no way back");
   return { solved, returned: returned || !!(r.reward && s.returnArrival && finalLeft), reached, framesToExit, pitFalls, nodes, layers: seenLayers.size, reasons: [...new Set(reasons)], positions };
 }

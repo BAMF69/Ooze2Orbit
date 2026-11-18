@@ -32,7 +32,7 @@ import { challengeSolid, clearWaterLine } from "./creature/waterChallenges";
 import { newObjective, newCargo, valves, useKeyed, canCollectReward, drainedRoom, tickObjective, useValve, bankCargo, objectiveBarrier, canClaimSeal, emergencyRelease, type RoomObjective, type Cargo } from "./creature/waterObjectives";
 import { arenaRoom, activeThreat, encounterLock, sealedEncounter, guardedControl, CONTROL_SECONDS, advanceOperation, canIncapacitate, type Operation } from "./creature/waterCombatRooms";
 import { netRig, netFrame, useNet, netCatches } from "./creature/waterTraps";
-import { roomSpec, roomGeometry } from "./creature/levelgen/roomSpec";
+import { latched, roomSpec, roomGeometry } from "./creature/levelgen/roomSpec";
 import { rightEdgeX, leftEdgeX, bottomEdgeY, goalX, regionAt, type RoomGeometry } from "./creature/levelgen/geometry";
 import { verticalArrival, horizontalReturn, pitRoom } from "./creature/waterRoutes";
 import { StageUi, action, type StageAction } from "./stageUi";
@@ -215,6 +215,7 @@ export class CreatureScene extends Phaser.Scene {
     this.trap = old?.trap ?? false; this.foodCache = old?.cache ?? false;
     this.objective = old?.objective ? { ...old.objective } : newObjective();
     if (spec.verticalOpenFrom !== null && this.rooms.get(spec.verticalOpenFrom)?.objective.open) this.objective.verticalOpen = true;
+    if (spec.farOpenFrom != null) this.objective.farOpen = latched(this.rooms.get(spec.farOpenFrom)?.objective); // a channel's finale hatch
     this.landmarks = valves(r).map((v, n) => this.add.text(v.x, v.y - 24, `${n + 1} · ${v.text.split(" · ").at(-1)}${guardedControl(r, n) ? " · E + stay 2s" : ""}`, { fontFamily: "monospace", fontSize: "10px", color: "#fff0bd", backgroundColor: "#172b2a", padding: { x: 3, y: 3 } }).setOrigin(0.5, 1).setDepth(7));
     if (spec.keyed) this.landmarks.push(this.add.text(spec.keyed.x, spec.keyed.y - 40, spec.keyed.opens === "keyOpen" ? `E: ${r.name.toUpperCase()}\n${(spec.variant ?? "").replace("tool", "tool use").toUpperCase()} LINEAGE` : "E: GROTTO SHAFT", { fontFamily: "monospace", fontSize: "10px", color: "#f0d79c", align: "center", backgroundColor: "#172b2a" }).setOrigin(0.5, 1).setDepth(7));
     if (spec.leftHatch) this.landmarks.push(this.add.text(spec.leftHatch.x, spec.leftHatch.y - 40, "← ONWARD HATCH\nReturn after both controls", { fontFamily: "monospace", fontSize: "10px", color: "#bfe7d8", align: "center" }).setOrigin(0.5, 1).setDepth(7));

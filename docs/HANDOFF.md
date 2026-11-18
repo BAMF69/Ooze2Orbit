@@ -1,5 +1,14 @@
 # Handoff
 
+## Creature level generator, step 1.6 (feat/creature-rooms, 2026-11-18, uncommitted)
+Foundation fixes from the independent review are built on top of f32bbae: ManiaMap multi-cell layout port (BSD-3,
+ADR 0008, `THIRD_PARTY_LICENSES.md` shipped in dist/), a real underchannel cycle in Medium and Hard (drain floor to
+a hatch behind the finale, opened once the seal is claimed), cycles counted from edges, stable class-door variants,
+sphere search (3 generations to Hard), amended pacing with a Hard recovery rule, Gardener placement check, and a
+`specSolid` validator with arrival tell-range timing. Details and proof levels: `docs/CREATURE_LEVELGEN.md`
+"Step 1.6". Next: BAMF69 plays a Medium seed and drops through the finale hatch; then step 2 (segment stitcher).
+Commit/push only on request.
+
 ## Creature level generator (levelgen worktree, 2026-11-17)
 Branch `feat/creature-levelgen` from `feat/creature-remaster` (5a2f3a9). New Water worlds come from a
 progression graph (critical chain, loops, nursery, class trials keyed on the temperament class skill,

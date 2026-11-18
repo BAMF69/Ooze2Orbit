@@ -7,7 +7,8 @@
 // Usage   : layoutLevel(world, tier) -> MapLayout ; mapProblems(layout) -> string[] (empty = coherent)
 // Notes   : Pure. Rooms are one screen, so one cell, unless a second connection lands somewhere the first
 //           placement cannot reach: then the destination grows by exactly the cell the door needs (the drain's
-//           floor drop makes the following shaft an L-shape that reaches under the drain).
+//           floor drop makes the following shaft an L-shape that reaches under the drain). Generated worlds since
+//           step 1.6 carry the graph's ManiaMap layout (multi-cell rooms, doors on any side) and use it directly.
 // Authored: Written with Claude (Opus 5.5).
 // ---------------------------------------------------------------------------
 import type { Difficulty, WaterWorld, WaterRoom } from "../waterWorld";
@@ -31,7 +32,19 @@ function links(r: WaterRoom): { to: number; side: DoorSide }[] {
   for (const op of roomSpec(r).openings) out.push({ to: op.to.room, side: op.side });
   return out;
 }
+/** A generated world carries its ManiaMap layout (levelgen/maniamap.ts via graph.ts): read it as is. */
+type WithMaps = WaterWorld & { maps?: Partial<Record<Difficulty, { cells: Record<number, Cell[]>; doors: Door[] }>> };
 export function layoutLevel(w: WaterWorld, tier: Difficulty): MapLayout {
+  const saved = (w as WithMaps).maps?.[tier];
+  if (saved) {
+    const level = w.rooms.filter(r => r.tier === tier);
+    const rooms = new Map(Object.entries(saved.cells).map(([id, cells]) => [Number(id), cells.map(c => ({ ...c }))]));
+    return { tier, rooms, doors: saved.doors.map(d => ({ ...d })), unplaced: level.filter(r => !rooms.has(r.id)).map(r => r.id) };
+  }
+  return deriveLayout(w, tier);
+}
+/** v1 worlds (and generated worlds whose layout failed) derive a map from their links, growing L-shapes as needed. */
+function deriveLayout(w: WaterWorld, tier: Difficulty): MapLayout {
   const level = w.rooms.filter(r => r.tier === tier), byId = new Map(level.map(r => [r.id, r]));
   const rooms = new Map<number, Cell[]>(), doors: Door[] = [], start = entryOf(w, tier);
   rooms.set(start, [{ x: 0, y: 0 }]);
@@ -72,7 +85,7 @@ export function mapProblems(m: MapLayout): string[] {
     const seen = new Set([key(cells[0])]), stack = [cells[0]];
     while (stack.length) { const c = stack.pop()!; for (const d of Object.values(STEP)) { const n = add(c, d); if (cells.some(x => key(x) === key(n)) && !seen.has(key(n))) { seen.add(key(n)); stack.push(n); } } }
     if (seen.size !== new Set(cells.map(key)).size) bad.add("map footprint");
-    if (cells.length > 3) bad.add("map footprint");
+    if (cells.length > 6) bad.add("map footprint"); // a channel spans at most five cells (drain to finale)
   }
   for (const d of m.doors) {
     const step = STEP[d.side];
