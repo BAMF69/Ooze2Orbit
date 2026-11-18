@@ -1,23 +1,25 @@
-// Purpose: Reciprocal vertical entrances and marked hazards over the stable seed-v1 room graph.
+// Purpose: Reciprocal vertical entrances and marked hazards, read from each room's spec openings and pits.
+// Notes: Every opening names its destination entrance, elevation and facing; returns enter at the edge used.
+// Authored: Written with Codex (GPT-6); moved onto the room model with Claude (Fable 5.1).
 import type { RoomObjective } from "./waterObjectives";
-export interface Arrival { room: number; x: number; y: number; facing: number; vy?: number }
-export const pitRoom = (id: number): boolean => id === 7 || id === 10;
-export function verticalOpening(id: number, o: RoomObjective, tx: number, ty: number): boolean {
-  if (id === 1 && tx >= 7 && tx <= 8 && ty < 6) return true;
-  if (id === 3 && tx >= 7 && tx <= 8 && ty >= 19) return true;
-  if (id === 4 && o.open && tx >= 19 && tx <= 21 && ty >= 19) return true;
-  return id === 5 && !!o.verticalOpen && tx >= 16 && tx <= 18 && ty < 6;
+import type { WaterRoom } from "./waterWorld";
+import { roomSpec, openingRect, conditionMet, type Arrival, type Opening } from "./levelgen/roomSpec";
+export type { Arrival };
+export const pitRoom = (r: WaterRoom): boolean => roomSpec(r).pits.length > 0;
+const openNow = (op: Opening, o: RoomObjective): boolean => conditionMet(op.when, o);
+export function verticalOpening(r: WaterRoom, o: RoomObjective, tx: number, ty: number): boolean {
+  return roomSpec(r).openings.some(op => { const q = openingRect(op); return openNow(op, o) && tx >= q.x0 && tx <= q.x1 && ty >= q.y0 && ty <= q.y1; });
 }
-export function verticalArrival(id: number, x: number, y: number, o: RoomObjective): Arrival | null {
-  if (id === 1 && x >= 119 && x <= 137 && y < 96) return { room: 3, x: 152, y: 298, facing: 1 };
-  if (id === 3 && x >= 119 && x <= 137 && y > 338) return { room: 1, x: 128, y: 116, facing: 1 };
-  if (id === 4 && o.open && x >= 311 && x <= 345 && y > 338) return { room: 5, x: 280, y: 116, facing: 1 };
-  if (id === 5 && o.verticalOpen && x >= 263 && x <= 291 && y < 96) return { room: 4, x: 328, y: 298, facing: -1, vy: -220 };
+/** Crossing the top edge (y < 96) or bottom edge (y > 338) over an open shaft arrives in the linked room. */
+export function verticalArrival(r: WaterRoom, x: number, y: number, o: RoomObjective): Arrival | null {
+  for (const op of roomSpec(r).openings) {
+    const edge = op.side === "top" ? y < 96 : y > 338;
+    if (openNow(op, o) && x >= op.probe[0] && x <= op.probe[1] && edge) return { ...op.to };
+  }
   return null;
 }
 /** A left-side onward hatch returns through that hatch, never the chamber's sealed right wall. */
-export function horizontalReturn(from: number, to: number): Arrival {
-  if (from === 3) return { room: to, x: 126, y: 304, facing: 1 };
-  if (to === 5 || to === 9) return { room: to, x: 128, y: 236, facing: -1 };
-  return { room: to, x: 600, y: 304, facing: -1 };
+export function horizontalReturn(from: WaterRoom, to: WaterRoom): Arrival {
+  const back = roomSpec(from).returnArrival;
+  return back ? { room: to.id, ...back } : { room: to.id, ...roomSpec(to).arriveFromRight };
 }
