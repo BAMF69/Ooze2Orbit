@@ -5,7 +5,7 @@ import type { Difficulty } from "./waterWorld";
 export const OVERWORLD = { width: 1920, waterWidth: 960, nest: 112, floor: 304, reach: 36 };
 export const BIOME_PATHS = [
   { x: 384, name: "Water", color: 0x70bed0, detail: "Reedwater trail" },
-  { x: 832, name: "Jungle", color: 0x70aa62, detail: "Coming later" },
+  { x: 832, name: "Jungle", color: 0x70aa62, detail: "Root Lane · Jungle trail" },
   { x: 1280, name: "Mountains", color: 0xa29e92, detail: "Coming later" },
   { x: 1728, name: "Ice", color: 0xd7edf5, detail: "Coming later" },
 ] as const;

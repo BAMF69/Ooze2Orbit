@@ -1,5 +1,14 @@
 # Handoff
 
+## Jungle Medium blockout (2026-11-18)
+
+Clear Root Lane and return to the Jungle arch to select Medium. Vine Well → Canopy Gap → Wall Loop teaches one new enemy per room. These are authored rooms with seeded patrol offsets. The creatures, traps and scenery use placeholder graphics. The phase state and tuning are in `jungleMedium.ts`; `?debug` shows the phase, perception box and patrol route. Browser checks cleared every encounter via recovery bites, stealth and trap at full health and confirmed the sprint-only exit lock. Generated Jungle layouts, Hard pairings, Vine sweeper and banked progression are pending.
+
+## Creature Jungle prototype (2026-11-18)
+
+Root Lane is playable via the Jungle arch. Placeholder encounter art is drawn in the scene. Snapfrond tuning and deterministic decision logic live in `src/game/creature/rootEncounter.ts`. Use `?debug` for phase, timer, detection and strike area. Snapfrond now attacks both ways, pulls a hit creature to center and holds it briefly. Rock bait wounds and stuns it. Honeycomb seals it for the life and leaves a jumpable bee hazard. Browser scenarios exercised the actual stage menu, walking, jump and bite, concealment and bait interactions. Sprint-only left the exit locked. Browser checks confirmed grab/release, rock stun, bee damage on foot and a damage-free running jump. The three approved Medium enemies, Hard pairings and guardian are still design proposals.
+
+
 ## Space hub and civilization modes design (2026-11-17, docs only, branch `docs/space-hub-civ-modes`)
 BAMF69 approved: space landings lead to seeding and guiding new species as the Gardener (indirect powers plus some
 direct control), ruin dungeons (creature levelgen) or battlefield matches; rewards are ship tech, blueprints and relics.

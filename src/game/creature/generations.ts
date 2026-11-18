@@ -1,12 +1,13 @@
 // Creature Toy 2: engine-free inheritance, persistent exploration and climate rules.
 // PROTOTYPE: handmade rooms and guaranteed contrasting heirs keep the first playtest readable.
 import { validExpedition, waterOffspring, validClassSkills, type Expedition } from "./expedition";
+import type { RootVerdict } from "./rootEncounter";
 import { refreshLineage } from "../../core/lineage";
 export const GEN = { strengthGate: 4, maxStat: 20, health: 6, hungerSeconds: 150, foodHeal: 1,
   roomWidth: 640, floor: 304, biteReach: 48, biteCooldown: 0.4, damageGrace: 1.2, foeSpeed: 38 };
 export type Climate = "drought" | "flood";
 export interface Traits { strength: number; vitality: number; climb: boolean; diet: string; gills?: boolean; fins?: boolean; classSkills?: ("roar" | "burrow" | "tool")[] }
-export interface Evidence { fights: number; sneaks: number; solves: number; jumps: number; plants: number; meat: number; cliff: boolean }
+export interface Evidence { fights: number; sneaks: number; solves: number; jumps: number; plants: number; meat: number; cliff: boolean; rootVerdict?: RootVerdict }
 export interface Heir { name: string; traits: Traits; cause: string }
 export interface Garden { generation: number; traits: Traits; climate: Climate; opened: number[]; visited: number[]; history: string[]; source?: string; expedition?: Expedition }
 export const ROOMS = [
@@ -24,12 +25,12 @@ export function newGarden(diet = "omnivore"): Garden {
 export function offspring(g: Garden, e: Evidence): Heir[] {
   const cap = (n: number) => Math.min(GEN.maxStat, n);
   const t = g.traits;
-  const jawGain = 2 + (e.fights >= 3 ? 1 : 0);
+  const jawGain = 2 + (e.fights >= 3 || e.rootVerdict === "fight" ? 1 : 0);
   const enduranceGain = 2 + (e.sneaks > 0 || e.plants >= 3 ? 1 : 0);
   return waterOffspring(g, [
-    { name: "Stonejaw", traits: { ...t, strength: cap(t.strength + jawGain) }, cause: `Strong-jaw variation: +${jawGain} strength${e.fights >= 3 ? "; repeated biting added +1" : "; 3 successful bites would add +1"}.` },
+    { name: "Stonejaw", traits: { ...t, strength: cap(t.strength + jawGain) }, cause: `Strong-jaw variation: +${jawGain} strength${e.rootVerdict === "fight" ? "; defeating Snapfrond with a recovery bite added +1" : e.fights >= 3 ? "; repeated biting added +1" : "; 3 successful bites would add +1"}.` },
     { name: "Vinefoot", traits: { ...t, climb: t.climb || e.cliff || e.jumps >= 3, vitality: cap(t.vitality + 1) }, cause: e.cliff || e.jumps >= 3 || t.climb ? "Cliff exploration and leaping favored climbing claws; +1 vitality." : "Explore the cliff or make 3 jumps to favor climbing claws; +1 vitality." },
-    { name: "Mossheart", traits: { ...t, vitality: cap(t.vitality + enduranceGain), strength: cap(t.strength + (e.solves > 0 ? 1 : 0)) }, cause: `+${enduranceGain} vitality: ${e.sneaks} unseen passages, ${e.plants} plants.${e.solves > 0 ? " Trap-solving adds +1 strength." : " Solve a trap for +1 strength."}` },
+    { name: "Mossheart", traits: { ...t, vitality: cap(t.vitality + enduranceGain), strength: cap(t.strength + (e.solves > 0 ? 1 : 0)) }, cause: `+${enduranceGain} vitality: ${e.sneaks} unseen passages, ${e.plants} plants.${e.rootVerdict === "sneak" ? " You crossed Root Lane unseen." : ""}${e.rootVerdict === "trap" ? " Stopping Snapfrond with bait adds +1 strength." : e.solves > 0 ? " Trap-solving adds +1 strength." : " Solve a trap for +1 strength."}` },
   ]);
 }
 export function inherit(g: Garden, heir: Heir, climate: Climate): Garden {

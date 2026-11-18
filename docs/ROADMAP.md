@@ -4,6 +4,9 @@
 > Claude reads the **Now** section at session start.
 
 ## Now (max 3 items)
+Jungle Root Lane and all three solo Medium encounters are playable. Next creature enemy work: generated Jungle layouts, paired Hard encounters, Vine sweeper and banked progression. See [creature enemy design](CREATURE_ENEMIES.md).
+
+
 Creature-chat update 2026-11-15: Medium encounter pass built (three enemy behaviors, vertical
 swim routes, vent timing, limited traps); human difficulty/fun playtest next.
 Creature-chat priority approved 2026-11-13: procedural creature content before controls/art.

@@ -8,6 +8,12 @@
 > (BAMF69 2026-11-10). Its full design and build notes are in this file's git history.
 > Items marked *(Claude's pick)* were chosen by Claude: confirm them with BAMF69. Everything else was decided by BAMF69.
 
+## Jungle prototype
+
+The Jungle arch starts at Root Lane, a dry Easy room with placeholder art. Snapfrond marks a ground strike to both sides. A hit pulls the creature into its jaws and holds it briefly before recovery. Crouch through the guarded stretch, defeat Snapfrond, or seal its jaws with honeycomb to unlock the far exit. Use E at the bait station to set a rock or honeycomb, then lure a strike. A rock damages and stuns Snapfrond temporarily. Honeycomb keeps its jaws shut for the life and leaves a marked bee swarm you can jump over. Either exit returns to the overworld, and the nest uses the existing daughter picker. Flood widens leaf cover. The prototype keeps its resolution for the life and awards encounter evidence once.
+Clear Root Lane, return to the arch and choose **Vine Well · Medium** in the same life. Medium runs through Vine Well (Vine thrower), Canopy Gap (Spearbeak diver) and Wall Loop (Wall pouncer). Each room has a marked attack, a recovery bite opening, a continuous crouch route and a reusable setup for trapping its enemy. The left edge returns to the previous room or overworld. The final exit returns to the arch. These are authored rooms with seeded patrol starting positions and placeholder art. See [the enemy design](../CREATURE_ENEMIES.md) for Hard and the guardian.
+
+
 ## Water difficulty/content follow-up (2026-11-15)
 Stronger hits and charger stun; rig/arm/lure nets can immobilize healthy enemies without bites.
 Ceiling droppers, marked damaging pits and two reciprocal top/bottom route pairs add vertical

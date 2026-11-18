@@ -1,3 +1,6 @@
+import { drawJungleMedium } from "./creature/jungleMediumView";
+import { JUNGLE, JUNGLE_MEDIUM, jungleRoom, jungleEnemy, stepJungleEnemy, biteJungleEnemy, type JungleEnemy } from "./creature/jungleMedium";
+import { ROOT_LANE, SNAPFROND, rootEncounter, rootCovered, snapLane, stepRootEncounter, biteSnapfrond, setRootBait, grabbedPosition, nearRootBees, type RootBait } from "./creature/rootEncounter";
 // Purpose: Creature roguelike Water slice: stable generated expeditions, inherited bodies and Gardener solutions.
 // Usage: Registered as creature in main.ts. Existing actions and original sprite sheets; no shared shell changes.
 // Notes: PROTOTYPE: four overworld paths, one playable biome. Unfinished lives restart at the nest.
@@ -40,12 +43,14 @@ import { LineagePanel } from "./lineagePanel";
 interface Foe extends WaterEnemy { sprite: Phaser.GameObjects.Sprite; label: Phaser.GameObjects.Text }
 interface RoomLife { food: WaterFood[]; foes: WaterEnemy[]; trap: boolean; cache: boolean; objective: RoomObjective }
 interface Choice { id: string; label: string; run: () => void }
-type Mode = "play" | "journal" | "gardener" | "climate" | "heir" | "won" | "newworld";
+type Mode = "jungleTrail" | "rootBait" | "play" | "journal" | "gardener" | "climate" | "heir" | "won" | "newworld";
 const POSE_START = { idle: 0, walk: 4, jump: 8, bite: 12, crouch: 16 };
 export class CreatureScene extends Phaser.Scene {
   private garden!: Garden;
   private world!: WaterWorld;
   private room = -1;
+  private jungleEnemies = new Map<number, JungleEnemy>();
+  private root!: ReturnType<typeof rootEncounter>;
   private operation: Operation | null = null;
   private stun = 0;
   private body!: Body;
@@ -188,7 +193,8 @@ export class CreatureScene extends Phaser.Scene {
     Log.info("creature", `Water world seed ${this.world.seed}, generator v${this.world.version}, G${this.garden.generation}`);
   }
   private newLife(): void {
-    this.rooms.clear(); this.evidence = evidence(); this.explored = false; this.cargo = newCargo();
+    this.jungleEnemies.clear();
+    this.root = rootEncounter(this.garden.expedition!.seed); this.rooms.clear(); this.evidence = evidence(); this.explored = false; this.cargo = newCargo();
     this.hp = GEN.health + this.garden.traits.vitality; this.hunger = 0;
     this.oxygen = WATER.oxygenSeconds; this.hurt = 0; this.stun = 0; this.bite = 0; this.clock = 0;
     this.weather = { climate: this.garden.climate, remaining: 0 }; this.enter(-1, OVERWORLD.nest);
@@ -206,13 +212,30 @@ export class CreatureScene extends Phaser.Scene {
     this.landmarks.forEach(label => label.destroy()); this.landmarks = [];
     // Hubs scroll across their own width; a Water room across its geometry (one screen for v1 rooms).
     const g = id >= 0 ? roomGeometry(this.roomById(id)) : null;
-    const width = id === -1 ? OVERWORLD.width : id === -2 ? OVERWORLD.waterWidth : g!.width;
+    const width = id === -1 ? OVERWORLD.width : id === -2 ? OVERWORLD.waterWidth : id === ROOT_LANE.id ? ROOT_LANE.width : jungleRoom(id) ? JUNGLE.width : g!.width;
     this.cameras.main.setBounds(0, 0, width, g?.height ?? 360);
-    if (id < 0) this.landmarks = hubLabels(id === -2).map(p => this.add.text(p.x, p.y, p.text,
+    if (id === -1 || id === -2) this.landmarks = hubLabels(id === -2).map(p => this.add.text(p.x, p.y, p.text,
       { fontFamily: "monospace", fontSize: "10px", color: "#ecedd4", align: "center", backgroundColor: "#132b2bcc", padding: { x: 5, y: 4 } }).setOrigin(0.5, 0).setResolution(2).setDepth(6));
     this.room = id; this.enemies.forEach(e => { e.sprite.destroy(); e.label.destroy(); }); this.enemies = [];
     this.body = newBody(x, y); this.body.vy = vy; this.facing = facing; this.oxygen = WATER.oxygenSeconds;
     this.player.setPosition(x, y - 16).setFlipX(facing < 0);
+    const jungle = jungleRoom(id);
+    if (jungle) {
+      this.explored = true;
+      this.food = [];
+      if (!this.jungleEnemies.has(id)) this.jungleEnemies.set(id, jungleEnemy(jungle, this.garden.expedition!.seed));
+      const signs = [
+        { x: 58, text: "← RETURN" },
+        { x: JUNGLE.trapX, text: "E · " + jungle.trap.toUpperCase() },
+        { x: JUNGLE.exit, text: "E · FAR TRAIL" },
+      ];
+      this.landmarks = signs.map(({ x, text }) => this.add.text(x, 246, text,
+        { fontFamily: "monospace", fontSize: "10px", color: "#ecedd4", backgroundColor: "#172b2a" })
+        .setOrigin(0.5, 1).setResolution(2).setDepth(7));
+      this.message = `${jungle.name} · Crouch through the cover, dodge and bite at its landing perch, or arm the ${jungle.trap.toLowerCase()} with E.`;
+      return;
+    }
+    if (id === ROOT_LANE.id) { this.explored = true; this.food = []; this.message = "Root Lane · crouch through the leaves, choose bait at the station with E, or dodge and bite during recovery."; return; }
     if (id < 0) { this.food = []; this.message = id === -1 ? "Explore the four trails. Walk right to Water; E at the nest raises daughters." : "Follow the shore to the three level entrances. E enters a trail; walk left to return to the overworld."; return; }
     this.explored = true;
     const e = this.garden.expedition!;
@@ -276,6 +299,21 @@ export class CreatureScene extends Phaser.Scene {
   private menuContent(): { text: string; choices: Choice[] } {
     const e = this.garden.expedition!, back = { id: "back", label: "Return to creature", run: () => this.close() };
     switch (this.mode) {
+      case "jungleTrail": return { text: "JUNGLE TRAIL\n\nRoot Lane teaches the Snapfrond. Medium has three solo encounters.",
+        choices: [
+          { id: "root-lane", label: "Root Lane · Easy", run: () => { this.travel(ROOT_LANE.id, ROOT_LANE.entry); this.close(); } },
+          { id: "jungle-medium", label: "Vine Well · Medium", run: () => { this.travel(JUNGLE_MEDIUM[0].id, JUNGLE.spawn); this.close(); } },
+          back,
+        ] };
+      case "rootBait": {
+        const choose = (bait: RootBait) => {
+          if (setRootBait(this.root, bait)) this.message = `${bait === "rock" ? "Rock" : "Honeycomb"} set. Draw a snap over the bait station.`;
+          this.close();
+        };
+        return { text: "SNAPFROND BAIT\n\nRock damages and briefly stuns. Honeycomb seals its jaws for this life and leaves a swarm. Jump over the marked swarm or stay clear.",
+          choices: [...(this.root.rockUsed ? [] : [{ id: "rock", label: "Set rock", run: () => choose("rock") }]),
+            { id: "honeycomb", label: "Set honeycomb", run: () => choose("honeycomb") }, back] };
+      }
       case "journal": return { text: `LINEAGE JOURNAL · seed ${e.seed}\n\nUnbanked cargo: ${[...this.cargo.samples, ...this.cargo.clears].join(", ") || "none"}. Return to the nest alive.\n\nCompleted Water levels: ${e.completed.join(", ") || "none"}.\nDiscovered adaptations: ${e.unlocked.join(", ") || "none"}.\n\nNavigate the overworld with your creature. Water lies east of the nest; its shoreline has the Easy, Medium and Hard entrances.\n\n${this.garden.history.slice(-6).join("\n")}`,
         choices: [{ id: "back", label: "Return to creature", run: () => this.close() },
           { id: "newworld", label: "Start a different world…", run: () => this.open("newworld") }] };
@@ -329,24 +367,29 @@ export class CreatureScene extends Phaser.Scene {
     this.stun = Math.max(0, this.stun - dt);
     this.clock += dt; this.hurt = Math.max(0, this.hurt - dt); this.bite = Math.max(0, this.bite - dt);
     const dir = this.stun > 0 ? 0 : Number(i.isDown("move_right")) - Number(i.isDown("move_left")), crouch = this.stun === 0 && i.isDown("move_down");
-    const jump = i.takePress("jump") && this.stun === 0; if (jump) this.evidence.jumps++;
+    const jump = i.takePress("jump") && this.stun === 0 && (this.room !== ROOT_LANE.id || this.root.grab === 0); if (jump) this.evidence.jumps++;
     // F bites too: it was the old default of "sink"; the aquatic remaster gave F to "electric" (Shock) and moved sink to
     // C, which left the creature stage's "J/F bite" without F (BAMF69 2026-11-18). Both presses are taken every frame.
     const sinkPress = i.takePress("sink"), shockPress = i.takePress("electric");
     const attack = i.takePress("attack") && this.stun === 0, altAttack = (sinkPress || shockPress) && this.stun === 0;
     if (dir) this.facing = dir;
-    if (this.room < 0) {
+    if (jungleRoom(this.room)) {
+      this.stepJungleMedium(dt, dir, jump, crouch, attack || altAttack);
+    } else if (this.room === ROOT_LANE.id) {
+      this.stepRootLane(dt, dir, jump, crouch, attack || altAttack);
+    } else if (this.room < 0) {
       if ((attack || altAttack) && this.bite === 0) this.bite = GEN.biteCooldown;
       // Hubs are physical, safe levels. There is no world/difficulty selection dialog.
       stepBody(this.body, { dir, jump, speed: crouch ? 45 : i.isDown("pace") ? 165 : 105 }, dt,
         (x, y) => hubSolid(this.room === -2, x, y));
       if (this.room === -1) {
         const path = BIOME_PATHS.find(p => nearLandmark(this.body.x, p.x));
-        this.message = path ? `E: follow ${path.name} trail${path.name === "Water" ? " to its level entrances." : " · this biome is coming later."}` :
+        this.message = path ? `E: follow ${path.name} trail${path.name === "Water" ? " to its level entrances." : path.name === "Jungle" ? " to " + (this.root.verdict ? "Easy or Medium." : "Root Lane.") : " · this biome is coming later."}` :
           nearLandmark(this.body.x, OVERWORLD.nest) ? "E: rest at your nest and raise daughters after exploring. Four biome paths lie to the east." : "A/D move · Space jump · explore the four biome trails. Signs mark each destination.";
         if (i.takePress("interact")) {
-          if (nearLandmark(this.body.x, OVERWORLD.nest)) this.explored ? this.endLife("You rested at the nest. Your offspring carry this life's discoveries.") : this.message = "Explore Water before raising daughters.";
+          if (nearLandmark(this.body.x, OVERWORLD.nest)) this.explored ? this.endLife("You rested at the nest. Your offspring carry this life's discoveries.") : this.message = "Explore a trail before raising daughters.";
           else if (path?.name === "Water") this.travel(-2, 64);
+          else if (path?.name === "Jungle") this.root.verdict ? this.open("jungleTrail") : this.travel(ROOT_LANE.id, ROOT_LANE.entry);
           else if (path) this.message = `${path.name} is coming later. Follow Water's trail to play the first biome.`;
         }
       } else {
@@ -433,6 +476,128 @@ export class CreatureScene extends Phaser.Scene {
       pose !== "bite" && this.room >= 0 && !!this.garden.traits.fins && inWater(this.body, this.roomWater(), this.currentRoom));
     this.draw();
   }
+  private stepJungleMedium(dt: number, dir: number, jump: boolean, crouch: boolean, attack: boolean): void {
+    const input = shell.input, spec = jungleRoom(this.room)!;
+    const enemy = this.jungleEnemies.get(spec.id)!;
+    this.weather = stepWeather(this.weather, dt);
+    stepBody(this.body, { dir, jump, speed: crouch ? 45 : input.isDown("pace") ? 165 : 105 }, dt,
+      (x, y) => x < 0 || x >= JUNGLE.width / 16 || y >= 19 || y < 6);
+    const previous = enemy.verdict;
+    if (attack && this.bite === 0) {
+      this.bite = GEN.biteCooldown;
+      biteJungleEnemy(enemy, this.body, this.garden.traits.strength + Number(this.climateNow() === "drought"));
+    }
+    if (input.takePress("interact")) {
+      if (!enemy.verdict && Math.abs(this.body.x - JUNGLE.trapX) < JUNGLE.reach) {
+        enemy.armed = true;
+        this.message = `${spec.trap} armed. Bait an attack over the marker, then move clear.`;
+      } else if (Math.abs(this.body.x - JUNGLE.exit) < JUNGLE.reach) {
+        if (!enemy.verdict) this.message = "The far trail is guarded. Cross in cover, lay a trap, or win the fight.";
+        else {
+          const next = jungleRoom(spec.id - 1);
+          this.travel(next?.id ?? -1, next ? JUNGLE.spawn : BIOME_PATHS[1].x);
+          if (!next) this.message = "Jungle Medium cleared. Return to the nest to raise a daughter.";
+          return;
+        }
+      }
+    }
+    const damage = stepJungleEnemy(spec, enemy, { ...this.body, crouch }, dt, this.climateNow() === "flood");
+    if (damage && this.hurt === 0) { this.hp -= damage; this.hurt = GEN.damageGrace; }
+    if (!previous && enemy.verdict) {
+      if (enemy.verdict === "fight") this.evidence.fights++;
+      if (enemy.verdict === "sneak") this.evidence.sneaks++;
+      if (enemy.verdict === "trap") this.evidence.solves++;
+      this.message = "Far trail open. Press E at the exit to continue.";
+    }
+    if (this.hp <= 0) { this.endLife(`${spec.name} ended this creature's life.`, true); return; }
+    if (this.body.x < JUNGLE.retreat) {
+      const prior = jungleRoom(spec.id + 1);
+      this.travel(prior?.id ?? -1, prior ? JUNGLE.exit - 28 : BIOME_PATHS[1].x, WATER.floor, -1);
+    }
+  }
+
+  private stepRootLane(dt: number, dir: number, jump: boolean, crouch: boolean, attack: boolean): void {
+    const input = shell.input, room = ROOT_LANE, e = this.root;
+    this.weather = stepWeather(this.weather, dt);
+    stepBody(this.body, { dir: e.grab > 0 ? 0 : dir, jump: e.grab === 0 && jump, speed: crouch ? 45 : input.isDown("pace") ? 165 : 105 }, dt,
+      (x, y) => x < 0 || x >= room.width / 16 || y >= 19 || y < 6);
+    const previous = e.verdict;
+    if (attack && this.bite === 0 && e.grab === 0) {
+      this.bite = GEN.biteCooldown;
+      biteSnapfrond(e, this.body.x, this.body.y, this.garden.traits.strength + Number(this.climateNow() === "drought"));
+    }
+    if (input.takePress("interact") && e.grab === 0) {
+      if (!e.verdict && Math.abs(this.body.x - room.baitX) < room.reach) {
+        this.open("rootBait"); return;
+      } else if (Math.abs(this.body.x - room.exit) < room.reach) {
+        if (!e.verdict) this.message = "The far trail is still guarded. Cross in cover, bait the Snapfrond, or defeat it.";
+        else { this.travel(-1, BIOME_PATHS[1].x, WATER.floor, -1); return; }
+      }
+    }
+    const wasGrabbed = e.grab > 0, bait = e.bait;
+    const strikeDamage = stepRootEncounter(e, { ...this.body, crouch }, dt, this.climateNow() === "flood");
+    if (wasGrabbed || e.grab > 0) {
+      this.body.x = grabbedPosition(e);
+      this.body.vx = 0;
+    }
+    if (bait === "rock" && e.rockUsed && !e.bait)
+      this.message = "Snapfrond bit the rock. Bite while it is stunned.";
+    const damage = strikeDamage || (nearRootBees(e, this.body.x, this.body.y) ? SNAPFROND.beeDamage : 0);
+    if (damage && this.hurt === 0) { this.hp -= damage; this.hurt = GEN.damageGrace; }
+    if (!previous && e.verdict) {
+      this.evidence.rootVerdict = e.verdict;
+      if (e.verdict === "fight") this.evidence.fights++;
+      if (e.verdict === "sneak") this.evidence.sneaks++;
+      if (e.verdict === "trap") this.evidence.solves++;
+      this.message = e.verdict === "fight" ? "Snapfrond defeated. E at the far trail to return." :
+        e.verdict === "sneak" ? "Passed through the leaves unseen. E at the far trail to return." :
+        e.stuck ? "Honeycomb sealed its jaws. Take a running jump over the bee swarm." : "Snapfrond stopped. E at the far trail to return.";
+    }
+    if (this.hp <= 0) { this.endLife("Snapfrond ended this creature's life.", true); return; }
+    if (this.body.x < room.retreat) this.travel(-1, BIOME_PATHS[1].x, WATER.floor, -1);
+  }
+
+  private drawRootLane(): void {
+    const g = this.gfx, room = ROOT_LANE, e = this.root;
+    const flood = this.climateNow() === "flood";
+    g.fillStyle(0x152c29).fillRect(0, 0, room.width, 360);
+    g.fillStyle(0x35412f).fillRect(0, 304, room.width, 56);
+    for (let x = 0; x < room.width; x += 8) if (rootCovered(x, flood)) {
+      g.fillStyle(0x658c49, 0.65).fillTriangle(x - 6, 304, x + 3, 274 - x % 13, x + 8, 304);
+    }
+    g.lineStyle(2, e.bait ? 0xf0b66a : 0x9b8e72).strokeRect(room.baitX - 8, 275, 16, 29);
+    g.lineStyle(4, e.verdict ? 0x9bc878 : 0x9b8e72).strokeRect(room.exit - 15, 252, 30, 52);
+    if (e.stuck) {
+      const radius = SNAPFROND.beeRadius, top = SNAPFROND.beeHeight;
+      g.fillStyle(0xe8bf56, 0.24).fillRect(e.x - radius, top, radius * 2, 304 - top);
+      g.lineStyle(2, 0xe8bf56).strokeRect(e.x - radius, top, radius * 2, 304 - top);
+      for (let n = 0; n < 9; n++) {
+        const angle = n * 2.4 + (shell.settings.access.reduce_motion ? 0 : this.clock * 6);
+        g.fillStyle(0xffd764).fillEllipse(e.x + Math.cos(angle) * (radius - n * 2), (top + 304) / 2 + Math.sin(angle) * ((304 - top) / 2 - 3), 5, 3);
+      }
+      g.fillStyle(0xa4c46b).fillEllipse(e.x, 291, 19, 23);
+      g.fillStyle(0xdfa84d).fillRect(e.x - 5, 279, 10, 17);
+      return;
+    }
+    if (e.verdict === "fight" || e.verdict === "trap") return;
+    const [left, right] = snapLane(e);
+    if (e.grab > 0) {
+      g.lineStyle(5, 0xa4c46b).lineBetween(e.x, 290, this.body.x, this.body.y - 14);
+      g.lineStyle(2, 0xffb25e).strokeEllipse(this.body.x, this.body.y - 14, 35, 19);
+    } else if (e.phase === "tell" || e.phase === "strike") {
+      g.fillStyle(0xffb25e, e.phase === "tell" ? 0.28 : 0.72).fillRect(left, room.attackHeight, right - left, 304 - room.attackHeight);
+      g.lineStyle(2, 0xffb25e).strokeRect(left, room.attackHeight, right - left, 304 - room.attackHeight);
+    }
+    const spread = e.phase === "tell" ? 26 : e.phase === "recover" ? 9 : 16;
+    g.fillStyle(0xa4c46b).fillEllipse(e.x, 297, 26, 14);
+    g.fillStyle(0x80b761).fillTriangle(e.x, 296, e.x - spread, 259, e.x - 5, 273)
+      .fillTriangle(e.x, 296, e.x + spread, 259, e.x + 5, 273);
+    if (this.debugEncounters) {
+      g.lineStyle(1, 0xf1d478).strokeRect(e.x - SNAPFROND.detect, room.attackHeight, SNAPFROND.detect * 2, 36);
+      g.lineBetween(left, 288, right, 288);
+    }
+  }
+
   private stepEnemies(dt: number, crouch: boolean): void {
     const r = this.currentRoom, flood = this.climateNow() === "flood";
     // A swimmer keeps to the water it spawned in; land enemies to the room's enemy bounds.
@@ -571,7 +736,10 @@ export class CreatureScene extends Phaser.Scene {
   private draw(): void {
     this.drawRack(); this.drawMinimap();
     const g = this.gfx; g.clear();
-    if (this.room < 0) { this.roomArt.syncHub(this.room === -2); drawHub(g, this.room === -2, this.garden.traits, this.garden.expedition!); }
+    const jungle = jungleRoom(this.room);
+    if (jungle) { this.roomArt.syncHub(false); drawJungleMedium(g, jungle, this.jungleEnemies.get(jungle.id)!, this.climateNow() === "flood", this.debugEncounters); }
+    else if (this.room === ROOT_LANE.id) { this.roomArt.syncHub(false); this.drawRootLane(); }
+    else if (this.room < 0) { this.roomArt.syncHub(this.room === -2); drawHub(g, this.room === -2, this.garden.traits, this.garden.expedition!); }
     else this.roomArt.sync(this.currentRoom, this.roomWater(), this.objective);
     const painted = this.room >= 0 && usesPaintedShallows(this.currentRoom, this.roomWater());
     if (this.room >= 0) drawWaterRoom(g, this.currentRoom, this.roomWater(), this.food, this.trap, this.clock, this.foodCache, this.objective, painted);
@@ -584,12 +752,13 @@ export class CreatureScene extends Phaser.Scene {
       g.lineStyle(2, 0xffae72).lineBetween(e.x, e.y, e.x + e.facing * 80, e.y + e.aimY * 80);
     }
     const t = this.garden.traits, e = this.garden.expedition!, weather = this.weather.remaining > 0 ? `${this.weather.climate} ${Math.ceil(this.weather.remaining)}s` : this.garden.climate;
-    this.screenUi.setStatus(`G${this.garden.generation} · ${this.room === -1 ? "Overworld" : this.room === -2 ? "Water shoreline" : roomLabel(this.currentRoom, this.garden.expedition?.seed)} · HP ${this.hp}/${GEN.health + t.vitality} · Carrying ${this.cargo.samples.length + this.cargo.clears.length}${this.room >= 0 && this.objective.netArmed ? " · NET READY" : ""}${this.room >= 0 && sealedEncounter(this.objective) ? " · SEALED: " + this.enemies.filter(activeThreat).length + " threats" : ""}`,
+    this.screenUi.setStatus(`G${this.garden.generation} · ${this.room === -1 ? "Overworld" : this.room === -2 ? "Water shoreline" : this.room === ROOT_LANE.id ? "Jungle · Root Lane" : jungle ? "Jungle · " + jungle.room + (this.debugEncounters ? " · " + this.jungleEnemies.get(jungle.id)!.phase : "") : roomLabel(this.currentRoom, this.garden.expedition?.seed)}${this.room === ROOT_LANE.id && this.debugEncounters ? " · " + this.root.phase + " " + this.root.remaining.toFixed(2) : ""} · HP ${this.hp}/${GEN.health + t.vitality} · Carrying ${this.cargo.samples.length + this.cargo.clears.length}${this.room >= 0 && this.objective.netArmed ? " · NET READY" : ""}${this.room >= 0 && sealedEncounter(this.objective) ? " · SEALED: " + this.enemies.filter(activeThreat).length + " threats" : ""}`,
       `UNBANKED: ${[...this.cargo.samples, ...this.cargo.clears.map(t => t + " seal")].join(", ") || "none"}\nBring these to the nest alive. Death/reload loses unbanked cargo.\nSeed ${e.seed} · generator v${this.world.version}\n${t.diet} · STR ${t.strength} · VIT ${t.vitality} · ${this.abilities()}\nFood ${Math.max(0, Math.round(100 - this.hunger / WATER.hungerSeconds * 100))}% · Air ${Math.ceil(this.oxygen)}s · ${weather}\nBasin ${e.basinRaised ? "raised" : "low"} · torrent ${e.torrentDiverted ? "diverted" : "wild"}\nUnlocked for daughters: ${e.unlocked.join(", ") || "none"}\nCompleted: ${e.completed.join(", ") || "none"}\nA/D move · W/Space swim up · S swim down/hide · J/F bite · E use · U Gardener\n\n${this.garden.history.slice(-8).join("\n")}`);
     const view = this.cameras.main.worldView;
     const unseen = this.enemies.find(e => activeThreat(e) && Math.abs(e.x - this.body.x) < 180 && (e.x < view.left || e.x > view.right));
     const warning = this.enemies.find(e => activeThreat(e) && e.phase === "tell" && Math.abs(e.x - this.body.x) < 180);
-    this.screenUi.setMessage(this.stun > 0 ? `STUNNED · ${this.stun.toFixed(1)}s` : this.operation ? `OPERATING: ${Math.floor(this.operation.elapsed / CONTROL_SECONDS * 100)}% · stay still; guards interrupt.` : this.room >= 0 && this.objective.remaining > 0 ? `PRESSURE GATE: ${Math.ceil(this.objective.remaining)}s · cross the vent or rearm the wheel.` : warning ? `${ENEMIES[warning.kind].name} is preparing an attack! Change height or get behind it; strike during recovery.` : unseen && !shell.input.isDown("move_down") ? `Predator approaching from the ${unseen.x < this.body.x ? "left" : "right"}.` : this.message);
+    const jungleEnemy = jungle && this.jungleEnemies.get(jungle.id);
+    this.screenUi.setMessage(jungleEnemy?.phase === "tell" && !jungleEnemy.verdict ? jungle!.warning : this.stun > 0 ? `STUNNED · ${this.stun.toFixed(1)}s` : this.operation ? `OPERATING: ${Math.floor(this.operation.elapsed / CONTROL_SECONDS * 100)}% · stay still; guards interrupt.` : this.room >= 0 && this.objective.remaining > 0 ? `PRESSURE GATE: ${Math.ceil(this.objective.remaining)}s · cross the vent or rearm the wheel.` : warning ? `${ENEMIES[warning.kind].name} is preparing an attack! Change height or get behind it; strike during recovery.` : unseen && !shell.input.isDown("move_down") ? `Predator approaching from the ${unseen.x < this.body.x ? "left" : "right"}.` : this.room === ROOT_LANE.id && this.root.grab > 0 ? "CAUGHT · Snapfrond will release you shortly." : this.room === ROOT_LANE.id && this.root.phase === "tell" && !this.root.verdict ? "Snapfrond is opening its jaws. Jump or leave the marked strip." : this.message);
     const actions: StageAction[] = [action("use", "interact", "Use / study"), action("jump", "jump", "Jump"), action("bite", "attack", "Bite"),
       { id: "gardener", label: "Gardener", run: () => this.open("gardener") }, { id: "journal", label: "Journal", run: () => this.open("journal") }];
     this.screenUi.actions(actions);
