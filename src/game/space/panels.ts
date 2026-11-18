@@ -27,7 +27,7 @@ export interface Pen {
   g: Phaser.GameObjects.Graphics;
   text(x: number, y: number, s: string, size?: number, color?: string, originX?: number): Phaser.GameObjects.Text;
   /** An atlas row drawn as a sprite (ships, part icons); pose is the row's name. */
-  sprite(x: number, y: number, atlas: string, pose: string, scale?: number, alpha?: number): void;
+  sprite(x: number, y: number, art: string, scale?: number, alpha?: number): void;
 }
 export type HangarItem = { kind: "part"; id: PartId } | { kind: "escort"; id: EscortId };
 export type HangarAct = { kind: "add" | "remove"; part: PartId } | { kind: "recruit"; escort: EscortId } | { kind: "hull" } | { kind: "launch" };
@@ -40,7 +40,6 @@ export const SLOT_WORD: Record<SlotType, string> = { gun: "guns", turret: "turre
 const MAKER_COL = { home: "#e8c890", ally: "#8ad8d0" } as const;
 const pct = (v: number) => `${Math.round(v * 100)} %`;
 /** Which atlas a hull's sprite lives in (yours, or the allies'). */
-export const hullAtlas = (hull: HullId): string => (hull === "skiff" || hull === "warden" ? "space_allies" : "space_ships");
 
 /** What this world's outfitter and shipyard offer, in palette order: its parts, then its ships. */
 export const hangarItems = (c: Campaign): HangarItem[] => [
@@ -81,10 +80,10 @@ function drawShip(p: Pen, c: Campaign, buttons: HangarButton[]): void {
     const dx = SHIP.x - s.x, dy = SHIP.y - s.y, d = Math.hypot(dx, dy) || 1;
     g.lineStyle(1, col, id ? 0.8 : 0.3).lineBetween(s.x + (dx / d) * 17, s.y + (dy / d) * 17, SHIP.x - (dx / d) * 40, SHIP.y - (dy / d) * 40); // slot -> ship
     g.fillStyle(id ? 0x16222c : 0x0a0e14, 1).fillRect(s.x - 16, s.y - 16, 32, 32).lineStyle(1, col, id ? 1 : 0.45).strokeRect(s.x - 16, s.y - 16, 32, 32);
-    if (id) { p.sprite(s.x, s.y, "space_parts", id); buttons.push({ x: s.x - 16, y: s.y - 16, w: 32, h: 32, act: { kind: "remove", part: id } }); }
+    if (id) { p.sprite(s.x, s.y, id); buttons.push({ x: s.x - 16, y: s.y - 16, w: 32, h: 32, act: { kind: "remove", part: id } }); }
     else g.fillStyle(col, 0.35).fillRect(s.x - 5, s.y - 1, 10, 2).fillRect(s.x - 1, s.y - 5, 2, 10); // an open slot: a faint plus
   }
-  p.sprite(SHIP.x, SHIP.y, hullAtlas(c.fit.hull), c.fit.hull, 4);
+  p.sprite(SHIP.x, SHIP.y, c.fit.hull, 4);
 }
 
 /** The picked palette item, in words: what it is, what it does, why it cannot be bought. */
@@ -138,7 +137,7 @@ export function drawHangar(p: Pen, c: Campaign, sel: number, notes: readonly str
   if (problems.length) p.text(8, 312, `Cannot launch: ${problems.join(", ")}`, 10, "#ff8070");
   else p.text(8, 312, isHybrid(c.fit) ? `Hybrid ship: ${T0} learns it slower` : "One maker's weapons and defences: easy to learn", 10, isHybrid(c.fit) ? "#a0e0a0" : "#a0a8b0");
   p.text(8, 332, `Fleet ${c.fleet.length}/${SPACE.fleet.max}:`, 10, "#c8d0c8");
-  c.fleet.forEach((id, i) => p.sprite(92 + i * 36, 338, hullAtlas(SPACE.escorts[id].hull), SPACE.escorts[id].hull, 1));
+  c.fleet.forEach((id, i) => p.sprite(92 + i * 36, 338, SPACE.escorts[id].hull, 1));
   if (!c.fleet.length) p.text(74, 332, "no escorts yet (recruit them at a shipyard)", 10, "#7a8088");
 
   // ---- right: this world's outfitter and shipyard, as icons ----
@@ -149,8 +148,8 @@ export function drawHangar(p: Pen, c: Campaign, sel: number, notes: readonly str
     const ok = it.kind === "part" ? install(c, it.id).ok : recruit(c, it.id).ok;
     const price = it.kind === "part" ? priceOf(c, it.id) : escortPrice(c, it.id);
     g.fillStyle(i === sel ? 0x1c2a34 : 0x0c141c, 1).fillRect(x, y, 44, 46).lineStyle(1, i === sel ? 0xffffff : it.kind === "part" ? SLOT_COL[part(it.id).slot] : 0x8ad8d0, i === sel ? 1 : 0.5).strokeRect(x, y, 44, 46);
-    if (it.kind === "part") p.sprite(x + 22, y + 18, "space_parts", it.id, 1, ok ? 1 : 0.4);
-    else p.sprite(x + 22, y + 18, hullAtlas(SPACE.escorts[it.id].hull), SPACE.escorts[it.id].hull, 1, ok ? 1 : 0.4);
+    if (it.kind === "part") p.sprite(x + 22, y + 18, it.id, 1, ok ? 1 : 0.4);
+    else p.sprite(x + 22, y + 18, SPACE.escorts[it.id].hull, 1, ok ? 1 : 0.4);
     p.text(x + 22, y + 34, `${price}`, 10, ok ? "#ffe080" : "#806840", 0.5);
     const n = it.kind === "part" ? countOf(c.fit, it.id) : c.fleet.filter((e) => e === it.id).length;
     if (n) p.text(x + 3, y + 1, `${n}`, 10, "#ffffff");

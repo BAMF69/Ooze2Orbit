@@ -23,7 +23,6 @@ import { writeStage, type TemperamentKind } from "../core/lineage";
 import { Log } from "../core/log";
 import { shell } from "../shell/app";
 import { revealFrom, type Reveal } from "./aquatic/reveal";
-import { animKey, animSpecs, firstFrame, type AtlasLayout } from "./cell/atlas";
 import { cellSfx, type CellSfx } from "./cell/sfx";
 import { LineagePanel } from "./lineagePanel";
 import { STAGE_SLOT, packSpace, unpackSpace } from "./stageSaves";
@@ -36,13 +35,15 @@ import {
 import { IDLE, approachControls, newBattle, pilotControls, reinforce, step, type Battle, type Controls } from "./space/combat";
 import { fitProblems, shipStats, part, powerOf, SLOT_TYPES, slotsOf, slotsUsed } from "./space/fit";
 import { StageUi, action, type StageAction } from "./stageUi";
-import { MAP_PICK, drawEnd, drawHangar, drawMap, drawReadout, hangarItems, hullAtlas, type HangarAct, type HangarButton, type Pen } from "./space/panels";
+import { artIcon, artKey, FLIGHT_SPRITE_SIZE, preloadSpaceArt } from "./space/art";
+import { SpaceTouchFlight } from "./space/touchFlight";
+import "./space/flight.css";
+import { MAP_PICK, drawEnd, drawHangar, drawMap, drawReadout, hangarItems, type HangarAct, type HangarButton, type Pen } from "./space/panels";
 import { SPACE } from "./space/tuning";
 
 const LOG = "space";
 const FIRE_SOUND: Record<string, string> = { kinetic: "sp_fire_kinetic", beam: "sp_fire_beam", spore: "sp_fire_spore" }; // by weapon family
 const W = 640, H = 360, CX = W / 2, CY = H / 2;
-const ATLASES = ["space_ships", "space_allies", "space_t0", "space_props", "space_parts"] as const;
 const SHOT_COL = { kinetic: 0xe8dcc0, beam: 0x80f0e0, spore: 0xa0e060 } as const;
 const TILE_COLS = 6; // the hangar palette's row length (space/panels.ts)
 const JUMP_KEYS: Record<string, 1 | -1> = { BracketRight: 1, Period: 1, BracketLeft: -1, Comma: -1 };
@@ -59,16 +60,18 @@ export class SpaceScene extends Phaser.Scene {
   private lineage!: LineagePanel;
   private shipPreview?: ShipPreview;
   private sfx!: CellSfx;
+  private touchFlight!: SpaceTouchFlight;
+  private systemBackdrop!: Phaser.GameObjects.Image;
   private world!: Phaser.GameObjects.Graphics; // stars, shots, radar: redrawn every frame
   private fx!: Phaser.GameObjects.Graphics; // the wormhole, over the ships
   private ui!: Phaser.GameObjects.Graphics; // panels and the HUD: redrawn when dirty
   private texts: Phaser.GameObjects.Text[] = [];
-  private icons: Phaser.GameObjects.Sprite[] = []; // the panels' sprites (ship, part icons): redrawn with the panel
+  private icons: Phaser.GameObjects.Image[] = []; // the panels' sprites (ship, part icons): redrawn with the panel
   private buttons: HangarButton[] = [];
-  private youS!: Phaser.GameObjects.Sprite;
-  private planetS!: Phaser.GameObjects.Sprite;
-  private foeS = new Map<number, Phaser.GameObjects.Sprite>();
-  private allyS = new Map<number, Phaser.GameObjects.Sprite>();
+  private youS!: Phaser.GameObjects.Image;
+  private planetS!: Phaser.GameObjects.Image;
+  private foeS = new Map<number, Phaser.GameObjects.Image>();
+  private allyS = new Map<number, Phaser.GameObjects.Image>();
   private toastT!: Phaser.GameObjects.Text;
   private toastLeft = 0;
   private notes: string[] = []; // what the last battle changed (shown in the hangar)
@@ -105,12 +108,7 @@ export class SpaceScene extends Phaser.Scene {
     super("space");
   }
 
-  preload(): void {
-    for (const a of ATLASES) {
-      this.load.spritesheet(a, `assets/art/${a}.png`, { frameWidth: 32, frameHeight: 32 });
-      this.load.json(`${a}_layout`, `assets/art/${a}.json`);
-    }
-  }
+  preload(): void { preloadSpaceArt(this); }
 
   create(): void {
     const params = new URLSearchParams(location.search);
@@ -118,15 +116,16 @@ export class SpaceScene extends Phaser.Scene {
     this.hold = params.has("hold");
     if (params.has("debug")) Log.enableChannel(LOG);
     this.sfx = cellSfx();
-    for (const a of ATLASES) {
-      const layout = this.cache.json.get(`${a}_layout`) as AtlasLayout | undefined;
-      if (!layout) throw new Error(`missing atlas layout ${a}_layout (build assets_src/sprites/${a}.py)`);
-      const rate = a === "space_parts" ? 2 : a === "space_props" ? 1 : 8;
-      for (const s of animSpecs(a, layout)) if (!this.anims.exists(s.key)) this.anims.create({ key: s.key, frames: this.anims.generateFrameNumbers(a, { start: s.start, end: s.end }), frameRate: rate, repeat: -1 });
-    }
     const handIn = this.readLineage();
     this.c = startCampaign({ temper: this.temper, civ: handIn.civ, harshness: handIn.harshness });
     this.screenUi = new StageUi(this); this.commandsOpen = false;
+    this.screenUi.root.classList.add("space-flight-ui");
+    this.touchFlight = new SpaceTouchFlight(this.screenUi.root, () =>
+      !this.autoplay && this.mode === "flight" && !this.commandsOpen && !this.screenUi.detailsOpen
+      && !this.lineage?.isOpen && shell.topId === "play" && shell.input.scheme === "touch");
+    this.events.once("shutdown", () => this.touchFlight.destroy());
+    const details = this.screenUi.details.closest("details");
+    details?.addEventListener("toggle", () => this.touchFlight.refresh());
     if (params.get("world") === "tidereach") this.c = { ...this.c, system: "tidereach" }; // debug: start at the allies' world
     if (params.has("boss")) this.c = { ...this.c, system: "lattice", latticeStreak: SPACE.boss.streak, latticeOpen: true }; // debug: the Mothership arrives
     this.allowSave = params.has("save") || (!this.autoplay && !params.has("boss") && !params.has("world")); // debug starts never touch your save; &save: an autoplay run writes one (smoke checks Continue)
@@ -137,9 +136,10 @@ export class SpaceScene extends Phaser.Scene {
     this.sel = 0; this.waveLeft = 0; this.victoryShown = false; this.autoLand = false; this.pilotGoal = "fight"; this.pilotCheck = false;
     const resize = () => { this.stars = Array.from({ length: 90 }, (_, i) => ({ x: (i * 197) % this.scale.width, y: (i * 113 + (i % 7) * 31) % this.scale.height, p: 0.15 + (i % 3) * 0.2 })); this.dirty = true; };
     resize(); this.scale.on("resize", resize); this.events.once("shutdown", () => this.scale.off("resize", resize));
+    this.systemBackdrop = this.add.image(0, 0, artKey("driftfield")).setDepth(-1).setVisible(false);
     this.world = this.add.graphics().setDepth(0);
-    this.planetS = this.add.sprite(0, 0, "space_props").setScale(3).setDepth(1);
-    this.youS = this.add.sprite(CX, CY, "space_ships").setDepth(5);
+    this.planetS = this.add.image(0, 0, artKey("hearth")).setDisplaySize(96, 96).setDepth(1);
+    this.youS = this.add.image(CX, CY, artKey("seedpod")).setDepth(5);
     this.fx = this.add.graphics().setDepth(30);
     this.ui = this.add.graphics().setDepth(50);
     this.toastT = this.add.text(CX - 30, 26, "", { fontFamily: "monospace", fontSize: "10px", color: "#fff6c8", align: "center", wordWrap: { width: 380 }, backgroundColor: "#000000b0", padding: { x: 6, y: 3 } })
@@ -151,7 +151,7 @@ export class SpaceScene extends Phaser.Scene {
     window.addEventListener("keydown", this.onKey);
     window.addEventListener("keyup", this.onKeyUp);
     this.events.once("shutdown", () => { window.removeEventListener("keydown", this.onKey); window.removeEventListener("keyup", this.onKeyUp); });
-    const paused = () => this.held.clear(); this.events.on("pause", paused); this.events.once("shutdown", () => this.events.off("pause", paused));
+    const paused = () => { this.held.clear(); this.touchFlight.clear(); }; this.events.on("pause", paused); this.events.once("shutdown", () => this.events.off("pause", paused));
     this.lineage = new LineagePanel(this);
     if (!this.autoplay && !resumed) this.lineage.show(this.reveal ?? revealFrom(null, 3, "space"), "Enter or E: take the helm");
     if (resumed) this.toast(`Welcome back, captain: ${starSystem(this.c.system).name}, ${this.c.wins} wins, ${this.c.credits} salvage.`, 5);
@@ -195,12 +195,14 @@ export class SpaceScene extends Phaser.Scene {
 
   private setMode(m: Mode): void {
     this.mode = m;
+    this.touchFlight.clear();
+    this.touchFlight.refresh();
     this.dirty = true;
     shell.input.clearPresses(); // a key pressed in one mode must not fire in the next (Enter in flight, then the map)
     const flying = m === "flight" || m === "map" || m === "jump";
-    this.youS.setVisible(flying).setScale(1).setAlpha(1);
+    this.youS.setVisible(flying).setDisplaySize(FLIGHT_SPRITE_SIZE, FLIGHT_SPRITE_SIZE).setAlpha(1);
     if (m !== "jump") this.fx.clear();
-    if (!flying) { this.clearShips(); this.world.clear(); this.planetS.setVisible(false); this.autoLand = false; }
+    if (!flying) { this.systemBackdrop.setVisible(false); this.clearShips(); this.world.clear(); this.planetS.setVisible(false); this.autoLand = false; }
   }
 
   // ---- the campaign's moves ---------------------------------------------------------------------------------
@@ -316,7 +318,8 @@ export class SpaceScene extends Phaser.Scene {
     const p = Math.min(1, this.jumpT / (still ? 0.4 : SPACE.jump.secs)), amp = Math.sin(Math.PI * p);
     g.clear();
     g.fillStyle(0x0a0420, 0.9 * amp * amp).fillRect(0, 0, W, H); // the dark of the tunnel hides the change of system
-    this.youS.setScale(1 - 0.6 * amp).setAlpha(1 - 0.5 * amp);
+    const size = FLIGHT_SPRITE_SIZE * (1 - 0.6 * amp);
+    this.youS.setDisplaySize(size, size).setAlpha(1 - 0.5 * amp);
     if (still) return; // reduce motion: a plain fade
     for (let k = 0; k < 10; k++) {
       const r = (k / 10 + p * 2.2) % 1;
@@ -442,13 +445,14 @@ export class SpaceScene extends Phaser.Scene {
   }
 
   private flightControls(): Controls {
+    const touch = this.touchFlight.read();
     const inp = shell.input, down = (a: string, b: string) => inp.isDown(a) || inp.isDown(b);
     return {
-      turn: (down("move_right", "ui_right") ? 1 : 0) - (down("move_left", "ui_left") ? 1 : 0),
-      thrust: (down("move_up", "ui_up") ? 1 : 0) - (down("move_down", "ui_down") ? 1 : 0), // W forward, S reverse thrusters
-      strafe: (this.held.has("KeyC") ? 1 : 0) - (this.held.has("KeyZ") ? 1 : 0), // side thrusters
-      brake: this.held.has("KeyX"),
-      fire: down("jump", "attack"),
+      turn: touch.turn || Number(down("move_right", "ui_right")) - Number(down("move_left", "ui_left")),
+      thrust: touch.thrust || Number(down("move_up", "ui_up")) - Number(down("move_down", "ui_down")), // W forward, S reverse thrusters
+      strafe: touch.strafe || Number(this.held.has("KeyC")) - Number(this.held.has("KeyZ")), // side thrusters
+      brake: touch.brake || this.held.has("KeyX"),
+      fire: touch.fire || down("jump", "attack"),
     };
   }
 
@@ -504,7 +508,15 @@ export class SpaceScene extends Phaser.Scene {
     const sx = (x: number) => x - you.x + CX, sy = (y: number) => y - you.y + CY;
     const warp = this.mode === "jump" && !shell.settings.access.reduce_motion ? Math.sin(Math.PI * Math.min(1, this.jumpT / SPACE.jump.secs)) : 0;
     g.clear();
-    g.fillStyle(0x05070d, 1).fillRect(0, 0, W, H);
+    const backdrop = this.c.system === "driftfield" ? "driftfield" : this.c.system === "lattice" ? "lattice_field" : null;
+    this.systemBackdrop.setVisible(backdrop !== null);
+    if (backdrop) {
+      const image = this.systemBackdrop, texture = artKey(backdrop);
+      if (image.texture.key !== texture) image.setTexture(texture);
+      const scale = Math.max((W + 24) / image.width, (H + 24) / image.height);
+      const offset = shell.settings.access.reduce_motion ? 0 : 1;
+      image.setPosition(CX - offset * Math.tanh(you.x / 700) * 10, CY - offset * Math.tanh(you.y / 700) * 10).setScale(scale);
+    } else g.fillStyle(0x05070d, 1).fillRect(0, 0, W, H);
     for (const s of this.stars) { // parallax: far stars drift slower; in a wormhole they streak away from the centre
       const x = (((s.x - you.x * s.p) % W) + W) % W, y = (((s.y - you.y * s.p) % H) + H) % H;
       if (warp > 0.05) g.lineStyle(1, 0xc8d8ff, 0.3 + s.p).lineBetween(x, y, x + (x - CX) * warp * 0.5, y + (y - CY) * warp * 0.5);
@@ -512,15 +524,19 @@ export class SpaceScene extends Phaser.Scene {
     }
     const world = worldOf(this.c.system);
     this.planetS.setVisible(!!world).setPosition(sx(0), sy(0));
-    if (world) { const key = animKey("space_props", world.sprite, "up"); if (this.planetS.anims.currentAnim?.key !== key) this.planetS.play(key); }
-    this.youS.setPosition(CX, CY).setRotation(you.a + Math.PI / 2);
-    const key = animKey("space_ships", this.c.fit.hull, "up");
-    if (this.youS.anims.currentAnim?.key !== key) this.youS.play(key);
+    if (world && this.planetS.texture.key !== artKey(world.sprite)) this.planetS.setTexture(artKey(world.sprite)).setDisplaySize(96, 96);
+    const flagship = artKey(this.c.fit.hull);
+    if (this.youS.texture.key !== flagship) this.youS.setTexture(flagship);
+    this.youS.setPosition(CX, CY).setRotation(you.a + Math.PI / 2).setDisplaySize(FLIGHT_SPRITE_SIZE, FLIGHT_SPRITE_SIZE);
     const allies = new Set<number>();
     for (const a of this.b.allies) { // your escorts: they fly themselves
       allies.add(a.escort);
       let s = this.allyS.get(a.escort);
-      if (!s) { s = this.add.sprite(0, 0, hullAtlas(a.hullId)).play(animKey(hullAtlas(a.hullId), a.hullId, "up")).setDepth(4).setScale(a.hullId === "seedpod" ? 0.8 : 1); this.allyS.set(a.escort, s); }
+      if (!s) {
+        const size = FLIGHT_SPRITE_SIZE * (a.hullId === "seedpod" ? 0.8 : 1);
+        s = this.add.image(0, 0, artKey(a.hullId)).setDepth(4).setDisplaySize(size, size);
+        this.allyS.set(a.escort, s);
+      }
       const x = sx(a.x), y = sy(a.y);
       s.setPosition(x, y).setRotation(a.a + Math.PI / 2);
       if (a.hull < a.hullMax) this.bar(x, y, a.r, a.hull / a.hullMax, 0x60d0c0);
@@ -530,7 +546,11 @@ export class SpaceScene extends Phaser.Scene {
     for (const f of this.b.foes) {
       seen.add(f.id);
       let s = this.foeS.get(f.id);
-      if (!s) { s = this.add.sprite(0, 0, "space_t0").play(animKey("space_t0", f.kind, "up")).setDepth(f.kind === "mothership" ? 3 : 4).setScale(f.kind === "mothership" ? 3 : 1); this.foeS.set(f.id, s); }
+      if (!s) {
+        const boss = f.kind === "mothership", size = FLIGHT_SPRITE_SIZE * (boss ? 3 : 1);
+        s = this.add.image(0, 0, artKey(f.kind)).setDepth(boss ? 3 : 4).setDisplaySize(size, size);
+        this.foeS.set(f.id, s);
+      }
       const x = sx(f.x), y = sy(f.y);
       s.setPosition(x, y).setRotation(f.a + Math.PI / 2).setTint(f.mode === "hunt" ? 0xffffff : 0x8090a8); // dim: pausing or resting
       if (f.hull < f.hullMax || f.kind === "mothership") this.bar(x, y, f.r + (f.kind === "mothership" ? 14 : 0), f.hull / f.hullMax, 0xff5040);
@@ -539,11 +559,21 @@ export class SpaceScene extends Phaser.Scene {
     for (const [id, s] of this.foeS) if (!seen.has(id)) { s.destroy(); this.foeS.delete(id); }
     for (const s of this.b.shots) {
       const big = s.homing ? 4 : s.family === "spore" ? 5 : 3;
-      g.fillStyle(s.family ? SHOT_COL[s.family] : 0xff4030, 1).fillRect(sx(s.x) - big / 2, sy(s.y) - big / 2, big, big);
+      const x = sx(s.x), y = sy(s.y), speed = Math.hypot(s.vx, s.vy) || 1;
+      const color = s.family ? SHOT_COL[s.family] : 0xff6374;
+      if (s.family === "spore") {
+        g.fillStyle(color, 0.27).fillCircle(x, y, big).fillStyle(color, 1).fillCircle(x, y, big * 0.56);
+      } else {
+        const trail = s.family === "beam" ? 13 : s.family === "kinetic" ? 6 : 3;
+        const tailX = x - trail * s.vx / speed, tailY = y - trail * s.vy / speed;
+        g.lineStyle(5, color, 0.21).lineBetween(x, y, tailX, tailY);
+        g.lineStyle(s.family ? 2 : 3, color, 1).lineBetween(x, y, tailX, tailY);
+      }
       if (s.homing) g.fillStyle(0x60a030, 0.7).fillRect(sx(s.x - s.vx * 0.04) - 1, sy(s.y - s.vy * 0.04) - 1, 2, 2); // a missile's trail
     }
     if (world && (sx(0) < 0 || sx(0) > W || sy(0) < 0 || sy(0) > H)) this.edgeArrow(sx(0), sy(0), 0x60c0a0);
-    // your hull and shield, always on screen
+    // The native status still reports hull and shield above the touch layout.
+    if (shell.input.scheme === "touch") return;
     g.fillStyle(0x000000, 0.7).fillRect(10, H - 24, 124, 16);
     g.fillStyle(0xd0a050, 1).fillRect(12, H - 22, 120 * Math.max(0, you.hull / you.hullMax), 5);
     if (this.b.stats.shield > 0) g.fillStyle(0x60d0e0, 1).fillRect(12, H - 15, 120 * (you.shield / this.b.stats.shield), 5);
@@ -565,8 +595,9 @@ export class SpaceScene extends Phaser.Scene {
         this.texts.push(t);
         return t;
       },
-      sprite: (x, y, atlas, pose, scale = 1, alpha = 1) => {
-        this.icons.push(this.add.sprite(x, y, atlas).play(animKey(atlas, pose, "up")).setScale(scale).setAlpha(alpha).setDepth(55));
+      sprite: (x, y, id, scale = 1, alpha = 1) => {
+        const size = FLIGHT_SPRITE_SIZE * scale;
+        this.icons.push(this.add.image(x, y, artKey(id)).setDisplaySize(size, size).setAlpha(alpha).setDepth(55));
       },
     };
   }
@@ -606,6 +637,9 @@ export class SpaceScene extends Phaser.Scene {
 
   private responsive(): void {
     const c = this.c, b = this.b, i18n = shell.i18n;
+    this.screenUi.root.dataset.flight = String(this.mode === "flight" || this.mode === "map" || this.mode === "jump");
+    this.touchFlight.refresh();
+    this.screenUi.root.dataset.touchFlight = String(this.mode === "flight" && shell.input.scheme === "touch");
     if (!this.shipPreview || !this.shipPreview.node.isConnected) {
       this.shipPreview = new ShipPreview(this);
       this.screenUi.modalText.after(this.shipPreview.node);
@@ -615,16 +649,18 @@ export class SpaceScene extends Phaser.Scene {
     if (this.mode === "hangar") this.shipPreview.update(c.fit);
     this.toastT.setVisible(false);
     this.screenUi.setStatus(`${starSystem(c.system).name} · Salvage ${c.credits} · Hull ${Math.ceil(b.you.hull)}/${Math.ceil(b.you.hullMax)}\nShield ${Math.ceil(b.you.shield)} · Wins ${c.wins} · Escorts ${b.allies.length}`, `Power ${powerOf(c.fit)}\n${Object.entries(c.learned).map(([k, v]) => `${k}: ${Math.round(v * 100)}% learned`).join("\n")}\n${this.hint()}`);
-    this.screenUi.setMessage(this.toastLeft > 0 ? this.toastT.text : this.mode === "flight" ? this.hint() : "");
+    this.screenUi.setMessage(this.toastLeft > 0 ? this.toastT.text : this.mode === "flight"
+      ? shell.input.scheme === "touch" ? "Helm: up to thrust, sideways to turn · Thrusters: sideways to strafe, down to reverse" : this.hint()
+      : "");
     const close = () => { this.commandsOpen = false; this.screenUi.hide(); this.held.clear(); shell.input.clearHeld(); };
-    this.screenUi.actions([{ id: "commands", label: i18n.t("display.commands"), run: () => { this.commandsOpen = true; this.held.clear(); shell.input.clearHeld(); } }, { id: "map", label: i18n.t("display.map"), run: () => { if (this.mode === "flight") this.openMap(); } }]);
+    this.screenUi.actions([{ id: "commands", label: i18n.t("display.commands"), run: () => { this.commandsOpen = true; this.touchFlight.refresh(); this.held.clear(); shell.input.clearHeld(); } }, { id: "map", label: i18n.t("display.map"), run: () => { if (this.mode === "flight") this.openMap(); } }]);
     if (this.mode === "hangar") {
-      const items = hangarItems(c), icon = (texture: string, pose: string) => ({ texture, frame: firstFrame(this.cache.json.get(`${texture}_layout`) as AtlasLayout, pose, "up") });
+      const items = hangarItems(c);
       const choices: StageAction[] = items.map((it, n) => it.kind === "part" ? {
-        id: `buy${it.id}`, label: `${n === this.sel ? "> " : ""}${part(it.id).name}\n${priceOf(c, it.id)} salvage · ${part(it.id).slot}\nPower ${part(it.id).power}`, icon: icon("space_parts", it.id),
+        id: `buy${it.id}`, label: `${n === this.sel ? "> " : ""}${part(it.id).name}\n${priceOf(c, it.id)} salvage · ${part(it.id).slot}\nPower ${part(it.id).power}`, icon: artIcon(it.id),
         run: () => { this.sel = n; this.hangar({ kind: "add", part: it.id }); },
-      } : { id: `hire${it.id}`, label: `Recruit ${SPACE.escorts[it.id].name} · ${escortPrice(c, it.id)} salvage`, run: () => this.hangar({ kind: "recruit", escort: it.id }) });
-      const fitted = [...new Set(c.fit.parts)].map(id => ({ id: `remove${id}`, label: `Remove ${part(id).name} (${c.fit.parts.filter(p => p === id).length} fitted)`, icon: icon("space_parts", id), run: () => this.hangar({ kind: "remove", part: id }) }));
+      } : { id: `hire${it.id}`, label: `Recruit ${SPACE.escorts[it.id].name} · ${escortPrice(c, it.id)} salvage`, icon: artIcon(SPACE.escorts[it.id].hull), run: () => this.hangar({ kind: "recruit", escort: it.id }) });
+      const fitted = [...new Set(c.fit.parts)].map(id => ({ id: `remove${id}`, label: `Remove ${part(id).name} (${c.fit.parts.filter(p => p === id).length} fitted)`, icon: artIcon(id), run: () => this.hangar({ kind: "remove", part: id }) }));
       this.screenUi.show(`${worldOf(c.system)?.name ?? "Hangar"} · ${SPACE.hulls[c.fit.hull].name} · Salvage ${c.credits}\nPower ${powerOf(c.fit)} · ${SLOT_TYPES.map(t => `${t} ${slotsUsed(c.fit, t)}/${slotsOf(c.fit.hull)[t]}`).join(" · ")}\n${(this.notes.length ? this.notes : c.start).join("\n")}\n${this.toastLeft > 0 ? this.toastT.text : "Choose parts to buy; fitted parts can be removed below."}`, [
         ...choices, ...fitted, { id: "hull", label: i18n.t("display.change_hull"), run: () => this.hangar({ kind: "hull" }) }, { id: "launch", label: i18n.t("display.launch"), run: () => { close(); this.launch(); } }]);
     } else if (this.mode === "map") this.screenUi.show(`Star map · ${starSystem(this.mapSel).name}\n${starSystem(this.mapSel).blurb}\nRoute: ${[c.system, ...routeTo(c.system, this.mapSel)].map(id => starSystem(id).name).join(" → ")}\nAction is paused while you choose.`, [
@@ -679,6 +715,7 @@ export class SpaceScene extends Phaser.Scene {
   }
 
   update(_time: number, deltaMs: number): void {
+    this.touchFlight.refresh();
     if ((this.commandsOpen || this.screenUi.detailsOpen) && this.mode === "flight" && !this.autoplay) { this.responsive(); return; }
     const dt = Math.min(deltaMs / 1000, 0.05);
     const playing = shell.topId === "play";
