@@ -1,0 +1,948 @@
+<!doctype html>
+<!-- ---------------------------------------------------------------------------
+  tools/level-sketcher/index.html
+  Purpose : Hand-design creature Water levels: arrange rooms on a minimap, paint each room on the real
+            16 px lattice (40x15 tiles per 640x360 screen), reuse layouts from a room library, and check
+            reachability with an approximation of creature/physics.ts. The lessons feed the generator
+            (docs/CREATURE_LEVELGEN.md, levelgen/templates.ts).
+  Usage   : open this file in a browser, or `npm run dev` and visit /tools/level-sketcher/index.html.
+            Export JSON to save a level and its library; Import to load one.
+  Notes   : Standalone, no build step, no dependencies. Movement constants copied from CR.move and WATER;
+            keep PHYS in sync if those change. Not yet read by the game.
+  Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
+---------------------------------------------------------------------------- -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Level Sketcher</title>
+<style>
+:root{--bg:#0b1116;--panel:#121b22;--panel2:#18242d;--line:#24343f;--text:#d8e4ea;--dim:#7d93a0;--accent:#4fd1a5;--warn:#f0b429;--bad:#ef5350;--good:#66bb6a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.4 system-ui,Segoe UI,sans-serif}
+header{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:14px;margin:0 8px 0 0;color:var(--accent);letter-spacing:.5px}
+header input,header select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:3px 6px}
+.tabs{display:flex;gap:2px;margin-left:8px}
+.tabs button{border-radius:4px 4px 0 0}
+.tabs button.on{background:var(--accent);color:#04140e;font-weight:600}
+.spacer{flex:1}
+button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:4px 9px;cursor:pointer;font:inherit}
+button:hover{border-color:var(--accent)}
+button.on{background:#1f4a3d;border-color:var(--accent)}
+button:disabled{opacity:.4;cursor:default}
+main{display:grid;grid-template-columns:190px 1fr 320px;height:calc(100% - 41px)}
+aside{background:var(--panel);overflow:auto;padding:10px}
+#tools{border-right:1px solid var(--line)}
+#side{border-left:1px solid var(--line)}
+#stage{position:relative;overflow:auto;padding:12px}
+#cv{display:block;image-rendering:pixelated;cursor:crosshair}
+#status{position:sticky;left:0;bottom:-12px;margin-top:8px;color:var(--dim);font-size:12px;background:var(--bg);padding:4px 0}
+h3{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:14px 0 6px}
+h3:first-child{margin-top:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.toolbtn{width:100%;text-align:left;margin-bottom:3px;display:flex;justify-content:space-between}
+.toolbtn kbd{color:var(--dim);font-size:11px}
+.sw{display:flex;align-items:center;gap:6px;width:100%;margin-bottom:3px;text-align:left}
+.sw i{display:inline-block;width:16px;height:16px;border-radius:3px;border:1px solid #0006;flex:none;font-style:normal;text-align:center;font-size:11px;line-height:15px;color:#000}
+label.f{display:block;margin:6px 0 2px;color:var(--dim);font-size:12px}
+.side input[type=text],.side select,.side textarea,#side input[type=text],#side input[type=number],#side select,#side textarea{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:4px 6px;font:inherit}
+#side textarea{min-height:54px;resize:vertical}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.msg{padding:4px 6px;border-radius:4px;margin:3px 0;background:var(--panel2);border-left:3px solid var(--dim);font-size:12px}
+.msg.bad{border-color:var(--bad)}.msg.warn{border-color:var(--warn)}.msg.good{border-color:var(--good)}.msg.info{border-color:#4fc3f7}
+table.reach{border-collapse:collapse;width:100%;font-size:12px}
+table.reach td,table.reach th{border:1px solid var(--line);padding:2px 4px;text-align:center}
+table.reach th{color:var(--dim);font-weight:500}
+.ok{color:var(--good)}.no{color:var(--bad)}
+.legend{display:flex;flex-wrap:wrap;gap:4px}
+.legend span{font-size:11px;padding:1px 5px;border-radius:3px;color:#000}
+#lib{display:none;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px;cursor:pointer}
+.card.sel{border-color:var(--accent)}
+.card canvas{width:100%;display:block;border-radius:3px;image-rendering:pixelated;background:#0e1820}
+.card b{display:block;margin-top:6px}
+.card small{color:var(--dim)}
+.help{color:var(--dim);font-size:12px}
+.help b{color:var(--text)}
+.stat{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding:2px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>OOZE2ORBIT · LEVEL SKETCHER</h1>
+  <input id="levelName" type="text" size="18" title="Level name">
+  <select id="levelTier" title="Level difficulty"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
+  <div class="tabs">
+    <button data-mode="map">1 · Minimap</button>
+    <button data-mode="room">2 · Paint room</button>
+    <button data-mode="library">3 · Room library</button>
+  </div>
+  <span class="spacer"></span>
+  <button id="btnNew" title="Start an empty level (the library is kept)">New level</button>
+  <button id="btnImport">Import…</button>
+  <button id="btnExport">Export JSON</button>
+  <input id="fileIn" type="file" accept=".json,application/json" hidden>
+</header>
+<main>
+  <aside id="tools"></aside>
+  <section id="stage">
+    <canvas id="cv"></canvas>
+    <div id="lib"></div>
+    <div id="status"></div>
+  </section>
+  <aside id="side"></aside>
+</main>
+<script>
+"use strict";
+// ============================================================================================
+// Constants: one screen = 40 x 15 tiles of 16 px. Row 0 = engine ty 5 (ceiling), row 14 = ty 19 (floor),
+// so a painted 1x1 room maps 1:1 onto the game's 640 x 360 room lattice (tx = col, ty = row + 5).
+// Movement numbers are copied from creature/tuning.ts (CR.move) and waterWorld.ts (WATER).
+// ============================================================================================
+const TW = 40, TH = 15, T = 16;
+const PHYS = { g: 900, jump: 400, breach: 360, run: 105, sprint: 165, swim: 85, fin: 155, dt: 1 / 60, maxFall: 520, steps: 220 };
+const TILES = {
+  '.': { name: 'Air', col: '#0e1820' },
+  '#': { name: 'Rock', col: '#55473a' },
+  '~': { name: 'Water', col: '#1c5f86' },
+  'c': { name: 'Current (torrent)', col: '#17809a' },
+  '=': { name: 'Ledge (one-way)', col: '#c4914f' },
+  '^': { name: 'Hazard', col: '#e0533d' },
+  'B': { name: 'Breakable wall (stat/class)', col: '#7a5590' },
+  'G': { name: 'Sluice gate (Gardener)', col: '#d4a72c' },
+  'D': { name: 'Door opening', col: '#2fae74' },
+};
+const TILE_ORDER = ['.', '#', '~', 'c', '=', '^', 'B', 'G', 'D'];
+const OBJ = {
+  spawn: { g: 'S', col: '#ffffff', name: 'Spawn / arrival', inter: true },
+  control: { g: 'L', col: '#f1c40f', name: 'Control / lever', inter: true },
+  keyed: { g: 'K', col: '#ff9f43', name: 'Keyed control', inter: true },
+  reward: { g: '★', col: '#ffd700', name: 'Reward / seal', inter: true },
+  food: { g: '•', col: '#7ed957', name: 'Food', inter: true },
+  cache: { g: '◆', col: '#80deea', name: 'Food cache', inter: true },
+  netRig: { g: 'n', col: '#9fe6d0', name: 'Net rigging', inter: true },
+  netFrame: { g: 'N', col: '#9fe6d0', name: 'Net frame', inter: true },
+  reeds: { g: 'ψ', col: '#4caf50', name: 'Reeds / cover', inter: false },
+  vent: { g: '≋', col: '#b0bec5', name: 'Pressure vent', inter: false },
+  charger: { g: 'C', col: '#ef5350', name: 'Charger', inter: false },
+  swimmer: { g: 'w', col: '#ff8a65', name: 'Swimmer', inter: false },
+  ambusher: { g: 'A', col: '#c62828', name: 'Ambusher', inter: false },
+  dropper: { g: '▼', col: '#ff4081', name: 'Ceiling dropper', inter: false },
+};
+const ROLES = {
+  entry: '#4fc3f7', traversal: '#90a4ae', lever: '#fbc02d', drain: '#29b6f6', shaft: '#7986cb', pressure: '#ba68c8',
+  arena: '#e53935', trap: '#ff7043', ceiling: '#ec407a', recovery: '#66bb6a', hub: '#a1887f', nursery: '#26a69a',
+  vault: '#ffd54f', classTrial: '#ff8f00', goal: '#fff176',
+};
+const DIR = { N: [0, -1], S: [0, 1], W: [-1, 0], E: [1, 0] };
+const OPP = { N: 'S', S: 'N', W: 'E', E: 'W' };
+const GW = 22, GH = 15, CW = 80, CH = 30; // minimap grid size and cell pixels
+
+// ============================================================================================
+// Tile helpers
+// ============================================================================================
+function blankTiles(w, h) {
+  const W = w * TW, H = h * TH, rows = [];
+  for (let r = 0; r < H; r++) {
+    let s = '';
+    for (let c = 0; c < W; c++) s += (r === 0 || r === H - 1 || c === 0 || c === W - 1) ? '#' : '.';
+    rows.push(s);
+  }
+  return rows;
+}
+const setT = (tiles, c, r, ch) => { if (r < 0 || r >= tiles.length || c < 0 || c >= tiles[0].length) return; const s = tiles[r]; if (s[c] !== ch) tiles[r] = s.slice(0, c) + ch + s.slice(c + 1); };
+const getT = (tiles, c, r) => (r < 0 || r >= tiles.length || c < 0 || c >= tiles[0].length) ? '#' : tiles[r][c];
+function fillRect(tiles, c0, r0, c1, r1, ch) { for (let r = Math.min(r0, r1); r <= Math.max(r0, r1); r++) for (let c = Math.min(c0, c1); c <= Math.max(c0, c1); c++) setT(tiles, c, r, ch); }
+
+// Door openings: where the Door tool carves an exit in a room's painted edge.
+function doorSpan(room, d) {
+  const W = room.w * TW, H = room.h * TH;
+  if (d.side === 'W' || d.side === 'E') { const c = d.side === 'W' ? 0 : W - 1, r1 = d.cy * TH + TH - 2; return { cells: [10, 11, 12, 13].map(k => [c, d.cy * TH + k]), inner: d.side === 'W' ? 1 : -1, r1 }; }
+  const r = d.side === 'N' ? 0 : H - 1; return { cells: [18, 19, 20, 21].map(k => [d.cx * TW + k, r]) };
+}
+function carveDoor(room, d) {
+  for (const [c, r] of doorSpan(room, d).cells) {
+    setT(room.tiles, c, r, 'D');
+    // Clear one tile inward so the opening is not plugged by the border.
+    const ic = d.side === 'W' ? c + 1 : d.side === 'E' ? c - 1 : c, ir = d.side === 'N' ? r + 1 : d.side === 'S' ? r - 1 : r;
+    if (getT(room.tiles, ic, ir) === '#') setT(room.tiles, ic, ir, '.');
+  }
+}
+function uncarveDoor(room, d) {
+  const W = room.w * TW, H = room.h * TH;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    if (getT(room.tiles, c, r) !== 'D') continue;
+    const onEdge = d.side === 'W' ? c === 0 && Math.floor(r / TH) === d.cy : d.side === 'E' ? c === W - 1 && Math.floor(r / TH) === d.cy
+      : d.side === 'N' ? r === 0 && Math.floor(c / TW) === d.cx : r === H - 1 && Math.floor(c / TW) === d.cx;
+    if (onEdge) setT(room.tiles, c, r, '#');
+  }
+}
+
+// ============================================================================================
+// Starter library: the five v1 Water templates, transcribed from levelgen/templates.ts, plus two new shapes.
+// ============================================================================================
+function starterLibrary() {
+  const L = [];
+  const mk = (name, tags, w, h, build) => { const tiles = blankTiles(w, h), objects = []; build(tiles, objects); L.push({ id: 'lib' + (L.length + 1), name, tags, w, h, tiles, objects, starter: true }); };
+  const sideDoors = (t, w = 1) => { for (const r of [10, 11, 12, 13]) { setT(t, 0, r, 'D'); setT(t, w * TW - 1, r, 'D'); } };
+  const pool = (t, r0 = 13) => fillRect(t, 9, r0, 33, 13, '~');
+  const o = (objects, type, x, y, extra) => objects.push({ type, x, y, ...extra });
+  mk('v1 Lever / sluice', 'lever', 1, 1, (t, ob) => {
+    sideDoors(t); pool(t); fillRect(t, 10, 9, 12, 9, '#'); fillRect(t, 18, 1, 18, 13, 'G');
+    o(ob, 'spawn', 3, 13); o(ob, 'control', 11, 8, { label: 'Upper sluice lever' }); [7, 13, 24, 32].forEach(x => o(ob, 'food', x, 13));
+    o(ob, 'reeds', 15, 13); o(ob, 'charger', 26, 13); o(ob, 'netRig', 6, 13); o(ob, 'netFrame', 23, 12);
+  });
+  mk('v1 Drain chamber', 'drain', 1, 1, (t, ob) => {
+    sideDoors(t); pool(t); fillRect(t, 11, 10, 13, 10, '#'); fillRect(t, 19, 14, 21, 14, 'D');
+    o(ob, 'spawn', 3, 13); o(ob, 'control', 30, 13, { label: '1 · Drain control', guarded: true }); o(ob, 'control', 12, 9, { label: '2 · Upper release' });
+    o(ob, 'charger', 27, 13); o(ob, 'reeds', 16, 13);
+  });
+  mk('v1 Shaft relay', 'shaft', 1, 1, (t, ob) => {
+    sideDoors(t); pool(t); fillRect(t, 10, 1, 14, 10, '#'); fillRect(t, 26, 1, 29, 10, '#'); fillRect(t, 19, 11, 21, 13, '#'); fillRect(t, 7, 10, 9, 10, '#');
+    fillRect(t, 16, 0, 18, 0, 'D');
+    o(ob, 'spawn', 3, 13); o(ob, 'control', 17, 9, { label: '1 · Shaft relay' }); o(ob, 'control', 31, 13, { label: '2 · Lower latch' }); o(ob, 'cache', 17, 10);
+  });
+  mk('v1 Pressure crossing', 'pressure', 1, 1, (t, ob) => {
+    sideDoors(t); pool(t); fillRect(t, 11, 10, 13, 10, '#'); fillRect(t, 7, 0, 8, 0, 'D');
+    o(ob, 'spawn', 3, 13); o(ob, 'control', 30, 13, { label: '1 · Charge pressure', guarded: true }); o(ob, 'control', 12, 9, { label: '2 · Timed release' }); o(ob, 'vent', 24, 13);
+    o(ob, 'swimmer', 27, 13);
+  });
+  mk('v1 Grotto / nursery', 'vault nursery', 1, 1, (t, ob) => {
+    for (const r of [10, 11, 12, 13]) setT(t, 0, r, 'D'); pool(t); fillRect(t, 16, 9, 19, 9, '#'); fillRect(t, 7, 14, 8, 14, 'D');
+    o(ob, 'control', 18, 8, { label: 'Upper sluice lever' }); o(ob, 'reward', 36, 13, { label: 'Sample' }); o(ob, 'reeds', 14, 13);
+  });
+  mk('New · Climbing well (1×2)', 'shaft traversal', 1, 2, (t, ob) => {
+    fillRect(t, 18, 0, 21, 0, 'D'); fillRect(t, 18, 29, 21, 29, 'D'); for (const r of [24, 25, 26, 27]) setT(t, 0, r, 'D');
+    fillRect(t, 1, 28, 38, 28, '#'); fillRect(t, 18, 28, 21, 28, '.');
+    [[6, 24], [14, 20], [24, 17], [32, 13], [22, 9], [12, 5]].forEach(([c, r]) => fillRect(t, c, r, c + 4, r, '='));
+    fillRect(t, 26, 23, 37, 27, '~'); o(ob, 'food', 34, 12); o(ob, 'dropper', 20, 2);
+  });
+  mk('New · Flooded undercroft (2×1)', 'traversal recovery', 2, 1, (t, ob) => {
+    for (const r of [10, 11, 12, 13]) { setT(t, 0, r, 'D'); setT(t, 79, r, 'D'); }
+    fillRect(t, 12, 1, 67, 6, '#'); fillRect(t, 12, 9, 67, 13, '~'); fillRect(t, 30, 7, 31, 13, '#'); fillRect(t, 48, 7, 49, 13, '#');
+    fillRect(t, 30, 12, 31, 13, '~'); fillRect(t, 48, 12, 49, 13, '~'); fillRect(t, 38, 7, 41, 7, '#');
+    o(ob, 'cache', 40, 6); o(ob, 'swimmer', 22, 11); o(ob, 'swimmer', 58, 11); o(ob, 'reeds', 8, 13);
+  });
+  return L;
+}
+
+// ============================================================================================
+// Reachability: a tile-lattice approximation of creature/physics.ts. Full jumps only (the game has no jump cut),
+// steady horizontal speed, swim anywhere in water, breach-jump from the surface. A stand-in for the real
+// controller bots, good for "can I get there at all", not for frame-perfect feel.
+// ============================================================================================
+function Grid(tiles, gatesOpen) {
+  const H = tiles.length, W = tiles[0].length;
+  const at = (c, r) => (c < 0 || r < 0 || c >= W || r >= H) ? '#' : tiles[r][c];
+  const solid = (c, r) => { const t = at(c, r); return t === '#' || (!gatesOpen && (t === 'B' || t === 'G')); };
+  const water = (c, r) => { const t = at(c, r); return t === '~' || t === 'c'; };
+  const haz = (c, r) => at(c, r) === '^';
+  return { W, H, at, solid, water, haz };
+}
+const boxCells = (x, y) => [Math.floor((x - 7) / T), Math.floor((x + 6.999) / T), Math.floor((y - 17.999) / T), Math.floor((y - 0.001) / T)];
+function boxAny(x, y, f) { const [c0, c1, r0, r1] = boxCells(x, y); for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) if (f(c, r)) return true; return false; }
+function standable(g, c, r) {
+  return !g.solid(c, r) && !g.solid(c, r - 1) && !g.haz(c, r) && !g.haz(c, r - 1) && !g.water(c, r) && (g.solid(c, r + 1) || g.at(c, r + 1) === '=');
+}
+const JUMPS = [[0, 0]], BREACH = [[0, 0]];
+for (const s of [-1, 1]) {
+  for (const v of [55, 105, 165]) JUMPS.push([s * v, s * v], [s * v, 0]);
+  JUMPS.push([0, s * 105], [0, s * 165]);
+  for (const v of [85, 155]) BREACH.push([s * v, s * v], [s * v, 0], [0, s * v]);
+}
+function simulate(g, x, y, vxA, vxB, vy) {
+  const cells = [];
+  if (boxAny(x, y, g.solid)) return { ok: false };
+  for (let i = 0; i < PHYS.steps; i++) {
+    vy = Math.min(PHYS.maxFall, vy + PHYS.g * PHYS.dt);
+    const vx = vy < 0 ? vxA : vxB;
+    const nx = x + vx * PHYS.dt;
+    if (!boxAny(nx, y, g.solid)) x = nx;
+    const ny = y + vy * PHYS.dt;
+    if (vy < 0) { if (boxAny(x, ny, g.solid)) vy = 0; else y = ny; }
+    else {
+      const row = Math.floor((ny - 0.001) / T), [c0, c1] = boxCells(x, ny);
+      let landY = null;
+      if (boxAny(x, ny, g.solid)) landY = row * T;
+      else if (y <= row * T + 0.001) { for (let c = c0; c <= c1; c++) if (g.at(c, row) === '=') landY = row * T; }
+      if (landY !== null) {
+        y = landY; pushBox(cells, g, x, y);
+        if (boxAny(x, y, g.haz)) return { ok: false };
+        const fr = Math.round(y / T) - 1, cc = Math.floor(x / T);
+        for (const c of [cc, c0, c1]) if (standable(g, c, fr)) return { ok: true, cells, node: { t: 's', c, r: fr } };
+        return { ok: true, cells, node: null };
+      }
+      y = ny;
+    }
+    if (boxAny(x, y, g.haz)) return { ok: false };
+    pushBox(cells, g, x, y);
+    const wc = Math.floor(x / T), wr = Math.floor((y - 2) / T);
+    if (g.water(wc, wr)) return { ok: true, cells, node: { t: 'w', c: wc, r: wr } };
+    if (y > g.H * T + 40) break;
+  }
+  return { ok: true, cells, node: null };
+}
+function pushBox(cells, g, x, y) { const [c0, c1, r0, r1] = boxCells(x, y); for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) if (c >= 0 && r >= 0 && c < g.W && r < g.H) cells.push(r * g.W + c); }
+function reach(g, seeds) {
+  const vis = new Uint8Array(g.W * g.H), nodes = new Set(), q = [], stand = [];
+  const mark = (c, r) => { if (c >= 0 && r >= 0 && c < g.W && r < g.H) vis[r * g.W + c] = 1; };
+  const push = n => { if (!n) return; const k = n.t + n.c + ',' + n.r; if (nodes.has(k)) return; nodes.add(k); q.push(n); if (n.t === 's') stand.push(n); };
+  const run = (x, y, a, b, vy) => { const res = simulate(g, x, y, a, b, vy); if (res.ok) { for (const i of res.cells) vis[i] = 1; push(res.node); } };
+  for (const s of seeds) { if (s.node) push(s.node); else if (s.traj) run(...s.traj); if (s.mark) mark(...s.mark); }
+  while (q.length) {
+    const n = q.pop(), x = (n.c + 0.5) * T, y = (n.r + 1) * T;
+    if (n.t === 's') {
+      mark(n.c, n.r); mark(n.c, n.r - 1);
+      for (const d of [-1, 1]) {
+        const c = n.c + d;
+        if (standable(g, c, n.r)) push({ t: 's', c, r: n.r });
+        else if (!g.solid(c, n.r) && !g.solid(c, n.r - 1)) {
+          if (g.water(c, n.r)) push({ t: 'w', c, r: n.r });
+          else { run(x + d * T, y, d * PHYS.run, d * PHYS.run, 0); run(x + d * T, y, d * PHYS.run, 0, 0); }
+        }
+      }
+      for (const [a, b] of JUMPS) run(x, y, a, b, -PHYS.jump);
+    } else {
+      mark(n.c, n.r);
+      for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const c = n.c + dc, r = n.r + dr;
+        if (g.water(c, r)) { push({ t: 'w', c, r }); continue; }
+        if (g.solid(c, r) || g.haz(c, r)) continue;
+        if (dr === 0) { if (standable(g, c, r)) push({ t: 's', c, r }); else run((c + 0.5) * T, (r + 1) * T, dc * PHYS.swim, dc * PHYS.swim, 0); }
+        else if (dr === -1) { mark(c, r); for (const [a, b] of BREACH) run(x, n.r * T + T, a, b, -PHYS.breach); }
+      }
+    }
+  }
+  return { vis, nodes, stand };
+}
+function seedsForCell(g, c, r, side) {
+  const out = [{ mark: [c, r] }], x = (c + 0.5) * T, y = (r + 1) * T;
+  if (g.water(c, r)) out.push({ node: { t: 'w', c, r } });
+  else if (standable(g, c, r)) out.push({ node: { t: 's', c, r } });
+  else if (side === 'S') for (const a of [0, PHYS.run, -PHYS.run]) out.push({ traj: [x, y, a, a, -PHYS.jump] });
+  else for (const a of side === 'W' ? [PHYS.run, 0] : side === 'E' ? [-PHYS.run, 0] : [0, PHYS.run, -PHYS.run]) out.push({ traj: [x, y, a, a, 0] });
+  return out;
+}
+function doorGroups(tiles, w, h) {
+  const H = tiles.length, W = tiles[0].length, seen = new Uint8Array(W * H), groups = [];
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    if (tiles[r][c] !== 'D' || seen[r * W + c]) continue;
+    const cells = [], st = [[c, r]]; seen[r * W + c] = 1;
+    while (st.length) {
+      const [a, b] = st.pop(); cells.push([a, b]);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = a + dx, y = b + dy; if (x >= 0 && y >= 0 && x < W && y < H && !seen[y * W + x] && tiles[y][x] === 'D') { seen[y * W + x] = 1; st.push([x, y]); } }
+    }
+    const cnt = { W: 0, E: 0, N: 0, S: 0 };
+    for (const [a, b] of cells) { if (a === 0) cnt.W++; if (a === W - 1) cnt.E++; if (b === 0) cnt.N++; if (b === H - 1) cnt.S++; }
+    let side = 'inner', best = 0; for (const k of ['W', 'E', 'N', 'S']) if (cnt[k] > best) { best = cnt[k]; side = k; }
+    const avgC = cells.reduce((s, p) => s + p[0], 0) / cells.length, avgR = cells.reduce((s, p) => s + p[1], 0) / cells.length;
+    const cx = side === 'W' ? 0 : side === 'E' ? w - 1 : Math.min(w - 1, Math.floor(avgC / TW));
+    const cy = side === 'N' ? 0 : side === 'S' ? h - 1 : Math.min(h - 1, Math.floor(avgR / TH));
+    groups.push({ cells, side, cx, cy });
+  }
+  groups.forEach((g, i) => { const same = groups.filter(o => o.side === g.side); g.label = g.side === 'inner' ? 'inner' + (i + 1) : g.side + (same.length > 1 ? same.indexOf(g) + 1 : ''); });
+  return groups;
+}
+const SEED_OBJ = { spawn: 1, reward: 1 };
+const anCache = new Map();
+function analyze(tiles, objects, w, h, gatesOpen) {
+  const key = (gatesOpen ? 1 : 0) + '|' + w + 'x' + h + '|' + tiles.join('') + '|' + objects.map(o => o.type + o.x + ',' + o.y).join(';');
+  if (anCache.has(key)) return anCache.get(key);
+  const g = Grid(tiles, gatesOpen), groups = doorGroups(tiles, w, h), per = {}, allSeeds = [];
+  const hits = vis => {
+    const gs = new Set(), os = new Set();
+    groups.forEach((gr, i) => { if (gr.cells.some(([c, r]) => vis[r * g.W + c])) gs.add(i); });
+    objects.forEach((o, i) => { if (!OBJ[o.type]?.inter) return; for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) { const c = o.x + dc, r = o.y + dr; if (c >= 0 && r >= 0 && c < g.W && r < g.H && vis[r * g.W + c]) { os.add(i); return; } } });
+    return { gs, os };
+  };
+  groups.forEach((gr, i) => { const seeds = gr.cells.flatMap(([c, r]) => seedsForCell(g, c, r, gr.side)); allSeeds.push(...seeds); const res = reach(g, seeds), hh = hits(res.vis); per['g' + i] = { groups: hh.gs, objs: hh.os }; });
+  objects.forEach((o, i) => { if (!SEED_OBJ[o.type]) return; const seeds = seedsForCell(g, o.x, o.y, 'obj'); if (o.type === 'spawn') allSeeds.push(...seeds); const res = reach(g, seeds), hh = hits(res.vis); per['o' + i] = { groups: hh.gs, objs: hh.os }; });
+  const all = reach(g, allSeeds), allHits = hits(all.vis);
+  const out = { groups, per, all, allHits, g };
+  anCache.set(key, out); if (anCache.size > 300) anCache.delete(anCache.keys().next().value);
+  return out;
+}
+
+// ============================================================================================
+// State and persistence
+// ============================================================================================
+const STORE = 'o2o-level-sketch-v1';
+function newProject(lib) { return { format: 'ooze2orbit-level-sketch', version: 1, level: { name: 'Water level 1', tier: 'easy' }, rooms: [], nextId: 1, library: lib || starterLibrary(), nextLib: 100 }; }
+function load() { try { const s = JSON.parse(localStorage.getItem(STORE)); if (s && s.format === 'ooze2orbit-level-sketch') return s; } catch (e) { } return null; }
+let S = load() || newProject();
+let saveTimer = 0;
+function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) { } }, 300); }
+const UI = {
+  mode: 'map', mapTool: 'room', selRoom: null, target: null, paintTool: 'pencil', brush: '#', objType: 'control', selObj: -1,
+  overlay: true, gatesOpen: false, probe: null, zoom: 0, libSel: null, drag: null, hover: null,
+};
+const undo = new Map(), redo = new Map();
+const roomById = id => S.rooms.find(r => r.id === id);
+const ownerAt = (x, y) => S.rooms.find(r => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) || null;
+function getTarget() {
+  if (!UI.target) return null;
+  if (UI.target.startsWith('L:')) { const l = S.library.find(l => l.id === UI.target.slice(2)); return l ? { kind: 'layout', obj: l } : null; }
+  const r = roomById(UI.target); return r ? { kind: 'room', obj: r } : null;
+}
+
+// ============================================================================================
+// Level graph: topology from minimap doors, plus traversal through each room's painted reachability.
+// ============================================================================================
+function partnerOf(room, d) {
+  const ax = room.x + d.cx, ay = room.y + d.cy, [dx, dy] = DIR[d.side], B = ownerAt(ax + dx, ay + dy);
+  if (!B || B === room) return null;
+  const bd = B.doors.find(e => e.cx === ax + dx - B.x && e.cy === ay + dy - B.y && e.side === OPP[d.side]);
+  return bd ? { room: B, door: bd } : null;
+}
+function levelReport() {
+  const out = { msgs: [], stats: {}, path: [], badRooms: new Set() };
+  const msg = (k, t, room) => { out.msgs.push({ k, t }); if (room && (k === 'bad' || k === 'warn')) out.badRooms.add(room.id); };
+  const rooms = S.rooms;
+  if (!rooms.length) { msg('info', 'Draw rooms on the minimap with the Room tool (drag across cells).'); return out; }
+  const entries = rooms.filter(r => r.role === 'entry'), goals = rooms.filter(r => r.role === 'goal');
+  if (entries.length !== 1) msg('bad', entries.length ? 'More than one entry room.' : 'No entry room: set one room\'s role to "entry".');
+  if (!goals.length) msg('bad', 'No goal room: set one room\'s role to "goal".');
+  // Topology
+  const adj = new Map(rooms.map(r => [r.id, new Set()])); let edges = 0;
+  for (const r of rooms) for (const d of r.doors) {
+    const p = partnerOf(r, d);
+    if (!p) msg('warn', `${r.name}: ${d.side} door leads nowhere.`, r);
+    else if (!adj.get(r.id).has(p.room.id) || true) { if (r.id < p.room.id) edges++; adj.get(r.id).add(p.room.id); }
+  }
+  const entry = entries[0], goal = goals[0];
+  let comps = 0; const seenC = new Set();
+  for (const r of rooms) { if (seenC.has(r.id)) continue; comps++; const st = [r.id]; seenC.add(r.id); while (st.length) for (const n of adj.get(st.pop())) if (!seenC.has(n)) { seenC.add(n); st.push(n); } }
+  const loops = edges - rooms.length + comps;
+  const dead = rooms.filter(r => adj.get(r.id).size === 1 && r.role !== 'entry' && r.role !== 'goal' && r.role !== 'vault' && r.role !== 'nursery');
+  if (entry) {
+    const prev = new Map([[entry.id, null]]), q = [entry.id];
+    while (q.length) { const id = q.shift(); for (const n of adj.get(id)) if (!prev.has(n)) { prev.set(n, id); q.push(n); } }
+    const cut = rooms.filter(r => !prev.has(r.id));
+    if (cut.length) { msg('bad', `Not connected to the entry: ${cut.map(r => r.name).join(', ')}.`); cut.forEach(r => out.badRooms.add(r.id)); }
+    if (goal && prev.has(goal.id)) { let id = goal.id; while (id !== null) { out.path.unshift(id); id = prev.get(id); } }
+  }
+  out.stats = { Rooms: rooms.length, Screens: rooms.reduce((s, r) => s + r.w * r.h, 0), Connections: edges, Loops: loops, 'Dead ends': dead.length, 'Critical path': out.path.length ? out.path.length + ' rooms' : '—' };
+  if (loops < 1 && rooms.length > 3) msg('warn', 'No loop yet. A loop lets the player come back a different way.');
+  // Painted openings vs minimap doors
+  const an = new Map();
+  for (const r of rooms) {
+    const a = analyze(r.tiles, r.objects, r.w, r.h, true); an.set(r.id, a);
+    for (const d of r.doors) if (!a.groups.some(g => g.side === d.side && g.cx === d.cx && g.cy === d.cy)) msg('warn', `${r.name}: ${d.side} door has no painted opening (D tiles).`, r);
+    for (const g of a.groups) if (!r.doors.some(d => g.side === d.side && g.cx === d.cx && g.cy === d.cy)) msg('warn', `${r.name}: painted opening ${g.label} has no door on the minimap.`, r);
+    const unreach = r.objects.map((o, i) => [o, i]).filter(([o, i]) => OBJ[o.type]?.inter && !a.allHits.os.has(i));
+    if (unreach.length) msg('warn', `${r.name}: can't reach ${unreach.map(([o]) => o.label || OBJ[o.type].name).join(', ')} (gates open).`, r);
+  }
+  // Traversal with painted geometry
+  const traverse = (gates, startRoom, startKeys) => {
+    const A = new Map(rooms.map(r => [r.id, gates ? an.get(r.id) : analyze(r.tiles, r.objects, r.w, r.h, false)]));
+    const seen = new Set(), q = startKeys.map(k => [startRoom, k]), entered = new Set(), objs = new Set();
+    while (q.length) {
+      const [R, k] = q.pop(), id = R.id + ':' + k; if (seen.has(id)) continue; seen.add(id); entered.add(R.id);
+      const a = A.get(R.id), res = a.per[k]; if (!res) continue;
+      res.objs.forEach(o => objs.add(R.id + ':' + o));
+      res.groups.forEach(gi => {
+        const gr = a.groups[gi], d = R.doors.find(d => d.side === gr.side && d.cx === gr.cx && d.cy === gr.cy); if (!d) return;
+        const p = partnerOf(R, d); if (!p) return;
+        const bg = A.get(p.room.id).groups.findIndex(g => g.side === p.door.side && g.cx === p.door.cx && g.cy === p.door.cy);
+        if (bg >= 0) q.push([p.room, 'g' + bg]);
+      });
+    }
+    return { entered, objs };
+  };
+  const startKeys = r => { const si = r.objects.findIndex(o => o.type === 'spawn'); return si >= 0 ? ['o' + si] : analyzeKeys(r); };
+  const analyzeKeys = r => an.get(r.id).groups.map((g, i) => 'g' + i);
+  if (entry && goal) {
+    const ri = goal.objects.findIndex(o => o.type === 'reward');
+    const reachedGoal = t => ri >= 0 ? t.objs.has(goal.id + ':' + ri) : t.entered.has(goal.id);
+    const open = traverse(true, entry, startKeys(entry)), closed = traverse(false, entry, startKeys(entry));
+    if (reachedGoal(open)) msg('good', `Goal ${ri >= 0 ? 'reward' : 'room'} is reachable with painted geometry (gates and breakables open).`);
+    else msg('bad', `Goal ${ri >= 0 ? 'reward' : 'room'} is NOT reachable with painted geometry, even with gates open.`, goal);
+    if (reachedGoal(closed)) msg('warn', 'Goal is reachable with every gate and breakable wall CLOSED: nothing on the way gates the player.');
+    const never = rooms.filter(r => !open.entered.has(r.id));
+    if (never.length) msg('warn', `Never entered (gates open): ${never.map(r => r.name).join(', ')}.`);
+    if (ri >= 0 && reachedGoal(open)) {
+      const back = traverse(true, goal, ['o' + ri]), si = entry.objects.findIndex(o => o.type === 'spawn');
+      const home = si >= 0 ? back.objs.has(entry.id + ':' + si) : back.entered.has(entry.id);
+      msg(home ? 'good' : 'bad', home ? 'The reward can be carried home to the entry.' : 'No way back from the goal reward to the entry: the player would be stranded.');
+    }
+  }
+  return out;
+}
+
+// ============================================================================================
+// Rendering
+// ============================================================================================
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+function drawTiles(c2, tiles, ox, oy, z, detail) {
+  const H = tiles.length, W = tiles[0].length;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    const t = tiles[r][c], x = ox + c * z, y = oy + r * z;
+    c2.fillStyle = (t === '=' || t === '^') ? TILES['.'].col : TILES[t]?.col || '#f0f'; c2.fillRect(x, y, z + 0.5, z + 0.5);
+    if (!detail) { if (t === '=') { c2.fillStyle = TILES['='].col; c2.fillRect(x, y, z, Math.max(1, z * 0.3)); } if (t === '^') { c2.fillStyle = TILES['^'].col; c2.fillRect(x, y + z / 2, z, z / 2); } continue; }
+    const up = getT(tiles, c, r - 1);
+    if (t === '#') { if (up !== '#' && up !== 'B' && up !== 'G') { c2.fillStyle = '#8a7558'; c2.fillRect(x, y, z, Math.max(2, z * 0.15)); } }
+    else if (t === '~' || t === 'c') {
+      if (up !== '~' && up !== 'c') { c2.fillStyle = '#7fd0f5'; c2.fillRect(x, y, z, Math.max(1, z * 0.12)); }
+      if (t === 'c') { c2.strokeStyle = '#9ff3ff88'; c2.lineWidth = 1; c2.beginPath(); c2.moveTo(x + z * .7, y + z * .3); c2.lineTo(x + z * .3, y + z * .5); c2.lineTo(x + z * .7, y + z * .7); c2.stroke(); }
+    } else if (t === '=') { c2.fillStyle = TILES['='].col; c2.fillRect(x, y, z, Math.max(2, z * 0.28)); }
+    else if (t === '^') { c2.fillStyle = TILES['^'].col; c2.beginPath(); c2.moveTo(x, y + z); c2.lineTo(x + z / 4, y + z * .35); c2.lineTo(x + z / 2, y + z); c2.lineTo(x + z * .75, y + z * .35); c2.lineTo(x + z, y + z); c2.fill(); }
+    else if (t === 'B') { c2.strokeStyle = '#2a1830'; c2.lineWidth = 1; c2.beginPath(); c2.moveTo(x + z * .2, y); c2.lineTo(x + z * .5, y + z * .5); c2.lineTo(x + z * .3, y + z); c2.moveTo(x + z * .5, y + z * .5); c2.lineTo(x + z, y + z * .4); c2.stroke(); }
+    else if (t === 'G') { c2.fillStyle = '#3a2e1c'; c2.fillRect(x, y, z, z); c2.fillStyle = TILES.G.col; c2.fillRect(x + z * .15, y, z * .25, z); c2.fillRect(x + z * .6, y, z * .25, z); }
+    else if (t === 'D') { c2.fillStyle = '#0f3324'; c2.fillRect(x, y, z, z); c2.strokeStyle = TILES.D.col; c2.setLineDash([2, 2]); c2.strokeRect(x + .5, y + .5, z - 1, z - 1); c2.setLineDash([]); }
+  }
+}
+function drawObj(c2, o, x, y, z, ring) {
+  const d = OBJ[o.type] || { g: '?', col: '#f0f' }, rad = Math.max(5, z * 0.45);
+  c2.beginPath(); c2.arc(x, y, rad, 0, Math.PI * 2); c2.fillStyle = d.col; c2.fill();
+  if (o.guarded) { c2.strokeStyle = '#ef5350'; c2.lineWidth = 2; c2.stroke(); }
+  c2.fillStyle = '#000'; c2.font = `bold ${Math.max(8, rad * 1.2)}px system-ui`; c2.textAlign = 'center'; c2.textBaseline = 'middle'; c2.fillText(d.g, x, y + 1);
+  if (ring) { c2.beginPath(); c2.arc(x, y, rad + 3, 0, Math.PI * 2); c2.strokeStyle = ring; c2.lineWidth = 2; c2.stroke(); }
+}
+
+function drawMap() {
+  const rep = UI.report || (UI.report = levelReport());
+  cv.width = GW * CW + 2; cv.height = GH * CH + 2; cv.style.cursor = UI.mapTool === 'select' ? 'default' : 'crosshair';
+  ctx.fillStyle = '#0a0f13'; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.strokeStyle = '#18232b'; ctx.lineWidth = 1;
+  for (let x = 0; x <= GW; x++) { ctx.beginPath(); ctx.moveTo(x * CW + .5, 0); ctx.lineTo(x * CW + .5, GH * CH); ctx.stroke(); }
+  for (let y = 0; y <= GH; y++) { ctx.beginPath(); ctx.moveTo(0, y * CH + .5); ctx.lineTo(GW * CW, y * CH + .5); ctx.stroke(); }
+  const pathSet = new Set(rep.path);
+  for (const r of S.rooms) {
+    let rx = r.x, ry = r.y;
+    if (UI.drag?.kind === 'move' && UI.drag.room === r.id) { rx = UI.drag.nx; ry = UI.drag.ny; }
+    const X = rx * CW, Y = ry * CH, Wp = r.w * CW, Hp = r.h * CH, col = ROLES[r.role] || '#888';
+    ctx.save(); ctx.beginPath(); ctx.rect(X + 2, Y + 2, Wp - 4, Hp - 4); ctx.clip();
+    ctx.fillStyle = '#0e1820'; ctx.fillRect(X, Y, Wp, Hp);
+    ctx.globalAlpha = 0.55; drawTiles(ctx, r.tiles, X + 2, Y + 2, (Wp - 4) / (r.w * TW), false); ctx.globalAlpha = 1;
+    ctx.fillStyle = col + '40'; ctx.fillRect(X, Y, Wp, Hp);
+    ctx.restore();
+    ctx.lineWidth = r.id === UI.selRoom ? 3 : 2; ctx.strokeStyle = r.id === UI.selRoom ? '#fff' : col;
+    ctx.strokeRect(X + 2, Y + 2, Wp - 4, Hp - 4);
+    if (pathSet.has(r.id)) { ctx.fillStyle = '#fff176'; ctx.fillRect(X + 2, Y + Hp - 5, Wp - 4, 3); }
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.shadowColor = '#000'; ctx.shadowBlur = 3;
+    const icon = r.role === 'entry' ? '⌂ ' : r.role === 'goal' ? '⚑ ' : '';
+    ctx.fillText(icon + r.name, X + 6, Y + 5, Wp - 10);
+    ctx.font = '10px system-ui'; ctx.fillStyle = col; ctx.fillText(r.role + ' · ' + r.tier, X + 6, Y + 17, Wp - 10);
+    ctx.shadowBlur = 0;
+    if (rep.badRooms.has(r.id)) { ctx.fillStyle = '#ef5350'; ctx.beginPath(); ctx.arc(X + Wp - 10, Y + 10, 6, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'center'; ctx.fillText('!', X + Wp - 10, Y + 5); }
+  }
+  // Doors
+  for (const r of S.rooms) for (const d of r.doors) {
+    if (UI.drag?.kind === 'move' && UI.drag.room === r.id) continue;
+    const ax = r.x + d.cx, ay = r.y + d.cy, ok = !!partnerOf(r, d);
+    ctx.fillStyle = ok ? '#4fd1a5' : '#ef5350';
+    if (d.side === 'E' || d.side === 'W') { const x = (ax + (d.side === 'E' ? 1 : 0)) * CW; ctx.fillRect(x - 4, ay * CH + CH * 0.5 - 5, 8, 10); }
+    else { const y = (ay + (d.side === 'S' ? 1 : 0)) * CH; ctx.fillRect(ax * CW + CW / 2 - 7, y - 3, 14, 6); }
+  }
+  // Drag preview
+  if (UI.drag?.kind === 'new') {
+    const { x0, y0, x1, y1, ok } = UI.drag, X = Math.min(x0, x1) * CW, Y = Math.min(y0, y1) * CH;
+    ctx.strokeStyle = ok ? '#4fd1a5' : '#ef5350'; ctx.setLineDash([5, 4]); ctx.lineWidth = 2;
+    ctx.strokeRect(X + 2, Y + 2, (Math.abs(x1 - x0) + 1) * CW - 4, (Math.abs(y1 - y0) + 1) * CH - 4); ctx.setLineDash([]);
+  }
+  if (UI.drag?.kind === 'move' && !UI.drag.ok) { const r = roomById(UI.drag.room); ctx.strokeStyle = '#ef5350'; ctx.lineWidth = 2; ctx.strokeRect(UI.drag.nx * CW + 2, UI.drag.ny * CH + 2, r.w * CW - 4, r.h * CH - 4); }
+  if (UI.hover && UI.mapTool === 'door') {
+    const h = UI.hover; ctx.fillStyle = '#ffffff66';
+    if (h.side === 'E' || h.side === 'W') ctx.fillRect((h.x + (h.side === 'E' ? 1 : 0)) * CW - 3, h.y * CH + 4, 6, CH - 8);
+    else ctx.fillRect(h.x * CW + 6, (h.y + (h.side === 'S' ? 1 : 0)) * CH - 3, CW - 12, 6);
+  }
+}
+
+function roomZoom(t) {
+  const avail = Math.max(300, document.getElementById('stage').clientWidth - 30);
+  const W = t.w * TW, auto = Math.max(6, Math.min(26, Math.floor(avail / W)));
+  return UI.zoom ? Math.max(4, Math.min(40, auto + UI.zoom)) : auto;
+}
+function drawRoom() {
+  const t = getTarget(); if (!t) { cv.width = 600; cv.height = 120; ctx.fillStyle = '#0a0f13'; ctx.fillRect(0, 0, 600, 120); ctx.fillStyle = '#7d93a0'; ctx.font = '14px system-ui'; ctx.fillText('Select a room on the minimap (double-click) or a layout in the library to paint it.', 16, 60); return; }
+  const o = t.obj, z = roomZoom(o), W = o.w * TW, H = o.h * TH;
+  cv.width = W * z; cv.height = H * z; cv.style.cursor = 'crosshair';
+  let tiles = o.tiles;
+  if (UI.drag?.kind === 'rect') { tiles = tiles.slice(); fillRect(tiles, UI.drag.c0, UI.drag.r0, UI.drag.c1, UI.drag.r1, UI.drag.ch); }
+  drawTiles(ctx, tiles, 0, 0, z, true);
+  if (z >= 10) { ctx.strokeStyle = '#ffffff0d'; ctx.lineWidth = 1; for (let c = 1; c < W; c++) { ctx.beginPath(); ctx.moveTo(c * z + .5, 0); ctx.lineTo(c * z + .5, H * z); ctx.stroke(); } for (let r = 1; r < H; r++) { ctx.beginPath(); ctx.moveTo(0, r * z + .5); ctx.lineTo(W * z, r * z + .5); ctx.stroke(); } }
+  ctx.strokeStyle = '#ffffff44'; ctx.setLineDash([6, 6]); ctx.lineWidth = 1;
+  for (let c = 1; c < o.w; c++) { ctx.beginPath(); ctx.moveTo(c * TW * z + .5, 0); ctx.lineTo(c * TW * z + .5, H * z); ctx.stroke(); }
+  for (let r = 1; r < o.h; r++) { ctx.beginPath(); ctx.moveTo(0, r * TH * z + .5); ctx.lineTo(W * z, r * TH * z + .5); ctx.stroke(); }
+  ctx.setLineDash([]);
+  // Expected doors from the minimap: a bright strip along that edge of that screen.
+  if (t.kind === 'room') for (const d of o.doors) {
+    const ok = !!partnerOf(o, d); ctx.fillStyle = ok ? '#4fd1a5aa' : '#ef5350aa';
+    if (d.side === 'W' || d.side === 'E') ctx.fillRect(d.side === 'W' ? 0 : W * z - 3, d.cy * TH * z, 3, TH * z);
+    else ctx.fillRect(d.cx * TW * z, d.side === 'N' ? 0 : H * z - 3, TW * z, 3);
+  }
+  const an = analyze(o.tiles, o.objects, o.w, o.h, UI.gatesOpen);
+  UI.an = an;
+  let vis = null, stand = null, tint = '#4fd1a5';
+  if (UI.probe) { const g = an.g, res = reach(g, seedsForCell(g, UI.probe.c, UI.probe.r, 'obj')); vis = res.vis; stand = res.stand; tint = '#ffb74d'; }
+  else if (UI.overlay) { vis = an.all.vis; stand = an.all.stand; }
+  if (vis) {
+    ctx.fillStyle = tint + '2e';
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (vis[r * W + c]) ctx.fillRect(c * z, r * z, z, z);
+    ctx.fillStyle = tint; for (const n of stand) ctx.fillRect(n.c * z + z * 0.3, (n.r + 1) * z - Math.max(2, z * 0.18), z * 0.4, Math.max(2, z * 0.18));
+  }
+  if (UI.probe) { ctx.strokeStyle = '#ffb74d'; ctx.lineWidth = 2; ctx.strokeRect(UI.probe.c * z + 1, UI.probe.r * z + 1, z - 2, z - 2); }
+  // Door labels
+  ctx.font = `bold ${Math.max(9, z * 0.6)}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const gr of an.groups) { const [c, r] = gr.cells[Math.floor(gr.cells.length / 2)]; ctx.fillStyle = '#000a'; ctx.fillRect(c * z - z * .1, r * z, z * 1.6, z); ctx.fillStyle = '#7dffc4'; ctx.fillText(gr.label, c * z + z * .7, r * z + z / 2); }
+  o.objects.forEach((ob, i) => {
+    const bad = OBJ[ob.type]?.inter && !an.allHits.os.has(i) && UI.overlay && !UI.probe;
+    drawObj(ctx, ob, (ob.x + 0.5) * z, (ob.y + 0.5) * z, z, i === UI.selObj ? '#fff' : bad ? '#ef5350' : null);
+    if (ob.label && z >= 12) { ctx.font = `${Math.max(9, z * 0.5)}px system-ui`; ctx.fillStyle = '#fff'; ctx.shadowColor = '#000'; ctx.shadowBlur = 3; ctx.fillText(ob.label, (ob.x + 0.5) * z, (ob.y - 0.5) * z); ctx.shadowBlur = 0; }
+  });
+  if (UI.hover && UI.hover.c !== undefined) { ctx.strokeStyle = '#ffffffaa'; ctx.lineWidth = 1; ctx.strokeRect(UI.hover.c * z + .5, UI.hover.r * z + .5, z - 1, z - 1); }
+}
+function draw() { if (UI.mode === 'map') drawMap(); else if (UI.mode === 'room') drawRoom(); }
+
+// ============================================================================================
+// Panels
+// ============================================================================================
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function renderAll() {
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.mode === UI.mode));
+  $('levelName').value = S.level.name; $('levelTier').value = S.level.tier;
+  $('cv').style.display = UI.mode === 'library' ? 'none' : 'block';
+  $('lib').style.display = UI.mode === 'library' ? 'grid' : 'none';
+  $('status').textContent = '';
+  if (UI.mode === 'map') { renderMapTools(); renderMapSide(); }
+  else if (UI.mode === 'room') { renderRoomTools(); renderRoomSide(); }
+  else { renderLibTools(); renderLibrary(); renderLibSide(); }
+  draw();
+}
+function toolBtn(id, label, key, on) { return `<button class="toolbtn ${on ? 'on' : ''}" data-tool="${id}"><span>${label}</span><kbd>${key}</kbd></button>`; }
+function renderMapTools() {
+  $('tools').innerHTML = `<h3>Minimap tools</h3>
+    ${toolBtn('select', 'Select / move', 'V', UI.mapTool === 'select')}
+    ${toolBtn('room', 'Room (drag cells)', 'R', UI.mapTool === 'room')}
+    ${toolBtn('door', 'Door (click an edge)', 'D', UI.mapTool === 'door')}
+    ${toolBtn('erase', 'Delete room', 'X', UI.mapTool === 'erase')}
+    <h3>Room roles</h3><div class="legend">${Object.entries(ROLES).map(([k, c]) => `<span style="background:${c}">${k}</span>`).join('')}</div>
+    <h3>How it works</h3>
+    <div class="help">One cell = one 640×360 screen. Drag with <b>Room</b> to make a room of 1 or more screens. With <b>Door</b>, click the edge between two rooms to connect them; the opening is carved into both rooms. <b>Double-click</b> a room to paint it.<br><br>Green door = connected both ways. Red = leads nowhere. Yellow bar = critical path from entry to goal.</div>`;
+  bindTools(t => { UI.mapTool = t; renderMapTools(); draw(); });
+}
+function renderMapSide() {
+  const rep = UI.report = levelReport(), r = roomById(UI.selRoom);
+  let h = '';
+  if (r) {
+    h += `<h3>Selected room</h3>
+      <label class="f">Name</label><input type="text" id="rName" value="${esc(r.name)}">
+      <div class="grid2"><div><label class="f">Role</label><select id="rRole">${Object.keys(ROLES).map(k => `<option ${k === r.role ? 'selected' : ''}>${k}</option>`).join('')}</select></div>
+      <div><label class="f">Tier</label><select id="rTier">${['easy', 'medium', 'hard'].map(k => `<option ${k === r.tier ? 'selected' : ''}>${k}</option>`).join('')}</select></div></div>
+      <label class="f">Design notes (what this room should teach or test)</label><textarea id="rNotes">${esc(r.notes)}</textarea>
+      <div class="help">${r.w}×${r.h} screens · ${r.doors.length} door(s) · ${r.objects.length} object(s)</div>
+      <div class="row"><button id="rPaint">Paint this room</button><button id="rSave">Save layout to library</button></div>`;
+  } else h += `<h3>Selected room</h3><div class="help">Click a room to select it.</div>`;
+  h += `<h3>Level stats</h3>${Object.entries(rep.stats).map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('')}`;
+  h += `<h3>Checks</h3>${rep.msgs.map(m => `<div class="msg ${m.k}">${esc(m.t)}</div>`).join('') || '<div class="msg good">No problems found.</div>'}
+    <div class="help" style="margin-top:8px">Checks walk the level through each room's painted geometry with a physics approximation (run, jump ≈5.5 tiles, swim, breach). Gates and breakable walls count as open unless stated.</div>`;
+  $('side').innerHTML = h;
+  if (r) {
+    $('rName').oninput = e => { r.name = e.target.value; saveSoon(); UI.report = null; draw(); };
+    $('rRole').onchange = e => { r.role = e.target.value; changed(); };
+    $('rTier').onchange = e => { r.tier = e.target.value; changed(); };
+    $('rNotes').oninput = e => { r.notes = e.target.value; saveSoon(); };
+    $('rPaint').onclick = () => openRoom(r.id);
+    $('rSave').onclick = () => saveToLibrary(r);
+  }
+}
+function changed() { saveSoon(); UI.report = null; renderAll(); }
+
+function renderRoomTools() {
+  const pt = UI.paintTool;
+  $('tools').innerHTML = `<h3>Paint tools</h3>
+    ${toolBtn('pencil', 'Pencil', 'P', pt === 'pencil')}${toolBtn('rect', 'Rectangle', 'R', pt === 'rect')}${toolBtn('fill', 'Flood fill', 'F', pt === 'fill')}
+    ${toolBtn('object', 'Place object', 'O', pt === 'object')}${toolBtn('select', 'Select / move object', 'V', pt === 'select')}${toolBtn('probe', 'Reach probe', 'J', pt === 'probe')}
+    <h3>Tiles <span style="text-transform:none;letter-spacing:0">(right-click = air)</span></h3>
+    ${TILE_ORDER.map((ch, i) => `<button class="sw ${UI.brush === ch && ['pencil', 'rect', 'fill'].includes(pt) ? 'on' : ''}" data-brush="${ch === '"' ? '&quot;' : ch}"><i style="background:${TILES[ch].col}"></i>${i + 1} · ${TILES[ch].name}</button>`).join('')}
+    <h3>Objects <span style="text-transform:none;letter-spacing:0">(right-click removes)</span></h3>
+    ${Object.entries(OBJ).map(([k, d]) => `<button class="sw ${UI.objType === k && pt === 'object' ? 'on' : ''}" data-obj="${k}"><i style="background:${d.col}">${d.g}</i>${d.name}</button>`).join('')}
+    <h3>Edit</h3><div class="grid2"><button id="bUndo">Undo</button><button id="bRedo">Redo</button><button id="bZin">Zoom +</button><button id="bZout">Zoom −</button></div>`;
+  bindTools(t => { UI.paintTool = t; if (t !== 'probe') UI.probe = null; renderRoomTools(); draw(); });
+  document.querySelectorAll('[data-brush]').forEach(b => b.onclick = () => { UI.brush = b.dataset.brush; if (!['pencil', 'rect', 'fill'].includes(UI.paintTool)) UI.paintTool = 'pencil'; UI.probe = null; renderRoomTools(); });
+  document.querySelectorAll('[data-obj]').forEach(b => b.onclick = () => { UI.objType = b.dataset.obj; UI.paintTool = 'object'; UI.probe = null; renderRoomTools(); });
+  $('bUndo').onclick = doUndo; $('bRedo').onclick = doRedo;
+  $('bZin').onclick = () => { UI.zoom++; draw(); }; $('bZout').onclick = () => { UI.zoom--; draw(); };
+}
+function renderRoomSide() {
+  const t = getTarget();
+  if (!t) { $('side').innerHTML = '<div class="help">Nothing selected.</div>'; return; }
+  const o = t.obj, isRoom = t.kind === 'room';
+  const lib = S.library.filter(l => l.w === o.w && l.h === o.h && l !== o);
+  let h = isRoom
+    ? `<h3>Room</h3><label class="f">Name</label><input type="text" id="pName" value="${esc(o.name)}">
+       <div class="help">${o.role} · ${o.tier} · ${o.w}×${o.h} screens</div>
+       <div class="row"><button id="pBack">← Minimap</button><button id="pSave">Save as layout</button><button id="pCarve" title="Carve openings for minimap doors and wall up openings with no door">Fix openings</button></div>
+       <label class="f">Start from a library layout (${o.w}×${o.h})</label>
+       <div class="row"><select id="pLib" style="flex:1">${lib.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('') || '<option value="">No layouts this size</option>'}</select><button id="pApply" ${lib.length ? '' : 'disabled'}>Apply</button></div>`
+    : `<h3>Library layout</h3><label class="f">Name</label><input type="text" id="pName" value="${esc(o.name)}">
+       <label class="f">Tags</label><input type="text" id="pTags" value="${esc(o.tags)}">
+       <div class="row"><button id="pBack">← Library</button><button id="pDup">Duplicate</button></div>`;
+  h += `<h3>Reachability</h3>
+    <div class="row"><label><input type="checkbox" id="pOv" ${UI.overlay ? 'checked' : ''}> Show reach overlay</label><label><input type="checkbox" id="pGates" ${UI.gatesOpen ? 'checked' : ''}> Gates/breakables open</label></div>
+    <div id="reachBox"></div>`;
+  h += `<div id="objBox"></div>
+    <h3>Keys</h3><div class="help"><b>P R F O V J</b> tools · <b>1–9</b> tiles · <b>Ctrl+Z / Ctrl+Y</b> undo/redo · <b>Del</b> remove object · <b>M</b> minimap<br>
+    Reach probe: click a tile to see everywhere the creature can get to from there (orange).<br>
+    Movement used: run ${PHYS.run}, sprint ${PHYS.sprint} px/s, jump ${PHYS.jump} px/s (≈5.5 tiles up, ≈6 across walking, ≈9 sprinting), swim anywhere in water, breach from the surface.</div>`;
+  $('side').innerHTML = h;
+  $('pName').oninput = e => { o.name = e.target.value; saveSoon(); UI.report = null; };
+  $('pBack').onclick = () => { UI.mode = isRoom ? 'map' : 'library'; UI.probe = null; renderAll(); };
+  $('pOv').onchange = e => { UI.overlay = e.target.checked; draw(); renderReach(); };
+  $('pGates').onchange = e => { UI.gatesOpen = e.target.checked; draw(); renderReach(); };
+  if (isRoom) {
+    $('pSave').onclick = () => saveToLibrary(o);
+    $('pCarve').onclick = () => { pushUndo(); fixOpenings(o); afterEdit(); };
+    $('pApply').onclick = () => { const l = S.library.find(l => l.id === $('pLib').value); if (!l) return; pushUndo(); applyLayout(o, l); afterEdit(); };
+  } else {
+    $('pTags').oninput = e => { o.tags = e.target.value; saveSoon(); };
+    $('pDup').onclick = () => { const c = dupLayout(o); UI.target = 'L:' + c.id; renderAll(); };
+  }
+  renderReach(); renderObjBox();
+}
+function renderReach() {
+  const t = getTarget(), box = $('reachBox'); if (!t || !box) return;
+  const o = t.obj, an = analyze(o.tiles, o.objects, o.w, o.h, UI.gatesOpen);
+  const keys = [...an.groups.map((g, i) => ['g' + i, g.label]), ...o.objects.map((ob, i) => [ob, i]).filter(([ob]) => SEED_OBJ[ob.type]).map(([ob, i]) => ['o' + i, ob.type === 'spawn' ? 'Spawn' : (ob.label || 'Reward')])];
+  let h = '';
+  if (!an.groups.length) h += '<div class="msg warn">No door openings painted (D tiles on the room edge).</div>';
+  else {
+    h += `<table class="reach"><tr><th>from ↓ / to →</th>${an.groups.map(g => `<th>${g.label}</th>`).join('')}</tr>`;
+    for (const [k, label] of keys) h += `<tr><th>${esc(label)}</th>${an.groups.map((g, i) => k === 'g' + i ? '<td>·</td>' : an.per[k]?.groups.has(i) ? '<td class="ok">✓</td>' : '<td class="no">✗</td>').join('')}</tr>`;
+    h += '</table><div class="help">Can the creature get from each door (row) to each other door (column)? A ✗ in one direction only is a one-way route.</div>';
+  }
+  const unreach = o.objects.map((ob, i) => [ob, i]).filter(([ob, i]) => OBJ[ob.type]?.inter && !an.allHits.os.has(i));
+  if (unreach.length) h += `<div class="msg bad">Unreachable from any door or spawn: ${unreach.map(([ob]) => esc(ob.label || OBJ[ob.type].name)).join(', ')}</div>`;
+  if (t.kind === 'room') {
+    for (const d of o.doors) if (!an.groups.some(g => g.side === d.side && g.cx === d.cx && g.cy === d.cy)) h += `<div class="msg warn">Minimap door ${d.side}${o.w * o.h > 1 ? ` (screen ${d.cx + 1},${d.cy + 1})` : ''} has no painted opening. Use "Fix openings".</div>`;
+    for (const g of an.groups) if (!o.doors.some(d => g.side === d.side && g.cx === d.cx && g.cy === d.cy)) h += `<div class="msg warn">Opening ${g.label} has no door on the minimap.</div>`;
+  }
+  box.innerHTML = h;
+}
+function renderObjBox() {
+  const t = getTarget(), box = $('objBox'); if (!t || !box) return;
+  const ob = t.obj.objects[UI.selObj];
+  if (!ob) { box.innerHTML = ''; return; }
+  box.innerHTML = `<h3>Selected object · ${OBJ[ob.type].name}</h3>
+    <label class="f">Label</label><input type="text" id="oLabel" value="${esc(ob.label)}">
+    ${['control', 'keyed'].includes(ob.type) ? `<label><input type="checkbox" id="oGuard" ${ob.guarded ? 'checked' : ''}> Guarded (two still seconds under watch)</label>` : ''}
+    ${['keyed', 'reward'].includes(ob.type) ? `<label class="f">${ob.type === 'keyed' ? 'Requires (e.g. class:roar, stat:strength>=16)' : 'Grants (e.g. gills, fins, part:iceBreath)'}</label><input type="text" id="oKey" value="${esc(ob.key)}">` : ''}
+    <div class="help">Tile ${ob.x},${ob.y} · engine x ${(ob.x % TW) * T + 8}, y ${((ob.y % TH) + 5) * T + 8}${t.obj.w * t.obj.h > 1 ? ` on screen ${Math.floor(ob.x / TW) + 1},${Math.floor(ob.y / TH) + 1}` : ''}</div>
+    <div class="row"><button id="oDel">Delete object</button></div>`;
+  $('oLabel').oninput = e => { ob.label = e.target.value; saveSoon(); draw(); };
+  if ($('oGuard')) $('oGuard').onchange = e => { ob.guarded = e.target.checked; saveSoon(); draw(); };
+  if ($('oKey')) $('oKey').oninput = e => { ob.key = e.target.value; saveSoon(); };
+  $('oDel').onclick = () => { pushUndo(); t.obj.objects.splice(UI.selObj, 1); UI.selObj = -1; afterEdit(); };
+}
+function renderLibTools() {
+  $('tools').innerHTML = `<h3>Room library</h3><div class="help">Layouts you can reuse. Click to select, double-click to edit.<br><br>To use one: open a room of the same size and pick it under <b>Start from a library layout</b>, or select a room on the minimap and press <b>Apply to selected room</b> here.<br><br>The first five are the v1 Water templates, transcribed so you can modify them.</div>
+  <h3>New blank layout</h3><div class="grid2">${[[1, 1], [2, 1], [1, 2], [2, 2], [3, 1], [1, 3]].map(([w, h]) => `<button data-new="${w},${h}">${w}×${h}</button>`).join('')}</div>`;
+  document.querySelectorAll('[data-new]').forEach(b => b.onclick = () => { const [w, h] = b.dataset.new.split(',').map(Number); const l = { id: 'lib' + (S.nextLib++), name: `Blank ${w}×${h}`, tags: '', w, h, tiles: blankTiles(w, h), objects: [] }; S.library.push(l); saveSoon(); UI.libSel = l.id; renderAll(); });
+}
+function renderLibrary() {
+  const el = $('lib'); el.innerHTML = '';
+  for (const l of S.library) {
+    const card = document.createElement('div'); card.className = 'card' + (l.id === UI.libSel ? ' sel' : '');
+    const c = document.createElement('canvas'), z = Math.max(2, Math.floor(240 / (l.w * TW)));
+    c.width = l.w * TW * z; c.height = l.h * TH * z; const c2 = c.getContext('2d'); drawTiles(c2, l.tiles, 0, 0, z, z >= 4);
+    l.objects.forEach(o => drawObj(c2, o, (o.x + .5) * z, (o.y + .5) * z, z * 1.4));
+    card.appendChild(c);
+    card.insertAdjacentHTML('beforeend', `<b>${esc(l.name)}</b><small>${l.w}×${l.h} · ${esc(l.tags) || 'no tags'}${l.starter ? ' · starter' : ''}</small>`);
+    card.onclick = () => { UI.libSel = l.id; renderLibrary(); renderLibSide(); };
+    card.ondblclick = () => { UI.target = 'L:' + l.id; UI.mode = 'room'; UI.selObj = -1; renderAll(); };
+    el.appendChild(card);
+  }
+}
+function renderLibSide() {
+  const l = S.library.find(l => l.id === UI.libSel), r = roomById(UI.selRoom);
+  if (!l) { $('side').innerHTML = '<h3>Layout</h3><div class="help">Select a layout.</div>'; return; }
+  const fits = r && r.w === l.w && r.h === l.h;
+  $('side').innerHTML = `<h3>Layout</h3><b>${esc(l.name)}</b><div class="help">${l.w}×${l.h} screens · ${l.objects.length} objects</div>
+    <div class="row"><button id="lEdit">Edit</button><button id="lDup">Duplicate</button><button id="lDel">Delete</button></div>
+    <h3>Use it</h3>${r ? `<div class="help">Selected room: <b>${esc(r.name)}</b> (${r.w}×${r.h})</div><div class="row"><button id="lApply" ${fits ? '' : 'disabled'}>Apply to selected room</button></div>${fits ? '' : '<div class="help">Sizes differ: pick a room of the same size on the minimap.</div>'}` : '<div class="help">Select a room on the minimap first.</div>'}
+    <div class="help">Applying copies the tiles and objects into the room, then carves the room's own minimap doors and walls up openings it does not have. The library copy is unchanged.</div>`;
+  $('lEdit').onclick = () => { UI.target = 'L:' + l.id; UI.mode = 'room'; UI.selObj = -1; renderAll(); };
+  $('lDup').onclick = () => { const c = dupLayout(l); UI.libSel = c.id; renderAll(); };
+  $('lDel').onclick = () => { if (!confirm(`Delete layout "${l.name}" from the library?`)) return; S.library = S.library.filter(x => x !== l); UI.libSel = null; saveSoon(); renderAll(); };
+  if ($('lApply')) $('lApply').onclick = () => { applyLayout(r, l); UI.target = r.id; UI.mode = 'room'; saveSoon(); UI.report = null; renderAll(); };
+}
+function bindTools(f) { document.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => f(b.dataset.tool)); }
+
+// ============================================================================================
+// Actions
+// ============================================================================================
+function openRoom(id) { UI.target = id; UI.selRoom = id; UI.mode = 'room'; UI.selObj = -1; UI.probe = null; renderAll(); }
+function saveToLibrary(o) {
+  const name = prompt('Layout name', o.name); if (name === null) return;
+  S.library.push({ id: 'lib' + (S.nextLib++), name, tags: o.role || o.tags || '', w: o.w, h: o.h, tiles: o.tiles.slice(), objects: JSON.parse(JSON.stringify(o.objects)) });
+  saveSoon(); flash(`Saved "${name}" to the library.`);
+}
+function dupLayout(l) { const c = { ...JSON.parse(JSON.stringify(l)), id: 'lib' + (S.nextLib++), name: l.name + ' (copy)', starter: false }; S.library.push(c); saveSoon(); return c; }
+function fixOpenings(room) {
+  const an = analyze(room.tiles, room.objects, room.w, room.h, true);
+  for (const g of an.groups) if (g.side !== 'inner' && !room.doors.some(d => g.side === d.side && g.cx === d.cx && g.cy === d.cy)) for (const [c, r] of g.cells) setT(room.tiles, c, r, '#');
+  for (const d of room.doors) if (!an.groups.some(g => g.side === d.side && g.cx === d.cx && g.cy === d.cy)) carveDoor(room, d);
+}
+function applyLayout(room, l) { room.tiles = l.tiles.slice(); room.objects = JSON.parse(JSON.stringify(l.objects)); room.from = l.name; fixOpenings(room); }
+function pushUndo() {
+  const t = getTarget(); if (!t) return; const k = UI.target;
+  if (!undo.has(k)) undo.set(k, []); undo.get(k).push(JSON.stringify({ tiles: t.obj.tiles, objects: t.obj.objects }));
+  if (undo.get(k).length > 100) undo.get(k).shift(); redo.set(k, []);
+}
+function doUndo() { const t = getTarget(), st = undo.get(UI.target); if (!t || !st?.length) return; (redo.get(UI.target) || redo.set(UI.target, []).get(UI.target)).push(JSON.stringify({ tiles: t.obj.tiles, objects: t.obj.objects })); Object.assign(t.obj, JSON.parse(st.pop())); UI.selObj = -1; afterEdit(); }
+function doRedo() { const t = getTarget(), st = redo.get(UI.target); if (!t || !st?.length) return; undo.get(UI.target).push(JSON.stringify({ tiles: t.obj.tiles, objects: t.obj.objects })); Object.assign(t.obj, JSON.parse(st.pop())); UI.selObj = -1; afterEdit(); }
+function afterEdit() { saveSoon(); UI.report = null; draw(); renderReach(); renderObjBox(); }
+function flash(t) { $('status').textContent = t; }
+
+// ============================================================================================
+// Canvas input
+// ============================================================================================
+function mapCell(e) { const b = cv.getBoundingClientRect(), px = (e.clientX - b.left) * cv.width / b.width, py = (e.clientY - b.top) * cv.height / b.height; const x = Math.floor(px / CW), y = Math.floor(py / CH); return { x, y, fx: px / CW - x, fy: py / CH - y }; }
+function edgeAt(m) { const d = { W: m.fx, E: 1 - m.fx, N: m.fy, S: 1 - m.fy }; const side = Object.keys(d).reduce((a, b) => d[a] <= d[b] ? a : b); return { x: m.x, y: m.y, side }; }
+function areaFree(x0, y0, w, h, self) { if (x0 < 0 || y0 < 0 || x0 + w > GW || y0 + h > GH) return false; for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) { const o = ownerAt(x, y); if (o && o.id !== self) return false; } return true; }
+function roomCell(e) { const t = getTarget(); if (!t) return null; const z = roomZoom(t.obj), b = cv.getBoundingClientRect(); const c = Math.floor((e.clientX - b.left) * cv.width / b.width / z), r = Math.floor((e.clientY - b.top) * cv.height / b.height / z); return { c, r, inside: c >= 0 && r >= 0 && c < t.obj.w * TW && r < t.obj.h * TH }; }
+
+cv.addEventListener('contextmenu', e => e.preventDefault());
+cv.addEventListener('mousedown', e => { if (UI.mode === 'map') mapDown(e); else if (UI.mode === 'room') roomDown(e); });
+window.addEventListener('mousemove', e => { if (UI.mode === 'map') mapMove(e); else if (UI.mode === 'room') roomMove(e); });
+window.addEventListener('mouseup', e => { if (UI.mode === 'map') mapUp(e); else if (UI.mode === 'room') roomUp(e); });
+cv.addEventListener('dblclick', e => { if (UI.mode !== 'map') return; const m = mapCell(e), r = ownerAt(m.x, m.y); if (r) openRoom(r.id); });
+cv.addEventListener('mouseleave', () => { UI.hover = null; draw(); });
+
+function mapDown(e) {
+  const m = mapCell(e), r = ownerAt(m.x, m.y);
+  if (UI.mapTool === 'room') { if (r) { UI.selRoom = r.id; renderMapSide(); draw(); return; } UI.drag = { kind: 'new', x0: m.x, y0: m.y, x1: m.x, y1: m.y, ok: true }; draw(); }
+  else if (UI.mapTool === 'select') { UI.selRoom = r ? r.id : null; if (r) UI.drag = { kind: 'move', room: r.id, ox: m.x - r.x, oy: m.y - r.y, nx: r.x, ny: r.y, ok: true }; renderMapSide(); draw(); }
+  else if (UI.mapTool === 'erase') { if (r && confirm(`Delete room "${r.name}"? Its painted layout is lost unless saved to the library.`)) { removeRoom(r); changed(); } }
+  else if (UI.mapTool === 'door') { toggleDoor(edgeAt(m)); }
+}
+function mapMove(e) {
+  if (!UI.drag && UI.mapTool !== 'door') return;
+  const m = mapCell(e);
+  if (UI.drag?.kind === 'new') { const d = UI.drag; d.x1 = Math.max(0, Math.min(GW - 1, m.x)); d.y1 = Math.max(0, Math.min(GH - 1, m.y)); d.ok = areaFree(Math.min(d.x0, d.x1), Math.min(d.y0, d.y1), Math.abs(d.x1 - d.x0) + 1, Math.abs(d.y1 - d.y0) + 1, null); draw(); }
+  else if (UI.drag?.kind === 'move') { const d = UI.drag, r = roomById(d.room); d.nx = m.x - d.ox; d.ny = m.y - d.oy; d.ok = areaFree(d.nx, d.ny, r.w, r.h, r.id); draw(); }
+  else if (UI.mapTool === 'door' && e.target === cv) { UI.hover = edgeAt(m); draw(); }
+}
+function mapUp() {
+  const d = UI.drag; if (!d) return; UI.drag = null;
+  if (d.kind === 'new' && d.ok) {
+    const x = Math.min(d.x0, d.x1), y = Math.min(d.y0, d.y1), w = Math.abs(d.x1 - d.x0) + 1, h = Math.abs(d.y1 - d.y0) + 1;
+    const id = 'r' + (S.nextId++), first = !S.rooms.length;
+    S.rooms.push({ id, name: first ? 'Entry' : 'Room ' + (S.nextId - 1), role: first ? 'entry' : 'traversal', tier: S.level.tier, x, y, w, h, doors: [], tiles: blankTiles(w, h), objects: first ? [{ type: 'spawn', x: 3, y: 13 }] : [], notes: '' });
+    UI.selRoom = id; changed(); return;
+  }
+  if (d.kind === 'move' && d.ok) { const r = roomById(d.room); r.x = d.nx; r.y = d.ny; changed(); return; }
+  draw();
+}
+function removeRoom(r) {
+  // Remove the matching half of every connection so neighbours are not left with a door into nothing.
+  for (const d of r.doors) { const p = partnerOf(r, d); if (p) { p.room.doors = p.room.doors.filter(x => x !== p.door); uncarveDoor(p.room, p.door); } }
+  S.rooms = S.rooms.filter(x => x !== r); if (UI.selRoom === r.id) UI.selRoom = null; if (UI.target === r.id) UI.target = null;
+}
+function toggleDoor(edge) {
+  const A = ownerAt(edge.x, edge.y); if (!A) return;
+  const [dx, dy] = DIR[edge.side], B = ownerAt(edge.x + dx, edge.y + dy);
+  if (B === A) { flash('That edge is inside one room. Doors go between rooms (or on an outer edge).'); return; }
+  const da = { cx: edge.x - A.x, cy: edge.y - A.y, side: edge.side };
+  const has = A.doors.find(d => d.cx === da.cx && d.cy === da.cy && d.side === da.side);
+  const db = B ? { cx: edge.x + dx - B.x, cy: edge.y + dy - B.y, side: OPP[edge.side] } : null;
+  if (has) {
+    A.doors = A.doors.filter(d => d !== has); uncarveDoor(A, da);
+    if (B) { const hb = B.doors.find(d => d.cx === db.cx && d.cy === db.cy && d.side === db.side); if (hb) { B.doors = B.doors.filter(d => d !== hb); uncarveDoor(B, db); } }
+  } else {
+    A.doors.push(da); carveDoor(A, da);
+    if (B && !B.doors.some(d => d.cx === db.cx && d.cy === db.cy && d.side === db.side)) { B.doors.push(db); carveDoor(B, db); }
+  }
+  UI.selRoom = A.id; changed();
+}
+
+function bresenham(c0, r0, c1, r1, f) { const dc = Math.abs(c1 - c0), dr = -Math.abs(r1 - r0), sc = c0 < c1 ? 1 : -1, sr = r0 < r1 ? 1 : -1; let err = dc + dr; for (; ;) { f(c0, r0); if (c0 === c1 && r0 === r1) break; const e2 = 2 * err; if (e2 >= dr) { err += dr; c0 += sc; } if (e2 <= dc) { err += dc; r0 += sr; } } }
+function objAt(o, c, r) { for (let i = o.objects.length - 1; i >= 0; i--) if (o.objects[i].x === c && o.objects[i].y === r) return i; return -1; }
+function flood(tiles, c, r, ch) { const from = getT(tiles, c, r); if (from === ch) return; const W = tiles[0].length, H = tiles.length, st = [[c, r]]; while (st.length) { const [a, b] = st.pop(); if (a < 0 || b < 0 || a >= W || b >= H || tiles[b][a] !== from) continue; setT(tiles, a, b, ch); st.push([a + 1, b], [a - 1, b], [a, b + 1], [a, b - 1]); } }
+function roomDown(e) {
+  const t = getTarget(), p = roomCell(e); if (!t || !p?.inside) return; const o = t.obj, right = e.button === 2, ch = right ? '.' : UI.brush;
+  if (UI.paintTool === 'pencil') { pushUndo(); setT(o.tiles, p.c, p.r, ch); UI.drag = { kind: 'pencil', c: p.c, r: p.r, ch }; draw(); }
+  else if (UI.paintTool === 'rect') { pushUndo(); UI.drag = { kind: 'rect', c0: p.c, r0: p.r, c1: p.c, r1: p.r, ch }; draw(); }
+  else if (UI.paintTool === 'fill') { pushUndo(); flood(o.tiles, p.c, p.r, ch); afterEdit(); }
+  else if (UI.paintTool === 'object' || UI.paintTool === 'select') {
+    const i = objAt(o, p.c, p.r);
+    if (right) { if (i >= 0) { pushUndo(); o.objects.splice(i, 1); UI.selObj = -1; afterEdit(); } return; }
+    if (i >= 0) { pushUndo(); UI.selObj = i; UI.drag = { kind: 'obj', i }; }
+    else if (UI.paintTool === 'object') { pushUndo(); o.objects.push({ type: UI.objType, x: p.c, y: p.r }); UI.selObj = o.objects.length - 1; afterEdit(); }
+    else UI.selObj = -1;
+    renderObjBox(); draw();
+  } else if (UI.paintTool === 'probe') { UI.probe = right ? null : { c: p.c, r: p.r }; draw(); }
+}
+function roomMove(e) {
+  const t = getTarget(); if (!t) return; const p = roomCell(e); if (!p) return;
+  if (e.target === cv && p.inside) { UI.hover = { c: p.c, r: p.r }; const ch = getT(t.obj.tiles, p.c, p.r), sx = Math.floor(p.c / TW), sy = Math.floor(p.r / TH); $('status').textContent = `tile ${p.c},${p.r} · ${TILES[ch]?.name || ch}${t.obj.w * t.obj.h > 1 ? ` · screen ${sx + 1},${sy + 1}` : ''} · engine tx ${p.c % TW}, ty ${(p.r % TH) + 5}`; }
+  const d = UI.drag; if (!d) { if (e.target === cv) draw(); return; }
+  const c = Math.max(0, Math.min(t.obj.w * TW - 1, p.c)), r = Math.max(0, Math.min(t.obj.h * TH - 1, p.r));
+  if (d.kind === 'pencil') { bresenham(d.c, d.r, c, r, (a, b) => setT(t.obj.tiles, a, b, d.ch)); d.c = c; d.r = r; }
+  else if (d.kind === 'rect') { d.c1 = c; d.r1 = r; }
+  else if (d.kind === 'obj') { const ob = t.obj.objects[d.i]; ob.x = c; ob.y = r; }
+  draw();
+}
+function roomUp() {
+  const t = getTarget(), d = UI.drag; if (!d || !t) return; UI.drag = null;
+  if (d.kind === 'rect') fillRect(t.obj.tiles, d.c0, d.r0, d.c1, d.r1, d.ch);
+  afterEdit();
+}
+
+// Keyboard
+window.addEventListener('keydown', e => {
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); e.shiftKey ? doRedo() : doUndo(); return; }
+  if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); doRedo(); return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (UI.mode === 'map') {
+    const m = { v: 'select', r: 'room', d: 'door', x: 'erase' }[k]; if (m) { UI.mapTool = m; renderMapTools(); draw(); }
+    if ((k === 'enter' || k === 'p') && UI.selRoom) openRoom(UI.selRoom);
+    if (k === 'delete' && UI.selRoom) { const r = roomById(UI.selRoom); if (r && confirm(`Delete room "${r.name}"?`)) { removeRoom(r); changed(); } }
+  } else if (UI.mode === 'room') {
+    const m = { p: 'pencil', r: 'rect', f: 'fill', o: 'object', v: 'select', j: 'probe' }[k];
+    if (m) { UI.paintTool = m; if (m !== 'probe') UI.probe = null; renderRoomTools(); draw(); }
+    if (/^[1-9]$/.test(k)) { UI.brush = TILE_ORDER[+k - 1]; if (!['pencil', 'rect', 'fill'].includes(UI.paintTool)) UI.paintTool = 'pencil'; renderRoomTools(); }
+    if ((k === 'delete' || k === 'backspace') && UI.selObj >= 0) { const t = getTarget(); pushUndo(); t.obj.objects.splice(UI.selObj, 1); UI.selObj = -1; afterEdit(); }
+    if (k === 'm') { UI.mode = getTarget()?.kind === 'layout' ? 'library' : 'map'; UI.probe = null; renderAll(); }
+    if (k === 'escape') { UI.probe = null; UI.selObj = -1; renderObjBox(); draw(); }
+  }
+});
+
+// Header
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  UI.mode = b.dataset.mode; UI.probe = null;
+  if (UI.mode === 'room' && !getTarget() && UI.selRoom) UI.target = UI.selRoom;
+  renderAll();
+});
+$('levelName').oninput = e => { S.level.name = e.target.value; saveSoon(); };
+$('levelTier').onchange = e => { S.level.tier = e.target.value; saveSoon(); };
+$('btnNew').onclick = () => { if (!confirm('Start a new empty level? The current minimap and rooms are cleared (export first to keep them). The room library is kept.')) return; S = newProject(S.library); Object.assign(UI, { selRoom: null, target: null, selObj: -1 }); changed(); };
+$('btnExport').onclick = () => {
+  const out = { ...S, exported: new Date().toISOString(), legend: { tiles: Object.fromEntries(Object.entries(TILES).map(([k, v]) => [k, v.name])), screen: `${TW}x${TH} tiles of ${T}px per minimap cell; tile (col,row) in a screen maps to engine tx=col, ty=row+5` } };
+  const blob = new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' }), a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = (S.level.name || 'level').replace(/[^\w\- ]+/g, '').replace(/\s+/g, '-').toLowerCase() + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+$('btnImport').onclick = () => $('fileIn').click();
+$('fileIn').onchange = e => {
+  const f = e.target.files[0]; if (!f) return; const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const d = JSON.parse(rd.result); if (d.format !== 'ooze2orbit-level-sketch') throw new Error('Not a level sketch file.');
+      const replace = confirm('OK = replace the current level with the imported one.\nCancel = only add its library layouts to yours.');
+      if (replace) { delete d.legend; delete d.exported; S = d; Object.assign(UI, { selRoom: null, target: null, selObj: -1 }); }
+      else { for (const l of d.library || []) if (!S.library.some(x => JSON.stringify(x.tiles) === JSON.stringify(l.tiles))) S.library.push({ ...l, id: 'lib' + (S.nextLib++) }); }
+      changed();
+    } catch (err) { alert('Import failed: ' + err.message); }
+  };
+  rd.readAsText(f); e.target.value = '';
+};
+window.addEventListener('resize', () => draw());
+renderAll();
+</script>
+</body>
+</html>
