@@ -1,5 +1,11 @@
 # HD remaster: first cell slice
 
+## Approved open HUD family (2026-11-16)
+Cell and aquatic now use a quiet material-specific open overlay, replacing the active ornate dock CSS.
+Native status tapers at upper left; inventory/system controls sit at upper right. Navigation/progression
+is75% of usable landscape width and shallow/full usable width in portrait. Upgrades/Info expand above
+it without shifting it. Artwork, font licensing, source bounds and QA: docs/art/HUD_OPEN_OVERLAY.md.
+
 ## Aquatic motion and wildlife (2026-11-16)
 A-0031 adds detailed transparent jellyfish/eel cutouts and three-view swim/bite sheets for deepmaws,
 blue sharks and hammerheads. Frame timing is simulation-clock based and reduced-motion aware. Actual
@@ -127,3 +133,26 @@ The bottom dock now owns status, point balances, upgrades and controls; top-righ
 Wood/vines, bone/claws and amber cellular shells follow the approved diet palette. Four-form progression
 and all gameplay gates remain unchanged. A-0025 records the new vector/CSS ornament. Full-grown bodies
 are framed above the dock on short windows; this does not change physics or stat progression.
+
+### High-density rendering foundation — 2026-11-17
+The browser game now draws WebGL scenes into a higher-resolution buffer while preserving logical
+world size, simulation, camera framing, culling and pointer mapping. `RenderResolution` adapts Phaser
+4.2's internal/combined camera transforms only during rendering and restores them afterward. Global
+nearest-neighbor/pixel-art scaling is disabled; illustrated textures retain linear filtering.
+Settings > Display > Graphics quality applies live and saves with the existing settings:
+
+| Preset | Maximum density | Long edge | Pixel budget |
+| --- | --- | --- | --- |
+| Performance | 1x | 1280 | 1280×720 |
+| Auto desktop | 2x | 2560 | 2560×1440 |
+| Auto touch | 2x | 1920 | 1920×1080 |
+| High | 2x | 3840 | 3840×2160 |
+| Ultra | 3x | 5120 | 5120×2880 |
+
+Targets fit within all caps and GPU renderbuffer/viewport limits; they never supersample beyond the
+preset/device density. Auto is a bounded default, not a measured FPS controller. Choose High for a
+4K monitor, Ultra for maximum high-DPR phone clarity, or Performance if frame rate/battery suffers.
+Resize, rotation, fullscreen, browser zoom/monitor DPR changes and WebGL restoration reapply sizing.
+Canvas-renderer fallback stays at logical resolution. The canvas exposes `data-render-resolution`
+and `data-render-quality` for inspection. Raster source detail is unchanged: larger background and
+sprite masters remain a separate art pass. No engine migration or native wrapper is needed for this.

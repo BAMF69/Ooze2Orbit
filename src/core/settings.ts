@@ -1,3 +1,4 @@
+import {RENDER_QUALITIES,type RenderQuality} from './renderQuality';
 // ---------------------------------------------------------------------------
 // settings.ts
 // Purpose : The player's settings: built-in defaults, the schema every field is checked against, and a
@@ -32,7 +33,7 @@ export const CONSENT = ["unset", "yes", "no"] as const;
 
 export interface Settings {
   version: number;
-  display: { mode: string; vsync: boolean; frame_cap: number; resolution: [number, number]; ui_scale: number; [k: string]: unknown };
+  display: { render_quality:RenderQuality; mode: string; vsync: boolean; frame_cap: number; resolution: [number, number]; ui_scale: number; [k: string]: unknown };
   audio: { master: number; music: number; sfx: number; ui: number; voice: number; mono: boolean; [k: string]: unknown };
   language: string;
   access: {
@@ -48,7 +49,7 @@ export interface Settings {
 
 const DEFAULTS: Settings = {
   version: SETTINGS_VERSION,
-  display: { mode: "windowed", vsync: true, frame_cap: 0, resolution: [1920, 1080], ui_scale: 1.0 },
+  display: { render_quality:"auto", mode: "windowed", vsync: true, frame_cap: 0, resolution: [1920, 1080], ui_scale: 1.0 },
   audio: { master: 1.0, music: 0.8, sfx: 1.0, ui: 1.0, voice: 1.0, mono: false },
   language: "en",
   access: {
@@ -72,7 +73,7 @@ const choice = (values: readonly (string | number)[]): Rule => ({ kind: "enum", 
 
 /** Section -> field -> rule. The default of each field comes from DEFAULTS. */
 export const SCHEMA: Record<string, Record<string, Rule>> = {
-  display: { mode: choice(DISPLAY_MODES), vsync: bool, frame_cap: choice(FRAME_CAPS), resolution: { kind: "res" }, ui_scale: num(0.75, 2.0) },
+  display: { render_quality:choice(RENDER_QUALITIES), mode: choice(DISPLAY_MODES), vsync: bool, frame_cap: choice(FRAME_CAPS), resolution: { kind: "res" }, ui_scale: num(0.75, 2.0) },
   audio: { master: num(0, 1), music: num(0, 1), sfx: num(0, 1), ui: num(0, 1), voice: num(0, 1), mono: bool },
   access: {
     text_scale: num(0.75, 2.0), subtitles: bool, subtitle_size: choice(SUB_SIZES), subtitle_background: num(0, 1),

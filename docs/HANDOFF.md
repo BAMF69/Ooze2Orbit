@@ -16,6 +16,18 @@
 - Asset provenance A-0035, A-0037/A-0038 and A-0039; exact generation prompts and bundled OFL license included.
 - User authorized commit/push on 2026-11-17. Physical phone/controller checks remain outstanding.
 
+## Approved cell/aquatic open HUD (2026-11-16)
+- New stable navigation/progression strip: centered75% usable width in landscape; compact88px portrait.
+- Tapered upper-left live resources/vitals; inventory/system buttons upper right. Upgrades/Info float
+  above the strip. Portrait depth/actions leave the center lane free; conditional abilities preserved.
+- A-0035 locally bundles OFL Vollkorn. A-0036 supplies six quiet transparent component sheets: membrane
+  cell materials, kelp/cartilage/scute aquatic materials. Historical ornate art is not used in this HUD.
+- hudDock.css is the single active HUD cascade. Older dietOverlay/paintedHud/hudTabs CSS is not imported.
+- Localized player-occlusion mask keeps overlapping content readable. Gameplay/input/save rules retained.
+- Source bounds/prompts and validation: docs/art/HUD_OPEN_OVERLAY.md. Browser captures are in ../outputs/
+  hud-final-{main,aquatic}-{herbivore,carnivore,omnivore}-{1440,375,812,800}.png and upgrade variants.
+- No commit/push/publication authorized for this pass. Physical-device checks remain outstanding.
+
 ## Aquatic crash and recovery polish (2026-11-16)
 - Fixed reported daughter-selection crashes: SisterView no longer draws legacy aparts overlays.
   AquaticIllustrations already owns complete equipment, including toxicTendrils and electricOrgan.
@@ -467,3 +479,9 @@ layout; then input/touch, offline/checkpoints, and individual stage adapters. Ar
 ## Next
 BAMF69 plays aquatic normally: are form choices worth anticipating and do they fit the swim/river pacing?
 Do not make further design changes until notes. Cell vertical slice waits; space Toy playtest still pending.
+
+2026-11-17: High-density WebGL rendering is now independent of logical gameplay dimensions. See
+HD_REMASTER.md for Graphics quality caps and architecture. Main entry no longer forces pixelArt or
+pixelated CSS scaling. New files: src/core/renderQuality.ts, src/shell/renderResolution.ts;
+DisplayViewport reapplies quality on viewport/DPR changes, Settings Display persists the choice.
+High targets native4K; Ultra allows3x phone density. Existing raster master sizes remain unchanged.

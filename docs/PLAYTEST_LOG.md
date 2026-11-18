@@ -450,3 +450,23 @@ real eating/chomp, surface breach/re-entry, paused body/equipment frames, reduce
 and health-stat bulk. Inspected equipped dash and breach screenshots; reduced plate coverage and added
 curved shading to keep the diet body readable. Coast and river production GPU smokes passed.
 Asset paths and built-in imagegen prompt set: docs/art/AQUATIC_PLAYER.md.
+
+2026-11-16 — Approved open HUD: 493 unit tests; typecheck and11 shader recipes pass. GPU browser
+matrix covers cell/aquatic × three diets ×1440×900,375×812,812×375,800×1024. Verified stable strip
+bounds across Growth/Upgrades/Info,75% usable landscape width, touch-upgrade pause, heldW continuity,
+purchases, arrow navigation, inspectable unaffordable cards and native fullscreen. Production cell and
+lake smoke runs reached DRIVE_DONE without errors. Fresh captures: ../outputs/hud-approved-review.md.
+Physical iPhone/Android tablet/PlayStation controller checks remain to be done. No publish/commit/push.
+Extra live-input checks: Q activated Jet/dash while Upgrades was open in both stages;125% text scale
+expanded the dock as intended. Safari mask prefixed fallback is included; physical Safari QA remains.
+
+2026-11-17 — High-density rendering: 496 unit tests, typecheck,11 shader recipe compiles and production
+build pass. GPU browser checks covered cell/aquatic at3840×2160,375×812 and812×375 (phone DPR3),
+switching all four quality presets without changing logical dimensions/camera framing. Inspected
+4K and portrait captures; corrected Phaser4 combined-matrix scaling after visual QA caught incomplete
+scene coverage. Live input checks pass for heldW, dash, purchase, menu arrows and fullscreen. Pixel
+readback plus pointer-hit checks pass in creature, civilization and space. Production aquatic boot
+smoke passed120 frames without errors. Captures: ../outputs/render-{main,aquatic}-*.
+Physical phone/4K hardware performance still needs playtesting; no publish/commit/push.
+Additional rendering checks passed: simulated DPR/viewport change and WebGL context loss/restoration;
+production Settings menu scenario reached DRIVE_DONE menus without errors.

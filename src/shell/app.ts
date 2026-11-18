@@ -210,7 +210,7 @@ export class Shell {
       this.displayPause = true; this.input.clearHeld();
       if (this.top?.gameplay) this.pauseGame();
       else this.game?.scene.pause(this.scene);
-    });
+    },()=>this.settings.display.render_quality);
     this.input.attach(window);
     window.addEventListener("blur", () => this.focusLost());
     document.addEventListener("visibilitychange", () => document.hidden && this.focusLost());
@@ -371,6 +371,7 @@ export class Shell {
       this.frameCap = s.display.frame_cap;
       game.loop.setFPSLimit(s.display.frame_cap);
     }
+    this.viewport?.measure();
     game.sound.volume = s.audio.master;
     try {
       const ctx = (game.sound as unknown as { context?: AudioContext }).context;

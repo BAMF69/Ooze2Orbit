@@ -1,64 +1,51 @@
-// Independent transparent landmarks join continuous vector trim at authored attachment ports.
-// No legacy frame slices, feather masks, image patterns or tiled connector textures.
+import components from './hudComponents.json';
 import type * as Phaser from 'phaser';
-const NS='http://www.w3.org/2000/svg';let sequence=0;
-function el<K extends keyof SVGElementTagNameMap>(tag:K,attrs:Record<string,string|number>):SVGElementTagNameMap[K] {
-  const n=document.createElementNS(NS,tag);for(const [key,value] of Object.entries(attrs))n.setAttribute(key,String(value));return n;
-}
-const COMPONENTS={
-  herbivore:{key:'verdant',corner:[263,320,691,735],crest:[1277,518,904,1655],dark:'#293209',middle:'#7b8d26',light:'#d5e58e'},
-  carnivore:{key:'scarlet',corner:[286,344,720,756],crest:[1327,486,964,1685],dark:'#421722',middle:'#9d3c42',light:'#e8b58e'},
-  omnivore:{key:'solar',corner:[267,310,779,780],crest:[1329,534,960,1698],dark:'#453015',middle:'#a77d35',light:'#efd18a'},
-} as const;
+const NS='http://www.w3.org/2000/svg';
 export class ModularHudFrame {
-  constructor(scene:Phaser.Scene,host:HTMLElement) {
-    const decor=document.createElement('div');decor.className='modular-hud-frame';decor.setAttribute('aria-hidden','true');host.prepend(decor);
-    const id=`organic-component-frame-${++sequence}`;let previous='';
-    const draw=()=>{
-      const w=host.clientWidth,h=host.clientHeight,diet=document.body.dataset.overlayDiet as keyof typeof COMPONENTS;
-      const spec=COMPONENTS[diet]??COMPONENTS.omnivore,signature=`${w}:${h}:${spec.key}`;
-      if(w<1||h<1||signature===previous)return;previous=signature;
-      const url=new URL(`assets/art/hud_components_${spec.key}_v1.png`,document.baseURI).href;
-      const root=el('svg',{viewBox:`0 0 ${w} ${h}`,width:'100%',height:'100%',overflow:'visible'}),defs=el('defs',{});
-      const fill=el('linearGradient',{id:`${id}-fill`,x1:0,y1:0,x2:0,y2:1});
-      fill.append(el('stop',{offset:0,'stop-color':'var(--diet-top)'}),el('stop',{offset:1,'stop-color':'var(--diet-bottom)'}));defs.append(fill);root.append(defs);
-      // The background follows the soft edge. Trim is one long curve per side, never a repeated tile.
-      const panel=`M 26 10 C ${w*.28} 6 ${w*.35} 13 ${w*.5} 10 C ${w*.65} 7 ${w*.76} 14 ${w-26} 10 Q ${w-10} 9 ${w-10} 26 L ${w-10} ${h-26} Q ${w-9} ${h-10} ${w-26} ${h-10} C ${w*.7} ${h-6} ${w*.4} ${h-13} 26 ${h-10} Q 10 ${h-9} 10 ${h-26} L 10 26 Q 9 10 26 10 Z`;
-      root.append(el('path',{d:panel,fill:`url(#${id}-fill)`}));
-      const cornerSize=Math.min(80,Math.max(34,h*.6)),s=cornerSize/887;
-      const [cx,cy,hx,vy]=spec.corner,xPort=10+(hx-cx)*s,yPort=10+(vy-cy)*s;
-      const crestSize=h<80?58:86,cs=crestSize/887,[mx,my,ml,mr]=spec.crest;
-      const leftPort=w/2+(ml-mx)*cs,rightPort=w/2+(mr-mx)*cs;
-      const line=(d:string)=>{
-        root.append(el('path',{d,fill:'none',stroke:spec.dark,'stroke-width':6,'stroke-linecap':'round','stroke-linejoin':'round'}),el('path',{d,fill:'none',stroke:spec.middle,'stroke-width':3.8,'stroke-linecap':'round'}),el('path',{d,fill:'none',stroke:spec.light,'stroke-width':1,'stroke-linecap':'round','stroke-opacity':.8,transform:'translate(0,-.8)'}));
-      };
-      line(`M ${xPort-2} 10 C ${w*.23} 2 ${w*.35} 15 ${leftPort+2} 10`);
-      line(`M ${rightPort-2} 10 C ${w*.65} 4 ${w*.77} 16 ${w-xPort+2} 10`);
-      line(`M ${xPort-2} ${h-10} C ${w*.3} ${h-15} ${w*.68} ${h-3} ${w-xPort+2} ${h-10}`);
-      line(`M 10 ${yPort-2} C 5 ${h*.45} 15 ${h*.56} 10 ${h-yPort+2}`);
-      line(`M ${w-10} ${yPort-2} C ${w-5} ${h*.43} ${w-15} ${h*.58} ${w-10} ${h-yPort+2}`);
-      // Each bridge uses a complete long painted rail, not a tiny repeated texture sample.
-      const railUrl=new URL(`assets/art/hud_rail_${spec.key}_v1.png`,document.baseURI).href;
-      const railHeight=h<80?28:54;
-      const rail=(left:number,right:number,y:number,flipX=false,flipY=false)=>{
-        const width=right-left,group=el('g',{transform:`translate(${flipX?right:left} ${y}) scale(${flipX?-1:1} ${flipY?-1:1})`});
-        const image=el('svg',{x:0,y:-railHeight*.533,width,height:railHeight,viewBox:'50 140 2070 430',preserveAspectRatio:'none',overflow:'hidden'});
-        image.append(el('image',{href:railUrl,width:2172,height:724}));group.append(image);root.append(group);
-      };
-      rail(xPort-4,leftPort+4,10);rail(rightPort-4,w-xPort+4,10,true);
-      rail(xPort-4,w/2+3,h-10,true,true);rail(w/2-3,w-xPort+4,h-10,false,true);
-      // The source is a purpose-built sheet of whole objects with transparent margins around each.
-      const sprite=(group:SVGGElement,x:number,y:number,width:number,height:number,viewBox:string)=>{
-        const tile=el('svg',{x,y,width,height,viewBox,overflow:'hidden'});tile.append(el('image',{href:url,width:1774,height:887}));group.append(tile);
-      };
-      for(const [flipX,flipY] of [[false,false],[true,false],[true,true],[false,true]]) {
-        const group=el('g',{transform:`translate(${flipX?w:0} ${flipY?h:0}) scale(${flipX?-1:1} ${flipY?-1:1})`});
-        sprite(group,10-cx*s,10-cy*s,820*s,cornerSize,'0 0 820 887');root.append(group);
-      }
-      const crest=el('g',{});sprite(crest,w/2-(mx-850)*cs,10-my*cs,924*cs,887*cs,'850 0 924 887');root.append(crest);
-      decor.replaceChildren(root);
-    };
-    const resize=new ResizeObserver(draw);resize.observe(host);const theme=new MutationObserver(draw);theme.observe(document.body,{attributes:true,attributeFilter:['data-overlay-diet']});draw();
-    scene.events.once('shutdown',()=>{resize.disconnect();theme.disconnect();decor.remove();});
-  }
+ constructor(scene:Phaser.Scene,host:HTMLElement,kind:'strip'|'status'='strip'){
+  const decor=document.createElement('div');decor.className=`quiet-hud-frame ${kind}`;decor.setAttribute('aria-hidden','true');host.prepend(decor);
+  let previous='';
+  const draw=()=>{
+   const w=host.clientWidth,h=host.clientHeight,diet=document.body.dataset.overlayDiet??'omnivore',stage=document.body.classList.contains('aquatic-display')?'aquatic':'cell';
+   const signature=`${w}:${h}:${diet}:${stage}`;if(!w||!h||signature===previous)return;previous=signature;
+   const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox',`0 0 ${w} ${h}`);svg.setAttribute('preserveAspectRatio','none');
+   const path=document.createElementNS(NS,'path');
+   const d=kind==='strip'?`M 20 5 Q ${w*.25} 1 ${w*.5} 5 T ${w-20} 5 Q ${w-5} 5 ${w-5} 22 L ${w-5} ${h-20} Q ${w-5} ${h-5} ${w-22} ${h-5} Q ${w*.72} ${h-1} ${w*.5} ${h-5} T 22 ${h-5} Q 5 ${h-5} 5 ${h-22} L 5 22 Q 5 5 20 5 Z`:
+    `M 13 3 Q ${w*.55} 0 ${w-9} 5 Q ${w+2} ${h*.13} ${w*.84} ${h*.29} Q ${w*.7} ${h*.36} ${w*.67} ${h*.51} Q ${w*.64} ${h*.62} ${w*.56} ${h*.69} Q ${w*.49} ${h*.76} ${w*.52} ${h-12} Q ${w*.46} ${h+1} 13 ${h-5} Q 3 ${h-2} 4 ${h-20} L 4 16 Q 3 3 13 3 Z`;
+   let outline=d;
+   if(kind==='status'){
+    const hostRect=host.getBoundingClientRect();
+    const rows=[...host.querySelectorAll<HTMLElement>('.aquatic-vital,.dock-resource,.dock-middle')].filter(e=>e.getBoundingClientRect().height>0).map(e=>{const r=e.getBoundingClientRect();return {right:Math.min(w-5,r.right-hostRect.left+7),bottom:r.bottom-hostRect.top+2};}).sort((a,b)=>a.bottom-b.bottom);
+    if(rows.length){outline=`M 12 3 Q ${w*.45} 0 ${rows[0].right-6} 4`;
+      let previousRight=rows[0].right;
+      for(const row of rows){outline+=` Q ${previousRight+3} ${row.bottom-5} ${row.right} ${row.bottom}`;previousRight=row.right;}
+      outline+=` Q ${previousRight} ${h-5} ${w*.5} ${h-5} L 12 ${h-5} Q 4 ${h-5} 4 ${h-17} L 4 15 Q 4 3 12 3 Z`;
+    }
+   }
+   path.setAttribute('d',outline);path.setAttribute('fill','var(--hud-cavity)');path.setAttribute('stroke','var(--hud-rim)');path.setAttribute('stroke-width','3');svg.append(path);
+   const highlight=path.cloneNode() as SVGPathElement;highlight.setAttribute('fill','none');highlight.setAttribute('stroke','var(--hud-highlight)');highlight.setAttribute('stroke-width','.8');svg.append(highlight);
+   const spec=components[`${stage}_${diet}` as keyof typeof components];
+   const url=new URL(`assets/art/hud_${stage}_${diet}_components_v2.png`,document.baseURI).href;
+   const piece=(bounds:number[],x:number,y:number,width:number,height:number,flip=false)=>{
+    const tile=document.createElementNS(NS,'svg');tile.setAttribute('x',String(x));tile.setAttribute('y',String(y));tile.setAttribute('width',String(width));tile.setAttribute('height',String(height));tile.setAttribute('viewBox',bounds.join(' '));tile.setAttribute('preserveAspectRatio','xMidYMid meet');tile.setAttribute('overflow','hidden');
+    const image=document.createElementNS(NS,'image');image.setAttribute('href',url);image.setAttribute('width',String(spec.width));image.setAttribute('height',String(spec.height));tile.append(image);
+    if(flip){const group=document.createElementNS(NS,'g');group.setAttribute('transform',`translate(${2*x+width},0) scale(-1,1)`);group.append(tile);svg.append(group);}else svg.append(tile);
+   };
+   if(kind==='strip'){
+    path.setAttribute('stroke','none');highlight.remove();
+    const cap=h-4,span=w-cap*1.6;
+    for(const y of [6,h-6]){
+      const cord=document.createElementNS(NS,'path');cord.setAttribute('d',`M ${cap*.7} ${y} Q ${w*.3} ${y-3} ${w*.5} ${y} T ${w-cap*.7} ${y}`);cord.setAttribute('fill','none');cord.setAttribute('stroke','var(--hud-rim)');cord.setAttribute('stroke-width','4');svg.append(cord);
+      const railWidth=Math.min(span*.7,170),railHeight=railWidth*spec.rail[3]/spec.rail[2];piece(spec.rail,w/2-railWidth/2,y-railHeight/2,railWidth,railHeight);
+    }
+    piece(spec.cap,1,2,cap,cap);piece(spec.cap,w-cap-1,2,cap,cap,true);
+   }else{
+    piece(spec.cap,0,2,22,40);
+    const railWidth=Math.min(w*.6,130),rh=railWidth*spec.rail[3]/spec.rail[2];piece(spec.rail,20,1-rh/2,railWidth,rh);
+   }
+   decor.replaceChildren(svg);
+  };
+  const observer=new ResizeObserver(draw);observer.observe(host);const mutation=new MutationObserver(draw);mutation.observe(document.body,{attributes:true,attributeFilter:['data-overlay-diet','class']});draw();
+  scene.events.once('shutdown',()=>{observer.disconnect();mutation.disconnect();});
+ }
 }
