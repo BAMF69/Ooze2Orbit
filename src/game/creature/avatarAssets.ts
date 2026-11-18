@@ -5,9 +5,9 @@
 //   (the other eight bodies are never downloaded). Every sheet must have every frame or it is removed and re-queued.
 // Authored: Written with Codex (GPT-6); HD sheets added with Claude (Opus 5.5).
 import type * as Phaser from "phaser";
-import { HD_AVATAR, bodyKey, bodyPath, wornKey, wornPath, wornFrameCount, type AvatarLook } from "./avatarLook";
+import { HD_AVATAR, paintedAvatar, bodyFrameCount, bodyKey, bodyPath, wornKey, wornPath, wornFrameCount, type AvatarLook } from "./avatarLook";
 import { FOE_HD, HD_FOE_KINDS } from "./foeArt";
-import { WATER_TILES, WATER_BG, OVERWORLD_BG, tileCount } from "./roomTiles";
+import { WATER_TILES, WATER_BG, OVERWORLD_BG, REED_SHALLOWS_BG, REED_SHALLOWS_TILES, paintedTileCount, tileCount } from "./roomTiles";
 
 export interface AvatarSheet { key: string; path: string; frames: number; size: number; height?: number }
 export const AVATAR_ASSETS: readonly AvatarSheet[] = [
@@ -19,11 +19,13 @@ export const AVATAR_ASSETS: readonly AvatarSheet[] = [
 export function avatarSheets(look?: Pick<AvatarLook, "family" | "diet">): AvatarSheet[] {
   if (!look) return [...AVATAR_ASSETS];
   return [...AVATAR_ASSETS,
-    { key: bodyKey(look.family, look.diet), path: bodyPath(look.family, look.diet), frames: HD_AVATAR.frames, size: HD_AVATAR.cell },
-    { key: wornKey(look.family), path: wornPath(look.family), frames: wornFrameCount(), size: HD_AVATAR.cell },
+    { key: bodyKey(look.family, look.diet), path: bodyPath(look.family, look.diet), frames: bodyFrameCount(look.family, look.diet), size: HD_AVATAR.cell },
+    { key: wornKey(look.family, look.diet), path: wornPath(look.family, look.diet), frames: wornFrameCount(paintedAvatar(look.family, look.diet)), size: HD_AVATAR.cell },
     ...HD_FOE_KINDS.map(k => ({ key: FOE_HD[k].key, path: FOE_HD[k].path, frames: FOE_HD[k].frames, size: FOE_HD[k].cell })),
     { key: WATER_TILES.key, path: WATER_TILES.path, frames: tileCount(), size: WATER_TILES.cell },
     { key: WATER_BG.key, path: WATER_BG.path, frames: 1, size: WATER_BG.width, height: WATER_BG.height },
+    { key: REED_SHALLOWS_TILES.key, path: REED_SHALLOWS_TILES.path, frames: paintedTileCount(), size: REED_SHALLOWS_TILES.cell },
+    { key: REED_SHALLOWS_BG.key, path: REED_SHALLOWS_BG.path, frames: 1, size: REED_SHALLOWS_BG.width, height: REED_SHALLOWS_BG.height },
     { key: OVERWORLD_BG.key, path: OVERWORLD_BG.path, frames: 1, size: OVERWORLD_BG.width, height: OVERWORLD_BG.height }];
 }
 

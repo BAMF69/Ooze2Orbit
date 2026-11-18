@@ -23,11 +23,12 @@ export function spawnEncounters(r: WaterRoom): WaterEnemy[] {
 export const reedPatches = (r: WaterRoom): number[] => roomSpec(r).reeds;
 export const reedCover = (r: WaterRoom, x: number): boolean => reedPatches(r).some(center => Math.abs(x - center) < 36);
 export interface EnemyTarget { x: number; y: number; hidden: boolean; submerged: boolean }
+/** `maxX` bounds land enemies and `swimMaxX` swimmers (defaults are the v1 room: 580 and the water edge less 8). */
 export function stepEnemy(e: WaterEnemy, target: EnemyTarget, dt: number, flood: boolean, minX: number,
-  blocked: (x: number, y: number) => boolean = () => false): boolean {
+  blocked: (x: number, y: number) => boolean = () => false, bounds: { maxX: number; swimMaxX: number } = { maxX: 580, swimMaxX: 536 }): boolean {
   if (e.hp <= 0 || e.incapacitated || dt <= 0) return false;
   if (e.kind === "dropper") return stepDropper(e, target, dt, blocked);
-  const oldX = e.x, oldY = e.y, t = ENEMIES[e.kind], maxX = e.kind === "swimmer" ? 536 : 580; e.age += dt;
+  const oldX = e.x, oldY = e.y, t = ENEMIES[e.kind], maxX = e.kind === "swimmer" ? bounds.swimMaxX : bounds.maxX; e.age += dt;
   const eligible = !target.hidden && (e.kind !== "swimmer" || target.submerged) && Math.abs(target.y - e.y) < (e.kind === "swimmer" ? 90 : 45);
   if (e.phase === "patrol") {
     if (e.kind === "swimmer") { e.x = (e.patrolX ?? e.home) + Math.sin(e.age * 0.9) * 32; e.y = 266 + Math.sin(e.age * 1.3) * 13; }

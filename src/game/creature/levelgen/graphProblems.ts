@@ -7,12 +7,14 @@
 // Notes   : Each name has a deliberately-broken test in tests/creatureLevelGraph.test.ts (SOP-17 §1).
 // Authored: Written with Claude (Fable 5.1).
 // ---------------------------------------------------------------------------
-import type { BiomeGraph, LevelGraph, Edge } from "./graph";
+import { cycleCount, type BiomeGraph, type LevelGraph, type Edge, type GardenerControl } from "./graph";
 import { MATERIALS, isStoryOrTerrain, isCritical, CLASS_SKILLS, type Key } from "./keys";
 import { LEVELGEN } from "./tuning";
-import { simulateLineage, minimalKeys, maximalKeys, reachable } from "./lineageSim";
+import { sphereSearch, minimalKeys, maximalKeys, reachable } from "./lineageSim";
+import type { ClassSkill } from "./keys";
 
-export function graphProblems(g: BiomeGraph): string[] {
+/** `classes`: the lineage's class skills, when known; every class door must then be built for one of them. */
+export function graphProblems(g: BiomeGraph, classes?: readonly ClassSkill[]): string[] {
   const bad = new Set<string>();
   if (g.version !== LEVELGEN.version || g.levels.length !== 3) bad.add("graph identity");
   for (const level of g.levels) {
@@ -27,19 +29,28 @@ export function graphProblems(g: BiomeGraph): string[] {
     if (!chainConnected(level, n => n.onCritical)) bad.add("critical chain");
     if (!chainConnected(level, n => n.onCritical && n.role !== "vault")) bad.add("bonus isolation");
     if (level.placements.some(p => p.kind === "storyKey" && level.nodes.find(n => n.id === p.node)?.role === "vault")) bad.add("bonus isolation");
-    if (level.loops < (level.tier === "easy" ? 0 : 1)) bad.add("loop");
+    // Counted from the edges, never from the generator's own field (review finding 3): parallel edges add nothing.
+    if (cycleCount(level) < (level.tier === "easy" ? 0 : 1)) bad.add("loop");
+    if (!level.map) bad.add("map layout");
     const chain = level.nodes.filter(n => n.onCritical).sort((a, b) => a.depth - b.depth);
     for (let n = LEVELGEN.pacing.maxSameRole; n < chain.length; n++)
       if (chain.slice(n - LEVELGEN.pacing.maxSameRole, n + 1).every(x => x.role === chain[n].role)) bad.add("pacing");
     for (let n = LEVELGEN.pacing.maxSpikesInRow; n < chain.length; n++)
       if (chain.slice(n - LEVELGEN.pacing.maxSpikesInRow, n + 1).every(x => x.sealed)) bad.add("pacing");
-    for (const n of level.nodes) if (n.role === "classTrial" && !level.edges.some(e => e.from === n.id && e.materials.includes("classDoor"))) bad.add("class triad");
+    // Recovery (§5 invariant 10): every Hard spike (a sealed room) has a food cache room within three rooms of it.
+    if (level.tier === "hard") for (const spike of chain.filter(n => n.sealed))
+      if (!chain.some(n => RECOVERY.has(n.role) && Math.abs(n.depth - spike.depth) <= LEVELGEN.pacing.recoveryWithin)) bad.add("pacing");
+    for (const n of level.nodes) if (n.role === "classTrial") {
+      if (!level.edges.some(e => e.from === n.id && e.materials.includes("classDoor"))) bad.add("class triad");
+      // The variant must be a class this lineage has (review finding 4); unset means "not built for a lineage yet".
+      if (classes && (!n.classVariant || !classes.includes(n.classVariant))) bad.add("class triad");
+    }
   }
   for (const m of Object.values(MATERIALS)) if (m.critical && m.opens.some(all => all.some(k => k !== "play" && !isStoryOrTerrain(k)))) bad.add("critical materials");
-  if (gardenerCircular(GARDENER_PREREQ)) bad.add("gardener circularity");
+  if (gardenerCircular(GARDENER_PREREQ) || gardenerUnreachable(g)) bad.add("gardener circularity");
   // Keys before gates, for the weakest lineage of each class and for the strongest lineage.
-  for (const c of CLASS_SKILLS) { const sim = simulateLineage(g, minimalKeys(c)); if (sim.problem) bad.add(sim.problem); }
-  if (simulateLineage(g, maximalKeys()).problem) bad.add("keys before gates");
+  for (const c of CLASS_SKILLS) { const sim = sphereSearch(g, minimalKeys(c)); if (sim.problem) bad.add(sim.problem); }
+  if (sphereSearch(g, maximalKeys()).problem) bad.add("keys before gates");
   // Easy must open to a first-generation creature with no story key: entry, goal and both discoveries.
   const easy = g.levels.find(l => l.tier === "easy");
   if (easy) {
@@ -47,6 +58,18 @@ export function graphProblems(g: BiomeGraph): string[] {
     if (!easy.entry.some(all => all.every(k => keys.has(k))) || !easy.nodes.filter(n => n.goal || n.role === "nursery").every(n => seen.has(n.id))) bad.add("easy open");
   }
   return [...bad];
+}
+/** Rooms that hold a food cache: the recovery a Hard spike needs nearby. */
+const RECOVERY = new Set(["shaft"]);
+/** Invariant 6 where the graph places the controls: an intervention operated in a room must be reachable without its
+ *  own effect (and without anything that needs it). A menu control (the nest toggle) is always reachable. */
+export function gardenerUnreachable(g: BiomeGraph): boolean {
+  return g.gardener.some((c: GardenerControl) => {
+    if (c.at === "menu") return false;
+    const at = c.at, level = g.levels.find(l => l.tier === at.tier); if (!level) return true;
+    const without = new Set<Key>([...maximalKeys(), ...g.gardener.map(x => x.key)].filter(k => k !== c.key && !(GARDENER_PREREQ[k as keyof typeof GARDENER_PREREQ] ?? []).includes(c.key)));
+    return !reachable(level, without).has(at.node);
+  });
 }
 /** Gardener terrain prerequisites; the generator never creates a circular one (invariant 6). */
 export const GARDENER_PREREQ: Record<"gardener:raise" | "gardener:divert", Key[]> = { "gardener:raise": [], "gardener:divert": ["gardener:raise"] };

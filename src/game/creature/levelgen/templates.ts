@@ -14,15 +14,18 @@ import type { Rng } from "./rng";
 import type { RoomSpec, CollisionRule, Control, EnemySpawn, Point, KeyedControl } from "./roomSpec";
 import type { ClassSkill, Key, Stat } from "./keys";
 import { LEVELGEN } from "./tuning";
+import { sizedGeometry, TILE } from "./geometry";
 
 export interface Entry { x: number; y: number; facing: number; vy?: number }
 /** One move of a solution script: swim/walk to a point, optionally jumping, then act there. */
-export interface Step { to: [number, number]; via?: [number, number]; leap?: boolean; jumpOnce?: boolean; sprint?: boolean; xOnly?: boolean; surface?: boolean; use?: "valve" | "keyed" | "hatch" | "reward" | "top" | "left" | "right" }
+export interface Step { to: [number, number]; via?: [number, number]; leap?: boolean; jumpOnce?: boolean; sprint?: boolean; xOnly?: boolean; surface?: boolean; use?: "valve" | "keyed" | "hatch" | "reward" | "top" | "left" | "right" | "claim" }
 export interface Hosting { tiles: [number, number]; probe: [number, number]; rules: CollisionRule[]; label: string; always: boolean }
 export type RoomFields = Pick<WaterRoom, "name" | "gate" | "tunnel" | "current" | "goal" | "reward" | "gateX" | "platforms" | "food" | "foes" | "cover" | "variant">;
 export interface Built {
   room: RoomFields; spec: RoomSpec; entries: { top?: Entry; bottom?: Entry };
-  hostTop?: Hosting; hostBottom?: Hosting; solution: Step[]; vaultKeyed?: (requires: Key[][], stat: Stat, threshold: number) => KeyedControl;
+  hostTop?: Hosting; hostBottom?: Hosting; solution: Step[];
+  /** A channel's two ceiling hatches: under the drain (near, first cell) and under the finale (far, last cell). */
+  channel?: { near: Hosting; far: Hosting; nearEntry: Entry; farEntry: Entry }; vaultKeyed?: (requires: Key[][], stat: Stat, threshold: number) => KeyedControl;
 }
 export interface TemplateContext { tier: Difficulty; node: RoomNode; rng: Rng; authored: boolean; index: number; roomId: number }
 
@@ -102,6 +105,9 @@ function branch(ctx: TemplateContext, kind: "nursery" | "vault"): Built {
 function drain(ctx: TemplateContext): Built {
   const variant = ctx.authored ? ctx.index % 3 : ctx.rng.int(3), c = common(ctx, variant, []);
   const g = guarded(ctx.tier, "drain");
+  // The net frame sits between the drain control's two guards, within one strike of each, so either can be lured
+  // into it (relations.ts lure lane / guard opening); at v1's x 368 the ambusher's short lunge never reached it.
+  if (g) c.spec.net = { ...c.spec.net, frame: { x: 440, y: 288 } };
   const spec: RoomSpec = { ...c.spec, puzzle: "drain", controls: [control(480, 288, "1 · Drain control", g), control(200, 236, "2 · Upper release")], timed: 0,
     collision: [{ solid: true, x0: 11, x1: 13, y0: 15, y1: 15 }], base: { platforms: false, tunnel: true, gate: false }, hint: { priority: HINT.drain, fallback: HINT.lever } };
   // Launch well left of the water edge: the drained shallows would cancel a jump that enters them below the surface.
@@ -112,6 +118,9 @@ function drain(ctx: TemplateContext): Built {
 function shaft(ctx: TemplateContext): Built {
   const variant = ctx.authored ? ctx.index % 3 : ctx.rng.int(3), c = common(ctx, variant, []);
   const g = guarded(ctx.tier, "shaft");
+  // A guarded relay needs a guard that can actually interrupt it (within 76 px, waterCombatRooms.ts): the first
+  // swimmer patrols just right of the relay, between it and the net, so it can also be lured (relations.ts).
+  if (g && c.spec.enemies[0]?.kind === "swimmer") c.spec.enemies = [{ ...c.spec.enemies[0], x: 296, y: 268 }, ...c.spec.enemies.slice(1)];
   const spec: RoomSpec = { ...c.spec, puzzle: "shaft", switchback: true, leftHatch: { x: 128, y: 236 }, cache: { x: 280, y: 228 }, arriveFromRight: { x: 128, y: 236, facing: -1 },
     controls: [control(280, 228, "1 · Shaft relay", g), control(496, 288, "2 · Lower latch")], timed: 0,
     collision: [{ solid: true, x0: 7, x1: 9, y0: 15, y1: 15 }, { solid: true, x0: 10, x1: 14, y0: -99, y1: 15 }, { solid: true, x0: 26, x1: 29, y0: -99, y1: 15 }, { solid: true, x0: 19, x1: 21, y0: 16, y1: 99 }],
@@ -124,11 +133,47 @@ function shaft(ctx: TemplateContext): Built {
 function pressure(ctx: TemplateContext): Built {
   const variant = ctx.authored ? ctx.index % 3 : ctx.rng.int(3), c = common(ctx, variant, []);
   const g = guarded(ctx.tier, "pressure");
+  // A sealed finale must be clearable with the net alone: its swimmer patrols within one lunge (133 px) of the frame.
+  if (ctx.node.sealed) c.spec.enemies = c.spec.enemies.map(en => en.kind === "swimmer" ? { ...en, x: 456 } : en);
   const spec: RoomSpec = { ...c.spec, puzzle: "pressure", vent: { x: 384, y: 300 }, controls: [control(480, 288, "1 · Charge pressure", g), control(192, 236, "2 · Timed release")], timed: 12,
     collision: [{ solid: true, x0: 11, x1: 13, y0: 15, y1: 15 }], base: { platforms: false, tunnel: true, gate: false }, hint: { priority: HINT.pressure, fallback: HINT.lever } };
-  const solution: Step[] = [...pitIn(ctx.node), { to: [480, 288], use: "valve" }, { to: [192, 236], leap: true, use: "valve" }, { to: [632, 288], use: "right" }, ...pitOut(ctx.node), { to: [8, 304], jumpOnce: ctx.node.pit, sprint: ctx.node.pit, use: "left" }];
-  return { room: { ...c.room, gate: false }, spec, entries: { top: { x: 128, y: 116, facing: 1 } }, hostTop: BRANCH_TOP, solution,
+  // A finale claims its seal at x 560, short of the underchannel hatch (tiles 36-37) that the claim opens.
+  const solution: Step[] = [...pitIn(ctx.node), { to: [480, 288], use: "valve" }, { to: [192, 236], leap: true, use: "valve" }, { to: [560, 288], use: ctx.node.goal ? "claim" : "right" }, ...pitOut(ctx.node), { to: [8, 304], jumpOnce: ctx.node.pit, sprint: ctx.node.pit, use: "left" }];
+  return { room: { ...c.room, gate: false }, spec, entries: { top: { x: 128, y: 116, facing: 1 }, bottom: FINALE_RISE }, hostTop: BRANCH_TOP, hostBottom: FINALE_HATCH, solution,
     vaultKeyed: (requires, stat, n) => ({ x: 144, y: 304, text: "The grotto shaft above gives way. Climb the ledges to the top.", requires, opens: "bonusOpen", locked: `Sealed grotto shaft. A lineage with ${stat} ${n} or more could force it; this one cannot yet.` }) };
+}
+/** The finale's floor hatch sits past its exit wall (tiles 36-37), where only a player who has claimed the seal
+ *  stands: dropping through it is the shortcut home under the galleries. Coming back up lands beside it. */
+const FINALE_HATCH: Hosting = { tiles: [36, 37], probe: [580, 604], rules: [], label: "↓ UNDERCHANNEL\nshortcut home", always: true };
+const FINALE_RISE: Entry = { x: 552, y: 298, facing: -1, vy: -220 };
+const CHANNEL_HINT = "Underchannel: a passage beneath the galleries joining the drain chamber to the finale. Climb the ledges under either hatch.";
+/**
+ * A channel spans `span + 1` map cells under the chain, from the drain (first cell) to the finale (last cell): the
+ * level's real cycle (review finding 3). Dry climbs under each hatch (two ledges, as under a nursery shaft), a flooded
+ * run between them, solid end walls, no enemies and no controls: its hatches open with the rooms above.
+ */
+function channel(ctx: TemplateContext): Built {
+  const span = Math.max(2, ctx.node.span ?? 2), cols = 40 * (span + 1), far = span * 40 + 36, width = cols * TILE;
+  const geometry = sizedGeometry(cols, undefined, [{ x0: 448, x1: span * 640 + 480, low: 288, raised: 224 }]);
+  const food = Array.from({ length: 2 * (span + 1) }, (_, i) => (6 + i * 20) * TILE);
+  const room: RoomFields = { name: "Underchannel", gate: false, tunnel: false, current: false, goal: false, gateX: 288, platforms: [], food, foes: [], cover: 224, variant: 0 };
+  // Near climb is approached from the right (ledge A right of B), far climb from the left; B sits under each hatch.
+  const collision: CollisionRule[] = [
+    { solid: true, x0: -99, x1: 1, y0: -99, y1: 99 }, { solid: true, x0: cols - 2, x1: 999, y0: -99, y1: 99 },
+    { solid: true, x0: 22, x1: 23, y0: 15, y1: 15 }, { solid: true, x0: 19, x1: 20, y0: 11, y1: 11 },
+    { solid: true, x0: far - 2, x1: far - 1, y0: 15, y1: 15 }, { solid: true, x0: far, x1: far + 1, y0: 11, y1: 11 },
+  ];
+  const spec: RoomSpec = { puzzle: "channel", controls: [], timed: 0, leftHatch: null, sealed: false, enemies: [], reeds: [], net: NET, vent: null, cache: null,
+    pits: [], switchback: false, collision, base: { platforms: false, tunnel: false, gate: false }, openings: [], verticalOpenFrom: null, farOpenFrom: null,
+    returnArrival: null, arriveFromRight: { x: width - 40, y: 304, facing: -1 }, branchArchX: null, hint: { priority: CHANNEL_HINT, fallback: CHANNEL_HINT },
+    keyed: null, geometry, start: { x: 328, y: 116 } };
+  const bx = (far + 1) * TILE, ax = (far - 1) * TILE;
+  // Drop from the drain onto ledge B, cross to the far climb and rise into the finale; then the way back.
+  const solution: Step[] = [{ to: [(far - 2) * TILE - 20, 304] }, { to: [ax, 240], leap: true }, { to: [bx, 176], leap: true }, { to: [bx, 92], leap: true, use: "top" },
+    { to: [404, 304] }, { to: [368, 240], leap: true }, { to: [320, 176], leap: true }, { to: [320, 92], leap: true, use: "top" }];
+  const hatch = (tiles: [number, number], label: string): Hosting => ({ tiles, probe: [tiles[0] * TILE + 3, (tiles[1] + 1) * TILE - 3], rules: [], label, always: false });
+  return { room, spec, entries: {}, solution,
+    channel: { near: hatch([19, 21], "↑ DRAIN CHAMBER"), far: hatch([far, far + 1], "↑ FINALE"), nearEntry: { x: 328, y: 116, facing: 1 }, farEntry: { x: bx, y: 116, facing: -1 } } };
 }
 export function buildRoom(ctx: TemplateContext): Built {
   switch (ctx.node.role) {
@@ -139,6 +184,7 @@ export function buildRoom(ctx: TemplateContext): Built {
     case "drain": return drain(ctx);
     case "shaft": return shaft(ctx);
     case "pressure": return pressure(ctx);
+    case "channel": return channel(ctx);
   }
 }
 export const climbScript = (): Step[] => climbToTop;
