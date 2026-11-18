@@ -21,6 +21,10 @@ export const waterlineAt = (room: WaterRoom | undefined, e: Expedition, x: numbe
 export function inWater(b: Body, e: Expedition, room?: WaterRoom): boolean {
   const w = regionAt(geom(room), b.x); return !!w && b.y > surfaceY(w, e.basinRaised);
 }
+/** Shared oxygen/HUD predicate: feet may be wet while the creature's head is above this region's surface. */
+export function isSubmerged(b: Body, e: Expedition, room: WaterRoom): boolean {
+  return inWater(b, e, room) && b.y - b.h > waterlineAt(room, e, b.x);
+}
 export function stepWaterBody(b: Body, room: WaterRoom, e: Expedition, traits: Traits,
   intent: { dir: number; vertical: number; jump: boolean; crouch: boolean; sprint: boolean; braced?: boolean; stunned?: boolean }, dt: number, objective?: RoomObjective): void {
   if (objective && drainedRoom(room, objective)) e = { ...e, basinRaised: false };
