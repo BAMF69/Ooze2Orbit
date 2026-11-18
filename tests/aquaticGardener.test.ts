@@ -48,14 +48,15 @@ describe("what the water does to the lake now", () => {
   it("mild water changes nothing", () => {
     const w = waterEffects(mild);
     for (const v of Object.values(w)) expect(v).toBeCloseTo(1);
-    expect(describeWater(mild)).toMatch(/mild/);
+    expect(describeWater(mild)).toMatch(/mild \(adaptable\)/);
   });
   it("warm: more food, faster and keener hunters", () => {
     const w = waterEffects(tempMax);
     expect(w.food).toBeGreaterThan(1);
     expect(w.hunterSpeed).toBeGreaterThan(1);
     expect(w.hunterSight).toBeGreaterThan(1);
-    expect(describeWater(tempMax)).toMatch(/^warm/);
+    expect(w.staminaRegen).toBeGreaterThan(1);
+    expect(describeWater(tempMax)).toMatch(/^warm \(aggressive\)/);
   });
   it("cold: less food, slower hunters and prey, slower stamina", () => {
     const w = waterEffects(tempMin);
@@ -63,7 +64,7 @@ describe("what the water does to the lake now", () => {
     expect(w.hunterSpeed).toBeLessThan(1);
     expect(w.preySpeed).toBeLessThan(1);
     expect(w.staminaRegen).toBeLessThan(1);
-    expect(describeWater(tempMin)).toMatch(/^cold/);
+    expect(describeWater(tempMin)).toMatch(/^cold \(cautious\)/);
   });
   it("stamina refills slower in cold water", () => {
     const c = { ...creatureFromLineage(null, "omnivore"), stamina: 10 };

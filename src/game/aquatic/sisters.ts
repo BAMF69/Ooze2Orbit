@@ -34,14 +34,14 @@ function inheritedBody(body: AqCreature): AqCreature {
   return { ...next, hp: maxHp(next) };
 }
 
-function bound(s: AqSister): void {
+function bound(s: AqSister, height = MAPS[s.home].width): void {
   const map = MAPS[s.home], r = size(s.body) * AQ.sisters.radiusMult;
   const beforeX = s.x, beforeY = s.y;
   s.x = Math.max(r, Math.min(map.width - r, s.x));
-  s.y = Math.max(r, Math.min(map.width - r, s.y));
+  s.y = Math.max(r, Math.min(height - r, s.y));
   s.z = Math.max(AQ.water.floorZ, Math.min(map.surface - 4, s.z));
   if (beforeX !== s.x) s.vx = Math.sign(map.width / 2 - s.x) * Math.abs(s.vx) * AQ.sisters.boundaryBounce;
-  if (beforeY !== s.y) s.vy = Math.sign(map.width / 2 - s.y) * Math.abs(s.vy) * AQ.sisters.boundaryBounce;
+  if (beforeY !== s.y) s.vy = Math.sign(height / 2 - s.y) * Math.abs(s.vy) * AQ.sisters.boundaryBounce;
   if (beforeX !== s.x || beforeY !== s.y) s.heading = Math.atan2(s.vy, s.vx);
 }
 
@@ -81,7 +81,7 @@ export function sisterIntent(s: AqSister, foods: readonly SisterFood[], player: 
 }
 
 /** Steering and arrival are separate from the choice of target. */
-function move(s: AqSister, target: { x: number; y: number; z: number } | null, dt: number): void {
+function move(s: AqSister, target: { x: number; y: number; z: number } | null, dt: number, height: number): void {
   const speed = movement(s.body).maxSpeed * AQ.sisters.speedMult * ((s.toxicLeft??0)>0?AQ.combat.toxicSlow:1);
   const dx = target ? target.x - s.x : Math.cos(s.heading) * speed;
   const dy = target ? target.y - s.y : Math.sin(s.heading) * speed;
@@ -94,11 +94,11 @@ function move(s: AqSister, target: { x: number; y: number; z: number } | null, d
   s.vz += (dz / len * v - s.vz) * rate;
   s.x += s.vx * dt; s.y += s.vy * dt; s.z += s.vz * dt;
   if (Math.hypot(s.vx, s.vy) > 1) s.heading = Math.atan2(s.vy, s.vx);
-  bound(s);
+  bound(s, height);
 }
 
 /** Only the active habitat advances. A shared consumed-id set stops two sisters eating one item. */
-export function stepSisters(colony: SisterColony, home: number, foods: readonly SisterFood[], player: SisterPlayer, dt: number, random: () => number): SisterEvents {
+export function stepSisters(colony: SisterColony, home: number, foods: readonly SisterFood[], player: SisterPlayer, dt: number, random: () => number, height = MAPS[home].width): SisterEvents {
   const t = AQ.sisters;
   const events: SisterEvents = { eaten: [], hits: [], deaths: [], births: 0, grew: [] };
   const consumed = new Set<number>();
@@ -112,7 +112,7 @@ export function stepSisters(colony: SisterColony, home: number, foods: readonly 
     const stunned=effect.speed===0;if(stunned) {s.vx=s.vy=s.vz=0;s.windup=0;}
     const choice = sisterIntent(s, foods.filter(f => !consumed.has(f.id)), player);
     s.intent = choice.intent;
-    if(!stunned)move(s, choice.target, dt);
+    if(!stunned)move(s, choice.target, dt, height);
     if (!stunned && choice.food && distance(s, choice.food) < size(s.body) * t.radiusMult + t.eatBonus) {
       const before = s.body.form;
       const eaten = eatFood(s.body, choice.food.food, choice.food.base);
@@ -157,6 +157,7 @@ export function stepSisters(colony: SisterColony, home: number, foods: readonly 
     if (dead.has(parent.id) || !parent.ready || count + t.broodSize - 1 > t.maxPerMap - t.founderReserve) continue;
     const offers = aquaticDaughters(parent.body, random);
     const children = offers.slice(0, t.broodSize).map(d => newborn(colony, d.creature, home, parent, random, parent));
+    for (const child of children) bound(child, height);
     colony.members = colony.members.filter(s => s.id !== parent.id);
     colony.members.push(...children); count += children.length - 1; events.births += children.length;
   }
@@ -169,7 +170,7 @@ export function stepSisters(colony: SisterColony, home: number, foods: readonly 
     const push = (reach - d) * Math.min(1, dt * t.separationRate);
     const nx = d > 0 ? dx / d : 1, ny = d > 0 ? dy / d : 0;
     a.x -= nx * push; a.y -= ny * push; b.x += nx * push; b.y += ny * push;
-    bound(a); bound(b);
+    bound(a, height); bound(b, height);
   }
   return events;
 }

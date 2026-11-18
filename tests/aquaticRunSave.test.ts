@@ -24,6 +24,10 @@ describe("the aquatic run as a save", () => {
     expect(back.problems).toEqual([]);
     expect(back.run).toEqual(run());
   });
+  it("restores an opened river while older saves still load", () => {
+    expect(unpackRun(packRun({ ...run(), rockslide: true })).run?.rockslide).toBe(true);
+    expect(unpackRun(packRun(run())).run?.rockslide).toBeUndefined();
+  });
   it("nothing saved: no run, no complaint", () => {
     expect(unpackRun(undefined)).toEqual({ run: null, problems: [] });
   });

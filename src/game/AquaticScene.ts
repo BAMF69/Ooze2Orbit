@@ -13,8 +13,8 @@ import { upgradeEffect } from './aquatic/effectDescriptions';
 //           your lineage's diet for plant and meat points (every bite heals 1), buy five stats up to 10 (E), grow
 //           through three forms, ram creatures for meat and parts; fish fight fish too (deepmaws hunt everything,
 //           darter schools swarm); your species turns shark-like as it grows aggressive; the lens (U) sets the
-//           water temperature while your kin evolve. Reaching the next form opens the map's river mouth: breach in
-//           its light to leap into the river. v4: stamina (Shift toggles cruise / full speed; dash Q and breach cost
+//           water temperature while your kin evolve. At the next form, the Gardener opens the map's river mouth
+//           with a rockslide. Breach in its light to leap into the river. v4: stamina (Shift toggles cruise / full speed; dash Q and breach cost
 //           half), part icons with what they do, river parts in their own slots, the admin panel (` key).
 // Usage   : Started by the shell ("aquatic"): main menu "Aquatic stage (prototype)", or
 //           dev.py smoke --drive play:N --query "stage=aquatic&autoplay". URL options: ?autoplay (a pilot swims,
@@ -176,6 +176,7 @@ export class AquaticScene extends Phaser.Scene {
   private avatarSpr!: Phaser.GameObjects.Sprite;
   private thickness = 0.5;
   private climate: WaterEffects = waterEffects(AQ.population.neutralTemp); // what the water does now (gardener.ts)
+  private rockslide = false;
   private critters: Critter[] = [];
   private kin: Critter[] = [];
   private items: Item[] = [];
@@ -257,7 +258,7 @@ export class AquaticScene extends Phaser.Scene {
   private cutTitle!: Phaser.GameObjects.Text;
   private decals: { x: number; y: number; w: number; aspect: number; color: number; alpha: number }[] = [];
   private propsLayout!: AtlasLayout;
-  private onAdminKey = (e: KeyboardEvent) => { if (e.code === "Backquote" && shell.topId === "play" && !this.division?.isActive) this.admin.toggle(); };
+  private onAdminKey = (e: KeyboardEvent) => { if (e.code === "Backquote" && shell.topId === "play" && !this.division?.isActive && !this.rockslidePending()) this.admin.toggle(); };
 
   constructor() {
     super("aquatic");
@@ -322,7 +323,7 @@ export class AquaticScene extends Phaser.Scene {
 
     this.sfx = cellSfx();
     trackHudOcclusion(this, () => this.avatarSpr);
-    this.hud = new AquaticHud(this, shell.i18n, () => { if (shell.topId === "play") this.panel.toggle(); }, () => { if (shell.topId === "play" && this.evolveReady()) this.evolveOut(); });
+    this.hud = new AquaticHud(this, shell.i18n, () => { if (shell.topId === "play" && !this.rockslidePending()) this.panel.toggle(); }, () => { if (shell.topId === "play" && this.evolveReady()) this.evolveOut(); });
     this.entry = new LifeSequence(this); this.entryPhase = null;
     const resize = () => { if (this.palette) this.setPalette(this.palette); this.drawSky(); this.cutTitle.setPosition(this.scale.width / 2, this.scale.height * 0.2).setWordWrapWidth(this.scale.width - 24); };
     this.scale.on("resize", resize); this.events.once("shutdown", () => this.scale.off("resize", resize));
@@ -342,7 +343,7 @@ export class AquaticScene extends Phaser.Scene {
     this.division = new AqDivisionPicker(this, shell.i18n, index => { if (shell.topId === "play") this.chooseDaughter(index); });
     this.propsLayout = this.cache.json.get("aprops_layout") as AtlasLayout;
     new AquaticIllustrations(this, () => this.me, () => ({ map: this.mapIndex, visible: this.bg.visible }),
-      () => shell.topId === "play" && (this.mode === "swim" || this.mode === "river") && !this.entry.isPlaying && !this.division.isActive && !this.panel.touchPaused && !this.admin?.isOpen && !this.hud.blackedOut,
+      () => shell.topId === "play" && (this.mode === "swim" || this.mode === "river") && !this.rockslidePending() && !this.entry.isPlaying && !this.division.isActive && !this.panel.touchPaused && !this.admin?.isOpen && !this.hud.blackedOut,
       () => shell.settings.access.reduce_motion, () => shell.settings.access.game_speed,()=>this.murkLeft,()=>({speed:Math.hypot(this.av.vx,this.av.vy),dash:this.av.dashLeft>0,airborne:this.av.airborne,rising:this.av.vz>0,stunned:this.playerStunLeft>0}));
     this.admin = new AdminPanel(this, {
       setTemperament: (k, v) => this.adminTemper(k, v),
@@ -367,7 +368,7 @@ export class AquaticScene extends Phaser.Scene {
     for (const p of (params.get("parts") ?? "").split(",")) if (isPart(p)) this.me = addPart(this.me, p).creature; // ?parts=fins,jaws (captures)
     this.allowSave = !this.autoplay && !params.has("map") && !params.has("river") && !params.has("form") && !params.has("division");
     const resumed = shell.takeContinue("aquatic") || params.has("continue") ? this.loadRun() : null; // menu "Continue" (or ?continue): the saved run (2026-11-09)
-    this.buildMap(resumed ? resumed.map : Math.max(0, askMap), "start");
+    this.buildMap(resumed ? resumed.map : Math.max(0, askMap), "start", resumed?.rockslide);
     if (resumed) { this.closeReveal(false); this.hud.toast(shell.i18n.t("aq.welcome_back", { form: this.me.form }), 5); }
     if (askRiver === 1 || askRiver === 2) this.startRiver(askRiver - 1);
     if (params.has("threat")) { // a deepmaw right behind you (?threat) or ahead, facing you (?threat=front)
@@ -433,11 +434,12 @@ export class AquaticScene extends Phaser.Scene {
 
   private spot(minFromYou = 0): { x: number; y: number } {
     const w = this.map.width;
+    const h = this.swimHeight;
     for (let i = 0; i < 30; i++) {
-      const x = 40 + this.rng() * (w - 80), y = 40 + this.rng() * (w - 80);
+      const x = 40 + this.rng() * (w - 80), y = 40 + this.rng() * (h - 80);
       if (Math.hypot(x - this.av.x, y - this.av.y) >= minFromYou) return { x, y };
     }
-    return { x: 40 + this.rng() * (w - 80), y: 40 + this.rng() * (w - 80) };
+    return { x: 40 + this.rng() * (w - 80), y: 40 + this.rng() * (h - 80) };
   }
 
   /** A kind's numbers in this map: tougher and bigger in the lake and the ocean, its depth band scaled to the water. */
@@ -466,8 +468,11 @@ export class AquaticScene extends Phaser.Scene {
   }
 
   /** Build map i. Arriving from a river you splash in near the shore; the river mouth out is on the far side. */
-  private buildMap(i: number, arrival: "start" | "river"): void {
+  private buildMap(i: number, arrival: "start" | "river", restoreRockslide = false): void {
     this.clearMap();
+    this.rockslide = false;
+    this.regrowIn = 0;
+    this.climate = waterEffects(this.tempC);
     this.playerStunLeft=0;this.murkLeft=0;
     this.mapIndex = i;
     this.map = MAPS[i];
@@ -495,6 +500,7 @@ export class AquaticScene extends Phaser.Scene {
       const at = this.spot(300);
       for (const c of this.critters) if (c.school === i) Object.assign(c, { x: at.x + (this.rng() - 0.5) * 120, y: at.y + (this.rng() - 0.5) * 120 });
     });
+    if (restoreRockslide && this.map.exitForm !== null && this.me.form >= this.map.exitForm) this.collapseHabitat();
     const counts = AQ_KINDS.map((k) => `${k} ${this.map.counts[k]}`).join(", ");
     Log.info(LOG, `MAP ${this.map.id} (${w} px, depth ${this.map.surface}): ${counts}; you are form ${this.me.form}`);
     this.saveRun();
@@ -583,12 +589,19 @@ export class AquaticScene extends Phaser.Scene {
     this.mode = "lens";
     this.panel.close();
     this.hud.clearToast();
-    this.renderLensPanel();
+    if (this.rockslidePending()) {
+      this.hud.clearRockslidePrompt();
+      this.hud.screenUi.modal.classList.add("rockslide-guide");
+      this.hud.screenUi.show(shell.i18n.t("aq.rockslide_lens"), [
+        action("rockslide", "ui_accept", shell.i18n.t("aq.rockslide_apply")),
+      ]);
+    } else this.renderLensPanel();
     Log.info(LOG, `LENS open: water ${this.tempC} °C, generation ${this.pop.generation}`);
   }
 
   private closeLens(): void {
     this.mode = "swim";
+    this.hud.screenUi.modal.classList.remove("rockslide-guide");
     this.hud.hidePanel();
     this.lensBg.setVisible(false);
     this.hud.notice(shell.i18n.t("aq.water_now", { t: Math.round(this.tempC), what: describeWater(this.tempC) }), 6);
@@ -598,6 +611,7 @@ export class AquaticScene extends Phaser.Scene {
     this.hud.showLens(this.tempC, AQ.lens.tempMin, AQ.lens.tempMax, this.kin.map((k) => k.thickness), this.causes, this.pop.generation, [
       shell.i18n.t("aq.lens_water_now", { what: describeWater(this.tempC) }),
       shell.i18n.t("aq.lens_body_now", { what: describeBody(this.thickness) }),
+      shell.i18n.t("aq.lens_styles"),
     ]);
   }
 
@@ -699,7 +713,7 @@ export class AquaticScene extends Phaser.Scene {
     if (!this.allowSave || (this.run && !finished)) return;
     try {
       const data = finished ? { kind: "aquatic_run", v: 1, finished: true } : stamp(packRun({
-        sisters: this.sisters, map: this.mapIndex, me: { ...this.me, thickness: this.thickness }, tempC: this.tempC, pop: this.pop, causes: this.causes,
+        sisters: this.sisters, map: this.mapIndex, rockslide: this.rockslide, me: { ...this.me, thickness: this.thickness }, tempC: this.tempC, pop: this.pop, causes: this.causes,
         temper: this.temper, kills: this.kills, deaths: this.deaths, breaches: this.breaches,
       }));
       shell.saves.save(RUN_SLOT, data as Parameters<typeof shell.saves.save>[1]);
@@ -729,7 +743,7 @@ export class AquaticScene extends Phaser.Scene {
     this.hud.screenUi.root.classList.toggle("aquatic-can-evolve", this.evolveReady());
     this.hud.advanceAvailable(this.evolveReady());
     this.touch.setAvailable("electric",has(this.me,"electricOrgan"));
-    this.touch.update(shell.topId === "play" && (this.mode === "swim" || this.mode === "river") && !this.entry.isPlaying && !this.division.isActive && !this.admin.isOpen && !this.panel.isOpen && !this.hud.blackedOut && !this.hud.screenUi.detailsOpen && !this.hud.controlsOpen);
+    this.touch.update(shell.topId === "play" && (this.mode === "swim" || this.mode === "river") && !this.rockslidePending() && !this.entry.isPlaying && !this.division.isActive && !this.admin.isOpen && !this.panel.isOpen && !this.hud.blackedOut && !this.hud.screenUi.detailsOpen && !this.hud.controlsOpen);
     this.hud.screenUi.actions([action("upgrades", "interact", shell.i18n.t("cell.ui.upgrades")), ...(this.mode !== "river" ? [action("lens", "lens", shell.i18n.t("display.gardener"))] : []), ...(this.evolveReady() ? [action("advance", "ui_accept", shell.i18n.t("display.advance_creature"))] : [])]);
     const dt = Math.min(deltaMs / 1000, MAX_DT) * shell.settings.access.game_speed;
     const playing = shell.topId === "play"; // presses made on the menus wait until the play screen is up
@@ -755,7 +769,7 @@ export class AquaticScene extends Phaser.Scene {
       }
       return; // Threats, rivers, timers and population all wait for the selected body.
     }
-    if (playing && !this.autoplay && shell.input.scheme === "touch" && (this.mode === "swim" || this.mode === "river") && !this.admin.isOpen) this.panelInput();
+    if (playing && !this.autoplay && shell.input.scheme === "touch" && (this.mode === "swim" || this.mode === "river") && !this.rockslidePending() && !this.admin.isOpen) this.panelInput();
     if (this.panel.touchPaused) {
       this.panel.render(this.me); this.drawAvatar(this.av.airborne);
       this.hud.status(this.statusLines()); this.hudExtras(); return;
@@ -787,11 +801,13 @@ export class AquaticScene extends Phaser.Scene {
     }
     if (this.mode === "cutscene") { this.cutsceneFrame(dt, playing); return; }
     if (this.mode === "river") { this.riverFrame(dt, playing); return; }
+    if (this.rockslidePending()) { this.rockslideTutorial(playing); return; }
     if (this.mode === "lens") {
       if (this.autoplay) this.pilotLens(dt);
       else if (playing) {
         if (inp.takePress("ui_left") || inp.takePress("move_left")) this.setTemp(-AQ.lens.tempStep);
         if (inp.takePress("ui_right") || inp.takePress("move_right")) this.setTemp(AQ.lens.tempStep);
+        if (inp.takePress("interact")) this.setTemp(AQ.population.neutralTemp - this.tempC);
         if (inp.takePress("ui_accept")) this.passGeneration();
         if (inp.takePress("lens")) this.closeLens();
       }
@@ -927,7 +943,79 @@ export class AquaticScene extends Phaser.Scene {
   }
 
   private mouthOpen(): boolean {
-    return this.map.exitForm !== null && this.me.form >= this.map.exitForm;
+    return this.rockslide && this.map.exitForm !== null;
+  }
+
+  private rockslidePending(): boolean {
+    return !this.rockslide && this.map?.exitForm != null && this.me.form >= this.map.exitForm
+      && (this.mode === "swim" || this.mode === "lens");
+  }
+
+  private get swimHeight(): number {
+    return this.map.width * (this.rockslide ? AQ.rockslide.openArea : 1);
+  }
+
+  private plantCapacity(base: number): number {
+    return this.rockslide ? Math.ceil(base * AQ.rockslide.plantCapacity) : base;
+  }
+
+  private collapseHabitat(): void {
+    this.rockslide = true;
+    this.regrowIn = AQ.regrowS / (this.climate.food * AQ.rockslide.regrowRate);
+    const edge = this.swimHeight;
+    keepInside(this.av, 20, this.map.width, edge);
+    const keepNorth = <T extends { y: number; spr: Phaser.GameObjects.Sprite }>(objects: T[]): T[] =>
+      objects.filter(object => {
+        if (object.y < edge) return true;
+        object.spr.destroy();
+        return false;
+      });
+    this.critters = keepNorth(this.critters);
+    this.sharks = keepNorth(this.sharks);
+    this.items = keepNorth(this.items);
+    this.decals = this.decals.filter(d => d.y < edge);
+    for (const kind of ["algae", "plankton", "bloom"] as const) {
+      const baseline = kind === "bloom" ? this.map.blooms : this.map[kind];
+      const cap = Math.floor(this.plantCapacity(baseline) * this.climate.food);
+      this.items.filter(it => it.kind === kind).slice(cap).forEach(it => it.spr.destroy());
+    }
+    this.items = this.items.filter(it => it.spr.active);
+    for (const k of this.kin) if (k.y >= edge) Object.assign(k, this.spot());
+    for (const sister of this.sisters.members) {
+      if (sister.home === this.mapIndex && sister.y >= edge) Object.assign(sister, this.spot());
+    }
+    for (let z = 0; z < this.map.surface; z += 64) {
+      for (let x = 0; x < this.map.width; x += 78) {
+        const rock = this.addItem("rock", { x: Math.min(this.map.width, x + (z % 128 ? 39 : 0)), y: edge, z });
+        rock.size = 65 + this.rng() * 22;
+      }
+    }
+  }
+
+  private rockslideTutorial(playing: boolean): void {
+    const inp = shell.input;
+    if (this.mode === "swim") {
+      this.drawBehind(0);
+      if (this.hud.screenUi.modal.hidden) {
+        this.panel.close();
+        inp.clearHeld();
+        this.hud.showRockslidePrompt(this.me.form);
+      }
+      if (playing && (this.autoplay || inp.takePress("lens"))) {
+        this.openLens();
+        this.hud.screenUi.modalActions.querySelector("button")?.focus();
+        this.drawLens();
+      }
+    } else if (playing && (this.autoplay || inp.takePress("ui_accept"))) {
+      this.collapseHabitat();
+      this.closeLens();
+      this.hud.toast(shell.i18n.t("aq.rockslide_done"), 8);
+      this.sfx.play("evolve");
+      inp.clearHeld();
+      this.saveRun();
+      this.drawBehind(0);
+    } else this.drawLens();
+    inp.clearPresses();
   }
 
   private steer(dt: number, playing: boolean): void {
@@ -966,7 +1054,7 @@ export class AquaticScene extends Phaser.Scene {
       this.sfx.play("pop");
       this.cameras.main.shake(140, (6 * effectiveShake(shell.settings)) / this.scale.width);
     }
-    keepInside(this.av, 20, this.map.width, this.map.width);
+    keepInside(this.av, 20, this.map.width, this.swimHeight);
     this.avatarSpr.setRotation(-p.s.turn * 0.12);
   }
 
@@ -1101,10 +1189,9 @@ export class AquaticScene extends Phaser.Scene {
     if (this.run) this.drawRiver(0); else this.drawBehind(0);
     this.saveRun();
     this.sfx.play("choose");
-    const open = this.map.exitForm !== null && this.me.form >= this.map.exitForm && this.mode === "swim";
-    const key = this.evolveReady() ? "aq.evolved_last" : this.finalFormAway() ? "aq.evolved_last_away" : open ? "aq.evolved_mouth" : "aq.evolved";
+    const key = this.evolveReady() ? "aq.evolved_last" : this.finalFormAway() ? "aq.evolved_last_away" : "aq.evolved";
     this.hud.toast(shell.i18n.t(key, { n: this.me.form, slots: slots(this.me) }), 6);
-    Log.info(LOG, `EVOLVE form ${this.me.form}${open ? " (the river mouth opens)" : ""}`);
+    Log.info(LOG, `EVOLVE form ${this.me.form}`);
   }
 
   private updateSisters(dt: number): void {
@@ -1112,7 +1199,7 @@ export class AquaticScene extends Phaser.Scene {
       .map(({ it, id }) => ({ id, x: it.x, y: it.y, z: it.z, food: it.kind.startsWith("meat") ? "meat" as const : "algae" as const,
         base: (AQ.food as Record<string, number>)[it.kind] ?? AQ.food.algae }));
     const result = stepSisters(this.sisters, this.mapIndex, foods,
-      { ...this.av, body: this.me, dashing: this.av.dashLeft > 0 }, dt, this.rng);
+      { ...this.av, body: this.me, dashing: this.av.dashLeft > 0 }, dt, this.rng, this.swimHeight);
     for (const id of result.eaten) this.items[id]?.spr.destroy();
     this.items = this.items.filter(it => it.spr.active);
     for (const hit of result.hits) {
@@ -1163,7 +1250,7 @@ export class AquaticScene extends Phaser.Scene {
   private swimTo(c: Critter, dir: { x: number; y: number }, targetZ: number, speed: number, dt: number): void {
     speed *= (c.toxicLeft??0)>0 ? AQ.combat.toxicSlow : 1;
     swim(c, dir.x * 0.75, dir.y * 0.75, dt, { accel: 260, maxSpeed: speed, drag: 1.3 });
-    keepInside(c, 20, this.map.width, this.map.width);
+    keepInside(c, 20, this.map.width, this.swimHeight);
     c.vz += Phaser.Math.Clamp((targetZ - c.z) / 15, -1, 1) * 120 * dt;
     c.vz *= Math.exp(-2 * dt);
     c.z = Phaser.Math.Clamp(c.z + c.vz * dt, AQ.water.floorZ, this.map.surface - 4);
@@ -1247,7 +1334,7 @@ export class AquaticScene extends Phaser.Scene {
     c.vz += ((dz / d) * v - c.vz) * k;
     c.x += c.vx * dt; c.y += c.vy * dt;
     c.z = Phaser.Math.Clamp(c.z + c.vz * dt, AQ.water.floorZ, this.map.surface - 4);
-    keepInside(c, 20, this.map.width, this.map.width);
+    keepInside(c, 20, this.map.width, this.swimHeight);
     if (Math.hypot(c.vx, c.vy) > 6) c.heading = Math.atan2(c.vy, c.vx);
   }
 
@@ -1316,6 +1403,7 @@ export class AquaticScene extends Phaser.Scene {
     const k = this.K(c.kind as AqKind);
     const home = c.school >= 0 ? this.schools[c.school]?.centre : null; // a darter rejoins its school
     Object.assign(c, home && home.x ? { x: home.x + (this.rng() - 0.5) * 80, y: home.y + (this.rng() - 0.5) * 80 } : this.spot(500), { z: k.zMin + this.rng() * (k.zMax - k.zMin), vx: 0, vy: 0, vz: 0, hp: k.hp, provokedLeft: 0 });
+    if (this.rockslide) keepInside(c, 20, this.map.width, this.swimHeight);
     if (c.brain) c.brain = newBrain();
   }
 
@@ -1530,11 +1618,11 @@ export class AquaticScene extends Phaser.Scene {
     if (this.genLeft <= 0) this.passGeneration();
     if ((this.saveIn -= dt) <= 0) { this.saveIn = AQ.save.everyS; this.saveRun(); }
     if ((this.regrowIn -= dt) <= 0) {
-      const food = this.climate.food; // warm water grows more, faster; cold water less, slower
-      this.regrowIn = AQ.regrowS / food;
-      if (this.items.filter((i) => i.kind === "algae").length < this.map.algae * food) this.addItem("algae", { ...this.spot(300), z: 0 });
-      if (this.items.filter((i) => i.kind === "plankton").length < this.map.plankton * food) this.addItem("plankton", { ...this.spot(300), z: this.planktonZ() });
-      if (this.items.filter((i) => i.kind === "bloom").length < Math.round(this.map.blooms * food) && this.rng() < 0.15 * food) this.addItem("bloom", { ...this.spot(400), z: 0 });
+      const food = this.climate.food;
+      this.regrowIn = AQ.regrowS / (food * (this.rockslide ? AQ.rockslide.regrowRate : 1));
+      if (this.items.filter((i) => i.kind === "algae").length < this.plantCapacity(this.map.algae) * food) this.addItem("algae", { ...this.spot(300), z: 0 });
+      if (this.items.filter((i) => i.kind === "plankton").length < this.plantCapacity(this.map.plankton) * food) this.addItem("plankton", { ...this.spot(300), z: this.planktonZ() });
+      if (this.items.filter((i) => i.kind === "bloom").length < Math.round(this.plantCapacity(this.map.blooms) * food) && this.rng() < 0.15 * food) this.addItem("bloom", { ...this.spot(400), z: 0 });
     }
   }
 
@@ -2018,6 +2106,8 @@ export class AquaticScene extends Phaser.Scene {
     const wash = this.lerpColor(0x16324a, 0x3a3020, (this.tempC - AQ.lens.tempMin) / (AQ.lens.tempMax - AQ.lens.tempMin));
     this.lensBg.clear().setVisible(true).fillStyle(0x050f13, 1).fillRect(0, 0, w, h).fillStyle(wash, 1)
       .fillRect(sx(0), sy(0), W * Z, W * Z).lineStyle(1, 0x6a9aa0, 0.6).strokeRect(sx(0), sy(0), W * Z, W * Z);
+    if (this.rockslide) this.lensBg.fillStyle(0x403e36, 1)
+      .fillRect(sx(0), sy(this.swimHeight), W * Z, (W - this.swimHeight) * Z);
     if (this.map.exitForm !== null) {
       this.lensBg.lineStyle(2, this.mouthOpen() ? 0xfff0b0 : 0x8aa0a0, 0.9).strokeCircle(sx(this.mouth.x), sy(this.mouth.y), AQ.mouth.radius * Z);
     }

@@ -59,3 +59,39 @@
 .aquatic-remaster.aquatic-can-evolve .stage-details { top:calc(var(--safe-top) + 245px); }
 @media(orientation:portrait) { .aquatic-remaster.aquatic-can-evolve .stage-details { top:calc(var(--safe-top) + 286px); }.aquatic-remaster.aquatic-can-evolve .stage-message { top:calc(var(--safe-top) + 342px); } }
 @media(max-height:480px) { .aquatic-remaster .stage-footer [data-action=advance] { left:202px; top:0; }.aquatic-remaster.aquatic-can-evolve .stage-details { top:calc(var(--safe-top) + 185px); } }
+.aquatic-remaster .rockslide-prompt {
+  inset: 0;
+  z-index: 11;
+  align-items: center;
+  background: #07151d88;
+  backdrop-filter: grayscale(1);
+}
+.aquatic-remaster .rockslide-prompt .stage-dialog {
+  max-width: 440px;
+}
+@media (orientation: landscape) {
+  .aquatic-remaster .rockslide-prompt .stage-dialog {
+    width: min(44vw, 440px);
+    margin-inline: auto max(16px, var(--safe-right));
+  }
+}
+.aquatic-remaster.rockslide-spotlight .dock-status-group {
+  z-index: 12;
+  pointer-events: none;
+}
+.aquatic-remaster.rockslide-spotlight .dock-status-group > :not(.dock-center),
+.aquatic-remaster.rockslide-spotlight .aquatic-vital,
+.aquatic-remaster.rockslide-spotlight .dock-center > :not(.dock-middle),
+.aquatic-remaster.rockslide-spotlight .dock-middle > :not(.dock-gardener) {
+  filter: grayscale(1) brightness(.55);
+}
+.aquatic-remaster.rockslide-spotlight .dock-gardener {
+  pointer-events: auto;
+  outline: 3px solid #ffdf80;
+  outline-offset: 3px;
+}
+.aquatic-remaster .rockslide-guide {
+  z-index: 12;
+  align-items: end;
+  background: transparent;
+}
