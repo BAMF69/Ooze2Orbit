@@ -18,6 +18,7 @@ export class DisplayViewport {
   activate(stage: DisplayStage | boolean | null): void {
     this.stage = stage === true ? "main" : stage === false ? null : stage; this.portrait = window.innerHeight > window.innerWidth;
     document.body.classList.toggle("cell-display", this.stage === "main");
+    document.body.classList.toggle("aquatic-display", this.stage === "aquatic");
     document.body.classList.toggle("display-active", this.stage !== null); this.measure();
   }
   measure(): void {

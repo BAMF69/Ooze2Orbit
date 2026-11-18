@@ -16,7 +16,7 @@ import { settingsScreen } from "./settingsScreen";
 import { navigateNative } from "./nativeNavigation";
 import { landing, gameLogo } from "./landing";
 import { uiIcon, type UiIcon } from "../game/uiIcons";
-import { exportSaves, hasRun, importSaves } from "./saveFiles";
+import { exportSaves, importSaves, latestRun } from "./saveFiles";
 import { Menu, buttonItem, el, glyph, tl, val } from "./ui";
 
 // ---- Tunables ----------------------------------------------------------------
@@ -104,7 +104,8 @@ export function menu(shell: Shell): Screen {
     const list = el("div", "list");
     const stages = el("div", "stage-select-grid"); m.horizontal = true;
     const add = (key: string, fn: () => void) => list.append(m.add(buttonItem(shell.i18n, key, fn)).el);
-    if (hasRun(shell)) add("menu.continue", () => shell.continueAquatic()); // 2026-11-09: pick up where you left off
+    const resume = latestRun(shell); // the most recently saved stage (2026-11-10: aquatic or space)
+    if (resume) add(`menu.continue_${resume}`, () => shell.continueStage(resume));
     for (const [id, game, label, icon] of [
       ["menu.play", "main", "cell", "cell"], ["menu.aquatic", "aquatic", "aquatic", "aquatic"],
       ["menu.creature", "creature", "creature", "creature"], ["menu.civ", "civ", "civilization", "civ"],
@@ -230,7 +231,7 @@ export function gameplay(shell: Shell, key: GameKey): Screen {
         if (navigateNative(a, () => shell.input.clearPresses())) return true;
       }
       const focused = document.activeElement;
-      if (key !== "juice" && (a === "ui_accept" || a === "jump") && focused instanceof HTMLElement &&
+      if (key !== "juice" && a === "ui_accept" && focused instanceof HTMLElement &&
         focused.matches("button, summary") && focused.getClientRects().length > 0 && getComputedStyle(focused).visibility !== "hidden" && !focused.closest("[hidden], [inert]") && focused.closest(".cell-ui-layer, .cell-toolbar, .stage-ui-layer")) {
         shell.input.clearPresses(); focused.click(); return true;
       }
@@ -261,6 +262,8 @@ export function pause(shell: Shell): Screen {
     list.append(
       m.add(buttonItem(shell.i18n, "pause.resume", () => shell.resumeGame())).el,
       m.add(buttonItem(shell.i18n, "pause.settings", () => shell.push(settingsScreen(shell)))).el,
+      m.add(buttonItem(shell.i18n, "menu.export", () => exportSaves(shell))).el, // from any stage's pause menu (BAMF69 2026-11-10)
+      m.add(buttonItem(shell.i18n, "menu.import", () => importSaves(shell, () => shell.quitToTitle()))).el, // back to the title: a stage left running would write its old state over the imported saves
       m.add(buttonItem(shell.i18n, "pause.quit", () => shell.quitToTitle())).el,
     );
     p.append(list);

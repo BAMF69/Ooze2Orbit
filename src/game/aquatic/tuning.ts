@@ -25,13 +25,13 @@ export const AQ_PAID_WITH: Readonly<Record<AqStat, PaidWith>> = {
  * The aquatic stage's own parts (BAMF69 2026-11-08: all new; cell parts do not carry over as parts). The last two are
  * the river parts: found only in the river runs, one per river.
  */
-export const AQ_PARTS = ["fins", "jaws", "plates", "gills", "endurance", "torrent"] as const;
+export const AQ_PARTS = ["fins", "jaws", "plates", "gills", "endurance", "torrent", "toxicTendrils", "electricOrgan"] as const;
 export type AqPart = (typeof AQ_PARTS)[number];
 /** The river parts have their own slots, on top of the normal ones (BAMF69 2026-11-08). */
 export const UNIQUE_PARTS: readonly AqPart[] = ["endurance", "torrent"];
 
 /** The lake's creatures. */
-export const AQ_KINDS = ["darter", "finray", "spinefish", "shellback", "deepmaw"] as const;
+export const AQ_KINDS = ["darter", "finray", "spinefish", "shellback", "deepmaw", "jellyfish", "electricEel"] as const;
 export type AqKind = (typeof AQ_KINDS)[number];
 
 export interface KindTuning {
@@ -53,6 +53,8 @@ export interface KindTuning {
 }
 
 export const KINDS: Readonly<Record<AqKind, KindTuning>> = {
+  jellyfish: { atlas: "ashell", count: 0, hp: 32, size: 44, speed: 20, zMin: 30, zMax: 165, bite: 22, aggro: 0, provoked: false, flee: 0, meat: 3, part: "toxicTendrils", chunk: "meatM", respawnS: 18 },
+  electricEel: { atlas: "afin", count: 0, hp: 55, size: 52, speed: 110, zMin: 15, zMax: 110, bite: 16, aggro: 240, provoked: true, flee: 0, meat: 4, part: "electricOrgan", chunk: "meatL", respawnS: 24 },
   darter: { atlas: "aprey", count: 30, hp: 4, size: 16, speed: 80, zMin: 30, zMax: 150, bite: 0, aggro: 0, provoked: false, flee: 170, meat: 1, part: null, chunk: "meat", respawnS: 5 },
   finray: { atlas: "afin", count: 10, hp: 10, size: 26, speed: 95, zMin: 150, zMax: 195, bite: 0, aggro: 0, provoked: false, flee: 220, meat: 2, part: "fins", chunk: "meatM", respawnS: 10 },
   spinefish: { atlas: "aspine", count: 12, hp: 14, size: 24, speed: 105, zMin: 40, zMax: 160, bite: 8, aggro: 260, provoked: true, flee: 0, meat: 3, part: "jaws", chunk: "meatM", respawnS: 9 },
@@ -61,6 +63,7 @@ export const KINDS: Readonly<Record<AqKind, KindTuning>> = {
 };
 
 export const AQ = {
+  combat: { eelShockCooldownS:5, eelFleeS:2.5, eelStunS:1.2, eelShockRange:180, jellySlowS:3, toxicS:3, toxicDps:5, toxicSlow:.45, electricRange:260, electricStunS:2.5, electricCooldownS:8, electricDamage:8 },
   // Map-bound sisters and descendants (your picks, 2026-11-13; awaiting playtest).
   sisters: {
     maxPerMap: 24, founderReserve: 6, broodSize: 3, statCap: 17,
@@ -106,6 +109,7 @@ export const AQ = {
     near: 18, // nothing closer than this is drawn (it would fill the screen)
     far: 900, // draw distance; fog hides the edge
     fogStart: 350, // things start fading into the water here...
+    avatarMaxScreenShare: 0.38, avatarMaxPlayShare: 0.62, // fit large forms above the native HUD on short screens
     avatarY: 0.8, // where the avatar sits on screen (fraction of the height)
   },
 
@@ -132,6 +136,7 @@ export const AQ = {
     slots: [1, 2, 3, 3] as readonly number[], // part slots per form
   },
   parts: {
+    finsTierTurn: .12, // extra turn multiplier per tier above I
     finsMobility: 3, // fins count as this many mobility levels
     jawsDamage: 6, // jaws add this to your ram
     platesMult: 0.75, // plates: damage taken x this
@@ -281,17 +286,17 @@ export interface MapSpec {
 
 export const MAPS: readonly MapSpec[] = [
   { id: "pond", width: 1800, surface: 200, exitForm: 2,
-    counts: { darter: 30, finray: 10, spinefish: 12, shellback: 9, deepmaw: 3 }, mult: { hp: 1, bite: 1, size: 1 },
+    counts: { darter: 30, finray: 10, spinefish: 12, shellback: 9, deepmaw: 3, jellyfish:0, electricEel:0 }, mult: { hp: 1, bite: 1, size: 1 },
     algae: 110, plankton: 70, rocks: 30, weeds: 50, blooms: 8, sharks: [], // fewer rocks and weeds in the pond (2026-11-08)
     palette: { top: 0x0c2a32, fog: 0x10262f, floor: 0x24505c, speck: 0x3a6a72, ripple: 0x8ac8c8 } },
   { id: "lake", width: 2400, surface: 320, exitForm: 3,
-    counts: { darter: 40, finray: 12, spinefish: 18, shellback: 10, deepmaw: 6 }, mult: { hp: 1.6, bite: 1.5, size: 1.15 },
+    counts: { darter: 40, finray: 12, spinefish: 18, shellback: 10, deepmaw: 6, jellyfish:8, electricEel:0 }, mult: { hp: 1.6, bite: 1.5, size: 1.15 },
     algae: 150, plankton: 90, rocks: 90, weeds: 110, blooms: 10,
     // one medium shark: on sight it hunts you until you breach or get far away; below half health, relentlessly
     sharks: [{ kind: "medium", count: 1, relentlessLow: true, mercyLow: false }],
     palette: { top: 0x061a28, fog: 0x0a1e2c, floor: 0x1c3a4c, speck: 0x2e5468, ripple: 0x7ab0c8 } },
   { id: "ocean", width: 3000, surface: 420, exitForm: null,
-    counts: { darter: 60, finray: 16, spinefish: 24, shellback: 12, deepmaw: 9 }, mult: { hp: 2.4, bite: 2.2, size: 1.35 },
+    counts: { darter: 60, finray: 16, spinefish: 24, shellback: 12, deepmaw: 9, jellyfish:12, electricEel:8 }, mult: { hp: 2.4, bite: 2.2, size: 1.35 },
     algae: 170, plankton: 120, rocks: 100, weeds: 90, blooms: 12,
     // several medium sharks that leave you alone below half health unless you get close, and one large shark
     // with the lake shark's rules: slower, but its bite is crushing

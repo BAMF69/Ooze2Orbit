@@ -23,6 +23,8 @@ export interface AqSelection {
 }
 
 export interface AqCreature {
+  partTiers?: Partial<Record<AqPart, number>>;
+  formDiets?: Diet[]; // Previous form identities, retained across daughter choices and saves.
   selections?: AqSelection[];
   growthEvidence?: { algae: number; meat: number };
   divisionSeed?: number; // while a grown form is waiting for a daughter choice (autosave/Continue)
@@ -101,18 +103,18 @@ export function slots(c: AqCreature): number {
 /** Damage you take from a bite after defense and plates. */
 export function damageTaken(c: AqCreature, bite: number): number {
   const def = Math.max(0, 1 - AQ.stats.defensePerLevel * c.ups.defense);
-  return bite * def * (has(c, "plates") ? AQ.parts.platesMult : 1) * body(c).bite;
+  return bite * def * (has(c, "plates") ? Math.pow(AQ.parts.platesMult, partTier(c,"plates")) : 1) * body(c).bite;
 }
 
 /** Damage your ram does. */
 export function ramDamage(c: AqCreature): number {
   const s = AQ.stats;
-  return s.ramBase + s.attackPerLevel * c.ups.attack + s.ramPerForm * (c.form - 1) + (has(c, "jaws") ? AQ.parts.jawsDamage : 0);
+  return s.ramBase + s.attackPerLevel * c.ups.attack + s.ramPerForm * (c.form - 1) + (has(c, "jaws") ? AQ.parts.jawsDamage * partTier(c,"jaws") : 0);
 }
 
 /** Mobility that counts for handling: the stat plus fins, capped at the max. */
 export function mobility(c: AqCreature): number {
-  return Math.min(maxLevel(), c.ups.mobility + (has(c, "fins") ? AQ.parts.finsMobility : 0));
+  return Math.min(maxLevel(), c.ups.mobility + (has(c, "fins") ? AQ.parts.finsMobility * partTier(c,"fins") : 0));
 }
 
 /** The cell stage's momentum rule: bigger forms are heavier; mobility takes it back toward 1 (full = snappiest). */
@@ -128,7 +130,7 @@ export function movement(c: AqCreature): Movement {
   const mob = mobility(c);
   const b = body(c);
   return {
-    turnRate: m.turnRate * (1 + m.turnPerMobility * mob) * b.turn,
+    turnRate: m.turnRate * (1 + m.turnPerMobility * mob) * b.turn * (1+Math.max(0,partTier(c,"fins")-1)*AQ.parts.finsTierTurn),
     accel: m.accel / h,
     drag: m.drag / h,
     maxSpeed: m.maxSpeed * (1 + AQ.stats.speedPerLevel * c.ups.speed) * b.speed,
@@ -150,17 +152,18 @@ export function foodToEvolve(c: AqCreature): number {
 }
 
 /** Eat: food and points by the diet's share (0 = it cannot eat this). May grow into the next form (full health). */
-export function eatFood(c: AqCreature, kind: FoodKind, base: number): { creature: AqCreature; eaten: boolean; evolved: boolean; gained: number } {
+export function eatFood(c: AqCreature, kind: FoodKind, base: number, healMult=1): { creature: AqCreature; eaten: boolean; evolved: boolean; gained: number } {
   const gained = base * dietShare(c, kind);
   if (gained <= 0) return { creature: c, eaten: false, evolved: false, gained: 0 };
   let next: AqCreature = {
     ...c, growthEvidence: { algae: c.growthEvidence?.algae ?? 0, meat: c.growthEvidence?.meat ?? 0,
       [kind]: (c.growthEvidence?.[kind] ?? 0) + gained }, food: c.food + gained, points: { ...c.points, [kind]: c.points[kind] + gained },
-    hp: Math.min(maxHp(c), c.hp + AQ.food.heal), // every food pickup heals a little
+    hp: Math.min(maxHp(c), c.hp + AQ.food.heal*healMult), // every food pickup heals a little
   };
   const need = foodToEvolve(next);
   if (next.food < need) return { creature: next, eaten: true, evolved: false, gained };
-  next = { ...next, form: next.form + 1, food: next.food - need };
+  const formDiets = [...(next.formDiets ?? [])]; formDiets[next.form - 1] = next.diet;
+  next = { ...next, formDiets, form: next.form + 1, food: next.food - need };
   return { creature: { ...next, hp: maxHp(next) }, eaten: true, evolved: true, gained };
 }
 
@@ -187,13 +190,13 @@ export function pay(points: { algae: number; meat: number }, stat: AqStat, cost:
   return { ...points, [first]: points[first] - fromFirst, [second]: points[second] - (cost - fromFirst) } as { algae: number; meat: number };
 }
 
-export function buyUpgrade(c: AqCreature, stat: AqStat): BuyResult {
+export function buyUpgrade(c: AqCreature, stat: AqStat, healMult=1): BuyResult {
   const cost = upgradeCost(c, stat);
   if (cost === null) return { ok: false, reason: "max" };
   if (pointsFor(c, stat) < cost) return { ok: false, reason: "points" };
   const next: AqCreature = { ...c, points: pay(c.points, stat, cost), ups: { ...c.ups, [stat]: c.ups[stat] + 1 } };
   // a health level raises the max and heals by the same amount
-  return { ok: true, creature: stat === "health" ? { ...next, hp: c.hp + AQ.stats.hpPerLevel } : next };
+  return { ok: true, creature: stat === "health" ? { ...next, hp: Math.min(maxHp(next),c.hp + AQ.stats.hpPerLevel*healMult) } : next };
 }
 
 // ---- parts -------------------------------------------------------------------------------------
@@ -206,9 +209,13 @@ export type PartResult =
  * Pick up a part: add it, swap out the oldest when the slots are full, or turn a duplicate into food. River parts go
  * to their own slots, on top of the normal ones.
  */
-export function addPart(c: AqCreature, p: AqPart): PartResult {
+export function partTier(c: AqCreature,p: AqPart): number { return has(c,p)?Math.max(1,Math.min(3,c.partTiers?.[p]??1)):0; }
+export function addPart(c: AqCreature, p: AqPart, tier=1): PartResult {
   if (!AQ_PARTS.includes(p)) throw new Error(`unknown aquatic part "${p}"`);
+  tier = ["fins","jaws","plates"].includes(p) ? Math.max(1,Math.min(3,Math.floor(tier))) : 1;
+  if(has(c,p) && tier>partTier(c,p)) return {kind:"added",creature:{...c,partTiers:{...c.partTiers,[p]:tier}}};
   if (has(c, p)) return { kind: "duplicate", creature: { ...c, food: c.food + AQ.parts.duplicateFood } };
+  c={...c,partTiers:{...c.partTiers,[p]:tier}};
   if (isUnique(p)) {
     const next = { ...c, uniques: [...c.uniques, p] };
     return { kind: "added", creature: p === "endurance" ? { ...next, stamina: maxStamina(next) } : next };
@@ -237,20 +244,15 @@ export function sharkTier(aggr: number): number {
 // ---- the body's look from all three temperaments (2026-11-08) -------------------------------------
 export type LookFamily = "aggressive" | "cautious" | "adaptable";
 
-/**
- * How strongly each temperament shapes the body now, 0..1: half from the lineage's temperament, the rest from how you
- * live this stage (attack and kills; defense, health and plates; speed, mobility and breaches).
- */
+/** Body family follows temperament shares directly; diet, purchases and kills cannot replace it. */
 export function lookScores(
-  temper: Record<LookFamily, number>, c: AqCreature, kills: number, breaches: number,
+  temper: Record<LookFamily, number>, _c: AqCreature, _kills: number, _breaches: number,
 ): Record<LookFamily, number> {
-  const s = AQ.shark, max = maxLevel();
-  const clamp = (v: number) => Math.max(0, Math.min(1, v));
-  return {
-    aggressive: aggression(temper.aggressive, c, kills),
-    cautious: clamp(s.fromLineage * temper.cautious + s.fromAttack * ((c.ups.defense + c.ups.health) / (2 * max)) + s.fromKills * (has(c, "plates") ? 1 : 0)),
-    adaptable: clamp(s.fromLineage * temper.adaptable + s.fromAttack * ((c.ups.speed + c.ups.mobility) / (2 * max)) + s.fromKills * Math.min(1, breaches / 10)),
-  };
+  const safe = (n: number) => Number.isFinite(n) ? Math.max(0, n) : 0;
+  const aggressive = safe(temper.aggressive), cautious = safe(temper.cautious), adaptable = safe(temper.adaptable);
+  const total = aggressive + cautious + adaptable;
+  return total > 0 ? { aggressive: aggressive / total, cautious: cautious / total, adaptable: adaptable / total }
+    : { aggressive: 0, cautious: 0, adaptable: 0 };
 }
 
 /**

@@ -1,3 +1,5 @@
+import { trackHudOcclusion } from './hudOcclusion';
+import { organicPlayBottom } from './hudDock';
 // ---------------------------------------------------------------------------
 // MainScene.ts
 // Purpose : Cell pond: swim, feed, fight, collect parts, buy levels and choose inherited daughter bonuses.
@@ -103,7 +105,7 @@ export class MainScene extends Phaser.Scene {
 
   preload(): void {
     for (const sheet of CELL_SHEETS) this.load.image(sheet.source, `assets/art/${sheet.file}`);
-    this.load.image("pondIllustrated", "assets/art/pond_illustrated_v1.png");
+    this.load.image("pondIllustrated", "assets/art/pond_illustrated_v1.webp");
     for (const [key, file] of [["player", "player_cell"], ["pond", "pond_cells"], ["props", "pond_props"]]) {
       this.load.spritesheet(key, `assets/art/${file}.png`, { frameWidth: 32, frameHeight: 32 });
       this.load.json(`${key}_layout`, `assets/art/${file}.json`);
@@ -160,7 +162,7 @@ export class MainScene extends Phaser.Scene {
       ...this.cells.map(c => ({ ...c, texture: "cellFauna", frame: CELL_KINDS.indexOf(c.kind), size: TUNING.cell.kinds[c.kind].radius * CELL_ART.faunaRadiusScale / TUNING.cell.kinds[c.kind].scale, forward: c.kind === "snail" ? -Math.PI / 2 : 0 })),
       ...this.foods.map(f => ({ ...f, texture: "cellProps", frame: f.kind === "algae" ? 0 : 1, size: f.kind === "algae" ? CELL_ART.algaeSize : CELL_ART.meatSize, swims: false })),
       ...this.orbs.map(o => ({ ...o, texture: "cellProps", frame: 2 + ["spikes", "shell", "mouth"].indexOf(o.part), size: CELL_ART.pickupSize, swims: false })),
-    ], () => shell.topId === "play" && !this.picker.isOpen && !this.choosing, () => shell.settings.access.reduce_motion, () => shell.settings.access.game_speed);
+    ], () => shell.topId === "play" && !this.picker.isOpen && !this.choosing && !this.panel?.touchPaused, () => shell.settings.access.reduce_motion, () => shell.settings.access.game_speed);
 
     for (let i = 0; i < pondFood(this.creature.form).algaeCount; i++) this.spawnAlgae();
     for (const kind of CELL_KINDS) for (let i = 0; i < cellsWanted(kind, this.creature.form); i++) this.spawnCell(kind);
@@ -174,9 +176,10 @@ export class MainScene extends Phaser.Scene {
     this.sfx = cellSfx();
     this.hud = new CellHud(this, shell.i18n, (p) => firstFrame(this.propsLayout, "prop", p), () => {
       if (shell.topId === "play" && !this.picker.isOpen && !this.choosing) this.panel.toggle();
-    });
-    this.panel = new UpgradePanel(this, shell.i18n, stat => this.tryBuy(stat));
+    }, () => { if (shell.topId === "play" && this.evolveReady && !this.choosing) this.evolveToAquatic(); });
+    this.panel = new UpgradePanel(this, shell.i18n, stat => this.tryBuy(stat), () => shell.input.scheme === "touch", () => shell.input.clearMenuInput());
     this.mitosis = new Mitosis(this, shell.i18n);
+    trackHudOcclusion(this, () => this.player.spr);
     this.division = new DivisionPicker(this, (index) => { if (shell.topId === "play") this.chooseDaughter(index); }, shell.i18n);
     this.birth = new LifeSequence(this);
     this.events.once("shutdown", () => { this.mitosis.close(); this.division.close(); });
@@ -190,8 +193,6 @@ export class MainScene extends Phaser.Scene {
     this.picker = new DietPicker(this, shell.i18n, (d) => this.chooseDiet(d));
     this.touch = new TouchControls(shell.input, [
       { label: shell.i18n.t("cell.controls.dash"), action: "jump" },
-      { label: shell.i18n.t("cell.ui.upgrades"), run: () => this.panel.toggle() },
-      { label: shell.i18n.t("cell.controls.evolve"), action: "ui_accept" },
     ]);
     this.events.on("pause", this.touch.suspend, this.touch);
     this.events.once("shutdown", () => { this.events.off("pause", this.touch.suspend, this.touch); this.touch.destroy(); });
@@ -205,8 +206,10 @@ export class MainScene extends Phaser.Scene {
   }
 
   update(_time: number, deltaMs: number): void {
-    this.touch?.update(shell.topId === "play" && !this.picker.isOpen && !this.choosing && !this.panel.isOpen);
-    this.touch?.setAvailable("ui_accept", this.evolveReady);
+    // The following camera frames the playable region above native chrome, in world units.
+    const camera = this.cameras.main;
+    camera.setFollowOffset(0, -(this.scale.height - organicPlayBottom(this.scale.height)) / (2 * camera.zoom));
+    this.touch?.update(shell.topId === "play" && !this.picker.isOpen && !this.choosing && !this.birth.isPlaying && !this.panel.isOpen && !this.hud.controlsOpen);
     this.touch?.setAvailable("jump", perkLevel(this.creature, "jetBurst") > 0);
     if (shell.plantedCrash) {
       shell.plantedCrash = false;
@@ -245,6 +248,9 @@ export class MainScene extends Phaser.Scene {
       return;
     }
     if (playing) this.panelInput();
+    if (this.panel.touchPaused) {
+      this.hud.update(this.creature, 0, this.jet.cooldown); this.panel.render(this.creature); return;
+    }
     if (this.evolveReady) { // Form 4 keeps playing; Enter moves on only when it is not buying a level.
       this.evolveT += dt;
       if (this.autoplay ? this.evolveT > 2 : playing && !this.panel.isOpen && shell.input.takePress("ui_accept")) {
@@ -376,8 +382,8 @@ export class MainScene extends Phaser.Scene {
     }
     if (inp.takePress("interact")) this.panel.toggle();
     if (!this.panel.isOpen) return;
-    if (inp.takePress("ui_up")) this.panel.move(-1);
-    if (inp.takePress("ui_down")) this.panel.move(1);
+    if (inp.takePress("ui_up") || inp.takePress("ui_left")) this.panel.move(-1);
+    if (inp.takePress("ui_down") || inp.takePress("ui_right")) this.panel.move(1);
     if (inp.takePress("ui_accept")) this.tryBuy(this.panel.selected);
   }
 
@@ -439,8 +445,8 @@ export class MainScene extends Phaser.Scene {
     }
     const p = this.player;
     const oldJet = this.jet;
-    const pressed = shell.topId === "play" && !this.panel.isOpen &&
-      (this.autoplay || shell.input.takePress("jump"));
+    const pressed = shell.topId === "play" &&
+      (this.autoplay || shell.input.takePress("jump") || shell.input.takePress("dash"));
     this.jet = tickJet(this.creature, this.jet, dt, pressed);
     const bursting = this.jet.remaining > 0;
     const top = maxSpeed(this.creature) * (bursting ? TUNING.perks.jetSpeedMult : 1);
@@ -573,6 +579,7 @@ export class MainScene extends Phaser.Scene {
         }
         return true; // it floats past
       }
+      this.record = bump(this.record, f.kind === "meat" ? "meatEaten" : "algaeEaten"); // what you eat shapes the lineage (2026-11-10)
       this.sfx.play(f.kind === "algae" ? "eat_algae" : "eat_meat");
       if (f.fresh) this.evidence[f.kind] += r.gained;
       this.applyFood(r);

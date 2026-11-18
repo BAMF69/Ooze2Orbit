@@ -20,6 +20,7 @@ src/game/           scenes and game objects (Phaser lives here): main (play), ju
 data/               i18n/<locale>.json strings, dialogue/*.built.json subtitles, golden/ test vectors
 tests/              Vitest tests for src/core and pure parts of src/game (*.test.ts)
 public/assets/      images, audio, fonts, tilemaps: served as-is at assets/... (see docs/ASSET_LOG.md)
+assets_src/art_masters/  full-quality PNG masters of the painted art; the build ships their WebP (ADR 0007)
 src/shaders/        the kit's shader recipes (kit/ generated from tools/shaders/) and their glue
 tools/              dev.py, smoke.mjs and helpers
 dist/               production build (git-ignored): what you upload
@@ -30,6 +31,8 @@ dist/               production build (git-ignored): what you upload
 - One scene per file. Scene keys are short lowercase strings (`"main"`, `"hud"`).
 - **Version:** one source, the `version` field of package.json (SOP-06). Show it in game with
   `import { version } from "../package.json"` (adjust the relative path; `resolveJsonModule` is on, Vite keeps only that field).
+- **Painted art is WebP** (ADR 0007): drop a new painted PNG into `public/assets/art/`, run `python tools/art/compress_art.py`
+  (moves it to `assets_src/art_masters/`, writes the `.webp`), load the `.webp`. `tests/artBudget.test.ts` enforces it.
 - Load assets in `preload()` with paths relative to the page (`this.load.image("player", "assets/art/player.png")`), never `/assets/...` (breaks itch.io and GitHub Pages subfolders).
 - Tunables in one module (for example `tuning.ts` in src/game) or JSON in public/assets/data, never literals inside logic.
 - Use the `dt` from `update(time, delta)` (milliseconds, convert to seconds and clamp), never assume 60 fps.

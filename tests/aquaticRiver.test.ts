@@ -111,14 +111,17 @@ describe("the body's look from all three temperaments (2026-11-08)", () => {
   const t = (cautious: number, aggressive: number, adaptable: number) => ({ cautious, aggressive, adaptable });
   it("the strongest temperament picks the family, its strength the step", () => {
     expect(bodyLook(lookScores(t(0, 0, 0), c, 0, 0))).toMatchObject({ tier: 0, row: "0" });
-    expect(bodyLook(lookScores(t(0, 1, 0), c, 0, 0))).toMatchObject({ family: "aggressive", row: "2" });
-    expect(bodyLook(lookScores(t(1, 0, 0), c, 0, 0))).toMatchObject({ family: "cautious", row: "c2" });
-    expect(bodyLook(lookScores(t(0, 0, 1), c, 0, 0))).toMatchObject({ family: "adaptable", row: "a2" });
+    expect(bodyLook(lookScores(t(0, 1, 0), c, 0, 0))).toMatchObject({ family: "aggressive", row: "3" });
+    expect(bodyLook(lookScores(t(1, 0, 0), c, 0, 0))).toMatchObject({ family: "cautious", row: "c3" });
+    expect(bodyLook(lookScores(t(0, 0, 1), c, 0, 0))).toMatchObject({ family: "adaptable", row: "a3" });
   });
-  it("how you live counts too: defense and plates make it armoured, speed and breaches streamlined", () => {
-    const tank = { ...c, ups: { ...c.ups, defense: 10, health: 10 }, parts: ["plates" as const] };
-    expect(bodyLook(lookScores(t(1, 0, 0), tank, 0, 0)).row).toBe("c3");
-    const racer = { ...c, ups: { ...c.ups, speed: 10, mobility: 10 } };
-    expect(bodyLook(lookScores(t(1, 0, 1), racer, 0, 10)).family).toBe("adaptable");
+  it("keeps family independent of stats, equipped parts, kills, breaches and diet", () => {
+    const temper = t(.35, .25, .4);
+    const base = bodyLook(lookScores(temper, c, 0, 0));
+    const tank = { ...c, diet: 'herbivore' as const, ups: { attack: 99, defense: 99, health: 99, speed: 0, mobility: 0 }, parts: ['plates' as const] };
+    expect(bodyLook(lookScores(temper, tank, 999, 999))).toEqual(base);
+    expect(base.family).toBe('adaptable');
+    expect(tank.ups.attack).toBe(99);
+    expect(lookScores(t(35, 25, 40), c, 0, 0)).toEqual(lookScores(temper, c, 0, 0));
   });
 });

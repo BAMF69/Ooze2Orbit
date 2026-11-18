@@ -10,7 +10,7 @@
 // Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
 // ---------------------------------------------------------------------------
 import {
-  TEMPERAMENTS, lineageProblems, shipSpecialty, temperamentOf, balancedTemperament, temperamentPercentages,
+  STAGES, TEMPERAMENTS, lineageProblems, shipSpecialty, temperamentOf, balancedTemperament, temperamentPercentages,
   type Lineage, type TemperamentKind,
 } from "../../core/lineage";
 
@@ -41,7 +41,9 @@ const STAGE_WORDS: Record<RevealStage, { title: string; test: string; none: stri
 };
 
 /** Build the reveal from whatever the save slot held (undefined/null = no save), worded for the stage it opens. */
-export function revealFrom(saved: unknown, maxCauses = 3, stage: RevealStage = "aquatic"): Reveal {
+const STAGE_LABEL: Record<(typeof STAGES)[number], string> = { cell: "cell", aquatic: "water", creature: "land", civ: "civilization", space: "space" };
+
+export function revealFrom(saved: unknown, maxCauses = 4, stage: RevealStage = "aquatic"): Reveal {
   if (saved === undefined || saved === null) return defaultReveal([], stage);
   const problems = lineageProblems(saved);
   if (problems.length) return defaultReveal(problems, stage);
@@ -51,11 +53,13 @@ export function revealFrom(saved: unknown, maxCauses = 3, stage: RevealStage = "
   const rows = TEMPERAMENTS.map((kind) => ({
     kind,
     pct: percentages[kind],
+    // newest stage first, then the biggest within a stage, each labelled with its stage (BAMF69 2026-11-10: the later
+    // stages' causes are small, so "biggest first" let the cell stage's crowd them all off this screen)
     causes: home.influence
       .filter((e) => (e.effect[kind] ?? 0) > 0)
-      .sort((a, b) => (b.effect[kind] ?? 0) - (a.effect[kind] ?? 0))
+      .sort((a, b) => STAGES.indexOf(b.stage) - STAGES.indexOf(a.stage) || (b.effect[kind] ?? 0) - (a.effect[kind] ?? 0))
       .slice(0, maxCauses)
-      .map((e) => e.cause),
+      .map((e) => `${e.cause} (${STAGE_LABEL[e.stage]})`),
   }));
   const top = shipSpecialty(t).kind;
   const any = Math.max(...Object.values(t)) - Math.min(...Object.values(t)) > 1e-9;

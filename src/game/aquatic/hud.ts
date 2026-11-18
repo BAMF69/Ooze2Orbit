@@ -1,3 +1,11 @@
+import { purchaseMeters } from '../purchaseMeters';
+import { HudDock } from '../hudDock';
+import { DietOverlay } from '../dietOverlay';
+import './remaster.css';
+import { node } from '../cell/responsiveUi';
+import { DIET_COLORS } from '../cell/growthMeter';
+import { AQ, AQ_STATS, AQ_PAID_WITH } from './tuning';
+import { type AqCreature, upgradeCost, movement, foodToEvolve } from './creature';
 // ---------------------------------------------------------------------------
 // hud.ts (aquatic)
 // Purpose : Everything drawn over the lake: the status block (health, food, points, abilities) with your parts as
@@ -27,10 +35,25 @@ const BAR = { cautious: 0x8bd77d, aggressive: 0xef716a, adaptable: 0x72b6f1 } as
 const TOAST_S = 3.5;
 
 export class AquaticHud {
+  private dietOverlay: DietOverlay;
+  private dock!: HudDock;
+  get controlsOpen(): boolean { return this.dock.infoOpen; }
+  advanceAvailable(value: boolean): void { this.dock.advance.hidden = !value; }
   readonly screenUi: StageUi;
   private statusLines: readonly string[] = [];
+  private overview = "";
+  private equipment = node("div", "", "cell-icon-rack aquatic-equipment");
+  private equipmentKey = "";
   private partLines: string[] = [];
   private staminaLine = "";
+  private upgradeLines: readonly string[] = [];
+  private growthRoot = node("div", "", "aquatic-growth cell-growth");
+  private growthCaption = node("div", "", "cell-growth-caption");
+  private growthFills: HTMLSpanElement[] = [];
+  private growthDiets: (AqCreature["diet"] | undefined)[] = [];
+  private goalText=node("small","","dock-map-reward");
+  private electricText = node('span','','dock-electric');
+  electric(owned:boolean,cooldown:number):void { this.electricText.hidden=!owned;this.electricText.textContent=cooldown>0?this.i18n.t('aq.shock_recharge',{seconds:cooldown.toFixed(1)}):this.i18n.t('aq.shock_ready');const center=this.screenUi.root.querySelector('.dock-center');if(center&&!this.electricText.isConnected)center.append(this.electricText); }
   private bannerValue = "";
   private healthBar = document.createElement("progress");
   private staminaBar = document.createElement("progress");
@@ -57,10 +80,32 @@ export class AquaticHud {
   private w: number;
   private h: number;
 
-  constructor(private readonly scene: Phaser.Scene, private readonly i18n: I18n) {
+  constructor(private readonly scene: Phaser.Scene, private readonly i18n: I18n, onUpgrade: () => void, onAdvance: () => void) {
+    this.dietOverlay = new DietOverlay(scene);
     this.screenUi = new StageUi(scene);
-    this.healthBar.setAttribute("aria-label", "Health"); this.staminaBar.setAttribute("aria-label", "Stamina");
-    this.screenUi.meters.append(this.healthBar, this.staminaBar);
+    this.screenUi.root.classList.add("aquatic-remaster");
+    const hints = node("div", "", "cell-control-hints aquatic-control-hints");
+    for (const scheme of ["keyboard", "controller", "touch"]) hints.append(node("span", i18n.t(`aq.controls.${scheme}`), `${scheme}-hint`));
+    this.screenUi.root.append(hints, this.equipment);
+    this.screenUi.meters.classList.add("aquatic-vitals");
+    this.screenUi.root.append(this.screenUi.meters);
+    const segments = node("div", "", "cell-growth-segments");
+    for (let form = 1; form <= 4; form++) {
+      const section = node("div", "", "growth-section"), label = node("span", i18n.t("cell.ui.form_label", { form }), "growth-label"), track = node("div", "", "growth-track"), fill = node("span");
+      label.dataset.roman=['I','II','III','IV'][form-1];
+      track.setAttribute("role", "progressbar"); track.setAttribute("aria-label", label.textContent!); track.setAttribute("aria-valuemin", "0");track.setAttribute("aria-valuemax", "100");
+      track.append(fill);section.append(label,track);segments.append(section);this.growthFills.push(fill);
+    }
+    this.growthRoot.append(this.growthCaption,segments);this.screenUi.root.append(this.growthRoot);
+    this.healthBar.setAttribute("aria-label", i18n.t("effect.health")); this.staminaBar.setAttribute("aria-label", i18n.t("effect.stamina"));
+    for (const [label, bar] of [["Health", this.healthBar], ["Stamina", this.staminaBar]] as const) {
+      const wrap = node("label", "", `aquatic-vital ${label.toLowerCase()}`); wrap.append(node('span',label==='Health'?'♥':'ϟ','vital-value'),bar); this.screenUi.meters.append(wrap);
+    }
+    this.dock = new HudDock(scene, i18n, { root:this.screenUi.root, growth:this.growthRoot, status:this.screenUi.status,
+      inventory:this.equipment, details:this.screenUi.root.querySelector<HTMLDetailsElement>(".stage-details")!, hints,
+      upgrade:onUpgrade, commands:this.screenUi.footer, advance:onAdvance });
+
+    this.growthRoot.querySelector(".cell-growth-segments")!.before(this.goalText);
     this.w = scene.scale.width;
     this.h = scene.scale.height;
     this.statusText = this.text(this.w - 8, 6, "", { ...FONT, align: "right", lineSpacing: 1 }).setOrigin(1, 0); // top right: the bottom centre is the "behind" cue's
@@ -120,7 +165,24 @@ export class AquaticHud {
    * Your parts under the status block: one row each, the part's icon (an atlas frame; null = an empty slot) and
    * what it does. Unique (river) parts are tinted gold.
    */
-  parts(rows: readonly { atlas: string; frame: number | null; text: string; unique: boolean }[]): void {
+  parts(rows: readonly { atlas: string; frame: number | null; text: string; unique: boolean; part?: string | null }[]): void {
+    const key = rows.map(r => r.text).join("|");
+    if (key !== this.equipmentKey) {
+      this.equipmentKey = key; this.equipment.replaceChildren();
+      const icons = node("div", "", "cell-icon-row");
+      const frames: Record<string,number> = { fins:7,jaws:8,plates:9,gills:10,endurance:11,torrent:11 };
+      for (const r of rows) {
+        if(r.unique&&!r.part)continue;
+        if(!r.part){const empty=node('span','◇','cell-ability-icon empty-part-slot');empty.title=r.text;empty.setAttribute('aria-label',r.text);icons.append(empty);continue;}
+        const b = node("button", "", "cell-ability-icon"); b.title = r.text; b.setAttribute("aria-label",r.text);
+        const canvas = node("canvas"); canvas.width = canvas.height = 96;
+        const f = this.scene.textures.getFrame(r.part==="toxicTendrils"||r.part==="electricOrgan" ? `aq-${r.part}` : "aqPropsHD",frames[r.part]??"__BASE"), ctx = canvas.getContext("2d");
+        if (f && ctx) ctx.drawImage(f.source.image as CanvasImageSource,f.cutX,f.cutY,f.cutWidth,f.cutHeight,0,0,96,96);
+        b.append(canvas); b.onclick = () => this.toast(r.text); icons.append(b);
+      }
+      if (!icons.children.length) icons.append(node("span",this.i18n.t("cell.ui.empty_parts"),"empty-icons"));
+      this.equipment.append(icons);
+    }
     const top = this.statusText.y + this.statusText.height + 4;
     rows.forEach((r, i) => {
       const y = top + i * 17;
@@ -138,7 +200,8 @@ export class AquaticHud {
 
   /** The stamina gauge, bottom right: the bar, a mark at the share dash and breach need, and your pace. */
   stamina(cur: number, max: number, paceLabel: string, needShare: number, redBelow: number): void {
-    this.staminaBar.max = max; this.staminaBar.value = cur;
+    this.staminaBar.max = max; this.staminaBar.value = cur;this.staminaBar.parentElement!.querySelector('.vital-value')!.textContent=`${Math.ceil(cur)}/${Math.ceil(max)}`;
+    this.staminaBar.parentElement?.classList.toggle("low", cur < redBelow);
     const g = this.gaugeGfx.clear();
     const w = 120, x = this.w - 8 - w, y = this.h - 14;
     const f = Math.max(0, Math.min(1, cur / max));
@@ -171,7 +234,8 @@ export class AquaticHud {
 
   /** The health bar, right under the numbers in the status block (2026-11-08): green, then yellow, then red. */
   health(cur: number, max: number): void {
-    this.healthBar.max = max; this.healthBar.value = cur;
+    this.healthBar.max = max; this.healthBar.value = cur;this.healthBar.parentElement!.querySelector('.vital-value')!.textContent=`${Math.ceil(cur)}/${Math.ceil(max)}`;
+    this.healthBar.parentElement?.classList.toggle("low", cur / max <= .25);
     const g = this.healthGfx.clear();
     if (!this.statusText.visible) return;
     const w = 150, x = this.w - 8 - w, y = this.statusText.y + 16;
@@ -335,8 +399,33 @@ export class AquaticHud {
     this.gaugeGfx.clear();
     this.gaugeText.setVisible(false);
   }
+  build(c: AqCreature, _map: string, mapId="pond"): void {
+    this.dietOverlay.update(c.diet);
+    this.goalText.textContent=this.i18n.t(`aq.goal_${mapId==="ocean"?"coast":mapId}`);
+    this.overview = `${this.i18n.t("cell.ui.form_label", { form: c.form })} · ${this.i18n.t(`diet.${c.diet}`)}`;
+    this.publish();
+  }
+  upgrades(lines: readonly string[]): void { this.upgradeLines = lines; }
+  growth(c: AqCreature, dashCd=0): void {
+    const purchases=purchaseMeters(c.points,AQ_STATS.map(s=>({cost:upgradeCost(c,s),pay:AQ_PAID_WITH[s]})));
+    this.dock.meters(c.points,purchases.costs,purchases.affordable,dashCd,movement(c).dashCdS,purchases.ready);
+    const need = foodToEvolve(c);
+    this.growthCaption.textContent = Number.isFinite(need) ? this.i18n.t("effect.growth", { food: Math.floor(c.food), need }) : this.i18n.t("effect.aq.grown");
+    c.formDiets?.forEach((diet, n) => { this.growthDiets[n] = diet; });
+    c.selections?.forEach(p => { this.growthDiets[p.form - 1] = p.diet; });
+    this.growthDiets[c.form - 1] = c.diet;
+    this.growthRoot.style.setProperty('--proof-form-columns',[1,2,3,4].map(form=>`minmax(0,${form===c.form?1.35:1}fr)`).join(' '));
+    this.growthFills.forEach((fill, n) => {
+      const value = n < c.form - 1 ? 1 : n === c.form - 1 ? (c.form === AQ.forms.size.length ? 1 : Math.max(0, Math.min(1,c.food / need))) : 0;
+      fill.style.width = `${value * 100}%`; fill.parentElement!.setAttribute("aria-valuenow", String(Math.round(value * 100)));
+      const section = fill.parentElement!.parentElement!;
+      if(section.dataset.formDiet!==(this.growthDiets[n]??c.diet))section.dataset.formDiet=this.growthDiets[n]??c.diet; section.classList.toggle("future", n >= c.form);
+      section.style.setProperty("--growth-color",DIET_COLORS[this.growthDiets[n] ?? c.diet]);section.classList.toggle("current",n === c.form-1);section.classList.toggle("complete",value===1);
+      section.querySelector(".growth-label")!.textContent = n===c.form-1?(Number.isFinite(need)?`${Math.floor(c.food)}/${need}`:'✓'):value===1?'✓':'';
+    });
+  }
   private publish(): void {
     const lines = this.statusLines.filter(s => s.trim());
-    this.screenUi.setStatus(`${lines[0] ?? ""}\n${lines[1] ?? ""} · ${this.staminaLine}`, [...lines, this.staminaLine, ...this.partLines].join("\n"));
+    this.screenUi.setStatus(this.overview || lines[0] || "", [...lines, this.staminaLine, "\n" + this.i18n.t("effect.aq.parts"), ...this.partLines, "\n" + this.i18n.t("cell.ui.upgrades"), ...this.upgradeLines, "\n" + this.i18n.t("effect.aq.daughters")].join("\n"));
   }
 }

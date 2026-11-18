@@ -1,5 +1,40 @@
 # HD remaster: first cell slice
 
+## Aquatic motion and wildlife (2026-11-16)
+A-0031 adds detailed transparent jellyfish/eel cutouts and three-view swim/bite sheets for deepmaws,
+blue sharks and hammerheads. Frame timing is simulation-clock based and reduced-motion aware. Actual
+attacks trigger open jaws and brief lunge/recovery without changing damage or collision timing.
+Wildlife is currently a single side pose; predator rows cover front, side and back.
+
+
+## Purpose-built components and compact proportions (2026-11-15)
+Latest outer frame replaces A-0028's cropped/feathered legacy decorations with A-0029: newly generated
+transparent corner and centerpiece objects. Their drawn attachment arms meet long continuous vector trim;
+no bitmap tile or feather mask is used. Form meter artwork remains as approved. Asset prompts and regions
+are documented in docs/art/HUD_COMPONENTS.md. The dock is 17.5dvh, with centered 75vw width in fullscreen.
+
+## Fixed landmarks and organic frame profile (2026-11-15)
+The latest frame restores the painted organic treatment without repeating large ornaments. A-0028 uses
+fixed A-0026 corners and one centerpiece, blended with masked joints, quieter textured connecting trim,
+and sparse leaf/claw accents that extend outside the curved silhouette. No CSS rectangle underlies it.
+The same 25dvh frame holds Growth, Upgrades and a combined Info tab (Controls + Details), with fixed content
+bounds. Exit Fullscreen becomes a small opaque icon. Individual form capsules are retained.
+
+## Shared frame and expanded aquatic wildlife (2026-11-15)
+Latest outer HUD treatment is a simple layered rim; individual illustrated form bars remain. Growth,
+Upgrades, Controls and Details replace content inside the same bottom frame. Plant/meat affordability
+meters, dash recharge, readiness glows and a central aquatic Gardener command share the dock.
+A-0027 supplies original code-native jellyfish/eel silhouettes and toxic/electric organ icons and worn
+effects. Tiered jaws/plates/fins change worn equipment, with explicit tier/effect descriptions in Details.
+
+## Painted organic HUD revision (2026-11-15)
+Cell/aquatic use A-0026 transparent illustrated diet frames, with native live luminous fills behind the
+empty apertures. Green vines/carved wood, red bones/fangs and gold chitin/leaves replace the muted rim
+treatment. Palatino/Book Antiqua/Georgia heading stacks add character while compact cost text stays readable.
+Upgrade menus are full-width bottom-quarter trays that cover the growth dock and preserve the world view.
+Small screens suppress card illustrations and verbose effects; Details and accessible labels retain the
+complete explanations. Touch pause and all progression rules are preserved. No external fonts or new dependencies.
+
 Approved direction, BAMF69, 2026-11-13: smooth illustrated biological creatures with the bold outlines,
 shadow bands and hand-drawn texture of cel-shaded games. The Borderlands reference supplied by the user
 describes the treatment; organisms, environments and interface are original to Ooze2Orbit.
@@ -109,3 +144,44 @@ BAMF69 approved concepts C-0101..C-0107 as FINAL v1 and the build defaults: shee
   Unit tests prove hub art == hub collision. Every creature-stage visual now uses the HD art except the HUD rack.
 - Remaining: the HUD icon rack (C-0107; needs the rack code location), the
   existing collision (C-0106), overworld/shoreline, HUD rack (C-0107; needs the rack code location).
+## Civilization illustrated remaster — 2026-11-14
+Civilization now fills the viewport behind native status and command overlays. Original generated
+biological towers, shell settlements, three diet heroes, sends, workers and resources replace active
+pixel placeholders. A quiet illustrated habitat fills portrait and landscape; code-native ownership
+badges, route arrows, build previews/progress, shots, damage/slow feedback and pulse effects keep the
+battle readable. Atlas and terrain are A-CIV-0001/0002; exact prompts: assets_src/civ/HD_ART_PROMPTS.md.
+The three-role control scheme and optional hero patrol remain. User explicitly reaffirmed live
+submenus; Details and shell/rotation pause still freeze. Touch uses completed taps, cancelling drags
+and interrupted input; no new stick or camera gesture is required. Native localized cards persist
+without focus churn. Actual effects, costs, inheritance and technology records are described in Details.
+
+Only the civilization case in core/viewport.ts was added to shared runtime code. No uncommitted
+cell/aquatic files were copied wholesale or modified. World logical width is capped at 1600; this is
+not a game-wide render-resolution overhaul, new progression or offline support. Browser emulation
+covers desktop/phone/tablet and short landscape; real iPhone/Android/controller performance is pending.
+
+## Aquatic and upgrade polish — 2026-11-13
+Cell and aquatic purchase menus now use persistent native cards with effect descriptions, costs, level
+tracks and inherited bonus labels. Details explains parts, active levels and exclusive daughter/river
+rewards. Both growth meters use the four-chamber illustrated treatment; aquatic keeps its own gates.
+Aquatic now has original three-view diet bodies, fauna, sharks, food, part pickups and three underwater
+environments. Projection, collisions and populations are unchanged. Matching code-native worn equipment
+and temperament accents appear in play, daughter previews and mitosis. Environment art covers portrait
+bounds; HP/stamina and messages use scoped native styling. New art is logged in A-0023.
+Remaining: distinct form illustrations, richer animation, resolution-independent world rendering,
+other stage touch adapters and physical Safari/Android/controller verification. This is the aquatic
+art/HUD pass, not a claim that the game-wide HD/platform roadmap is complete.
+
+### Diet identity — 2026-11-14
+Cell/aquatic overlays now follow the actual diet: green leaves/vines for herbivores, red teeth/scratches
+for carnivores and yellow cellular patterns plus leaf/fang accents for omnivores. Native HUD, purchases,
+Details and touch controls share the theme, with edge decoration kept away from important text.
+Changes follow daughter selection immediately and clean up on stage exit. Omnivore growth is yellow;
+adaptable temperament remains blue and keeps its separate meaning. A-0024 logs the original SVG motifs.
+
+### Organic compact HUD — 2026-11-15
+The user's vine progress-bar reference informed original native carved frames and luminous inset tracks.
+The bottom dock now owns status, point balances, upgrades and controls; top-right holds Parts/Details.
+Wood/vines, bone/claws and amber cellular shells follow the approved diet palette. Four-form progression
+and all gameplay gates remain unchanged. A-0025 records the new vector/CSS ornament. Full-grown bodies
+are framed above the dock on short windows; this does not change physics or stat progression.

@@ -232,7 +232,7 @@
 .touch-knob { position: absolute; width: 48px; height: 48px; left: 34px; top: 34px; border-radius: 50%; background: radial-gradient(circle at 35% 25%, #d4e8bc, #6caa9d); border: 2px solid #12313b; box-sizing: border-box; box-shadow: 0 2px 8px #0008; }
 .touch-actions { position: absolute; right: calc(var(--safe-right) + 18px); bottom: calc(var(--safe-bottom) + 26px); display: flex; flex-direction: column; gap: 10px; }
 .touch-actions button { min-width: 92px; min-height: 52px; border: 2px solid #8fb5a2; border-radius: 18px; color: #f2f4de; background: linear-gradient(140deg, #29535c, #112a38); font: inherit; font-weight: 650; touch-action: none; pointer-events: auto; user-select: none; box-shadow: 0 4px 0 #04121a; }
-.game-landing, .game-menu { background: linear-gradient(90deg, #03192244, #03192211), url('/assets/art/start_illustrated_v1.png') center / cover; }
+.game-landing, .game-menu { background: linear-gradient(90deg, #03192244, #03192211), url('/assets/art/start_illustrated_v1.webp') center / cover; }
 .game-landing { flex-direction: column; justify-content: center; gap: 26px; overflow-y: auto; padding-bottom: max(100px, 14vh); }
 .landing-content { width: min(800px, 88vw); text-align: center; padding: 24px 12px; box-sizing: border-box; color: #f2f3d8; text-shadow: 0 2px 12px #00131d; font-size: calc(16px * var(--text-scale)); }
 .game-logo { display: block; width: 100%; height: auto; object-fit: contain; filter: drop-shadow(0 8px 9px #00121c99); }
@@ -245,7 +245,7 @@
 .landing-input { margin-top: 17px; font-size: .75em; color: #d2e4d5; }
 .landing-journey { position: absolute; bottom: calc(var(--safe-bottom) + 38px); display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 94vw; color: #ecf0dc; font-size: calc(12px * var(--text-scale)); }
 .journey-step { border: 1px solid #98c2a65e; border-radius: 20px; padding: 6px 13px; background: #0a2637bb; }
-.screen.game-menu { background: linear-gradient(#03192288, #03192299), url('/assets/art/start_illustrated_v1.png') center / cover; }
+.screen.game-menu { background: linear-gradient(#03192288, #03192299), url('/assets/art/start_illustrated_v1.webp') center / cover; }
 .game-menu .panel { font-size: 16px; border: 1px solid #83b3a0; border-radius: 20px; background: linear-gradient(145deg, #112f3bf5, #091e2cf5); box-shadow: 0 18px 60px #0008; max-width: 520px; }
 .game-menu .game-logo { width: min(100%, 320px); max-height: 115px; margin: 0 auto 8px; }
 .game-menu .item { min-height: 38px; box-sizing: border-box; border-radius: 9px; }

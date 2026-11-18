@@ -8,9 +8,9 @@ import { equipmentTexture } from "./equipmentArt";
 export const CELL_ART = { source: "cellIllustratedSource", texture: "cellIllustrated", size: 40, tiles: 3,
   faunaRadiusScale: 2.6, algaeSize: 18, meatSize: 16, pickupSize: 28 };
 export const CELL_SHEETS = [
-  { source: CELL_ART.source, texture: CELL_ART.texture, file: "cell_illustrated_v1.png", tiles: 3 },
-  { source: "cellFaunaSource", texture: "cellFauna", file: "cell_fauna_v1.png", tiles: 4 },
-  { source: "cellPropsSource", texture: "cellProps", file: "cell_props_v1.png", tiles: 5 },
+  { source: CELL_ART.source, texture: CELL_ART.texture, file: "cell_illustrated_v1.webp", tiles: 3 },
+  { source: "cellFaunaSource", texture: "cellFauna", file: "cell_fauna_v1.webp", tiles: 4 },
+  { source: "cellPropsSource", texture: "cellProps", file: "cell_props_v1.webp", tiles: 5 },
 ];
 export const dietFrame = (diet: Diet): number => DIETS.indexOf(diet);
 export function prepareCellArt(scene: Phaser.Scene): void {

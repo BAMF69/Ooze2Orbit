@@ -62,3 +62,8 @@ export function critterIntent(k: KindTuning, me: Pos3, player: Pos3, provoked: b
   }
   return { dir: wander, targetZ: clamp(me.z, k.zMin, k.zMax) === me.z ? me.z : homeZ(k), speedMult: 1, mode: "wander" };
 }
+
+/** A passive jellyfish lashes only when the player moves into it, never for proximity alone. */
+export function jellyRetaliates(into:number,ramming:boolean,ready:boolean,stunned:boolean):boolean {
+  return ready&&!stunned&&(ramming||into>5);
+}

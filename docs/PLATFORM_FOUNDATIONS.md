@@ -1,5 +1,11 @@
 # Shared display, input and mobile foundations
 
+Organic HUD revision (2026-11-15): cell/aquatic now use a fixed quarter-height frame with Growth, Upgrades
+and combined Info (Controls + Details) buttons, pointer focus release, explicit Enter activation and gameplay Space. Fine-pointer
+or already-fullscreen sessions show top-left fullscreen. Touch upgrade selection still pauses the stage.
+Aquatic F / R3 / touch Shock activates an equipped electric organ; descent is now C / L2 / touch Descend.
+Old default F descent bindings migrate to C without replacing customized alternatives.
+
 Decisions: BAMF69, 2026-11-13. Display adapters now implemented across all five stages; remaining
 input/offline phases are incremental. User reports liking all stages. Art direction chosen 2026-11-13:
 smooth biological illustration with inked cel shading; first cell pass in `docs/HD_REMASTER.md`.
@@ -130,3 +136,34 @@ while commands or details are open. Stage changes stop old scenes and clean thei
 fullscreen, paused clocks, retained choices, purchases, construction and cleanup. This does not
 certify Safari or actual Android devices. No new assets, dependencies, account system, save schema,
 offline cache, movement stick or controller bindings were added. Those remain next phases.
+
+## Civilization strategy adapter — 2026-11-14
+The user explicitly reaffirmed live civilization submenus after the HD brief: this overrides the
+older table's civilization command-pause entry. Space retains its own policy. Civilization Details,
+explicit Pause, focus loss and rotation still freeze; rotation requires Resume. Civilization now
+uses an edge-to-edge viewport, with safe native HUD bounds supplying the draw/hit transform. The
+same pure transform fits mazes above/beside controls in desktop, portrait and short landscape.
+
+One finger selects roles, buys commands, places towers and orders hero movement. Only a completed
+single-pointer tap can issue a world order; drags, extra fingers, cancellation, loss of capture,
+focus/visibility changes, pause, rotation/layout changes and scheme switches invalidate it. Existing
+keyboard/controller bindings, auto/manual input selection and fullscreen remain. No mandatory
+multi-touch gesture, creature stick or hidden offscreen build area was added. Browser emulation and
+simulated controller actions pass; real iPhone 13 mini / Android tablet / Xbox / PlayStation checks
+remain required. Local save/export/import and future offline scope are unchanged.
+
+### Aquatic touch rollout — 2026-11-14
+Aquatic now uses the cell full-screen native overlay arrangement. A captured left stick swims/turns,
+right buttons dash/jump/toggle cruise, and held Ascend/Descend buttons control depth. Upgrade menus pause
+cell and aquatic on the touch scheme, including scene clocks/tweens, while preserving live desktop
+purchases. Input clears at menu boundaries and suspend/rotation/shutdown. Tablet and phone emulation
+passed; hardware multi-touch capability is not inferred from emulation. User should retest the tablet.
+
+### Compact dock and iPhone browser chrome — 2026-11-15
+Cell/aquatic status and commands share a bottom dock; Parts/Details is top-right. Pause, fullscreen and
+control explanations are in Controls. Unsupported fullscreen shows Apple's Home Screen/Open as Web App
+instructions; Apple standalone metadata is present. The game cannot suppress Safari tabs/toolbars from
+a normal browser tab. No service worker/offline cache was introduced. Available-height testing includes
+375x650 portrait and 812x273 landscape to account for visible browser chrome; hardware retest is pending.
+Dock and inventory are measured for touch/drawer spacing. Cell follow framing and aquatic presentation
+camera distance keep the player's body above the dock. Later-stage layouts remain independent.

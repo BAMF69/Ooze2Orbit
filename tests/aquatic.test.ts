@@ -201,13 +201,13 @@ describe("temperament reveal (Toy 2)", () => {
       ],
     }],
   };
-  it("shows each temperament from the cause log, biggest causes first", () => {
+  it("shows each temperament from the cause log, newest stage first, then biggest", () => {
     const r = revealFrom(lineage);
     expect(r.fromSave).toBe(true);
     const ag = r.rows.find((x) => x.kind === "aggressive")!;
     expect(ag.pct).toBe(89);
     expect(r.rows.reduce((sum, row) => sum + row.pct, 0)).toBe(100);
-    expect(ag.causes).toEqual(["Bought attack level 5", "Picked carnivore 3 times"]);
+    expect(ag.causes).toEqual(["Bought attack level 5 (cell)", "Picked carnivore 3 times (cell)"]); // labelled by stage (2026-11-10)
     expect(r.leaning).toMatch(/aggressive/);
     expect(r.diet).toBe("carnivore");
   });

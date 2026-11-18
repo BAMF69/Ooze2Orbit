@@ -36,7 +36,7 @@ export class StageUi {
     this.modal.hidden = false; this.footer.inert = true; if (this.modalText.textContent !== text) this.modalText.textContent = text; this.buttons(this.modalActions, actions);
   }
   hide(): void { this.modal.hidden = true; this.footer.inert = false; }
-  get detailsOpen(): boolean { return this.root.querySelector("details")?.open ?? false; }
+  get detailsOpen(): boolean { return this.details.closest("details")?.open ?? this.root.dataset.hudTab === "info"; }
   private buttons(host: HTMLElement, actions: readonly StageAction[]): void {
     const ids = actions.map(a => a.id).join("|");
     if (host.dataset.actions !== ids) { host.replaceChildren(...actions.map(() => document.createElement("button"))); host.dataset.actions = ids; }

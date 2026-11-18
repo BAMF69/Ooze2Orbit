@@ -6,17 +6,17 @@ export function cellUi(scene: Phaser.Scene, className: string): HTMLDivElement {
 }
 export function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = "", className = ""): HTMLElementTagNameMap[K] {
   const n = document.createElement(tag); n.textContent = text; n.className = className;
-  if (tag === "button") n.addEventListener("click", e => { if (e instanceof MouseEvent && e.detail > 0) n.blur(); });
+  if (tag === "button" || tag === "summary") n.addEventListener("click", e => { if (e instanceof MouseEvent && e.detail > 0) n.blur(); });
   return n;
 }
 export function preview(scene: Phaser.Scene, parent: HTMLElement, layers: { texture: string; first: number; animated?: boolean }[], decorate?: (ctx: CanvasRenderingContext2D) => void): () => void {
-  const size = layers.some(l => l.texture === "cellIllustrated") ? 384 : 96;
+  const size = layers.some(l => (l.texture === "cellIllustrated" || l.texture.endsWith("HD"))) ? 384 : 96;
   const canvas = node("canvas"); canvas.width = size; canvas.height = size; canvas.className = "cell-preview"; canvas.setAttribute("aria-hidden", "true"); parent.append(canvas);
   const ctx = canvas.getContext("2d");
   const draw = () => {
     if (!ctx) return; ctx.clearRect(0, 0, size, size);
     for (const l of layers) {
-      ctx.imageSmoothingEnabled = l.texture === "cellIllustrated";
+      ctx.imageSmoothingEnabled = (l.texture === "cellIllustrated" || l.texture.endsWith("HD"));
       const f = scene.textures.getFrame(l.texture, l.first + (l.animated ? Math.floor(scene.time.now / 160) % 4 : 0));
       if (f) ctx.drawImage(f.source.image as CanvasImageSource, f.cutX, f.cutY, f.cutWidth, f.cutHeight, 0, 0, size, size);
     }

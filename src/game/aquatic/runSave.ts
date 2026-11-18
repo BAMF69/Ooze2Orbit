@@ -24,7 +24,7 @@ import { AQ, AQ_PARTS, AQ_STATS, MAPS, UNIQUE_PARTS, type AqPart, type AqStat } 
 export const RUN_SLOT = "aquatic_run";
 export const RUN_V = 1;
 /** The slots an export carries, in this order. */
-export const EXPORT_SLOTS = ["lineage", RUN_SLOT, "creature_generations"] as const;
+export const EXPORT_SLOTS = ["lineage", RUN_SLOT, "creature_generations", "space_run"] as const; // space added 2026-11-10
 export const EXPORT_FORMAT = "ooze2orbit-save";
 export const EXPORT_V = 1;
 const MAX_CAUSES = 20;
@@ -69,6 +69,9 @@ export function readAqCreature(raw: unknown): AqCreature {
     stamina: num(m.stamina, 0, 1e6, 1e6),
     thickness: num(m.thickness, 0, 1, 0.5),
   };
+  if (isObj(m.partTiers)) me.partTiers = Object.fromEntries(AQ_PARTS.filter(p => Object.hasOwn(m.partTiers as Json,p)).map(p => [p, ["fins","jaws","plates"].includes(p) ? int((m.partTiers as Json)[p],1,3,1) : 1]));
+  if (Array.isArray(m.formDiets)) me.formDiets = m.formDiets.slice(0, form).map(d =>
+    d === "herbivore" || d === "carnivore" || d === "omnivore" ? d : me.diet);
   if (isObj(m.growthEvidence)) me.growthEvidence = {
     algae: num(m.growthEvidence.algae, 0, 1e6, 0), meat: num(m.growthEvidence.meat, 0, 1e6, 0),
   };
@@ -142,5 +145,6 @@ export function unpackBundle(text: string): { slots: Partial<Record<(typeof EXPO
   if (!Object.keys(slots).length) return { slots, problems: ["the file holds no saves"] };
   if (slots[RUN_SLOT] && !unpackRun(slots[RUN_SLOT]).run && slots[RUN_SLOT].finished !== true) return { slots: {}, problems: ["its aquatic run is damaged"] };
   if (slots.creature_generations && !readGarden(slots.creature_generations)) return { slots: {}, problems: ["its creature garden is damaged"] };
+  if (slots.space_run && slots.space_run.kind !== "space_run") return { slots: {}, problems: ["its space save is damaged"] }; // checked in full when it loads
   return { slots, problems: [] };
 }

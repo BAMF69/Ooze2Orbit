@@ -1,3 +1,10 @@
+import { armEelShock, stepEelAttack, type EelAttackState } from './aquatic/eelCombat';
+import { tickCombatStatus, toxicRetaliation, shock, type CombatStatus } from './aquatic/combatEffects';
+import { trackHudOcclusion } from './hudOcclusion';
+import { organicPlayBottom } from './hudDock';
+import { TouchControls } from '../shell/touchControls';
+import { preloadAquaticArt, prepareAquaticArt, AquaticIllustrations, dietColumn } from './aquatic/illustrated';
+import { upgradeEffect } from './aquatic/effectDescriptions';
 // ---------------------------------------------------------------------------
 // AquaticScene.ts
 // Purpose : The aquatic stage Toy (docs/stages/02-aquatic.md), v3 (BAMF69 2026-11-08): three maps, one per form
@@ -45,11 +52,11 @@ import { cellSfx, type CellSfx } from "./cell/sfx";
 import { keepInside, swim } from "./cell/steer";
 import { dash, jump, newAvatar, steerAvatar, type Avatar, type Water } from "./aquatic/avatar";
 import {
-  addPart, buyUpgrade, bodyLook, lookScores, canAbility, canGoFast, outOfBreath, creatureFromLineage, dieAndCarryOn, eatFood, foodToEvolve, heal, has, maxHp,
+  addPart, partTier, buyUpgrade, bodyLook, lookScores, canAbility, canGoFast, outOfBreath, creatureFromLineage, dieAndCarryOn, eatFood, foodToEvolve, heal, has, maxHp,
   maxStamina, movement, paceSpeed, ramDamage, size as bodySize, slots, spendAbility, stepStamina, takeHit,
   type AqCreature, type FoodKind, type Pace,
 } from "./aquatic/creature";
-import { critterIntent, schoolTarget } from "./aquatic/critters";
+import { critterIntent, jellyRetaliates, schoolTarget } from "./aquatic/critters";
 import { seabedContact } from "./aquatic/seabed";
 import { newSharkBrain, sharkBit, sharkThink, type SharkBrain } from "./aquatic/sharks";
 import { AquaticHud } from "./aquatic/hud";
@@ -70,6 +77,8 @@ import { AqDivisionPicker } from "./aquatic/divisionPicker";
 import { AqUpgradePanel } from "./aquatic/upgradePanel";
 import { cameraBehind, hiddenThreat, project, viewOf, wrapAngle, type Camera } from "./aquatic/view";
 
+const stamp = (d: Record<string, unknown>) => ({ ...d, savedAt: Date.now() }); // the menu continues the most recent stage
+
 const LOG = "aquatic";
 const LINEAGE_SLOT = "lineage";
 const MAX_DT = 0.1;
@@ -87,7 +96,7 @@ const FILES: Record<Atlas, [string, number]> = {
 const px = (a: Atlas) => FILES[a][1];
 const isPart = (k: string): k is AqPart => (AQ_PARTS as readonly string[]).includes(k);
 
-interface Critter {
+interface Critter extends CombatStatus, EelAttackState {
   id: number;
   kind: AqKind | "kin";
   x: number; y: number; z: number; vx: number; vy: number; vz: number;
@@ -125,7 +134,7 @@ interface RiverObj {
 }
 
 /** A shark (2026-11-08): its own mind (sharks.ts) and numbers (SHARKS), not a KINDS creature. */
-interface Shark {
+interface Shark extends CombatStatus {
   x: number; y: number; z: number; vx: number; vy: number; vz: number;
   heading: number;
   turnIn: number;
@@ -178,6 +187,7 @@ export class AquaticScene extends Phaser.Scene {
   private floor!: Phaser.GameObjects.Graphics;
   private hud!: AquaticHud;
   private panel!: AqUpgradePanel;
+  private touch!: TouchControls;
   private division!: AqDivisionPicker;
   private daughterOffers: AqDaughter[] = [];
   private sisters: SisterColony = newSisterColony();
@@ -233,6 +243,9 @@ export class AquaticScene extends Phaser.Scene {
   private pace: Pace = "still";
   private tiredToastCd = 0;
   private invincible = false; // admin: no damage taken
+  private electricCd = 0;
+  private murkLeft=0;
+  private playerStunLeft = 0;
   private slowLeft = 0; // s of seaweed tangle left
   private weedToastCd = 0;
   private bumpCd = 0;
@@ -251,7 +264,8 @@ export class AquaticScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.image("cellEntryArt", "assets/art/cell_illustrated_v1.png");
+    preloadAquaticArt(this);
+    this.load.image("cellEntryArt", "assets/art/cell_illustrated_v1.webp");
     for (const [key, [file, cell]] of Object.entries(FILES)) {
       this.load.spritesheet(key, `assets/art/${file}.png`, { frameWidth: cell, frameHeight: cell });
       this.load.json(`${key}_layout`, `assets/art/${file}.json`);
@@ -282,6 +296,7 @@ export class AquaticScene extends Phaser.Scene {
     this.run = null;
     this.rb = null;
 
+    prepareAquaticArt(this);
     for (const key of Object.keys(FILES) as Atlas[]) this.makeAnims(key);
     this.bg = this.add.graphics().setDepth(-10);
     this.skyBg = this.add.graphics().setDepth(-10).setVisible(false);
@@ -294,29 +309,46 @@ export class AquaticScene extends Phaser.Scene {
     this.cut = null;
     this.drawSky();
     this.av = newAvatar(0, 0, 60, -Math.PI / 2);
-    this.avatarSpr = this.add.sprite(0, 0, "aswim").setDepth(2500);
+    this.avatarSpr = this.add.sprite(0, 0, "aswim").setDepth(2500).setData('aqPlayer',true);
     this.partsLayout = this.cache.json.get("aparts_layout") as AtlasLayout;
     this.partLayers = {};
     this.sisters = newSisterColony();
     this.sisterView = new SisterView(this, this.partsLayout);
-    for (const p of AQ_PARTS) this.partLayers[p] = this.add.sprite(0, 0, "aparts", firstFrame(this.partsLayout, "on", p)).setDepth(2501).setVisible(false);
+    for (const p of AQ_PARTS.filter(p=>p!=="toxicTendrils"&&p!=="electricOrgan")) this.partLayers[p] = this.add.sprite(0, 0, "aparts", firstFrame(this.partsLayout, "on", p)).setDepth(2501).setVisible(false);
+    this.electricCd=0; this.slowLeft=0;
     this.breaches = 0;
     this.pop = newPopulation(AQ.population, this.rng);
     this.thickness = average(this.pop);
 
     this.sfx = cellSfx();
-    this.hud = new AquaticHud(this, shell.i18n);
+    trackHudOcclusion(this, () => this.avatarSpr);
+    this.hud = new AquaticHud(this, shell.i18n, () => { if (shell.topId === "play") this.panel.toggle(); }, () => { if (shell.topId === "play" && this.evolveReady()) this.evolveOut(); });
     this.entry = new LifeSequence(this); this.entryPhase = null;
     const resize = () => { if (this.palette) this.setPalette(this.palette); this.drawSky(); this.cutTitle.setPosition(this.scale.width / 2, this.scale.height * 0.2).setWordWrapWidth(this.scale.width - 24); };
     this.scale.on("resize", resize); this.events.once("shutdown", () => this.scale.off("resize", resize));
-    this.panel = new AqUpgradePanel(this, shell.i18n, (stat) => this.tryBuy(stat));
+    this.panel = new AqUpgradePanel(this, shell.i18n, (stat) => this.tryBuy(stat), () => shell.input.scheme === "touch", () => shell.input.clearMenuInput());
+    this.touch = new TouchControls(shell.input, [
+      { label: shell.i18n.t("display.dash"), action: "dash" },
+      { label: "Shock", action: "electric" },
+      { label: shell.i18n.t("touch.breach"), description:shell.i18n.t("display.jump"), action: "jump" },
+      { label: shell.i18n.t("touch.pace_short"), description:shell.i18n.t("touch.pace"), action: "pace" },
+      { label: shell.i18n.t("touch.rise"), action: "rise", group: "depth" },
+      { label: shell.i18n.t("touch.sink"), action: "sink", group: "depth" },
+    ]);
+    this.touch.root.classList.add("aquatic-touch");
+    this.events.on("pause", this.touch.suspend, this.touch);
+    this.events.once("shutdown", () => { this.events.off("pause", this.touch.suspend, this.touch); this.touch.destroy(); });
     this.daughterOffers = [];
     this.division = new AqDivisionPicker(this, shell.i18n, index => { if (shell.topId === "play") this.chooseDaughter(index); });
     this.propsLayout = this.cache.json.get("aprops_layout") as AtlasLayout;
+    new AquaticIllustrations(this, () => this.me, () => ({ map: this.mapIndex, visible: this.bg.visible }),
+      () => shell.topId === "play" && (this.mode === "swim" || this.mode === "river") && !this.entry.isPlaying && !this.division.isActive && !this.panel.touchPaused && !this.admin?.isOpen && !this.hud.blackedOut,
+      () => shell.settings.access.reduce_motion, () => shell.settings.access.game_speed,()=>this.murkLeft,()=>({speed:Math.hypot(this.av.vx,this.av.vy),dash:this.av.dashLeft>0,airborne:this.av.airborne,rising:this.av.vz>0,stunned:this.playerStunLeft>0}));
     this.admin = new AdminPanel(this, {
       setTemperament: (k, v) => this.adminTemper(k, v),
       goTo: (d) => this.adminGoTo(d),
       setForm: (n) => { this.me = { ...this.me, form: n }; this.me = { ...this.me, hp: maxHp(this.me) }; Log.info(LOG, `ADMIN form ${n}`); },
+      setDiet: (diet) => { this.me = { ...this.me, diet }; Log.info(LOG, `ADMIN diet ${diet}`); },
       addPoints: () => { this.me = { ...this.me, points: { algae: this.me.points.algae + 50, meat: this.me.points.meat + 50 } }; },
       toggleInvincible: () => { this.invincible = !this.invincible; Log.info(LOG, `ADMIN invincible ${this.invincible}`); },
     });
@@ -334,7 +366,7 @@ export class AquaticScene extends Phaser.Scene {
     this.me = { ...this.me, hp: maxHp(this.me) };
     for (const p of (params.get("parts") ?? "").split(",")) if (isPart(p)) this.me = addPart(this.me, p).creature; // ?parts=fins,jaws (captures)
     this.allowSave = !this.autoplay && !params.has("map") && !params.has("river") && !params.has("form") && !params.has("division");
-    const resumed = shell.takeContinue() || params.has("continue") ? this.loadRun() : null; // menu "Continue" (or ?continue): the saved run (2026-11-09)
+    const resumed = shell.takeContinue("aquatic") || params.has("continue") ? this.loadRun() : null; // menu "Continue" (or ?continue): the saved run (2026-11-09)
     this.buildMap(resumed ? resumed.map : Math.max(0, askMap), "start");
     if (resumed) { this.closeReveal(false); this.hud.toast(shell.i18n.t("aq.welcome_back", { form: this.me.form }), 5); }
     if (askRiver === 1 || askRiver === 2) this.startRiver(askRiver - 1);
@@ -436,6 +468,7 @@ export class AquaticScene extends Phaser.Scene {
   /** Build map i. Arriving from a river you splash in near the shore; the river mouth out is on the far side. */
   private buildMap(i: number, arrival: "start" | "river"): void {
     this.clearMap();
+    this.playerStunLeft=0;this.murkLeft=0;
     this.mapIndex = i;
     this.map = MAPS[i];
     this.water = { ...AQ.water, surface: this.map.surface };
@@ -485,12 +518,12 @@ export class AquaticScene extends Phaser.Scene {
   }
 
   private propSprite(kind: ItemKind): Phaser.GameObjects.Sprite {
-    const row = kind === "meatM" || kind === "meatL" ? "meat" : kind; // bigger chunks are bigger meat sprites
+    const row = kind === "meatM" || kind === "meatL" ? "meat" : kind === "toxicTendrils" || kind === "electricOrgan" ? "gills" : kind; // bigger chunks are bigger meat sprites
     const pose = kind === "rock" ? "still" : kind === "weed" || kind === "bloom" ? "sway" : isPart(kind) ? "bob" : "drift";
     const onFloor = kind === "rock" || kind === "weed" || kind === "algae" || kind === "bloom";
     const spr = this.add.sprite(0, 0, "aprops").setOrigin(0.5, onFloor ? 1 : 0.5).play(animKey("aprops", pose, row)).setVisible(false);
     spr.anims.setProgress(this.rng());
-    return spr;
+    spr.setData("aqItem",kind); return spr;
   }
 
   private addCritter(kind: AqKind | "kin", n: number): Critter {
@@ -499,7 +532,7 @@ export class AquaticScene extends Phaser.Scene {
     const at = this.spot(kind === "deepmaw" ? 700 : 250);
     const z = k ? k.zMin + this.rng() * (k.zMax - k.zMin) : 30 + this.rng() * (this.map.surface - 80);
     const spr = this.add.sprite(0, 0, atlas).play(animKey(atlas, "swim", kind === "kin" ? "side0" : "side")).setVisible(false);
-    spr.anims.setProgress(this.rng());
+    spr.anims.setProgress(this.rng()); spr.setData("aqSpecies",kind);
     return {
       id: this.nextId++, kind, x: at.x, y: at.y, z, vx: 0, vy: 0, vz: 0, heading: this.rng() * Math.PI * 2, turnIn: this.rng() * 2,
       hp: k ? k.hp : 1, spr, atlas, size: k ? k.size : AQ.size.kin, thickness: 0.5, school: kind === "darter" ? n % AQ.schools.count : -1,
@@ -535,12 +568,12 @@ export class AquaticScene extends Phaser.Scene {
   private closeReveal(animate = true): void {
     if (animate && !this.autoplay && this.mode === "reveal") {
       this.hud.hidePanel(); this.entryPhase = "after";
-      this.entry.play("arrival", { texture: this.avatarSpr.texture.key, frame: this.avatarSpr.frame.name }, shell.i18n.t("aq.entry_after"), shell.settings.access.reduce_motion);
+      this.entry.play("arrival", { texture: "aqHeroHD", frame: 6 + dietColumn(this.me.diet) }, shell.i18n.t("aq.entry_after"), shell.settings.access.reduce_motion);
       shell.input.clearHeld(); return;
     }
     this.hud.hidePanel();
     this.mode = this.run ? "river" : "swim";
-    this.hud.toast(shell.i18n.t(this.run ? "aq.river_start" : "aq.intro_v2"), 8);
+    this.hud.toast(shell.i18n.t(this.run ? (shell.input.scheme === "touch" ? "aq.river_start_touch" : "aq.river_start") : `aq.controls.${shell.input.scheme}`), 8);
     if (this.openLensAtStart && !this.run) this.openLens();
     if (this.openAdminAtStart && !this.admin.isOpen) this.admin.toggle();
   }
@@ -665,10 +698,10 @@ export class AquaticScene extends Phaser.Scene {
   private saveRun(finished = false): void {
     if (!this.allowSave || (this.run && !finished)) return;
     try {
-      const data = finished ? { kind: "aquatic_run", v: 1, finished: true } : packRun({
+      const data = finished ? { kind: "aquatic_run", v: 1, finished: true } : stamp(packRun({
         sisters: this.sisters, map: this.mapIndex, me: { ...this.me, thickness: this.thickness }, tempC: this.tempC, pop: this.pop, causes: this.causes,
         temper: this.temper, kills: this.kills, deaths: this.deaths, breaches: this.breaches,
-      });
+      }));
       shell.saves.save(RUN_SLOT, data as Parameters<typeof shell.saves.save>[1]);
       Log.debug(LOG, `SAVED run (${finished ? "finished" : MAPS[this.mapIndex].id})`);
     } catch (err) {
@@ -693,7 +726,11 @@ export class AquaticScene extends Phaser.Scene {
 
   // ---- the frame --------------------------------------------------------------------------------
   update(_time: number, deltaMs: number): void {
-    this.hud.screenUi.actions([action("upgrades", "interact", shell.i18n.t("cell.ui.upgrades")), action("lens", "lens", shell.i18n.t("display.gardener")), action("jump", "jump", shell.i18n.t("display.jump")), action("dash", "dash", shell.i18n.t("display.dash")), ...(this.evolveReady() ? [action("advance", "ui_accept", shell.i18n.t("display.advance_creature"))] : [])]);
+    this.hud.screenUi.root.classList.toggle("aquatic-can-evolve", this.evolveReady());
+    this.hud.advanceAvailable(this.evolveReady());
+    this.touch.setAvailable("electric",has(this.me,"electricOrgan"));
+    this.touch.update(shell.topId === "play" && (this.mode === "swim" || this.mode === "river") && !this.entry.isPlaying && !this.division.isActive && !this.admin.isOpen && !this.panel.isOpen && !this.hud.blackedOut && !this.hud.screenUi.detailsOpen && !this.hud.controlsOpen);
+    this.hud.screenUi.actions([action("upgrades", "interact", shell.i18n.t("cell.ui.upgrades")), ...(this.mode !== "river" ? [action("lens", "lens", shell.i18n.t("display.gardener"))] : []), ...(this.evolveReady() ? [action("advance", "ui_accept", shell.i18n.t("display.advance_creature"))] : [])]);
     const dt = Math.min(deltaMs / 1000, MAX_DT) * shell.settings.access.game_speed;
     const playing = shell.topId === "play"; // presses made on the menus wait until the play screen is up
     const inp = shell.input;
@@ -717,6 +754,11 @@ export class AquaticScene extends Phaser.Scene {
         if (inp.takePress("ui_accept") || inp.takePress("jump")) this.chooseDaughter(this.division.confirm());
       }
       return; // Threats, rivers, timers and population all wait for the selected body.
+    }
+    if (playing && !this.autoplay && shell.input.scheme === "touch" && (this.mode === "swim" || this.mode === "river") && !this.admin.isOpen) this.panelInput();
+    if (this.panel.touchPaused) {
+      this.panel.render(this.me); this.drawAvatar(this.av.airborne);
+      this.hud.status(this.statusLines()); this.hudExtras(); return;
     }
     this.hud.tick(dt);
     this.sfx.update(shell.settings.audio);
@@ -763,6 +805,7 @@ export class AquaticScene extends Phaser.Scene {
       this.panelInput();
       if (this.evolveReady() && !this.panel.isOpen && inp.takePress("ui_accept")) { this.evolveOut(); return; }
     }
+    if (this.panel.touchPaused) { this.panel.render(this.me); this.hudExtras(); return; }
     this.steer(dt, playing);
     if (this.mode !== "swim") return; // the river took you
     this.seabed(dt);
@@ -782,7 +825,7 @@ export class AquaticScene extends Phaser.Scene {
   }
 
   private adminState() {
-    return { temperament: { ...this.temper }, form: this.me.form, look: this.lookName, invincible: this.invincible };
+    return { temperament: { ...this.temper }, form: this.me.form, diet: this.me.diet, look: this.lookName, invincible: this.invincible };
   }
 
   /** Admin: set a temperament (not saved); aggressive drives the shark look at once. */
@@ -827,14 +870,14 @@ export class AquaticScene extends Phaser.Scene {
     const inp = shell.input;
     if (inp.takePress("interact")) this.panel.toggle(); // E, as in the cell stage
     if (!this.panel.isOpen) return;
-    if (inp.takePress("ui_up")) this.panel.move(-1);
-    if (inp.takePress("ui_down")) this.panel.move(1);
+    if (inp.takePress("ui_up") || inp.takePress("ui_left")) this.panel.move(-1);
+    if (inp.takePress("ui_down") || inp.takePress("ui_right")) this.panel.move(1);
     if (inp.takePress("ui_accept")) this.tryBuy(this.panel.selected);
   }
 
   private tryBuy(stat: AqStat): void {
     if (shell.topId !== "play" || this.division.isActive || this.mode === "reveal") return;
-    const r = buyUpgrade(this.me, stat);
+    const r = buyUpgrade(this.me, stat,2**(this.mapIndex+1));
     if (!r.ok) {
       this.sfx.play("deny");
       this.hud.toast(r.reason === "max" ? shell.i18n.t("up.max") : shell.i18n.t(`up.need_${AQ_PAID_WITH[stat]}`));
@@ -848,9 +891,14 @@ export class AquaticScene extends Phaser.Scene {
 
   // ---- you ----------------------------------------------------------------------------------------
   private readInput(playing: boolean, dt: number): Pilot {
+    if(this.playerStunLeft>0){
+      shell.input.takePress('dash');shell.input.takePress('jump');shell.input.takePress('electric');
+      return {s:{turn:0,push:0,rise:0},doJump:false,doDash:false};
+    }
     if (this.autoplay) return this.mode === "river" ? this.pilotRiver() : this.pilot(dt);
     if (!playing) return { s: { turn: 0, push: 0, rise: 0 }, doJump: false, doDash: false };
     const inp = shell.input;
+    if(inp.takePress("electric")) this.electricPulse();
     const arrows = !this.panel.isOpen; // the panel borrows the arrow keys
     const down = (a: string) => inp.isDown(`move_${a}`) || (arrows && inp.isDown(`ui_${a}`));
     return {
@@ -884,6 +932,11 @@ export class AquaticScene extends Phaser.Scene {
 
   private steer(dt: number, playing: boolean): void {
     const p = this.readInput(playing, dt);
+    if(this.playerStunLeft>0){
+      this.playerStunLeft=Math.max(0,this.playerStunLeft-dt);
+      this.av.vx=this.av.vy=this.av.vz=0;this.av.dashLeft=0;
+      return;
+    }
     if (playing && !this.autoplay && shell.input.takePress("pace")) this.togglePace();
     if (this.wantFast && this.me.stamina <= 0) this.wantFast = false; // at 0 you drop to cruise on your own
     const sp = paceSpeed(this.me, this.wantFast, p.s.push > 0);
@@ -1002,7 +1055,7 @@ export class AquaticScene extends Phaser.Scene {
   private eatThing(kind: string): boolean {
     const food: FoodKind = kind.startsWith("meat") ? "meat" : "algae";
     const values: Record<string, number> = AQ.food;
-    const r = eatFood(this.me, food, values[kind] ?? AQ.food.algae);
+    const r = eatFood(this.me, food, values[kind] ?? AQ.food.algae,2**(this.mapIndex+1));
     if (!r.eaten) { this.cantEat(); return false; }
     this.gotFood(r);
     this.sfx.play(food === "meat" ? "eat_meat" : "eat_algae");
@@ -1011,6 +1064,7 @@ export class AquaticScene extends Phaser.Scene {
   }
 
   private gotFood(r: { creature: AqCreature; evolved: boolean }): void {
+    this.playerChomp();
     this.me = r.creature;
     if (!r.evolved) return;
     this.me = { ...this.me, divisionSeed: Math.floor(this.rng() * 0x100000000) };
@@ -1080,10 +1134,10 @@ export class AquaticScene extends Phaser.Scene {
   }
 
   private pickPart(p: AqPart): void {
-    const r = addPart(this.me, p);
+    const r = addPart(this.me, p, this.mapIndex+1);
     this.me = r.creature;
     this.sfx.play("part");
-    const name = shell.i18n.t(`aq.part_${p}`);
+    const name = shell.i18n.t(`aq.part_${p}`) + (["fins","jaws","plates"].includes(p) ? ` ${partTier(r.creature,p)}` : "");
     if (r.kind === "added") this.hud.toast(shell.i18n.t("aq.got_part", { part: name }));
     else if (r.kind === "replaced") this.hud.toast(shell.i18n.t("aq.swapped_part", { part: name, lost: shell.i18n.t(`aq.part_${r.lost}`) }));
     else this.hud.toast(shell.i18n.t("aq.dup_part", { part: name }));
@@ -1107,6 +1161,7 @@ export class AquaticScene extends Phaser.Scene {
   }
 
   private swimTo(c: Critter, dir: { x: number; y: number }, targetZ: number, speed: number, dt: number): void {
+    speed *= (c.toxicLeft??0)>0 ? AQ.combat.toxicSlow : 1;
     swim(c, dir.x * 0.75, dir.y * 0.75, dt, { accel: 260, maxSpeed: speed, drag: 1.3 });
     keepInside(c, 20, this.map.width, this.map.width);
     c.vz += Phaser.Math.Clamp((targetZ - c.z) / 15, -1, 1) * 120 * dt;
@@ -1123,6 +1178,7 @@ export class AquaticScene extends Phaser.Scene {
     // the deepmaw sees you and every other fish (BAMF69 2026-11-08: fish fight fish)
     const fish: Seen[] = this.critters.filter((c) => this.alive(c) && c.kind !== "deepmaw").map((c) => ({ id: c.id, x: c.x, y: c.y }));
     for (const c of this.critters) {
+      c.spr.setData('aqHunting',false).setData('aqFleeing',false);
       c.biteCd = Math.max(0, c.biteCd - dt);
       c.hitCd = Math.max(0, c.hitCd - dt);
       c.provokedLeft = Math.max(0, c.provokedLeft - dt);
@@ -1130,15 +1186,28 @@ export class AquaticScene extends Phaser.Scene {
         if ((c.respawnIn -= dt) <= 0) this.respawn(c);
         continue;
       }
-      if (c.brain) { this.deepmawThink(c, dt, [{ id: PLAYER_ID, x: you.x, y: you.y }, ...fish]); continue; }
+      if(c.kind==='electricEel'){
+        const discharge=stepEelAttack(c,dt,(c.stunLeft??0)<=0);
+        c.spr.setData('aqShockLeft',c.shockLeft??0);
+        if(discharge&&!this.av.airborne&&Math.hypot(c.x-you.x,c.y-you.y,c.z-you.z)<=AQ.combat.eelShockRange){
+          this.playerStunLeft=Math.max(this.playerStunLeft,AQ.combat.eelStunS);
+          this.av.vx=this.av.vy=this.av.vz=0;this.av.dashLeft=0;
+          this.hud.toast(shell.i18n.t('aq.eel_stunned'),AQ.combat.eelStunS);
+        }
+      }
+      const effect=tickCombatStatus(c,dt); if(effect.damage>0) { c.hp-=effect.damage; if(c.hp<=0){this.kill(c,true);continue;} }
+      if(effect.speed===0) { c.vx=c.vy=c.vz=0; continue; }
+      if (c.brain) { this.deepmawThink(c, dt, [{ id: PLAYER_ID, x: you.x, y: you.y }, ...fish]); c.spr.setData('aqHunting',c.brain.state==='hunt').setData('aqFleeing',c.brain.state==='sated'||c.brain.state==='tired'); continue; }
       const k = this.K(c.kind as AqKind);
       const school = c.school >= 0 ? this.schools[c.school] : null;
-      if (school?.target) { // swarming: straight at the target in 3D (v3 circled overhead: too slow to change depth)
+      if (school?.target) { c.spr.setData('aqHunting',true); // swarming: straight at the target in 3D (v3 circled overhead: too slow to change depth)
         const t = school.target === "you" ? { ...you, size: bodySize(this.me) } : school.target;
         this.pursue(c, t, k.speed * 1.3, dt);
         if (c.biteCd <= 0 && Math.hypot(t.x - c.x, t.y - c.y, t.z - c.z) < (k.size + t.size) * 0.55) {
+          c.spr.setData('aqBiteSerial',Number(c.spr.getData('aqBiteSerial')??0)+1);
           c.biteCd = AQ.schools.biteCdS;
           if (school.target === "you") {
+            if(has(this.me,"toxicTendrils"))toxicRetaliation(c);
             this.takeDamage(AQ.schools.bite * this.map.mult.bite, "darters");
             if (this.me.hp < maxHp(this.me) * AQ.schools.breakOffAt) { // they break off: a chance to recover (2026-11-08)
               school.target = null;
@@ -1155,7 +1224,13 @@ export class AquaticScene extends Phaser.Scene {
         const dx = school.centre.x - c.x, dy = school.centre.y - c.y, d = Math.hypot(dx, dy);
         if (d > AQ.schools.spread) wander = { x: wander.x * 0.3 + (dx / d) * 0.7, y: wander.y * 0.3 + (dy / d) * 0.7 };
       }
+      if(c.kind==='electricEel'&&(c.fleeLeft??0)>0){
+        c.spr.setData('aqFleeing',true);
+        const dx=c.x-you.x,dy=c.y-you.y,d=Math.hypot(dx,dy)||1;
+        this.swimTo(c,{x:dx/d,y:dy/d},c.z,k.speed*1.5*effect.speed,dt);continue;
+      }
       const it = critterIntent(k, c, you, c.provokedLeft > 0, wander);
+      c.spr.setData('aqHunting',it.mode==='chase').setData('aqFleeing',it.mode==='flee');
       this.swimTo(c, it.dir, school && it.mode === "wander" ? school.centre.z : it.targetZ, k.speed * it.speedMult, dt);
     }
     for (const k of this.kin) this.swimTo(k, this.wanderDir(k, dt), k.z, AQ.population.kinSpeed, dt);
@@ -1232,10 +1307,12 @@ export class AquaticScene extends Phaser.Scene {
     if (Math.hypot(prey.x - d.x, prey.y - d.y, prey.z - d.z) > (k.size + prey.size) * 0.45 + 6) return;
     if (prey.kind === "darter") this.kill(prey, false); // swallowed whole
     else this.hurt(prey, k.bite * AQ.deepmawVsFish, "deepmaw"); // bitten: it may survive, or die and drop its part
+    d.spr.setData("aqBiteSerial",Number(d.spr.getData("aqBiteSerial")??0)+1);
     d.brain = ate(d.brain, AQ.deepmaw.brain);
   }
 
   private respawn(c: Critter): void {
+    c.toxicLeft=0;c.stunLeft=0;c.shockCd=0;c.shockWindup=undefined;c.fleeLeft=0;c.shockLeft=0;c.spr.setData('aqShockLeft',0);
     const k = this.K(c.kind as AqKind);
     const home = c.school >= 0 ? this.schools[c.school]?.centre : null; // a darter rejoins its school
     Object.assign(c, home && home.x ? { x: home.x + (this.rng() - 0.5) * 80, y: home.y + (this.rng() - 0.5) * 80 } : this.spot(500), { z: k.zMin + this.rng() * (k.zMax - k.zMin), vx: 0, vy: 0, vz: 0, hp: k.hp, provokedLeft: 0 });
@@ -1246,19 +1323,24 @@ export class AquaticScene extends Phaser.Scene {
   private moveSharks(dt: number): void {
     const you = { x: this.av.x, y: this.av.y, z: this.av.z, airborne: this.av.airborne, hpFrac: this.me.hp / maxHp(this.me) };
     for (const sh of this.sharks) {
+      sh.spr.setData('aqHunting',false).setData('aqFleeing',false);
       sh.biteCd = Math.max(0, sh.biteCd - dt);
       sh.hitCd = Math.max(0, sh.hitCd - dt);
       if (sh.respawnIn > 0) {
-        if ((sh.respawnIn -= dt) <= 0) Object.assign(sh, this.spot(1200), { hp: sh.spec.hp, brain: newSharkBrain() });
+        if ((sh.respawnIn -= dt) <= 0) Object.assign(sh, this.spot(1200), {toxicLeft:0,stunLeft:0, hp: sh.spec.hp, brain: newSharkBrain() });
         continue;
       }
+      const effect=tickCombatStatus(sh,dt); sh.hp-=effect.damage;
+      if(sh.hp<=0) { sh.respawnIn=60;sh.spr.setVisible(false);this.kills+=3;for(let n=0;n<sh.spec.meat;n++)this.addItem('meatL',sh,AQ.meatLifeS);continue; }
+      if(effect.speed===0) {sh.vx=sh.vy=sh.vz=0;continue;}
       const before = sh.brain.mode;
       const spec = { ...sh.spec, sight: sh.spec.sight * this.climate.hunterSight };
       sh.brain = sharkThink(sh.brain, sh, you, dt, spec, sh.rules, SHARK_MIND);
+      sh.spr.setData('aqHunting',sh.brain.mode==='hunt').setData('aqFleeing',sh.brain.mode==='rest');
       if (sh.brain.mode === "hunt" && before !== "hunt") {
         Log.info(LOG, `SHARK (${sh.rules.kind}) hunts you${you.hpFrac < 0.5 && sh.rules.relentlessLow ? " relentlessly" : ""}`);
       }
-      const sp = sh.spec.speed * this.climate.hunterSpeed;
+      const sp = sh.spec.speed * this.climate.hunterSpeed * effect.speed;
       const c = sh as unknown as Critter; // pursue / swimTo only need position, velocity and heading
       if (sh.brain.mode === "hunt") this.pursue(c, this.av, sp, dt);
       else if (sh.brain.mode === "rest") { // peel off: away from you
@@ -1283,6 +1365,7 @@ export class AquaticScene extends Phaser.Scene {
       sh.hitCd = 0.5;
       const ramming = (this.av.vx * dx + this.av.vy * dy + this.av.vz * dz) / Math.max(1, dist) >= AQ.stats.rammingSpeed || this.av.dashLeft > 0;
       if (ramming) {
+        this.playerChomp();
         sh.hp -= ramDamage(this.me) * (this.av.dashLeft > 0 ? AQ.stats.dashRamMult : 1);
         this.sfx.play("chomp_you");
         if (sh.hp <= 0) {
@@ -1294,11 +1377,13 @@ export class AquaticScene extends Phaser.Scene {
           continue;
         }
       }
-      if (sh.brain.mode === "hunt" && sh.biteCd <= 0) {
+      if (sh.brain.mode === "hunt" && sh.biteCd <= 0 && (sh.stunLeft??0)<=0) {
         sh.biteCd = SHARK_MIND.biteCooldownS;
+        sh.spr.setData("aqBiteSerial",Number(sh.spr.getData("aqBiteSerial")??0)+1);
         sh.brain = sharkBit(sh.brain, SHARK_MIND);
         this.av.vx -= (dx / Math.max(1, dist)) * 260;
         this.av.vy -= (dy / Math.max(1, dist)) * 260;
+        if(has(this.me,"toxicTendrils")) toxicRetaliation(sh);
         this.takeDamage(sh.spec.bite, `shark (${sh.rules.kind})`);
       }
     }
@@ -1316,13 +1401,16 @@ export class AquaticScene extends Phaser.Scene {
       const into = (this.av.vx * dx + this.av.vy * dy + this.av.vz * dz) / Math.max(1, dist);
       const ramming = into >= AQ.stats.rammingSpeed || this.av.dashLeft > 0;
       c.hitCd = 0.4;
+      if(c.kind==='jellyfish' && jellyRetaliates(into,ramming,c.biteCd<=0,(c.stunLeft??0)>0)) { this.murkLeft=2; c.spr.setData('aqBiteSerial',Number(c.spr.getData('aqBiteSerial')??0)+1); c.biteCd=AQ.biteCooldownS; this.slowLeft=AQ.combat.jellySlowS; if(has(this.me,'toxicTendrils')) toxicRetaliation(c); this.takeDamage(k.bite,'jellyfish'); if(this.hud.blackedOut)return; }
+      if(!ramming&&has(this.me,'toxicTendrils')) toxicRetaliation(c);
       if (c.kind === "darter") { // a darter is a mouthful if your diet takes meat; else it bounces off
-        const r = eatFood(this.me, "meat", AQ.food.darterWhole);
+        const r = eatFood(this.me, "meat", AQ.food.darterWhole,2**(this.mapIndex+1));
         if (r.eaten) { this.gotFood(r); this.sfx.play("eat_meat"); this.kill(c, true); if (this.division.isActive) return; }
         else { this.cantEat(); this.knock(c, 0.5); }
         continue;
       }
       if (ramming) {
+        this.playerChomp();
         c.hp -= ramDamage(this.me) * (this.av.dashLeft > 0 ? AQ.stats.dashRamMult : 1);
         c.provokedLeft = 6;
         this.knock(c, 1);
@@ -1331,7 +1419,7 @@ export class AquaticScene extends Phaser.Scene {
         if (c.hp <= 0) { this.kill(c, true); continue; }
       }
       const hunting = c.brain ? c.brain.state === "hunt" && c.brain.targetId === PLAYER_ID : k.aggro > 0 || c.provokedLeft > 0;
-      if (k.bite > 0 && c.biteCd <= 0 && hunting && !ramming) this.bitten(c, k.bite);
+      if (c.kind!=="jellyfish" && k.bite > 0 && c.biteCd <= 0 && (c.fleeLeft??0)<=0 && hunting && !ramming && (c.stunLeft??0)<=0) this.bitten(c, k.bite);
       else if (!ramming) this.knock(c, 0.5);
     }
   }
@@ -1346,7 +1434,11 @@ export class AquaticScene extends Phaser.Scene {
     this.av.vy -= (dy / d) * push * 0.5;
   }
 
+  private playerChomp():void { this.avatarSpr.setData('aqBiteSerial',Number(this.avatarSpr.getData('aqBiteSerial')??0)+1); }
+
   private bitten(c: Critter, bite: number): void {
+    if(c.kind==='electricEel')armEelShock(c);
+    c.spr.setData("aqBiteSerial",Number(c.spr.getData("aqBiteSerial")??0)+1);
     c.biteCd = c.brain ? AQ.deepmaw.biteCooldownS : AQ.biteCooldownS;
     this.knock(c, c.brain ? 1.2 : 0.8);
     if (c.brain) c.brain = ate(c.brain, AQ.deepmaw.brain); // after a bite it backs off: your escape window (pillar 1)
@@ -1413,7 +1505,20 @@ export class AquaticScene extends Phaser.Scene {
     this.items = this.items.filter((i) => i.spr.active);
   }
 
+  private electricPulse(): void {
+    if(!has(this.me,'electricOrgan')||this.electricCd>0||this.mode!=='swim'||this.av.airborne||this.playerStunLeft>0)return;
+    this.electricCd=AQ.combat.electricCooldownS;this.sfx.play('upgrade');
+    const near=(p:{x:number;y:number;z:number})=>Math.hypot(p.x-this.av.x,p.y-this.av.y,p.z-this.av.z)<=AQ.combat.electricRange;
+    for(const c of this.critters)if(this.alive(c)&&near(c)){shock(c);c.hp-=AQ.combat.electricDamage;if(c.hp<=0)this.kill(c,true);}
+    for(const c of this.sharks)if(c.respawnIn<=0&&near(c))shock(c);
+    for(const c of this.sisters.members)if(c.home===this.mapIndex&&near(c))shock(c);
+    const ring=this.add.circle(this.avatarSpr.x,this.avatarSpr.y,20,0x72eaff,.2).setStrokeStyle(3,0xb8faff).setDepth(2600);
+    this.tweens.add({targets:ring,scale:6,alpha:0,duration:shell.settings.access.reduce_motion?100:400,onComplete:()=>ring.destroy()});
+    this.hud.toast(shell.i18n.t('aq.shock_fired'),1.5);
+  }
   private tickTimers(dt: number): void {
+    this.murkLeft=Math.max(0,this.murkLeft-dt);
+    this.electricCd=Math.max(0,this.electricCd-dt);
     this.cantEatCd = Math.max(0, this.cantEatCd - dt);
     this.huntToastCd = Math.max(0, this.huntToastCd - dt);
     this.warnCd = Math.max(0, this.warnCd - dt);
@@ -1650,7 +1755,7 @@ export class AquaticScene extends Phaser.Scene {
   private drawRiver(dt: number): void {
     this.sisterView.hide();
     const { width: w, height: h } = this.scale;
-    const C = AQ.camera, spec = this.run!.spec, rb = this.rb!;
+    const C = this.viewCamera(), spec = this.run!.spec, rb = this.rb!;
     const cam = cameraBehind({ x: rb.x, y: -rb.s, z: rb.z, heading: -Math.PI / 2 }, C);
     if (!rb.airborne) cam.z = Math.min(cam.z, spec.depth - 6);
     const above = cam.z > spec.depth;
@@ -1681,15 +1786,26 @@ export class AquaticScene extends Phaser.Scene {
   }
 
   // ---- drawing: the behind view ---------------------------------------------------------------------
+  /** Back the presentation camera away only when a grown body cannot fit above the native dock. */
+  private viewCamera() {
+    const C = AQ.camera, h = this.scale.height;
+    const maxBodyHeight = Math.max(1, Math.min(h * C.avatarMaxScreenShare, organicPlayBottom(h) * C.avatarMaxPlayShare));
+    // Keep the organism above the portrait touch controls; the dock and control layout retain their owners.
+    const avatarY = shell.input.scheme === "touch" && this.scale.height > this.scale.width ? .48 : C.avatarY;
+    return { ...C, avatarY, back: Math.max(C.back, bodySize(this.me) * C.focal / maxBodyHeight) };
+  }
+
   private drawAvatar(airborne: boolean): void {
+    this.avatarSpr.setData("aqBody", this.me);
     const { width: w, height: h } = this.scale;
-    const C = AQ.camera;
+    const C = this.viewCamera();
     const s = (bodySize(this.me) * C.focal) / C.back / px("aswim");
-    const bob = shell.settings.access.reduce_motion || airborne ? 0 : Math.sin(this.time.now / 260) * 1.5;
+    const bob = shell.settings.access.reduce_motion || airborne || this.panel.touchPaused ? 0 : Math.sin(this.time.now / 260) * 1.5;
     const th = 0.75 + 0.5 * this.thickness;
-    this.avatarSpr.setVisible(true).setPosition(w / 2, h * C.avatarY + bob).setScale(s * th, s).setFlipX(false).setFlipY(false)
+    this.avatarSpr.setVisible(true).setPosition(w / 2, Math.min(h * C.avatarY, organicPlayBottom(h) - bodySize(this.me) * C.focal / C.back * .6) + bob).setScale(s * th, s).setFlipX(false).setFlipY(false)
       .setDepth(2500).setAlpha(1).play(animKey("aswim", "swim", `back${this.look}`), true);
-    if (this.flashLeft > 0) this.avatarSpr.setTint(0xff8080);
+    if(this.playerStunLeft>0)this.avatarSpr.setTint(0x89edff);
+    else if (this.flashLeft > 0) this.avatarSpr.setTint(0xff8080);
     else this.avatarSpr.clearTint();
     // the parts you wear, drawn over your back (2026-11-08), in step with your swim frame
     const frame = this.avatarSpr.anims.currentFrame?.index ?? 1;
@@ -1705,7 +1821,7 @@ export class AquaticScene extends Phaser.Scene {
 
   private drawBehind(dt: number): void {
     const { width: w, height: h } = this.scale;
-    const C = AQ.camera;
+    const C = this.viewCamera();
     const cam = cameraBehind(this.av, C);
     if (!this.av.airborne) cam.z = Math.min(cam.z, this.map.surface - 6); // stay under the surface unless you breach
     const above = cam.z > this.map.surface;
@@ -1805,14 +1921,18 @@ export class AquaticScene extends Phaser.Scene {
   private hudExtras(): void {
     const i = shell.i18n, me = this.me;
     const row = (p: AqPart | null, unique: boolean) => ({
-      atlas: "aprops", frame: p ? firstFrame(this.propsLayout, "bob", p) : null, unique,
-      text: p ? `${i.t(`aq.part_${p}`)}: ${i.t(`aq.desc_${p}`)}` : i.t(unique ? "aq.slot_river" : "aq.slot_empty"),
+      part: p, atlas: "aprops", frame: p ? firstFrame(this.propsLayout, "bob", p === "toxicTendrils" || p === "electricOrgan" ? "gills" : p) : null, unique,
+      text: p ? `${i.t(`aq.part_${p}`)}${["fins","jaws","plates"].includes(p)?` ${partTier(me,p)}`:""}: ${i.t(`aq.desc_${p}`)}` : i.t(unique ? "aq.slot_river" : "aq.slot_empty"),
     });
     const rows = [
       ...Array.from({ length: slots(me) }, (_, n) => row(me.parts[n] ?? null, false)),
       ...UNIQUE_PARTS.map((_, n) => row(me.uniques[n] ?? null, true)),
     ];
     this.hud.parts(rows);
+    this.hud.upgrades(AQ_STATS.map(s => i.t("effect.level", { name: i.t(`up.${s}`), level: me.ups[s], effect: upgradeEffect(me, s, i) })));
+    this.hud.growth(me, this.av.dashCd);
+    this.hud.electric(has(me,"electricOrgan"),this.electricCd);
+    this.hud.build(me, i.t(`aq.map_${this.run ? "river" : this.map.id}`),this.map.id);
     const paceLabel = i.t(outOfBreath(me) ? "aq.pace_out" : this.wantFast ? "aq.pace_fast" : "aq.pace_cruise");
     this.hud.health(me.hp, maxHp(me));
     this.hud.stamina(me.stamina, maxStamina(me), paceLabel, AQ.stamina.abilityCost / maxStamina(me), AQ.stamina.minFast);

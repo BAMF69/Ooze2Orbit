@@ -1,0 +1,18 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aquatic frame material review</title>
+<style>
+:root{--safe-left:0px;--safe-right:0px;--safe-top:0px;--safe-bottom:0px;--text-scale:1}*{box-sizing:border-box}body{margin:0;background:#0b1b25;color:#eadfc9;font:17px Georgia,serif}h1{font-size:24px;margin:20px 0 8px}p{font-size:14px;color:#a9bab5;margin:0 0 16px}.review{width:1080px;margin:auto}.sample{height:218px;overflow:hidden;position:relative;border-top:1px solid #28414a}.sample h2{font-size:17px;margin:12px 0;position:absolute;z-index:2}.sample iframe{border:0;position:absolute;left:0;top:-280px;width:1080px;height:500px}.sample span{z-index:2;position:absolute;top:37px;left:0;font-size:13px;color:#adbbb3}
+</style><body><main class="review"><h1>Aquatic tab crests · live renderer material review</h1><p>Original painted frame ends, without added corner pieces. Shared production renderer; illustrative progress values.</p><div id="samples"></div></main>
+<script type="module">
+const diet=new URLSearchParams(location.search).get('diet');
+if(!['herbivore','carnivore','omnivore'].includes(diet)){
+ const descriptions={herbivore:'Flowing kelp and a quiet organelle accent',carnivore:'Webbed dorsal fin with fine rays',omnivore:'A keel of overlapping armored scutes'};
+ for(const d of Object.keys(descriptions)){const panel=document.createElement('section');panel.className='sample';panel.innerHTML=`<h2>${d[0].toUpperCase()+d.slice(1)}</h2><span>${descriptions[d]}</span><iframe title="${d} frame" src="?diet=${d}"></iframe>`;document.querySelector('#samples').append(panel)}
+}else{
+ await import('./src/game/hudDock.css');const {installIllustratedHud}=await import('./src/game/illustratedHud.ts');
+ document.body.className='aquatic-display';document.body.dataset.overlayDiet=diet;
+ document.body.innerHTML=`<main class="aquatic-remaster compact-organic-hud"><section class="hud-dock"><div class="dock-header"><div class="dock-tabs"><button aria-selected="true">Growth</button><button>Upgrades</button><button>Info</button></div></div><div class="dock-growth-panel"><div class="cell-growth-segments">${['I','II','III','IV'].map((roman,i)=>`<div class="growth-section ${i===0?'current':'future'}" style="--growth-color:#b4bd80"><span class="growth-label" data-roman="${roman}">${i===0?'24/40':''}</span><div class="growth-track"><span style="width:${i===0?'60%':'0'}"></span></div></div>`).join('')}</div></div></section><aside class="dock-status-group" style="display:none"><label class="dock-dash">Ready<progress></progress></label></aside></main>`;
+ // Standalone art-review lifetime: no game scene, input, save, or simulation state.
+ const lifetime={events:{once(_event,dispose){window.addEventListener('pagehide',dispose,{once:true})}}};
+ const root=document.querySelector('main');installIllustratedHud(lifetime,root,root.querySelector('.hud-dock'),root.querySelector('aside'));
+}
+</script></body></html>
