@@ -1,5 +1,11 @@
 # Handoff
 
+## Space hub and civilization modes design (2026-11-17, docs only, branch `docs/space-hub-civ-modes`)
+BAMF69 approved: space landings lead to seeding and guiding new species as the Gardener (indirect powers plus some
+direct control), ruin dungeons (creature levelgen) or battlefield matches; rewards are ship tech, blueprints and relics.
+Civilization becomes a campaign of battlefield modes sharing one frame (tower wars built; hero lane wars, tug-of-war,
+frenzy, survival, stealth planned; MOBA and autobattler dropped). Docs: stage docs 04 and 05; ROADMAP Later.
+
 ## Creature level generator (levelgen worktree, 2026-11-17)
 Branch `feat/creature-levelgen` from `feat/creature-remaster` (5a2f3a9). New Water worlds come from a
 progression graph (critical chain, loops, nursery, class trials keyed on the temperament class skill,

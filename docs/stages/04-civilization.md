@@ -174,6 +174,39 @@ checks cover real pointer placement; physical-device/controller expansion remain
   screen, so the player sees which temperament they are building *(Claude's pick for the tally)*.
 - The "5 times" threshold is a starting point to tune in playtests.
 
+## Battlefield modes *(BAMF69 2026-11-17)*
+Tower wars is the first of several modes that share this stage's battlefield, art and RTS controls. The player
+does not pick a mode: the **civilization stage is a campaign** where each region of the planet is fought in a set mode,
+and in the space stage the mode comes from the planet you land on (`docs/stages/05-space.md`, "Landing").
+
+### The shared frame *(Claude's pick, agreed 2026-11-17)*
+Every mode uses the same map and art, the same gather-and-build economy, the same hero (your creature) and the same
+scoring. Only the rules of engagement change.
+- **Each mode offers an aggressive way and a cautious way to win** (the Gardener rule), and **hero and positioning
+  play count as adaptable**.
+- **Each mode lists its Gardener levers**, one per side, as tower wars does below.
+- Shared systems to build once: units with stats, lane pathing, buildings, the hero, income, wave previews, the
+  temperament tally and the cause log.
+
+### The modes
+References are Warcraft 3 and StarCraft custom maps, mechanics only (no names, art or units from them). The MOBA and
+the autobattler were considered and **dropped** (BAMF69 2026-11-17) in favor of more hero-focused modes.
+
+| Mode | Reference | Core idea | Aggressive way | Cautious way | Build order *(Claude's pick)* |
+|---|---|---|---|---|---|
+| **Tower wars** (built) | Line Tower Wars, Legion TD | Your maze against their sends, your sends against their maze | Destroy their base | Out-earn them about 5 to 1 | Done |
+| **Hero lane wars** | Hero Line Wars | Your hero holds a lane while you send units at the enemy hero | Kill their hero and base | Outlast their sends and out-earn them | 1st: tower wars plus the hero, nearly free |
+| **Tug-of-war** | Castle Fight | Build structures that spawn units on their own; the units march and fight without orders | Push the front to their base | Hold the line while your economy grows | 2nd: pure spawners, no unit control |
+| **Frenzy** | Footmen Frenzy | Bases spawn units on a timer; you level the hero and choose upgrades, often in teams | Break the enemy bases | Hold yours longest | 3rd: adds teams and hero upgrades |
+| **Survival** (BAMF69 2026-11-17) | Hero Siege | The hero and defenses hold out against waves that keep growing | Hunt down the wave spawners | Survive every wave | 4th |
+| **Stealth mission** (BAMF69 2026-11-17) | Sheep Tag (the hide-and-hunt idea) | The hero slips through a guarded settlement to reach a goal | Strike the target and fight out | Reach it unseen | 5th: reuses the creature stage's readable stealth |
+
+### Where the modes appear
+- **Civilization stage:** a campaign across the planet's regions, each in a set mode *(Claude's pick: the first
+  region is tower wars, then a new mode per region, so each one is taught before it is mixed)*. Whether the order is
+  fixed or partly random is still open.
+- **Space stage:** guiding other species' civilizations as the Gardener (`docs/stages/05-space.md`, "Landing").
+
 ## The Gardener's levers *(the Gardener rule, BAMF69 2026-11-10; levers are Claude's picks)*
 
 | Lever | Helps | Why |
@@ -217,7 +250,7 @@ one income dwarfs the other
 |---|---|
 | Victory type | Base destroyed: a stronger war fleet. Out-earned: more ships and stronger defenses |
 | Technology heritage | The species' first ship parts |
-| Took `T0|▼|` tech? | A faster start, but `T0|▼|` begins partly adapted |
+| Took T0&#124;▼&#124; tech? | A faster start, but T0&#124;▼&#124; begins partly adapted |
 | `gardener.harshness` | Whether the species welcomes or resents the Gardener when it learns the truth |
 
 The space stage (built) reads the old victory types (conquest, trade, faith); it needs updating when Toy 2 is built.
@@ -236,7 +269,8 @@ The space stage (built) reads the old victory types (conquest, trade, faith); it
 ## Open questions
 | Question | Why it matters |
 |---|---|
-| One battle, or a short campaign of battles across the planet? | The stage's length and goal |
+| How many regions in the campaign, and is the order fixed or partly random? (BAMF69 2026-11-17: a campaign, the player does not pick modes) | The stage's length |
+| What does each new mode need that tower wars lacks (teams, spawners, hero upgrades, guard AI)? | Build cost per mode |
 | What happens if your base falls? *(Claude's pick: you lose that battle with a setback and fight again)* | Pillar 1: no game over for the Gardener |
 | Which resources, exactly? | Fewer is easier to read |
 | Can the hero die in battle, and what does it cost? | Hero use is part of adaptable |
