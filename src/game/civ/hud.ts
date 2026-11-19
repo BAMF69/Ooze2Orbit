@@ -2,7 +2,7 @@
 // Lifecycle: scene owns this overlay. Menus leave the mazes visible; Details is a scene pause gate.
 import type * as Phaser from "phaser";
 import type { I18n } from "../../core/i18n";
-import { foodIncome, income, towerCost, type Battle } from "./wars";
+import { foodIncome, income, towerCost, wavePreview, type Battle } from "./wars";
 import { SENDS, TOWERS, WAR, type SendKind, type TowerKind } from "./warsTuning";
 import { civTheme, type CivTemperament } from "./theme";
 import "./controls.css";
@@ -20,6 +20,7 @@ export interface CivHudCallbacks {
 export interface CivHudState {
   selection: CivSelection; patrol: boolean; menu: CivMenu | null; scheme: string;
   inherited: { strength: number; maxHp: number; climb: boolean }; pauseMenus: boolean;
+  campaign?: { context: string; tally: string; causes: string; blocked: boolean; title: string; body: string; action: string; actionDisabled: boolean; hideRematch: boolean };
   temperament: CivTemperament; commandFocus: boolean; selectedTower?: TowerKind; notice?: string; diet?: string; saveReady?: boolean;
 }
 interface Card { button: HTMLButtonElement; title: HTMLElement; effect: HTMLElement; cost: HTMLElement; }
@@ -61,6 +62,9 @@ function symbol(kind: string): HTMLElement {
 }
 export class CivHud {
   readonly root = node("div", "stage-ui-layer civ-controls civ-hd");
+  private campaignLine = node("div", "civ-campaign-line");
+  private tallyLine = node("div", "civ-campaign-tally");
+  private practiceLinks = node("div", "civ-campaign-practice");
   private header = node("div", "civ-hd-header");
   private resources = node("div", "civ-hd-resources");
   private ore = node("strong"); private food = node("strong"); private payday = node("small");
@@ -97,7 +101,7 @@ export class CivHud {
     ore.append(symbol("ore"), oreCopy); food.append(symbol("food"), foodCopy); this.resources.append(ore, food, this.payday);
     const settlements = node("div", "civ-hd-settlements"); settlements.append(this.base.root, this.rival.root);
     const pressure = node("div", "civ-hd-pressure"); this.wave.append(this.waveTitle, this.waveBody); pressure.append(this.wave, this.economy.root);
-    this.header.append(this.resources, settlements, pressure);
+    this.header.append(this.resources, settlements, pressure, this.campaignLine, this.tallyLine);
     this.roles.setAttribute("role", "tablist"); this.roles.setAttribute("aria-label", this.t("commands"));
     for (const role of ["hero", "builder", "summons", "workers"] as CivSelection[]) {
       const b = this.button(`select-${role}`, role === "workers" ? "farmer" : role, () => cb.select(role));
@@ -124,7 +128,12 @@ export class CivHud {
     const resultPanel = node("div", "civ-hd-result-panel"), resultButtons = node("div", "civ-hd-result-actions");
     const rematch = this.button("rematch", "patrol", () => cb.rematch()); put(rematch.lastElementChild as HTMLElement, this.t("rematch"));
     this.resultSpace = this.button("space", "summons", () => cb.space()); put(this.resultSpace.lastElementChild as HTMLElement, this.t("continue_space"));
-    resultButtons.append(rematch, this.resultSpace); resultPanel.append(this.resultTitle, this.resultBody, resultButtons); this.result.append(resultPanel);
+    resultButtons.append(rematch, this.resultSpace); resultPanel.append(this.resultTitle, this.resultBody, resultButtons, this.practiceLinks);
+    for (const difficulty of ["easy", "medium", "hard"]) {
+      const b = this.button(`practice-${difficulty}`, "summons", () => { const q = new URLSearchParams(location.search); q.set("stage", "civ"); q.set("mode", "tower"); q.set("difficulty", difficulty); location.search = q.toString(); });
+      put(b.lastElementChild as HTMLElement, this.i18n.t("civ.campaign.practice_button", { difficulty: this.i18n.t(`civ.campaign.${difficulty}`) }));
+      this.practiceLinks.append(b);
+    } this.result.append(resultPanel);
     this.notice.setAttribute("role", "status"); this.root.append(this.header, this.details, this.dock, this.result);
     this.surfaces.push(laterSurface(this.dock, "window"));
     document.body.append(this.root); scene.events.once("shutdown", () => this.destroy());
@@ -154,7 +163,7 @@ export class CivHud {
     const dock = this.dock.getBoundingClientRect();
     // Crests project above the tab bases. Keep both mazes clear of that silhouette.
     const crest = Number.parseFloat(getComputedStyle(this.root).getPropertyValue('--civ-crest-clear')) || 42;
-    return { top, bottom: dock.top - crest };
+    return matchMedia("(max-height:480px) and (orientation:landscape)").matches ? { top, bottom: this.root.getBoundingClientRect().bottom - 12, right: dock.left - 20 } : { top, bottom: dock.top - crest };
   }
 
   update(b: Battle, state: CivHudState): void {
@@ -178,16 +187,16 @@ export class CivHud {
     this.dock.classList.toggle("stage-modal", state.commandFocus && state.scheme === "controller");
     this.menu.setAttribute("aria-labelledby", `civ-tab-${state.selection}`);
     this.roles.setAttribute("aria-label", this.t("commands"));
-    const side = b.sides[0], ended = b.status !== "playing", selection = state.selectedTower ?? "thorn";
+    const side = b.sides[0], ended = b.status !== "playing" || !!state.campaign?.blocked, selection = state.selectedTower ?? "thorn";
     const orePayday = income(b, 0) * (b.lever === "ore" ? WAR.oreMult : 1);
     put(this.ore, this.t("ore_amount", { n: Math.floor(side.ore) })); put(this.food, this.t("food_amount", { n: Math.floor(side.food) }));
     put(this.oreFlow, this.t("per_payday", { n: orePayday.toFixed(1) })); put(this.foodFlow, this.t("per_payday", { n: foodIncome(b, 0) }));
     put(this.payday, this.t("payday", { n: Math.ceil(WAR.tick - b.incomeClock) }));
     put(this.base.label, this.t("your_base", { hp: side.hp, max: WAR.baseHp })); this.base.track.value = side.hp / WAR.baseHp;
     put(this.rival.label, this.t("rival_base", { hp: b.sides[1].hp, max: WAR.baseHp })); this.rival.track.value = b.sides[1].hp / WAR.baseHp;
-    const next = b.wave + 1, kind: SendKind = next % 3 === 0 ? "shell" : next % 2 === 0 ? "swarm" : "runner";
+    const next = b.wave + 1, { kind, count } = wavePreview(b);
     put(this.waveTitle, this.t("next_wave", { n: next, seconds: Math.ceil(b.waveClock) }));
-    put(this.waveBody, this.t("wave_kind", { n: 2 + Math.floor(next / 3) + (b.rival === "raider" ? 1 : 0), kind: this.t(kind), brood: kind === "swarm" ? this.t("brood_bodies") : "" }));
+    put(this.waveBody, this.t("wave_kind", { n: count, kind: this.t(kind), brood: kind === "swarm" ? this.t("brood_bodies") : "" }));
     const need = income(b, 1) * WAR.incomeRatio;
     put(this.economy.label, this.t("income_goal", { own: income(b, 0).toFixed(1), need: need.toFixed(1) })); this.economy.track.value = Math.min(1, income(b, 0) / need);
     for (const meter of [this.base, this.rival, this.economy]) meter.track.setAttribute("aria-label", meter.label.textContent!);
@@ -231,7 +240,8 @@ export class CivHud {
     for (const send of Object.keys(SENDS) as SendKind[]) {
       const spec = SENDS[send]; this.paintCard(send, this.t(send), this.t(`send_${send}`, { hp: spec.hp, damage: spec.damage, income: spec.income, armor: spec.armor }), this.t("send_cost", { ore: spec.ore, food: spec.food }), ended || side.ore < spec.ore || side.food < spec.food || b.units.length + (send === "swarm" ? 3 : 1) > WAR.unitLimit);
     }
-    const detail = [this.t("objective"), this.t("income_detail", { own: income(b, 0).toFixed(1), rival: income(b, 1).toFixed(1), factor: WAR.incomeRatio, seconds: WAR.tick }),
+    put(this.campaignLine, state.campaign?.context ?? ""); put(this.tallyLine, state.campaign?.tally ?? "");
+    const detail = [state.campaign?.context ?? "", state.campaign?.tally ?? "", state.campaign?.causes ?? "",this.t("objective"), this.t("income_detail", { own: income(b, 0).toFixed(1), rival: income(b, 1).toFixed(1), factor: WAR.incomeRatio, seconds: WAR.tick }),
       this.t("hero_inheritance", { strength: state.inherited.strength, damage: WAR.heroDamage + b.hero.strength, vitality: state.inherited.maxHp, hp: b.hero.maxHp, climb: this.t(state.inherited.climb ? "climb_yes" : "climb_no") }),
       this.t("hero_ability", { damage: WAR.heroDamage * 2 + b.hero.strength, range: WAR.abilityRange, seconds: WAR.abilityCooldown, recovery: WAR.heroRespawn, cost: WAR.killOre }),
       this.t("workers_detail", { gatherers: side.gatherers, builders: side.builders, farmers: side.farmers ?? 0, food: foodIncome(b, 0), ore: orePayday.toFixed(1) }),
@@ -244,7 +254,18 @@ export class CivHud {
     this.result.hidden = !ended;
     put(this.resultTitle, this.t(b.status === "fallen" ? "fallen" : b.status === "base" ? "victory_base" : "victory_income"));
     put(this.resultBody, this.t(b.status === "fallen" ? "fallen_body" : state.saveReady === false ? "notice.save_failed" : "victory_body")); this.resultSpace.hidden = b.status === "fallen"; this.resultSpace.disabled = state.saveReady === false;
+    if (state.campaign) {
+      const c = state.campaign;
+      if (c.blocked) { put(this.resultTitle, c.title); put(this.resultBody, c.body); }
+      else if (ended && b.status !== "fallen" && state.saveReady) put(this.resultBody, this.i18n.t("civ.campaign.saved") + " " + c.context);
+      put(this.resultSpace.lastElementChild as HTMLElement, c.action);
+      this.resultSpace.disabled = c.actionDisabled;
+      this.resultSpace.hidden = b.status === "fallen" && !c.blocked;
+      this.result.querySelector<HTMLButtonElement>('[data-action="rematch"]')!.hidden = c.hideRematch;
+      this.practiceLinks.hidden = !ended;
+    }
     this.dock.inert = ended || this.detailsOpen; this.menu.inert = this.detailsOpen; this.header.inert = ended;
   }
   destroy(): void { this.surfaces.forEach(dispose => dispose()); this.root.remove(); }
 }
+import "./campaign.css";

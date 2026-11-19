@@ -68,16 +68,23 @@ export class CivIllustrations {
     if (b.tile <= 0) { this.labels.forEach(label => label.setVisible(false)); this.images.forEach(image => image.setVisible(false)); return; }
     const tile = b.tile, clock = state.reduced ? 0 : s.clock;
     s.sides.forEach((side, n) => {
-      const origin = n === 0 ? b.left : b.right, width = tile * WAR.cols, height = tile * WAR.rows;
+      const origin = n === 0 ? b.left : b.right, width = tile * s.board.cols, height = tile * s.board.rows;
       g.fillStyle(0x081f24, .92).fillRoundedRect(origin.x - 6, origin.y - 5, width + 12, height + 12, 10);
       g.lineStyle(2, TEAM[n], .8).strokeRoundedRect(origin.x - 6, origin.y - 5, width + 12, height + 12, 10);
       this.labels[n].setVisible(true).setText(this.i18n.t(`civ.hd.${n === 0 ? "your_maze" : "rival_maze"}`)).setPosition(origin.x, origin.y - 25);
-      for (let y = 0; y < WAR.rows; y++) for (let x = 0; x < WAR.cols; x++) {
+      for (let y = 0; y < s.board.rows; y++) for (let x = 0; x < s.board.cols; x++) {
         const px = origin.x + x * tile, py = origin.y + y * tile;
         g.fillStyle((x + y) % 2 ? 0x49634c : 0x405b47, .91).fillRoundedRect(px + 1, py + 1, tile - 2, tile - 2, Math.min(5, tile / 7));
         g.lineStyle(1, 0x8ba176, .18).lineBetween(px + 4, py + 3, px + tile - 4, py + 3);
       }
-      const path = route(side.towers);
+      // Reuse the existing ruin illustration for impassable natural outcrops; no new asset.
+      for (const [i, obstacle] of s.board.obstacles.entries()) {
+        const p = civPoint(b, n, obstacle);
+        g.fillStyle(0x222e2e, .8).fillRoundedRect(p.x - tile * .43, p.y - tile * .43, tile * .86, tile * .86, 4);
+        this.paint(`obstacle-${n}-${i}`, 15, p, tile * .92, 3, 0, .8, 0x9cac91);
+        g.lineStyle(1, 0xdbc995, .7).strokeRect(p.x - tile * .3, p.y - tile * .3, tile * .6, tile * .6);
+      }
+      const path = route(side.towers, undefined, s.board);
       g.lineStyle(Math.max(2, tile * .18), 0xc7cf9d, .18);
       for (let j = 1; j < path.length; j++) { const a = civPoint(b, n, path[j - 1]), z = civPoint(b, n, path[j]); g.lineBetween(a.x, a.y, z.x, z.y); }
       // Quiet directional chevrons make the lane understandable without implying a new mechanic.
@@ -102,12 +109,12 @@ export class CivIllustrations {
           fx.lineStyle(2, color, .7).strokeCircle(end.x, end.y, tile * (t.kind === "mortar" ? .34 : .16));
         }
       }
-      const home = civPoint(b, n, WAR.exit); this.badge(home, tile * 1.2, n);
+      const home = civPoint(b, n, s.board.exit); this.badge(home, tile * 1.2, n);
       this.paint(`base-${n}`, side.hp > 0 ? 3 : 15, { x: home.x, y: home.y - tile * .07 }, tile * 1.22, 5);
-      const worker = civPoint(b, n, { x: 9, y: 6 }), farmer = civPoint(b, n, { x: 8, y: 6 });
+      const worker = civPoint(b, n, { x: s.board.cols - 2, y: s.board.rows - 1 }), farmer = civPoint(b, n, { x: s.board.cols - 3, y: s.board.rows - 1 });
       this.paint(`ore-${n}`, 13, { x: worker.x, y: worker.y - tile * .15 }, tile * .65, 3);
       this.paint(`gatherer-${n}`, 11, { x: worker.x - tile * .2 + Math.sin(clock * 2) * tile * .06, y: worker.y + tile * .14 }, tile * .62, 5);
-      const builder = civPoint(b, n, { x: 10, y: 6 });
+      const builder = civPoint(b, n, { x: s.board.cols - 1, y: s.board.rows - 1 });
       this.paint(`builder-${n}`, 7, builder, tile * .7, 5, Math.sin(clock * 2.5) * .025);
       if ((side.farmers ?? 0) > 0) {
         this.paint(`food-${n}`, 14, { x: farmer.x, y: farmer.y - tile * .1 }, tile * .65, 3);

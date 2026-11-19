@@ -4,6 +4,9 @@
 > Claude reads the **Now** section at session start.
 
 ## Now (max 3 items)
+Civilization chat 2026-11-18: campaign framework + three seeded tower-wars difficulties built on
+`feat/civilization-campaign-tower`; easy/medium/hard human playtest is the next gate. Hero lane wars,
+then tug-of-war follow separate PR/playtests. See HANDOFF_CIVILIZATION.md and the approved campaign plan.
 Creature-chat update 2026-11-15: Medium encounter pass built (three enemy behaviors, vertical
 swim routes, vent timing, limited traps); human difficulty/fun playtest next.
 Creature-chat priority approved 2026-11-13: procedural creature content before controls/art.

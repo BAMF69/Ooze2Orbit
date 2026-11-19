@@ -1,5 +1,15 @@
 # Handoff
 
+
+## Civilization campaign step 2 (2026-11-18, feat/civilization-campaign-tower)
+Versioned nine-slot battle-boundary progress, isolated standalone URLs and easy/medium/hard tower wars
+(11x7 / 15x9 / 19x11) with seeded route-safe obstacles and rival scaling. Existing live illustrated tabs,
+hero/patrol, Details/pause and guarded pointer placement retained. Hero/tug register as unavailable until
+later steps; progress pauses there rather than pretending tower wins clear other modes. Campaign Continue
+and bundle integration are the only shared edits. No new dependency/art; old lineage records preserved.
+Approved plan: CIVILIZATION_CAMPAIGN_PLAN.md; as built: stages/04-civilization.md; verification and preview:
+HANDOFF_CIVILIZATION.md. STOP for BAMF69's three-difficulty playtest before hero lane wars.
+
 ## Civilization campaign spec (2026-11-18, docs only, branch `docs/civ-campaign`)
 BAMF69: finish the civilization stage by beating tower wars, tug-of-war (Castle Fight) and hero lane wars at easy,
 medium and hard; Footmen Frenzy optional; tower wars difficulty = bigger field with random obstacles. Spec:

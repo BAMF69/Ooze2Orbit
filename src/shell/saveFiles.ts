@@ -9,6 +9,7 @@
 //           when it loads. The saves themselves live in the SaveStore (autosaved by the aquatic scene).
 // Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
 // ---------------------------------------------------------------------------
+import { readCampaign, CAMPAIGN_SLOT } from "../game/civ/campaign";
 import { Log } from "../core/log";
 import { EXPORT_SLOTS, RUN_SLOT, packBundle, unpackBundle, unpackRun } from "../game/aquatic/runSave";
 import type { GameKey, Shell } from "./app";
@@ -20,10 +21,11 @@ const slotData = (shell: Shell, slot: string): unknown => {
   try { return shell.saves.load(slot).envelope?.data ?? null; } catch { return null; }
 };
 
-/** The stage to continue: the most recently saved of the aquatic run and the space campaign (null: neither). */
+/** The stage to continue: the most recently saved aquatic, space or civilization campaign (null: none). */
 export function latestRun(shell: Shell): GameKey | null {
   const aquatic = slotData(shell, RUN_SLOT), space = slotData(shell, STAGE_SLOT.space);
-  const runs: [GameKey, unknown, boolean][] = [["aquatic", aquatic, unpackRun(aquatic).run !== null], ["space", space, isSpaceSave(space)]];
+  const civ = slotData(shell, CAMPAIGN_SLOT);
+  const runs: [GameKey, unknown, boolean][] = [["aquatic", aquatic, unpackRun(aquatic).run !== null], ["space", space, isSpaceSave(space)], ["civ", civ, !!readCampaign(civ).campaign]];
   let best: GameKey | null = null, at = -1;
   for (const [key, raw, live] of runs) if (live && savedAt(raw) > at) { best = key; at = savedAt(raw); }
   return best;

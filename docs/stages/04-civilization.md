@@ -212,7 +212,7 @@ the autobattler were considered and **dropped** (BAMF69 2026-11-17) in favor of 
   it opens once the three easy battles are won, and its reward is an extra technology for the space stage)*.
 - **Survival and stealth missions** stay in the design for later (space landings, a future campaign update); they are
   not part of this campaign.
-- **Order** *(Claude's pick)*: all three easies first (tower wars, then tug-of-war, then hero lane wars), then the
+- **Order** *(Claude's pick)*: all three easies first (tower wars, then hero lane wars, then tug-of-war; approved framework revision 2026-11-18), then the
   mediums, then the hards. Each mode is taught at easy before any mode gets harder. Within a difficulty, the player
   plays the battles in the set order (the player does not pick modes, 2026-11-17).
 - **Tower wars difficulty grows the battlefield** (BAMF69 2026-11-18): each difficulty is a **bigger playfield with
@@ -306,3 +306,42 @@ The space stage (built) reads the old victory types (conquest, trade, faith); it
 - Controller tower selection releases command navigation for build-cursor movement without hiding the Builder page; West or selecting Builder again re-enters command navigation. Native buttons retain stable DOM identity and 44px minimum targets.
 - Verification: 490 unit tests; type/shader checks; GPU production smoke. Browser tests check identical full layout/dock geometry across all four tabs and Back on 1440×900, 375×812, 812×375 and 800×1280; actual build completion, sends, Farmer, live clock, patrol/manual hero, Details freeze and controller selection. Touch emulation also checked; physical hardware remains pending.
 - Preview: http://localhost:5186/ from this civilization worktree. Port 5176 was found serving the older scene; do not use that link for the remaster. Nothing committed or pushed.
+
+## Campaign step 2: as built (2026-11-18)
+
+- Isolated `feat/civilization-campaign-tower`, based on merged main `91067f3`; approved framework:
+  `CIVILIZATION_CAMPAIGN_PLAN.md`. Only tower wars runs in this step. Hero/tug are registered but
+  explicitly unavailable until their own playtest gates; they never silently launch tower wars.
+- Normal civilization entry creates/resumes `civ_campaign`, a versioned, creature-bound nine-slot
+  checkpoint. Approved order (Claude's pick): tower/hero/tug at easy, then medium, then hard.
+  The first accepted win per slot counts once. No mid-match checkpoint: reload/rematch restarts
+  the same battle seed. A defeat never clears progress. Corrupt/newer/mismatched saves are preserved
+  and reported; a practice launch remains available. Existing one-battle lineage records remain valid.
+- Standalone `?stage=civ&mode=tower&difficulty=easy|medium|hard&seed=11` is isolated practice and
+  does not write lineage or campaign. Unsupported modes/parameters show an explanation. Result
+  panels offer all three tower difficulties for this playtest. Future space reuse can call the pure registry.
+- Difficulty tuning (Claude's picks, awaiting playtest): easy 11x7/0 obstacles, medium 15x9/12,
+  hard 19x11/30. One seeded immutable terrain layout serves both sides. Bounded candidate placement
+  accepts obstacles only with entry and hero-home routes; endpoint columns/home stay clear.
+  Existing ruin art represents natural outcrops. No new art or dependencies.
+- Medium/hard add 1/2 incoming sends, 15%/30% incoming health, 9/10 rival base income and stronger
+  rival growth/defenses. First waves allow 35/40 seconds of setup; hard waves recur every 22s.
+  All values are in `civ/battlefieldTuning.ts`; preview and actual spawn counts use one function.
+- `wars.ts`, hero routes/patrol, rival placement, rendering, previews, cursor bounds and pointer
+  mapping read the same per-battle board. Both sides preserve routes for every moving unit's next
+  waypoint. Terrain blocks nonclimbing heroes; inherited climbing retains its behavior.
+  Larger natural detours give no free adaptable credit: maze evidence subtracts the generated baseline.
+- The fixed illustrated dock and live tabs remain. Portrait stacks grids; short landscape keeps a
+  fixed right command panel. Combat/Details/shell/rotation pause rules remain. New compact header
+  shows campaign/practice, difficulty, seed and live temperament shares; Details explains the causes.
+- Boundary saves gate Next; failures offer explicit retry without duplicated wins. The ninth accepted
+  result persists before lineage finalization, so failed final writes can retry in-session or after reload.
+  Final record averages per-battle evidence and applies the civilization shift cap once. Victory is the
+  majority method; technology ranking sums actual type usage across accepted wins. Unknown lineage,
+  own stage extension and checkpoint fields survive. Space and creature contracts are unchanged.
+- Minimal shared integration: existing bundle module adds/validates `civ_campaign`; menu save selector
+  includes its timestamp for Continue. No shell/core behavior, dependency or other-stage gameplay change.
+- Validation includes an independent flood fill over 2,000 seeds per difficulty, both rival temperaments,
+  construction under live units, all-sized transforms, save failure/reload/idempotence, aggregate heritage,
+  legacy bundle/space compatibility. 820 full-suite tests pass with two workers; 53 focused civilization tests, type/11 shaders and GPU smoke pass. Browser touch/controller and actual Space transition verified; see HANDOFF_CIVILIZATION.
+- STOP after this step for BAMF69's easy/medium/hard playtest. Do not implement hero lane wars yet.

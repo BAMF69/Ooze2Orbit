@@ -1,5 +1,56 @@
 # Civilization remaster handoff
 
+
+## Campaign step 2 — 2026-11-18
+Worktree: sibling `Ooze2Orbit-campaign`; branch `feat/civilization-campaign-tower`; baseline origin/main
+`91067f3`. Earlier `Ooze2Orbit-civilization` remains untouched except its separate approved-plan commit.
+Preview: http://localhost:5192/?stage=civ&mode=tower&difficulty=easy&seed=11 (medium/hard also supported).
+Normal `?stage=civ` resumes campaign. Approved sequence is tower/hero/tug per difficulty; next unavailable
+mode shows a saved-progress explanation and practice buttons. Nine wins are still required; no premature
+Space button after one battle. Hero/tug implementation must wait for this step's playtest.
+
+New pure modules: battlefields.ts (registry/generation/BFS), battlefieldTuning.ts (balance), campaign.ts
+(checkpoint validation/idempotence/aggregate records), progress.ts (save orchestration). wars.ts accepts
+board config; heroOrders/hdLayout/illustrated/HUD use it. Terrain reuses ruin frame15; no new art/deps.
+Generator v1 and campaign v1 reject unsupported versions without overwriting. Battle-boundary checkpoint;
+no mid-battle save. Standalone matches cannot mutate campaign/lineage. Both player and rival construction
+preserve moving-unit routes. Unknown checkpoint/lineage extension data stays; legacy civ records stay valid.
+Minimal shared edits: aquatic/runSave.ts is the existing cross-stage bundle index, now includes and validates
+civ_campaign; shell/saveFiles.ts offers it through existing timestamp-based Continue. No new shared schema.
+Runtime finalization saves ninth result first, then writes the aggregate lineage; Retry save and reload
+recover failure safely. One stage-wide temperament cap; diet separate; usage-ranked technology heritage.
+
+Local dependencies copied into the new checkout; none changed elsewhere. Missing existing creature WebPs
+were hydrated from their exact merged GitHub LFS media and SHA-256 verified, without editing those assets.
+Initial full suite: 812 passed, two unrelated failures (missing creature LFS files and creature minimap 5s
+parallel-contention timeout). Assets restored; rerun uses VITEST_MAX_WORKERS=2 without changing test config.
+Final verification is below. Physical devices remain unverified.
+
+### Step-2 verification complete
+- Wrapper `check`: TypeScript and 11 shader recipes pass. `VITEST_MAX_WORKERS=2 python tools/dev.py test`:
+  **820 tests / 82 files pass** (12 default creature search seeds retained). Final focused civilization
+  suite: **53 tests pass**, including 6,000 generated seeds and real sends/defensive-kill economic victories
+  on all difficulties. No test configuration or other-stage test was changed.
+- Production GPU wrapper smoke passed for hard seed11, with an 8-frame recording and final screenshot.
+  Browser regression passed actual pointer construction/completion, resource flow and Farmer paydays,
+  live fixed tabs, Details timers/tweens freeze, both wins, same-seed rematch, standalone isolation,
+  campaign checkpoint/next-region/reload. Tested 1440x900, 375x812, 812x375, 667x375, 800x1280.
+- Touch/controller browser pass: actual hard-phone cell placement; all native visible button targets
+  >=44px; patrol/manual takeover; rotation freezes and explicit Resume; directional native controller
+  navigation to Thorn, single confirm, retained Builder page and subsequent cursor placement.
+  Input-scheme changes now cancel the gesture without discarding the new key/stick action.
+- Seeded a completed checkpoint through pure campaign functions solely for handoff integration:
+  aggregate legacy-compatible lineage finalized, unknown own/upstream fields retained, actual Space
+  scene entered, civilization DOM cleaned up. This is not a claim hero/tug gameplay exists.
+- Fresh-slot handling was checked against the REAL SaveStore after the browser exposed missing files
+  being confused with damage; missing is allowed, unreadable/newer saves remain protected. Failed final
+  lineage writes retain all nine results and expose retry on touch as well as keyboard/controller.
+- Browser review captures: chat outputs `civ-campaign-{easy,medium,hard}-desktop.png`, hard phone,
+  landscape/small-landscape/tablet, and touch375/667/812. Small-grid physical-device precision and
+  human difficulty/fun remain BAMF69's playtest. No physical hardware certification.
+- Branch is to be pushed for BAMF69 to open/merge the PR; do not push main or begin step3.
+
+
 Date: 2026-11-14 (America/Phoenix)
 Worktree: sibling Ooze2Orbit-civilization
 Branch: feat/civilization-remaster
