@@ -11,7 +11,8 @@
 // ---------------------------------------------------------------------------
 import { Log } from "../core/log";
 import { EXPORT_SLOTS, RUN_SLOT, packBundle, unpackBundle, unpackRun } from "../game/aquatic/runSave";
-import type { Shell } from "./app";
+import type { GameKey, Shell } from "./app";
+import { STAGE_SLOT, isSpaceSave, savedAt } from "../game/stageSaves";
 
 const LOG = "save";
 
@@ -19,9 +20,13 @@ const slotData = (shell: Shell, slot: string): unknown => {
   try { return shell.saves.load(slot).envelope?.data ?? null; } catch { return null; }
 };
 
-/** A run worth continuing is saved (not finished, readable). */
-export function hasRun(shell: Shell): boolean {
-  return unpackRun(slotData(shell, RUN_SLOT)).run !== null;
+/** The stage to continue: the most recently saved of the aquatic run and the space campaign (null: neither). */
+export function latestRun(shell: Shell): GameKey | null {
+  const aquatic = slotData(shell, RUN_SLOT), space = slotData(shell, STAGE_SLOT.space);
+  const runs: [GameKey, unknown, boolean][] = [["aquatic", aquatic, unpackRun(aquatic).run !== null], ["space", space, isSpaceSave(space)]];
+  let best: GameKey | null = null, at = -1;
+  for (const [key, raw, live] of runs) if (live && savedAt(raw) > at) { best = key; at = savedAt(raw); }
+  return best;
 }
 
 /** Download every save slot in one file, named with today's date. */

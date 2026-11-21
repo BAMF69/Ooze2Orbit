@@ -579,6 +579,7 @@ export class MainScene extends Phaser.Scene {
         }
         return true; // it floats past
       }
+      this.record = bump(this.record, f.kind === "meat" ? "meatEaten" : "algaeEaten"); // what you eat shapes the lineage (2026-11-10)
       this.sfx.play(f.kind === "algae" ? "eat_algae" : "eat_meat");
       if (f.fresh) this.evidence[f.kind] += r.gained;
       this.applyFood(r);

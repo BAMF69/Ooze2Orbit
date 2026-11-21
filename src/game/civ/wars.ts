@@ -10,7 +10,7 @@ import type { StageCause } from "../../core/lineage";
 export interface Cell { x: number; y: number }
 export interface Tower extends Cell { id: number; kind: TowerKind; cooldown: number; build: number; shot?: Cell; shotLeft?: number }
 export interface Unit extends Cell { id: number; kind: SendKind; hp: number; maxHp: number; slow: number; target: 0 | 1; waypoint?: Cell }
-export interface Side { hp: number; ore: number; food: number; income: number; gatherers: number; builders: number; towers: Tower[] }
+export interface Side { hp: number; ore: number; food: number; income: number; gatherers: number; builders: number; farmers?: number; towers: Tower[] }
 export interface Hero extends Cell { hp: number; maxHp: number; strength: number; climb: boolean; cooldown: number; ability: number; respawn: number; hurt: number }
 export interface Battle { sides: [Side, Side]; units: Unit[]; hero: Hero; clock: number; incomeClock: number; waveClock: number; wave: number; nextId: number;
   rival: "raider" | "warden";
@@ -37,7 +37,7 @@ export function route(towers: readonly Cell[], start: Cell = WAR.entry): Cell[] 
   return [];
 }
 export function newBattle(hero: Partial<Hero> = {}, rival: Battle["rival"] = "raider"): Battle {
-  const side = (): Side => ({ hp: WAR.baseHp, ore: WAR.startOre, food: WAR.startFood, income: WAR.baseIncome, gatherers: 2, builders: 1, towers: [] });
+  const side = (): Side => ({ hp: WAR.baseHp, ore: WAR.startOre, food: WAR.startFood, income: WAR.baseIncome, gatherers: 2, builders: 1, farmers: 0, towers: [] });
   const maxHp = WAR.heroHp + Math.min(20, Math.max(0, hero.maxHp ?? 0));
   const s: Battle = { sides: [side(), side()], units: [], hero: { x: 8, y: 3, hp: maxHp, maxHp, strength: Math.max(0, Math.min(20, hero.strength ?? 2)), climb: hero.climb ?? false, cooldown: 0, ability: 0, respawn: 0, hurt: 0 },
     clock: 0, incomeClock: 0, waveClock: WAR.firstWave, wave: 0, nextId: 1, rival, lever: "rocky", status: "playing",
@@ -48,22 +48,38 @@ export function newBattle(hero: Partial<Hero> = {}, rival: Battle["rival"] = "ra
   return s;
 }
 export function towerCost(s: Battle, kind: TowerKind): number { return Math.ceil(TOWERS[kind].cost * (s.lever === "rocky" ? WAR.rockyDiscount : 1)); }
-export function place(s: Battle, c: Cell, kind: TowerKind): boolean {
-  if (s.status !== "playing") return false;
-  const side = s.sides[0], cost = towerCost(s, kind);
-  if (!Number.isInteger(c.x) || !Number.isInteger(c.y) || c.x <= 0 || c.x >= WAR.cols - 1 || c.y < 0 || c.y >= WAR.rows || side.towers.some(t => key(t) === key(c))) { s.message = "Choose an empty cell; entrance and base columns stay clear."; return false; }
-  if (side.ore < cost) { s.message = "Not enough ore for that defense."; return false; }
-  if (s.units.some(u => u.target === 0 && (distance(u, c) < 0.8 || (u.waypoint && key(u.waypoint) === key(c))))) { s.message = "A creature occupies that cell."; return false; }
+export type PlacementIssue = "cell" | "ore" | "occupied" | "route" | "ended";
+/** Read-only preview shares the exact construction checks; no spend or message mutation. */
+export function placementIssue(s: Battle, c: Cell, kind: TowerKind): PlacementIssue | null {
+  if (s.status !== "playing") return "ended";
+  const side = s.sides[0];
+  if (!Number.isInteger(c.x) || !Number.isInteger(c.y) || c.x <= 0 || c.x >= WAR.cols - 1 || c.y < 0 || c.y >= WAR.rows || side.towers.some(t => key(t) === key(c))) return "cell";
+  if (side.ore < towerCost(s, kind)) return "ore";
+  if (s.units.some(u => u.target === 0 && (distance(u, c) < 0.8 || (u.waypoint && key(u.waypoint) === key(c))))) return "occupied";
   const candidate = [...side.towers, c];
-  if (!route(candidate).length || s.units.some(u => u.target === 0 && !route(candidate, u).length)) { s.message = "Keep a route open for every creature. A maze cannot seal the lane."; return false; }
+  if (!route(candidate).length || s.units.some(u => u.target === 0 && !route(candidate, u).length)) return "route";
+  return null;
+}
+export function place(s: Battle, c: Cell, kind: TowerKind): boolean {
+  const issue = placementIssue(s, c, kind);
+  if (issue) {
+    if (issue !== "ended") s.message = ({ cell: "Choose an empty cell; entrance and base columns stay clear.", ore: "Not enough ore for that defense.", occupied: "A creature occupies that cell.", route: "Keep a route open for every creature. A maze cannot seal the lane." })[issue];
+    return false;
+  }
+  const side = s.sides[0], cost = towerCost(s, kind), candidate = [...side.towers, c];
   side.ore -= cost; side.towers.push({ ...c, id: s.nextId++, kind, cooldown: 0, build: WAR.buildSeconds });
   s.tally.defenses += cost; s.tally.longest = Math.max(s.tally.longest, route(candidate).length - 1); s.message = `${TOWERS[kind].name} queued. Builders share construction work.`; return true;
 }
-export function train(s: Battle, kind: "gatherer" | "builder"): boolean {
-  const side = s.sides[0], cost = kind === "gatherer" ? WAR.gatherCost : WAR.builderCost, count = kind === "gatherer" ? side.gatherers : side.builders;
+export function train(s: Battle, kind: "gatherer" | "builder" | "farmer"): boolean {
+  const side = s.sides[0];
+  const cost = kind === "gatherer" ? WAR.gatherCost : kind === "farmer" ? WAR.farmerCost : WAR.builderCost;
+  const count = kind === "gatherer" ? side.gatherers : kind === "farmer" ? side.farmers ?? 0 : side.builders;
   if (s.status !== "playing" || side.ore < cost || count >= WAR.maxWorkers) { s.message = "Cannot train: need ore or worker capacity."; return false; }
-  side.ore -= cost; if (kind === "gatherer") side.gatherers++; else side.builders++;
-  s.message = `${kind} trained: ${kind === "gatherer" ? "more ore income and food each payday" : "faster construction"}.`; return true;
+  side.ore -= cost;
+  if (kind === "gatherer") side.gatherers++;
+  else if (kind === "farmer") side.farmers = count + 1;
+  else side.builders++;
+  s.message = `${kind} trained: ${kind === "gatherer" ? "more ore income and food each payday" : kind === "farmer" ? `+${WAR.farmerFood} food each payday` : "faster construction"}.`; return true;
 }
 export function send(s: Battle, kind: SendKind, target: 0 | 1 = 1, free = false): boolean {
   const side = s.sides[target === 1 ? 0 : 1], spec = SENDS[kind], count = kind === "swarm" ? 3 : 1;
@@ -79,6 +95,7 @@ export function setLever(s: Battle): void {
   s.message = s.lever === "ore" ? "Rich ore: +60% ore per payday, funding sends." : "Rocky ground: defenses cost 35% less.";
 }
 export const income = (s: Battle, side: 0 | 1) => s.sides[side].income + s.sides[side].gatherers * WAR.gatherIncome;
+export const foodIncome = (s: Battle, side: 0 | 1) => s.sides[side].gatherers * WAR.gatherFood + (s.sides[side].farmers ?? 0) * WAR.farmerFood;
 function kill(s: Battle, u: Unit, hero = false): void {
   if (u.hp > 0) return;
   const side = s.sides[u.target]; side.ore += WAR.killOre; side.income += WAR.killIncome;
@@ -105,7 +122,7 @@ export function stepBattle(s: Battle, dt: number): void {
   if (h.respawn > 0) { h.respawn = Math.max(0, h.respawn - dt); if (!h.respawn) { h.hp = h.maxHp; h.x = 8; h.y = 3; } }
   if (s.incomeClock >= WAR.tick) {
     s.incomeClock -= WAR.tick;
-    s.sides.forEach((side, n) => { side.ore += income(s, n as 0 | 1) * (n === 0 && s.lever === "ore" ? WAR.oreMult : 1); side.food += side.gatherers * WAR.gatherFood; });
+    s.sides.forEach((side, n) => { side.ore += income(s, n as 0 | 1) * (n === 0 && s.lever === "ore" ? WAR.oreMult : 1); side.food += foodIncome(s, n as 0 | 1); });
   }
   if (s.waveClock <= 0) {
     s.wave++; s.waveClock += WAR.wave;

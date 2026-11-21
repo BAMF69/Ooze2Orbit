@@ -1,4 +1,4 @@
-# Approved open HUD implementation — A-0035 / A-0036
+# Approved open HUD implementation — A-0040 (font) / A-0041 (components)
 
 Implemented for cell and aquatic, 2026-11-16. The approved visual-family v2 and compact portrait-menu
 study are material/layout references only. No interface, lettering or complete frame was extracted.

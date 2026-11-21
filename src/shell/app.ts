@@ -127,18 +127,18 @@ export class Shell {
   scene: GameKey | null = null;
   viewport!: DisplayViewport;
   displayPause = false;
-  private continueAsked = false; // menu "Continue": the next aquatic start resumes the saved run
+  private continueAsked: GameKey | null = null; // menu "Continue": the next start of this stage resumes its save
 
-  /** Start the aquatic stage from the saved run. */
-  continueAquatic(): void {
-    this.continueAsked = true;
-    this.startGame("aquatic");
+  /** Start a stage from its saved run (2026-11-10: aquatic or space, whichever was played last). */
+  continueStage(key: GameKey): void {
+    this.continueAsked = key;
+    this.startGame(key);
   }
 
-  /** The aquatic scene asks once at start whether to resume (and clears it). */
-  takeContinue(): boolean {
-    const c = this.continueAsked;
-    this.continueAsked = false;
+  /** A stage asks once at start whether to resume (and clears it). */
+  takeContinue(key: GameKey): boolean {
+    const c = this.continueAsked === key;
+    this.continueAsked = null;
     return c;
   }
   consentAsked = false;

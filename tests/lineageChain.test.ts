@@ -48,8 +48,20 @@ describe("the whole chain", () => {
     l = writeStage(l, "creature", creatureRecord({ den: { cause: "Beat the Old Horn mostly by fighting", counts: { fight: 1, puzzle: 0, stealth: 0, rushed: 0 }, boss: true } }, {}, 0, 0).causes, {});
     const r = revealFrom(l, 3, "civ");
     const aggressive = r.rows.find((x) => x.kind === "aggressive")!;
-    expect(aggressive.causes).toEqual(expect.arrayContaining(["Hunted 25 creatures in the water", "Beat the Old Horn mostly by fighting"]));
+    expect(aggressive.causes).toEqual(expect.arrayContaining(["Hunted 25 creatures in the water (water)", "Beat the Old Horn mostly by fighting (land)"]));
     expect(temperamentOf(l.species[0].influence).aggressive).toBeGreaterThan(0.2);
     expect(r.leaning).toMatch(/adaptable/); // The purely adaptable ancestor still leads; hunting now takes a share from it.
+  });
+});
+
+describe("later stages show up on the opening screen (BAMF69 2026-11-10)", () => {
+  it("small later causes are listed first, ahead of the cell's big ones, labelled by stage", () => {
+    let l = writeStage(defaultLineage(), "cell", [
+      { cause: "Kept spikes", effect: { aggressive: 0.5 } }, { cause: "Ate meat", effect: { aggressive: 0.4 } },
+      { cause: "Rammed cells", effect: { aggressive: 0.3 } }, { cause: "Popped cells", effect: { aggressive: 0.2 } },
+    ], {});
+    l = writeStage(l, "civ", [{ cause: "Took Heartwood by conquest", effect: { aggressive: 0.03 } }], {});
+    const ag = revealFrom(l, 4, "space").rows.find((r) => r.kind === "aggressive")!;
+    expect(ag.causes[0]).toBe("Took Heartwood by conquest (civilization)");
   });
 });

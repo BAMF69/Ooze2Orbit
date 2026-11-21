@@ -214,6 +214,13 @@ BAMF69: "jumping between stars feels clumsy and unsatisfying"; "the space stage 
   chimes, falls or buzzes; an escort lost sounds a falling alarm; a klaxon warns 3 s before a wave
   (`SPACE.wave.warnS`). The cell stage's sounds are unchanged; levels follow the same sound settings.
 
+## The Lattice is earned, and the stage saves *(2026-11-10, ported 2026-11-15)*
+- The Lattice stays locked until you win 3 Driftfield waves in a row (`SPACE.patrol.latticeUnlock`); fleeing, losing
+  your ship or leaving breaks the streak; once open it stays open (`Campaign.driftStreak`, `latticeOpen`, `jumpLock()`).
+  The star map shows the lock and the streak; every jump (map, `[` `]`, the pilot) respects it.
+- Autosaves on landing, arriving in a system, after every battle and every refit; Continue restores the whole campaign
+  in that star system (a fight in progress starts over). Smoke: `&save` lets an autoplay run write it, `?continue`.
+
 ## Open questions
 | Question | Why it matters |
 |---|---|
