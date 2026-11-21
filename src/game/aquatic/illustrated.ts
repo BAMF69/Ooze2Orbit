@@ -3,6 +3,7 @@ import { evolutionProfile, familyForLook } from './evolutionArt';
 import { bodyRig } from './avatarRig';
 import { ADAPTABLE_DIETS, illustratedBody, avatarTexture } from './avatarVisual';
 import { LandmarkEquipment } from './landmarkEquipment';
+import { FIT_ART_TEXTURE, FIT_ART_FRAMES, fittedAttachmentAtlas } from './attachmentArtwork';
 import avatarFrames from './avatarFrames.json';
 import { playerPose, bodyWidth, type PlayerMotion } from './playerMotion';
 import { FOOD_KINDS, foodPulse, murkAlpha } from './ambientMotion';
@@ -30,13 +31,18 @@ export const AQ_SHEETS = [
 ];
 export const dietColumn = (diet: Diet): number => ['herbivore', 'carnivore', 'omnivore'].indexOf(diet);
 export function preloadAquaticArt(scene: Phaser.Scene): void {
-  if (!evolutionProfile('adaptable',3)) for (const diet of ADAPTABLE_DIETS) if (!scene.textures.exists(`aqAdaptable-${diet}HD`)) scene.load.image(`aqAdaptable-${diet}HDSource`, `assets/art/aquatic_adaptable_${diet}_motion_v1.png`);
-  if (!scene.textures.exists('aqOrgansHD')) scene.load.image('aqOrgansHDSource', 'assets/art/aquatic_player_organs_v1.png');
-  for (const s of AQ_SHEETS) scene.load.image(`${s.key}Source`, `assets/art/${['jellyfish','eel'].includes(s.file)?`aquatic_${s.file}_motion_v2.png`:(s.file.startsWith('player_')||['deepmaw','shark','hammer','darter','finray','spinefish','shellback'].includes(s.file))?`aquatic_${s.file}_motion_v1.png`:`aquatic_${s.file}_hd_v1.png`}`);
-  for (const map of ['pond', 'lake', 'coast']) scene.load.image(`aqWater-${map}`, `assets/art/aquatic_${map}_hd_v1.png`);
+  if (!evolutionProfile('adaptable',3)) for (const diet of ADAPTABLE_DIETS) if (!scene.textures.exists(`aqAdaptable-${diet}HD`)) scene.load.image(`aqAdaptable-${diet}HDSource`, `assets/art/aquatic_adaptable_${diet}_motion_v1.webp`);
+  if (!scene.textures.exists('aqOrgansHD')) scene.load.image('aqOrgansHDSource', 'assets/art/aquatic_player_organs_v1.webp');
+  for (const s of AQ_SHEETS) scene.load.image(`${s.key}Source`, `assets/art/${['jellyfish','eel'].includes(s.file)?`aquatic_${s.file}_motion_v2.webp`:(s.file.startsWith('player_')||['deepmaw','shark','hammer','darter','finray','spinefish','shellback'].includes(s.file))?`aquatic_${s.file}_motion_v1.webp`:`aquatic_${s.file}_hd_v1.webp`}`);
+  for (const map of ['pond', 'lake', 'coast']) scene.load.image(`aqWater-${map}`, `assets/art/aquatic_${map}_hd_v1.webp`);
 }
 export function prepareAquaticArt(scene: Phaser.Scene): void {
   prepareWildlifeArt(scene);
+  if(!scene.textures.exists(FIT_ART_TEXTURE)){
+    const texture=scene.textures.addCanvas(FIT_ART_TEXTURE,fittedAttachmentAtlas());
+    FIT_ART_FRAMES.forEach(([x,y,w,h],i)=>texture?.add(i,0,x,y,w,h));
+    texture?.setFilter(Phaser.Textures.FilterMode.LINEAR);
+  }
   if (!evolutionProfile('adaptable',3)) for (const diet of ADAPTABLE_DIETS) {
     const key = `aqAdaptable-${diet}HD`;
     if (scene.textures.exists(key)) continue;

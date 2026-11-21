@@ -33,8 +33,11 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-        with:
-          lfs: true
+
+      # LFS without the PNG art masters (assets_src/art_masters/): the build ships their WebP copies, and skipping
+      # them keeps each run's LFS download (billed against the repo's monthly quota) small.
+      - name: Fetch LFS files the build needs
+        run: git lfs pull --exclude="assets_src/**"
 
       - uses: actions/setup-python@v5
         with:
@@ -101,6 +104,20 @@ jobs:
           else
             python tools/dev.py test
           fi
+
+      - name: Illustrated creature and civilization HUD integration
+        if: env.ENGINE == 'web'
+        env:
+          O2O_HUD_OFFLINE: '1'
+        run: node tools/later-hud-playtest.mjs
+
+      - name: Upload HUD review captures
+        if: always() && env.ENGINE == 'web'
+        uses: actions/upload-artifact@v4
+        with:
+          name: illustrated-hud-review
+          path: build/later-hud/
+          if-no-files-found: ignore
 
       - name: dev.py smoke (LÖVE under a virtual display)
         if: env.ENGINE == 'love2d'

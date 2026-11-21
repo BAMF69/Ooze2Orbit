@@ -11,7 +11,8 @@ const page = await browser.newPage({viewport:device==='portrait'?{width:375,heig
 const errors = [];page.on('pageerror',e=>errors.push(e.message));
 page.on('console',m=>{if(m.type()==='error')errors.push(m.text());if(m.text().startsWith('REVIEW '))console.log(m.text());});
 try {
-  await page.goto('http://localhost:5178/?data-dir=build/avatar-review&stage=aquatic');
+  const origin=process.env.AVATAR_REVIEW_ORIGIN||'http://localhost:5178';
+  await page.goto(new URL('/?data-dir=build/avatar-review&stage=aquatic',origin).href);
   await page.waitForFunction(()=>document.querySelector('canvas'));
   await page.waitForFunction(async()=>{
     const urls=performance.getEntriesByType('resource').map(r=>r.name);
@@ -46,19 +47,20 @@ try {
     const {scene,shell}=globalThis.review;
     const {avatarTexture}=await import('/src/game/aquatic/avatarVisual.ts');
     const {evolutionTextures}=await import('/src/game/aquatic/evolutionTextures.ts');
-    const {familyForLook}=await import('/src/game/aquatic/evolutionArt.ts');
+    const {evolutionSheet}=await import('/src/game/aquatic/evolutionArt.ts');
     scene.scene.pause();
     const initial=structuredClone(scene.me);
     const image=()=>scene.children.list.find(o=>o.getData?.('aqPlayerState'));
     const flush=()=>scene.events.emit('postupdate',0,80);
     const present=async(c,view='back',look='a3')=>{
       scene.scene.resume();
-      await Promise.race([evolutionTextures(scene).warmForm(familyForLook(look),c.form),new Promise((_,reject)=>setTimeout(()=>reject(Error('Body atlas loading timed out: '+look+'/'+c.form)),15000))]);
+      const sheet=evolutionSheet(c,look);
+      await Promise.race([evolutionTextures(scene).load(sheet),new Promise((_,reject)=>setTimeout(()=>reject(Error('Body atlas loading timed out: '+sheet.key)),15000))]);
       scene.scene.pause();
       scene.me=c;scene.avatarSpr.setData('aqBody',c).setVisible(true).play(`aswim:swim:${view}${look}`,true);
       scene.av.airborne=false;scene.av.dashLeft=0;scene.av.vx=0;scene.av.vy=0;scene.playerStunLeft=0;
       for(let i=0;i<5;i++)flush();
-      if(image().texture.key!==avatarTexture(c,look))throw Error('Incorrect body family or diet');
+      if(image().texture.key!==avatarTexture(c,look))throw Error('Incorrect body atlas: '+image().texture.key+', expected '+sheet.key);
     };
     let combinations=0;console.log('REVIEW family matrix');
     for(const diet of ['herbivore','carnivore','omnivore'])for(const form of [1,2,3,4])for(const look of ['3','c3','a3'])for(const view of ['front','side','back']){
@@ -91,17 +93,17 @@ try {
     if(clock!==image().getData('aqSwimAge')||before!==JSON.stringify(snapshot()))throw Error('Touch menu did not freeze anatomy');
     scene.panel.close();shell.settings.input.scheme='keyboard';
     console.log('REVIEW daughter selections');
-    for(const form of [3,4])for(const part of ['toxicTendrils','electricOrgan']){
+    for(const form of [3,4])for(const organs of [['toxicTendrils'],['electricOrgan'],['toxicTendrils','electricOrgan']]){
       await present({...initial,form});
-      scene.me={...initial,form,parts:['fins',part,'plates'],uniques:['endurance','torrent'],divisionSeed:7};
+      scene.me={...initial,form,parts:[...organs,...(organs.length===1?['fins','plates']:['fins'])],uniques:['endurance','torrent'],divisionSeed:7};
       scene.beginDivision();scene.division.update(100);scene.chooseDaughter(1);flush();
-      if(!scene.sisters.members.some(s=>s.body.parts.includes(part)))throw Error('Sister lost new anatomy');
+      if(!scene.sisters.members.some(s=>organs.every(part=>s.body.parts.includes(part))))throw Error('Sister lost new anatomy');
       combinations++;
     }
     scene.me=initial;scene.updateLook(false);scene.drawBehind(0);flush();
     const textures=scene.textures.getTextureKeys().filter(k=>k.startsWith('aqEquipment:')).length;
     return {combinations,motionStates:['idle','swim','attack','dash','breach','stunned'],touchPause:true,reducedMotion:true,
-      swaps:true,daughterSelections:4,legacyEquipmentTextures:textures,bodyAtlases:scene.textures.getTextureKeys().filter(k=>k.startsWith('aqBody-')||k.startsWith('aqAdaptable-')).map(key=>{const im=scene.textures.get(key).getSourceImage();return {key,bytes:im.width*im.height*4};})};
+      swaps:true,daughterSelections:6,legacyEquipmentTextures:textures,bodyAtlases:scene.textures.getTextureKeys().filter(k=>k.startsWith('aqBody-')||k.startsWith('aqAdaptable-')).map(key=>{const im=scene.textures.get(key).getSourceImage();return {key,bytes:im.width*im.height*4};})};
   });
   await page.screenshot({path:resolve(out,'adaptable-desktop.png')});
   writeFileSync(resolve(out,'avatar-browser-report.json'),JSON.stringify({...report,errors},null,2));

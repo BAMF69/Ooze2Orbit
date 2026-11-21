@@ -1,3 +1,4 @@
+import { dorsalFit } from './surfaceAttachmentFits';
 import { SCUTE_PROFILE, type ScuteProfile } from './attachmentSchema';
 // Pose-authored dorsal paths. Arc-length sampling keeps overlapping scutes attached through tight bends.
 import { ADAPTABLE_RIG, type BodyRig } from './avatarRig';
@@ -53,9 +54,14 @@ export function spineSections(diet: Diet, view: AnatomyView, pose: number, tier:
   if (view === 'front') return [];
   const count = profile.counts[tier-1];
   const result: SpineSection[] = [];
-  const height = profile.height[view] * (tucked ? profile.tuckLength : 1);
+  const length=rigPath(rig,diet,view,pose).at(-1)!.distance;
+  const desired=profile.start+(count-1)*profile.spacing+profile.height[view];
+  const coverage=Math.min(1,length/desired);
+  const height = profile.height[view] * coverage * (tucked ? profile.tuckLength : 1);
+  const fit=dorsalFit(rig);
+  const sideInset=view==='side'?fit.sideInset:0;
   for (let plate = 0; plate < count; plate++) {
-    const start = profile.start + plate * profile.spacing;
+    const start = (profile.start + plate * profile.spacing)*coverage;
     const taper = 1 - plate * profile.taper;
     for (let section = 0; section < profile.sections; section++) {
       // Each third bends independently around its own point on the spine; neighbouring crops overlap slightly.
@@ -63,7 +69,7 @@ export function spineSections(diet: Diet, view: AnatomyView, pose: number, tier:
       const sample = spineSample(diet,view,pose,start+oy*height,rig);
       const cropY = Math.max(0,section/profile.sections-profile.cropOverlap);
       const cropEnd = Math.min(1,(section+1)/profile.sections+profile.cropOverlap);
-      result.push({...sample,plate,section,width:profile.width[view]*taper*(tucked?profile.tuckWidth:1),height,
+      result.push({...sample,y:sample.y+sideInset,plate,section,width:profile.width[view]*fit.widthScale*taper*(tucked?profile.tuckWidth:1),height,
         cropY,cropHeight:cropEnd-cropY,oy});
     }
   }

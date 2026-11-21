@@ -229,12 +229,13 @@ export const AQ = {
     water: {
       foodWarm: 0.8, foodCold: 0.5, // plant regrowth and how many plants the lake holds
       hunterSpeedWarm: 0.2, hunterSpeedCold: 0.25, hunterSightWarm: 0.25, hunterSightCold: 0.2,
-      preySpeedCold: 0.25, staminaCold: 0.3,
+      preySpeedCold: 0.25, staminaCold: 0.3, staminaWarm: 0.35,
     },
   },
 
   // ---- the lens (god mode) and the population (Toy 3: one lever, one trait) ----
   lens: { tempMin: 2, tempMax: 26, tempStart: 14, tempStep: 2 },
+  rockslide: { openArea: 0.5, plantCapacity: 0.25, regrowRate: 0.25 },
   population: {
     size: 12, // your kin swimming in the lake
     generationS: 60, // a generation passes on its own this often (Enter in the lens: at once)

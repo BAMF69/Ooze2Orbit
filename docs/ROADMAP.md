@@ -23,12 +23,14 @@ See `docs/HD_REMASTER.md`.
 - [ ] **Space Toy 1: refit because T0|▼| adapted** (built 2026-11-09; gameplay liked by user 2026-11-13): three systems, a hangar with two hulls and eight parts from two makers, real-time combat against patrols that hunt like gulpers, T0|▼| learning what you used after every battle with a readout, five wins to finish. **Toy 2 (2026-11-10):** slots and an icon hangar, turrets and homing missiles, a second friendly world (Tidereach), recruited escorts that fly themselves. **Toy 3 (2026-11-10):** wormhole jumps with next / previous keys and a clickable map, enemy waves on a countdown, auto-land, reverse and side thrusters, the ending is now three wins in a row at the Lattice then the Mothership | Done when: BAMF69 refits the ship because T0|▼| adapted, and wants another fight | Timebox: 2 sessions
 
 ## Next
+- [ ] **Civilization campaign** (BAMF69 2026-11-18, `docs/stages/04-civilization.md` "The campaign"): tower wars, tug-of-war and hero lane wars at easy, medium and hard (nine battles to finish); Footmen Frenzy optional; tower wars difficulty grows the field and adds random obstacles | Done when: BAMF69 has played one mode at all three difficulties and each step feels harder but fair
 - [x] **Civilization/creature Toy 2 initial playtest**: user reports liking how all stages play (2026-11-13); display rollout requested. Detailed balance tuning can follow device testing.
 - [ ] **Aquatic stage: vertical slice** (Toy done 2026-11-09) and **write the aquatic lineage** for the creature stage to read
 - [ ] **Cell stage: vertical slice** (Toy done 2026-11-08): fill `docs/VERTICAL_SLICE.md`; music, saves, first-time teaching, polish | Done when: the slice brief's "Done when" holds
 - [ ] **Cell stage ending: the pond floods** (from the parking lot): the bridge into the aquatic stage and its temperament reveal | Done when: finishing the cell stage leads into the aquatic stage
 
 ## Later
+- [ ] **Space landing hub** (BAMF69 2026-11-17, `docs/stages/05-space.md` "Landing"): seed and guide new species as the Gardener, ruin dungeons and battlefield matches on planets; rewards are ship tech, blueprints and relics
 - [ ] **Remaining shared platform foundations**: local checkpoint/autosave adapters, offline readiness and other stage adapters after cell display/input testing. See `docs/PLATFORM_FOUNDATIONS.md`. Final art waits until prototypes prove fun.
 - [ ] 
 
@@ -58,6 +60,8 @@ detail.
 | M4 Release candidate (v1.0.0-rc.N, then v1.0.0) | `/release-check` green | |
 
 ## Done (recent, newest first)
+- 2026-11-17: itch.io demo page https://bamf69.itch.io/ooze2orbitdemo: `tools/package_itch.py` checks itch's HTML5 rules and zips dist/ (`build/itch/`); `.github/workflows/itch.yml` uploads with butler when run by hand (needs repo secret BUTLER_API_KEY). GitHub Pages stays the dev preview
+- 2026-11-17: Painted art ships as WebP (ADR 0007): 84 sheets 112.6 MB PNG -> 27.9 MB WebP, PNG masters in `assets_src/art_masters/`, `tools/art/compress_art.py`, `tests/artBudget.test.ts`; CI/Pages skip the masters when pulling LFS
 - 2026-11-15: Ported onto main from unpushed 2026-11-10 work: the opening screen lists causes newest stage first, labelled by stage (the later stages' small causes were crowded out); the space Lattice opens after 3 Driftfield waves won in a row (`jumpLock`); export / import in every pause menu; the space stage autosaves and continues in its star system (`src/game/stageSaves.ts`, slot `space_run`), and the main menu's Continue picks the most recent of the aquatic and space saves. Left behind (in local branch `backup/lineage-and-saves-unported`): the old creature and civilization saves, temperament that falls (main's 100 % shares cover it), the aquatic per-form diet picker and the food weights (to re-decide against the daughter flow)
 - 2026-11-10: Design: **pillar 2 rewritten** (BAMF69): actions shape which variations offspring carry, you choose which to keep; no stat buying in any stage; bodies evolve, tools are built. Humor: quirky, deadpan (after Everything is Crab)
 - 2026-11-10: Design: the **Gardener rule** (every Gardener decision clearly helps aggressive or cautious play; without it the game is hard; adaptable uses them moment to moment) in the GDD; **creature stage redesigned as a roguelike metroidvania** (Super Metroid, Rogue Legacy; runs as generations, the Baldwin effect replaces Lamarckian parts); **civilization stage redesigned as a tower wars battler** (sends vs. defenses, base kill or 5x income, maze and hero for adaptable, your creature as the hero). Toys 1 of both stay until their Toy 2 exists

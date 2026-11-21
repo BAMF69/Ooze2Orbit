@@ -21,7 +21,7 @@ try{
     for(let pose=0;pose<4;pose++){
      const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
      const ctx=canvas.getContext('2d');ctx.scale(2/3,2/3);
-     drawCanvasAvatar(ctx,{bodies:{[diet]:image},body:image,organs:image},c,view,pose,{profile});
+     drawCanvasAvatar(ctx,{body:image,organs:image},c,view,pose,{profile});
      views[view].push(canvas.toDataURL('image/png'));
     }
    }

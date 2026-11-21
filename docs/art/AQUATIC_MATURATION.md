@@ -25,8 +25,9 @@ All profiles have compatible socket/path schemas, measured tail landmarks and fi
 New-form sockets are coarse body-relative fits, explicitly provisional. This is NOT a claim of completed part fitting.
 The approved mature-adaptable rig is preserved; its existing articulated scutes continue working.
 Equipment, tiers, stats, temperament and inherited anatomy remain separate. No attachment-refinement review is requested now.
-The existing offline attachment inspector is a preserved mature-adaptable snapshot. Its form-4 shared-art status describes
-that snapshot, not current game art. Do not rebuild it against the expanded catalog without teaching it to select profiles.
+The original offline attachment inspector is a preserved mature-adaptable snapshot. Inspector v2 selects
+all runtime profiles. The jaw and Torrent trial uses authored corrections in attachmentFits.ts, which the
+measurement script does not rewrite.
 
 ## Assets and reproduction
 A-0036 in ASSET_LOG.md registers the new art. AQUATIC_EVOLUTION_PROMPTS.json records generation prompts, design briefs,

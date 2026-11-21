@@ -15,6 +15,56 @@
 - Performance budget 960x540; Auto drops for low-end touch devices; body[data-perf-lite] lite HUD CSS.
 - Outstanding: real older-tablet and iPhone retest; casting is Screen Mirroring only (Info panel tip).
 - QA script: ../work/touch-dpad-layout-qa.cjs (captures in ../outputs/dpad-*, touch-layout-*, creature-fullscreen-*).
+## Civilization campaign spec (2026-11-18, docs only, branch `docs/civ-campaign`)
+BAMF69: finish the civilization stage by beating tower wars, tug-of-war (Castle Fight) and hero lane wars at easy,
+medium and hard; Footmen Frenzy optional; tower wars difficulty = bigger field with random obstacles. Spec:
+`docs/stages/04-civilization.md` "The campaign"; ROADMAP Next. An agent is being briefed to build it.
+
+## Space hub and civilization modes design (2026-11-17, docs only, branch `docs/space-hub-civ-modes`)
+BAMF69 approved: space landings lead to seeding and guiding new species as the Gardener (indirect powers plus some
+direct control), ruin dungeons (creature levelgen) or battlefield matches; rewards are ship tech, blueprints and relics.
+Civilization becomes a campaign of battlefield modes sharing one frame (tower wars built; hero lane wars, tug-of-war,
+frenzy, survival, stealth planned; MOBA and autobattler dropped). Docs: stage docs 04 and 05; ROADMAP Later.
+
+## Creature level generator, step 1.6 (feat/creature-rooms, 2026-11-18, pushed 833150f, bed07a6)
+Foundation fixes from the independent review are built on top of f32bbae: ManiaMap multi-cell layout port (BSD-3,
+ADR 0008, `THIRD_PARTY_LICENSES.md` shipped in dist/), a real underchannel cycle in Medium and Hard (drain floor to
+a hatch behind the finale, opened once the seal is claimed), cycles counted from edges, stable class-door variants,
+sphere search (3 generations to Hard), amended pacing with a Hard recovery rule, Gardener placement check, and a
+`specSolid` validator with arrival tell-range timing. Details and proof levels: `docs/CREATURE_LEVELGEN.md`
+"Step 1.6". Next: BAMF69 plays a Medium seed and drops through the finale hatch; then step 2 (segment stitcher).
+Playtest fixes bed07a6: F bites again, exact room in the status line, mid-water controls drawn where usable.
+Jungle (BAMF69 2026-11-18, not started): teaches climbing and also needs Water keys; opens after Water Hard;
+reuses Water enemies for now. Do not begin Jungle until BAMF69 asks.
+
+## Creature level generator (levelgen worktree, 2026-11-17)
+Branch `feat/creature-levelgen` from `feat/creature-remaster` (5a2f3a9). New Water worlds come from a
+progression graph (critical chain, loops, nursery, class trials keyed on the temperament class skill,
+stat-gated grotto vaults with fun parts), built from templates and solved by the real controller in tests.
+Existing v1 saves replay unchanged. Full status, tests and gaps: `docs/CREATURE_LEVELGEN.md` §10.
+Browser check: `npx vite --port 5186 --strictPort`, then `node tools/creature-levelgen-playtest.mjs`.
+Next: creature chat review of the Traits/health/damage changes in §8; new room templates; human playtest.
+
+**Last updated:** 2026-11-17
+**Branch:** `feat/cell-division`. Previous baseline committed and pushed as fd0f29d. This snapshot includes the subsequent aquatic remaster, map rewards and organic HUD/input polish. Push only when asked.
+**Active:** Cell/aquatic upgrade and growth HUD polish, expanded effects in Details, and aquatic illustrated remaster. Creature/civilization may be developed in independent chats/worktrees; preserve their scope.
+
+## Aquatic attachment pass v3 (2026-11-17)
+
+- The lower jaw hinges at the painted chin in the front chomp pose. The swim seam and side silhouette use their own fits.
+- All twelve forms have authored surface roots for fins, gills, endurance, toxic tendrils and electric organs.
+  Fins preserve their mirror pivots, plates compress to fit shorter dorsal paths, and tendrils flex in three linked sections.
+- Gills and endurance use separate local illustrations. Mouth/tail and surface corrections live in
+  `attachmentFits.ts` and `surfaceAttachmentFits.ts`, outside the measurement generator.
+- See PLAYTEST_LOG.md for review setups and provisional cases. Build inspector v3 into a fresh output directory.
+
+## Aquatic attachment trial (2026-11-17)
+- The local integrated baseline includes avatar PR #18. The trial uses a detached worktree from main at `4157e20`.
+- The version 2 offline inspector loads all 36 runtime sheets on demand. Keep the historical inspector snapshot.
+- Jaws use authored mouth-seam and chomp fits. Torrent uses the actual painted fin with a larger gold pass,
+  built once per body sheet and accounted for in the atlas cache. See the attachment trial in PLAYTEST_LOG.md.
+- Mouth and tail corrections live in `attachmentFits.ts`, outside the regenerated measurement catalog.
+- Other equipment fits and the jaw/tail edge cases noted in the playtest log remain provisional.
 
 ## Approved illustrated HUD family (2026-11-17)
 - Cell and aquatic use complete painted surfaces for all three diets, native weighted Vollkorn text,
@@ -32,7 +82,7 @@
 - New stable navigation/progression strip: centered75% usable width in landscape; compact88px portrait.
 - Tapered upper-left live resources/vitals; inventory/system buttons upper right. Upgrades/Info float
   above the strip. Portrait depth/actions leave the center lane free; conditional abilities preserved.
-- A-0040 locally bundles OFL Vollkorn. A-0041 supplies six quiet transparent component sheets: membrane
+- A-0040 locally bundles OFL Vollkorn. A-0053 (numbered A-0041 before the 2026-11-21 merge with main, which had its own A-0041) supplies six quiet transparent component sheets: membrane
   cell materials, kelp/cartilage/scute aquatic materials. Historical ornate art is not used in this HUD.
 - hudDock.css is the single active HUD cascade. Older dietOverlay/paintedHud/hudTabs CSS is not imported.
 - Localized player-occlusion mask keeps overlapping content readable. Gameplay/input/save rules retained.
@@ -43,7 +93,7 @@
 ## Repository publication (2026-11-17)
 The user authorized committing and pushing the aquatic avatar work to its own branch. Other stage branches remain separate.
 All 506 tests, type/shader checks, production build, and the in-game Diet developer-control check pass.
-Equipment attachment refinement is still deferred. Older uncommitted/shared-art notes below describe earlier snapshots.
+This was the body-art baseline before the attachment trial above. Older uncommitted/shared-art notes below describe earlier snapshots.
 
 ## Complete aquatic body forms (2026-11-16; current avatar worktree)
 - User deferred attachment tuning; continued body maturation instead. All three temperament families now have

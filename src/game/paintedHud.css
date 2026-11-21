@@ -1,7 +1,7 @@
 /* Painted A-0026 capsules surround native live meters; text and input are never baked into art. */
-body:is(.cell-display,.aquatic-display)[data-overlay-diet][data-overlay-diet=herbivore] { --diet-top:#337e0d; --diet-bottom:#072d09; --diet-accent:#b3ff40; --diet-ink:#fff6d7; --painted-frame:url('/assets/art/hud_frame_verdant_v1.png'); }
-body:is(.cell-display,.aquatic-display)[data-overlay-diet][data-overlay-diet=carnivore] { --diet-top:#a51125; --diet-bottom:#39020c; --diet-accent:#ff7960; --diet-ink:#fff0d5; --painted-frame:url('/assets/art/hud_frame_scarlet_v1.png'); }
-body:is(.cell-display,.aquatic-display)[data-overlay-diet][data-overlay-diet=omnivore] { --diet-top:#a96b00; --diet-bottom:#3d2500; --diet-accent:#ffe758; --diet-ink:#fff8d6; --painted-frame:url('/assets/art/hud_frame_solar_v1.png'); }
+body:is(.cell-display,.aquatic-display)[data-overlay-diet][data-overlay-diet=herbivore] { --diet-top:#337e0d; --diet-bottom:#072d09; --diet-accent:#b3ff40; --diet-ink:#fff6d7; --painted-frame:url('/assets/art/hud_frame_verdant_v1.webp'); }
+body:is(.cell-display,.aquatic-display)[data-overlay-diet][data-overlay-diet=carnivore] { --diet-top:#a51125; --diet-bottom:#39020c; --diet-accent:#ff7960; --diet-ink:#fff0d5; --painted-frame:url('/assets/art/hud_frame_scarlet_v1.webp'); }
+body:is(.cell-display,.aquatic-display)[data-overlay-diet][data-overlay-diet=omnivore] { --diet-top:#a96b00; --diet-bottom:#3d2500; --diet-accent:#ffe758; --diet-ink:#fff8d6; --painted-frame:url('/assets/art/hud_frame_solar_v1.webp'); }
 body:is(.cell-display,.aquatic-display)[data-overlay-diet][data-overlay-diet] { --diet-motif:none; --hud-heading:'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif; }
 .compact-organic-hud .hud-dock { border:2px solid #ead399 !important; border-radius:20px 8px !important; box-shadow:0 0 0 2px #392710,0 8px 20px #000b,inset 0 2px #fff8,inset 0 -5px #0008 !important; padding:8px 14px 11px !important; }
 .compact-organic-hud .hud-dock::before { display:none !important; }
@@ -86,9 +86,9 @@ body:is(.cell-display,.aquatic-display)[data-overlay-diet] .compact-organic-hud 
 
 
 /* Local identities override the active body palette, including completed form frames. */
-[data-form-diet=herbivore],[data-upgrade-diet=herbivore] { --painted-frame:url('/assets/art/hud_frame_verdant_v1.png'); --diet-top:#337e0d; --diet-bottom:#072d09; --diet-accent:#b3ff40; }
-[data-form-diet=carnivore],[data-upgrade-diet=carnivore] { --painted-frame:url('/assets/art/hud_frame_scarlet_v1.png'); --diet-top:#a51125; --diet-bottom:#39020c; --diet-accent:#ff7960; }
-[data-form-diet=omnivore],[data-upgrade-diet=omnivore] { --painted-frame:url('/assets/art/hud_frame_solar_v1.png'); --diet-top:#a96b00; --diet-bottom:#3d2500; --diet-accent:#ffe758; }
+[data-form-diet=herbivore],[data-upgrade-diet=herbivore] { --painted-frame:url('/assets/art/hud_frame_verdant_v1.webp'); --diet-top:#337e0d; --diet-bottom:#072d09; --diet-accent:#b3ff40; }
+[data-form-diet=carnivore],[data-upgrade-diet=carnivore] { --painted-frame:url('/assets/art/hud_frame_scarlet_v1.webp'); --diet-top:#a51125; --diet-bottom:#39020c; --diet-accent:#ff7960; }
+[data-form-diet=omnivore],[data-upgrade-diet=omnivore] { --painted-frame:url('/assets/art/hud_frame_solar_v1.webp'); --diet-top:#a96b00; --diet-bottom:#3d2500; --diet-accent:#ffe758; }
 .compact-organic-hud .growth-section.future { filter:grayscale(1); opacity:.45; }
 .cell-upgrades.upgrade-quarter button.upgrade-card.unaffordable { filter:grayscale(1); opacity:.52; }
 /* Repeated edge art and fixed corner dimensions avoid stretching a whole painted capsule. */

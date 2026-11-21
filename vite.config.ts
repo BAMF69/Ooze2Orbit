@@ -10,7 +10,7 @@
 // Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
 // ---------------------------------------------------------------------------
 /// <reference types="node" />
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
@@ -39,9 +39,20 @@ function uiAssets(): Plugin {
   };
 }
 
+/** Ships THIRD_PARTY_LICENSES.md beside index.html in every production build. */
+function licences(): Plugin {
+  return {
+    name: "licences",
+    apply: "build",
+    generateBundle() {
+      this.emitFile({ type: "asset", fileName: "THIRD_PARTY_LICENSES.md", source: readFileSync(fileURLToPath(new URL("./THIRD_PARTY_LICENSES.md", import.meta.url)), "utf8") });
+    },
+  };
+}
+
 export default defineConfig({
   base: "./",
-  plugins: [uiAssets()],
+  plugins: [uiAssets(), licences()],
   build: {
     outDir: "dist",
     assetsInlineLimit: 0, // keep game assets as files (easier to cache and to audit)

@@ -9,7 +9,20 @@
       "PowerShell(python tools/doctor.py *)",
       "Bash(python tools/issues.py:*)",
       "Bash(python3 tools/issues.py:*)",
-      "PowerShell(python tools/issues.py *)"
+      "PowerShell(python tools/issues.py *)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(node:*)",
+      "Bash(npm run:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(npx vitest run)",
+      "Bash(npx tsc --noEmit)"
     ],
     "ask": [
       "Bash(python tools/dev.py *ship*)",

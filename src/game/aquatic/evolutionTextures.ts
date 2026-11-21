@@ -2,6 +2,7 @@
 import * as Phaser from 'phaser';
 import type { AqCreature, LookFamily } from './creature';
 import { EVOLUTION_CATALOG, evolutionProfile, familyForLook, type EvolutionSheet, type EvolutionProfile } from './evolutionArt';
+import { torrentTextureKey } from './torrentArtwork';
 
 const loaders=new WeakMap<Phaser.Scene,EvolutionTextures>();
 // Textures survive scene shutdown. Keep ownership/LRU with the texture manager too.
@@ -25,8 +26,7 @@ export class EvolutionTextures {
     scene.events.once('shutdown',()=>loaders.delete(scene));
   }
   private prepare(sheet:EvolutionSheet):void {
-    const source=`${sheet.key}Source`,texture=this.scene.textures.get(source);
-    this.scene.textures.renameTexture(source,sheet.key);
+    const texture=this.scene.textures.get(sheet.key);
     sheet.rects.forEach(([x,y,w,h],i)=>{
       const [ox,oy]=sheet.offsets[i];texture.add(i,0,x,y,w,h)?.setTrim(384,384,ox,oy,w,h);
     });
@@ -38,14 +38,21 @@ export class EvolutionTextures {
     if(this.scene.textures.exists(sheet.key)){const item=this.cache.owned.get(sheet.key);if(item)item.used=++this.cache.serial;return Promise.resolve();}
     if(this.pending.has(sheet.key))return this.pending.get(sheet.key)!;
     if(this.failed.has(sheet.key))return Promise.reject(Error(`Body atlas failed to load: ${sheet.file}`));
-    const source=`${sheet.key}Source`;
-    if(this.scene.textures.exists(source)){this.prepare(sheet);return Promise.resolve();}
     const promise=new Promise<void>((resolve,reject)=>{
-      const event=`filecomplete-image-${source}`;
-      const done=()=>{this.scene.load.off('loaderror',error);this.pending.delete(sheet.key);this.prepare(sheet);resolve();};
-      const error=(file:{key:string})=>{if(file.key!==source)return;this.scene.load.off(event,done);this.scene.load.off('loaderror',error);this.pending.delete(sheet.key);this.failed.add(sheet.key);reject(Error(`Body atlas failed: ${sheet.file}`));};
+      const event=`filecomplete-image-${sheet.key}`;
+      // The loader registers directly under the final key. A missing source must
+      // never be renamed because Phaser returns its shared missing texture.
+      const done=()=>{
+        this.scene.load.off('loaderror',error);
+        this.pending.delete(sheet.key);
+        if(!this.scene.textures.exists(sheet.key)){
+          this.failed.add(sheet.key);reject(Error(`Body atlas missing after load: ${sheet.file}`));return;
+        }
+        this.prepare(sheet);resolve();
+      };
+      const error=(file:{key:string})=>{if(file.key!==sheet.key)return;this.scene.load.off(event,done);this.scene.load.off('loaderror',error);this.pending.delete(sheet.key);this.failed.add(sheet.key);reject(Error(`Body atlas failed: ${sheet.file}`));};
       this.scene.load.once(event,done);this.scene.load.on('loaderror',error);
-      this.scene.load.image(source,`assets/art/${sheet.file}`);
+      this.scene.load.image(sheet.key,`assets/art/${sheet.file}`);
     });
     this.pending.set(sheet.key,promise);
     if(!this.scene.load.isLoading())this.scene.load.start();
@@ -72,9 +79,15 @@ export class EvolutionTextures {
       this.cache.owned.set(sheet.key,{bytes:image.width*image.height*4,used:++this.cache.serial});
     }
     for(const key of this.cache.owned.keys())if(!this.scene.textures.exists(key))this.cache.owned.delete(key);
-    let bytes=[...this.cache.owned.values()].reduce((sum,item)=>sum+item.bytes,0);
+    const bytesFor=(key:string,bodyBytes:number)=>{
+      const tailKey=torrentTextureKey(key);
+      if(!this.scene.textures.exists(tailKey))return bodyBytes;
+      const tail=this.scene.textures.get(tailKey).getSourceImage() as HTMLCanvasElement;
+      return bodyBytes+tail.width*tail.height*4;
+    };
+    let bytes=[...this.cache.owned].reduce((sum,[key,item])=>sum+bytesFor(key,item.bytes),0);
     if(bytes<=BUDGET)return;
     const unused=[...this.cache.owned].filter(([key])=>!referenced.has(key)).sort((a,b)=>a[1].used-b[1].used);
-    for(const [key,item] of unused){if(bytes<=BUDGET)break;this.scene.textures.remove(key);this.cache.owned.delete(key);bytes-=item.bytes;}
+    for(const [key,item] of unused){if(bytes<=BUDGET)break;bytes-=bytesFor(key,item.bytes);this.scene.textures.remove(key);this.cache.owned.delete(key);}
   }
 }

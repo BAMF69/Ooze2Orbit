@@ -8,7 +8,7 @@
       "bodies": {
         "herbivore": {
           "key": "aqBody-aggressive-f1-herbivoreHD",
-          "file": "aquatic_aggressive_f1_herbivore_motion_v1.png",
+          "file": "aquatic_aggressive_f1_herbivore_motion_v1.webp",
           "rects": [
             [
               126,
@@ -136,7 +136,7 @@
         },
         "omnivore": {
           "key": "aqBody-aggressive-f1-omnivoreHD",
-          "file": "aquatic_aggressive_f1_omnivore_motion_v1.png",
+          "file": "aquatic_aggressive_f1_omnivore_motion_v1.webp",
           "rects": [
             [
               126,
@@ -264,7 +264,7 @@
         },
         "carnivore": {
           "key": "aqBody-aggressive-f1-carnivoreHD",
-          "file": "aquatic_aggressive_f1_carnivore_motion_v1.png",
+          "file": "aquatic_aggressive_f1_carnivore_motion_v1.webp",
           "rects": [
             [
               124,
@@ -1541,7 +1541,7 @@
       "bodies": {
         "herbivore": {
           "key": "aqBody-aggressive-f2-herbivoreHD",
-          "file": "aquatic_aggressive_f2_herbivore_motion_v1.png",
+          "file": "aquatic_aggressive_f2_herbivore_motion_v1.webp",
           "rects": [
             [
               78,
@@ -1669,7 +1669,7 @@
         },
         "omnivore": {
           "key": "aqBody-aggressive-f2-omnivoreHD",
-          "file": "aquatic_aggressive_f2_omnivore_motion_v1.png",
+          "file": "aquatic_aggressive_f2_omnivore_motion_v1.webp",
           "rects": [
             [
               77,
@@ -1797,7 +1797,7 @@
         },
         "carnivore": {
           "key": "aqBody-aggressive-f2-carnivoreHD",
-          "file": "aquatic_aggressive_f2_carnivore_motion_v1.png",
+          "file": "aquatic_aggressive_f2_carnivore_motion_v1.webp",
           "rects": [
             [
               76,
@@ -3074,7 +3074,7 @@
       "bodies": {
         "herbivore": {
           "key": "aqBody-aggressive-f3-herbivoreHD",
-          "file": "aquatic_aggressive_f3_herbivore_motion_v1.png",
+          "file": "aquatic_aggressive_f3_herbivore_motion_v1.webp",
           "rects": [
             [
               64,
@@ -3202,7 +3202,7 @@
         },
         "omnivore": {
           "key": "aqBody-aggressive-f3-omnivoreHD",
-          "file": "aquatic_aggressive_f3_omnivore_motion_v1.png",
+          "file": "aquatic_aggressive_f3_omnivore_motion_v1.webp",
           "rects": [
             [
               67,
@@ -3330,7 +3330,7 @@
         },
         "carnivore": {
           "key": "aqBody-aggressive-f3-carnivoreHD",
-          "file": "aquatic_aggressive_f3_carnivore_motion_v1.png",
+          "file": "aquatic_aggressive_f3_carnivore_motion_v1.webp",
           "rects": [
             [
               65,
@@ -4607,7 +4607,7 @@
       "bodies": {
         "herbivore": {
           "key": "aqBody-aggressive-f4-herbivoreHD",
-          "file": "aquatic_aggressive_f4_herbivore_motion_v1.png",
+          "file": "aquatic_aggressive_f4_herbivore_motion_v1.webp",
           "rects": [
             [
               65,
@@ -4735,7 +4735,7 @@
         },
         "omnivore": {
           "key": "aqBody-aggressive-f4-omnivoreHD",
-          "file": "aquatic_aggressive_f4_omnivore_motion_v1.png",
+          "file": "aquatic_aggressive_f4_omnivore_motion_v1.webp",
           "rects": [
             [
               69,
@@ -4863,7 +4863,7 @@
         },
         "carnivore": {
           "key": "aqBody-aggressive-f4-carnivoreHD",
-          "file": "aquatic_aggressive_f4_carnivore_motion_v1.png",
+          "file": "aquatic_aggressive_f4_carnivore_motion_v1.webp",
           "rects": [
             [
               67,
@@ -6140,7 +6140,7 @@
       "bodies": {
         "herbivore": {
           "key": "aqBody-adaptable-f1-herbivoreHD",
-          "file": "aquatic_adaptable_f1_herbivore_motion_v1.png",
+          "file": "aquatic_adaptable_f1_herbivore_motion_v1.webp",
           "rects": [
             [
               106,
@@ -6268,7 +6268,7 @@
         },
         "omnivore": {
           "key": "aqBody-adaptable-f1-omnivoreHD",
-          "file": "aquatic_adaptable_f1_omnivore_motion_v1.png",
+          "file": "aquatic_adaptable_f1_omnivore_motion_v1.webp",
           "rects": [
             [
               109,
@@ -6396,7 +6396,7 @@
         },
         "carnivore": {
           "key": "aqBody-adaptable-f1-carnivoreHD",
-          "file": "aquatic_adaptable_f1_carnivore_motion_v1.png",
+          "file": "aquatic_adaptable_f1_carnivore_motion_v1.webp",
           "rects": [
             [
               108,
@@ -7673,7 +7673,7 @@
       "bodies": {
         "herbivore": {
           "key": "aqBody-adaptable-f2-herbivoreHD",
-          "file": "aquatic_adaptable_f2_herbivore_motion_v2.png",
+          "file": "aquatic_adaptable_f2_herbivore_motion_v2.webp",
           "rects": [
             [
               72,
@@ -7801,7 +7801,7 @@
         },
         "omnivore": {
           "key": "aqBody-adaptable-f2-omnivoreHD",
-          "file": "aquatic_adaptable_f2_omnivore_motion_v2.png",
+          "file": "aquatic_adaptable_f2_omnivore_motion_v2.webp",
           "rects": [
             [
               75,
@@ -7929,7 +7929,7 @@
         },
         "carnivore": {
           "key": "aqBody-adaptable-f2-carnivoreHD",
-          "file": "aquatic_adaptable_f2_carnivore_motion_v2.png",
+          "file": "aquatic_adaptable_f2_carnivore_motion_v2.webp",
           "rects": [
             [
               74,
@@ -9206,7 +9206,7 @@
       "bodies": {
         "herbivore": {
           "key": "aqAdaptable-herbivoreHD",
-          "file": "aquatic_adaptable_herbivore_motion_v1.png",
+          "file": "aquatic_adaptable_herbivore_motion_v1.webp",
           "rects": [
             [
               127,
@@ -9334,7 +9334,7 @@
         },
         "omnivore": {
           "key": "aqAdaptable-omnivoreHD",
-          "file": "aquatic_adaptable_omnivore_motion_v1.png",
+          "file": "aquatic_adaptable_omnivore_motion_v1.webp",
           "rects": [
             [
               116,
@@ -9462,7 +9462,7 @@
         },
         "carnivore": {
           "key": "aqAdaptable-carnivoreHD",
-          "file": "aquatic_adaptable_carnivore_motion_v1.png",
+          "file": "aquatic_adaptable_carnivore_motion_v1.webp",
           "rects": [
             [
               118,
@@ -10738,7 +10738,7 @@
       "bodies": {
         "herbivore": {
           "key": "aqBody-adaptable-f4-herbivoreHD",
-          "file": "aquatic_adaptable_f4_herbivore_motion_v1.png",
+          "file": "aquatic_adaptable_f4_herbivore_motion_v1.webp",
           "rects": [
             [
               64,
@@ -10866,7 +10866,7 @@
         },
         "omnivore": {
           "key": "aqBody-adaptable-f4-omnivoreHD",
-          "file": "aquatic_adaptable_f4_omnivore_motion_v1.png",
+          "file": "aquatic_adaptable_f4_omnivore_motion_v1.webp",
           "rects": [
             [
               68,
@@ -10994,7 +10994,7 @@
         },
         "carnivore": {
           "key": "aqBody-adaptable-f4-carnivoreHD",
-          "file": "aquatic_adaptable_f4_carnivore_motion_v1.png",
+          "file": "aquatic_adaptable_f4_carnivore_motion_v1.webp",
           "rects": [
             [
               63,
@@ -12271,7 +12271,7 @@
       "bodies": {
         "herbivore": {
           "key": "aqBody-cautious-f1-herbivoreHD",
-          "file": "aquatic_cautious_f1_herbivore_motion_v1.png",
+          "file": "aquatic_cautious_f1_herbivore_motion_v1.webp",
           "rects": [
             [
               120,
@@ -12399,7 +12399,7 @@
         },
         "omnivore": {
           "key": "aqBody-cautious-f1-omnivoreHD",
-          "file": "aquatic_cautious_f1_omnivore_motion_v1.png",
+          "file": "aquatic_cautious_f1_omnivore_motion_v1.webp",
           "rects": [
             [
               121,
@@ -12527,7 +12527,7 @@
         },
         "carnivore": {
           "key": "aqBody-cautious-f1-carnivoreHD",
-          "file": "aquatic_cautious_f1_carnivore_motion_v1.png",
+          "file": "aquatic_cautious_f1_carnivore_motion_v1.webp",
           "rects": [
             [
               120,
@@ -13804,7 +13804,7 @@
       "bodies": {
         "herbivore": {
           "key": "aqBody-cautious-f2-herbivoreHD",
-          "file": "aquatic_cautious_f2_herbivore_motion_v1.png",
+          "file": "aquatic_cautious_f2_herbivore_motion_v1.webp",
           "rects": [
             [
               74,
@@ -13932,7 +13932,7 @@
         },
         "omnivore": {
           "key": "aqBody-cautious-f2-omnivoreHD",
-          "file": "aquatic_cautious_f2_omnivore_motion_v1.png",
+          "file": "aquatic_cautious_f2_omnivore_motion_v1.webp",
           "rects": [
             [
               76,
@@ -14060,7 +14060,7 @@
         },
         "carnivore": {
           "key": "aqBody-cautious-f2-carnivoreHD",
-          "file": "aquatic_cautious_f2_carnivore_motion_v1.png",
+          "file": "aquatic_cautious_f2_carnivore_motion_v1.webp",
           "rects": [
             [
               74,
@@ -15337,7 +15337,7 @@
       "bodies": {
         "herbivore": {
           "key": "aqBody-cautious-f3-herbivoreHD",
-          "file": "aquatic_cautious_f3_herbivore_motion_v1.png",
+          "file": "aquatic_cautious_f3_herbivore_motion_v1.webp",
           "rects": [
             [
               53,
@@ -15465,7 +15465,7 @@
         },
         "omnivore": {
           "key": "aqBody-cautious-f3-omnivoreHD",
-          "file": "aquatic_cautious_f3_omnivore_motion_v1.png",
+          "file": "aquatic_cautious_f3_omnivore_motion_v1.webp",
           "rects": [
             [
               56,
@@ -15593,7 +15593,7 @@
         },
         "carnivore": {
           "key": "aqBody-cautious-f3-carnivoreHD",
-          "file": "aquatic_cautious_f3_carnivore_motion_v1.png",
+          "file": "aquatic_cautious_f3_carnivore_motion_v1.webp",
           "rects": [
             [
               56,
@@ -16870,7 +16870,7 @@
       "bodies": {
         "herbivore": {
           "key": "aqBody-cautious-f4-herbivoreHD",
-          "file": "aquatic_cautious_f4_herbivore_motion_v1.png",
+          "file": "aquatic_cautious_f4_herbivore_motion_v1.webp",
           "rects": [
             [
               24,
@@ -16998,7 +16998,7 @@
         },
         "omnivore": {
           "key": "aqBody-cautious-f4-omnivoreHD",
-          "file": "aquatic_cautious_f4_omnivore_motion_v1.png",
+          "file": "aquatic_cautious_f4_omnivore_motion_v1.webp",
           "rects": [
             [
               25,
@@ -17126,7 +17126,7 @@
         },
         "carnivore": {
           "key": "aqBody-cautious-f4-carnivoreHD",
-          "file": "aquatic_cautious_f4_carnivore_motion_v1.png",
+          "file": "aquatic_cautious_f4_carnivore_motion_v1.webp",
           "rects": [
             [
               24,

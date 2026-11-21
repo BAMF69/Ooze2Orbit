@@ -1,0 +1,55 @@
+/* Approved illustrated command tabs: muted materials and a compact, open bottom window. */
+.civ-hd{font-family:Vollkorn,Georgia,serif;font-size:calc(15px * var(--text-scale,1));color:#f0e4ca;}
+.civ-hd button,.civ-hd summary{font-family:inherit;}
+.civ-hd .civ-hd-header{border:1px solid #8e7756;background:#151e29ed;border-radius:17px;box-shadow:0 4px 15px #0004;max-width:1100px;padding:7px 12px;gap:16px;}
+.civ-hd .civ-hd-resource strong{font-size:calc(17px * var(--text-scale,1));color:#dccc99;}.civ-hd .food strong{color:#bed386;}
+.civ-hd .civ-hd-base>span,.civ-hd .civ-hd-economy>span{color:#ded6be;}
+.civ-hd .civ-hd-base progress,.civ-hd .civ-hd-economy progress{height:8px;border:1px solid #72664e;box-shadow:none;}
+.civ-hd .civ-hd-base progress::-webkit-progress-value,.civ-hd .civ-hd-economy progress::-webkit-progress-value{background:#87ae88;box-shadow:none;}
+.civ-hd .rival progress::-webkit-progress-value{background:#c7857a;}
+.civ-hd .civ-hd-details{background:#18222bef;border:1px solid #957e58;border-radius:13px;box-shadow:0 3px 15px #0005;}
+.civ-hd .civ-hd-details summary{min-height:44px;}.civ-hd .civ-hd-detail-text{line-height:1.5;}
+.civ-hd .civ-hd-dock,.civ-hd .civ-hd-dock.stage-modal{inset:auto calc(var(--safe-right) + 10px) calc(var(--safe-bottom) + 8px) calc(var(--safe-left) + 10px);width:calc((100vw - var(--safe-left) - var(--safe-right)) * .70);max-width:880px;height:calc(170px * var(--text-scale,1));max-height:40dvh;margin:0 auto;grid-template-rows:44px minmax(0,1fr) 14px 14px;gap:2px;padding:0 10px 9px;border:0;border-radius:0;background:none;box-shadow:none;overflow:visible;}
+.civ-hd .civ-hd-dock::before,.civ-hd .civ-hd-dock::after{display:none;}
+.civ-hd .civ-hd-dock>.bio-skin{top:35px;}
+.civ-hd .civ-hd-roles{gap:0;margin-inline:-4px;align-items:stretch;}
+.civ-hd .civ-hd-roles button{min-height:44px;flex-direction:row;display:flex;padding:10px 8px 6px;border:0;border-radius:0;background:none;box-shadow:none;font-size:calc(17px * var(--text-scale,1));font-weight:650;text-shadow:0 2px 2px #000;}
+.civ-hd .civ-hd-roles button:hover:not(:disabled),.civ-hd .civ-hd-roles button[aria-selected=true]{background:none;border:0;box-shadow:none;}
+.civ-hd .civ-hd-roles button:hover:not(:disabled)>.bio-skin{filter:brightness(1.12);}
+.civ-hd .civ-hd-roles button[aria-selected=true]{color:#fff1ca;}
+.civ-hd .civ-hd-roles button[aria-selected=true]::after{height:2px;bottom:5px;background:#ddc175;box-shadow:0 0 5px #ccbb6d80;}
+.civ-hd .civ-hd-roles .civ-hd-icon{display:none;}
+.civ-hd .civ-hd-roles .civ-hd-button-label{white-space:nowrap;overflow-wrap:normal;}
+.civ-hd .civ-hd-menu{display:block;min-height:0;min-width:0;}
+.civ-hd .civ-hd-menu-head{position:absolute;right:0;top:0;width:44px;height:44px;padding:0;}
+.civ-hd .civ-hd-menu-head>strong,.civ-hd .civ-hd-menu-head>small{display:none;}
+.civ-hd .civ-hd-menu-head>button{position:static;min-width:44px;min-height:44px;width:44px;height:44px;padding:3px;font-size:calc(11px * var(--text-scale,1));background:#22222ddc;border:1px solid #8a7355;border-radius:12px;}
+.civ-hd .civ-hd-cards{height:100%;gap:6px;margin:0 49px 0 0;padding:5px 2px 2px;box-sizing:border-box;overflow:auto;overscroll-behavior:contain;}
+.civ-hd .civ-hd-cards:has(.civ-hd-context-group){margin-right:0;}
+.civ-hd .civ-hd-card.civ-hd-button{flex:1 0 158px;min-height:62px;grid-template-columns:44px minmax(0,1fr);grid-template-rows:auto auto auto;gap:0 5px;padding:5px 7px;border:1px solid #78644f;background:#241f2be8;box-shadow:inset 0 1px #dfcaa026,0 2px 3px #0006;border-radius:13px;text-align:left;}
+.civ-hd .civ-hd-card>.civ-hd-icon{width:44px;height:44px;}
+.civ-hd .civ-hd-card>.civ-hd-button-label{font-family:inherit;font-size:calc(14px * var(--text-scale,1));line-height:1.2;font-weight:650;overflow-wrap:normal;}
+.civ-hd .civ-hd-card-effect{font-size:calc(10px * var(--text-scale,1));line-height:1.2;color:#c6c4b0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}.civ-hd .civ-hd-card-cost{font-size:calc(13px * var(--text-scale,1));line-height:1.2;color:#e5ce88;}
+.civ-hd .civ-hd-card[aria-pressed=true]{border-color:#84aaa6;box-shadow:inset 0 0 0 1px #6e999b,0 0 4px #5b898950;}
+.civ-hd .civ-hd-card:hover:not(:disabled){background:#2c2c35;border-color:#c1a673;}
+.civ-hd .civ-hd-context-group{gap:6px;}.civ-hd .civ-hd-context-group button{min-height:44px;background:#24232ddd;border:1px solid #8a7758;border-radius:13px;font-size:calc(14px * var(--text-scale,1));}
+.civ-hd .civ-hd-selection,.civ-hd .civ-hd-notice{min-width:0;font-size:calc(11px * var(--text-scale,1));line-height:14px;padding-inline:8px;color:#dfcfaa;}.civ-hd .civ-hd-notice{color:#c5cabb;}
+.civ-hd .civ-hd-result-panel{font-family:inherit;background:#19242af5;border:2px solid #a58d5e;}
+/* One relevant context line, instead of two repetitive rows below the cards. */
+.civ-hd[data-role=hero] .civ-hd-notice,.civ-hd:not([data-role=hero]) .civ-hd-selection{display:none;}
+.civ-hd .civ-hd-dock,.civ-hd .civ-hd-dock.stage-modal{height:calc(156px * var(--text-scale,1));grid-template-rows:44px minmax(0,1fr) 14px;}
+@media(max-width:700px){
+ .civ-hd{--civ-crest-clear:32;}
+ .civ-hd .civ-hd-header{padding:5px 8px;gap:4px 9px;top:calc(var(--safe-top) + 54px);}.civ-hd .civ-hd-resource strong{font-size:calc(14px * var(--text-scale,1));}.civ-hd .civ-hd-resource small,.civ-hd .civ-hd-resources>small{font-size:calc(10px * var(--text-scale,1));}.civ-hd .civ-hd-resource .civ-hd-icon{width:22px;height:22px;}
+ .civ-hd .civ-hd-settlements{gap:8px;}.civ-hd .civ-hd-base>span{font-size:calc(10px * var(--text-scale,1));margin-bottom:1px;}.civ-hd .civ-hd-wave small{font-size:calc(10px * var(--text-scale,1));}.civ-hd .civ-hd-wave strong{font-size:calc(12px * var(--text-scale,1));}
+ .civ-hd .civ-hd-dock,.civ-hd .civ-hd-dock.stage-modal{width:calc(100vw - var(--safe-left) - var(--safe-right) - 12px);max-height:34dvh;height:calc(144px * var(--text-scale,1));padding:0 6px 7px;grid-template-rows:44px minmax(0,1fr) 13px;gap:1px;}
+ .civ-hd .civ-hd-roles button{font-size:calc(13px * var(--text-scale,1));padding:9px 2px 6px;}.civ-hd .civ-hd-cards{margin-right:45px;gap:5px;padding-inline:0;}.civ-hd .civ-hd-card.civ-hd-button{flex-basis:143px;padding:4px 5px;grid-template-columns:35px minmax(0,1fr);}.civ-hd .civ-hd-card>.civ-hd-icon{width:35px;height:42px;}.civ-hd .civ-hd-card>.civ-hd-button-label{font-size:calc(13px * var(--text-scale,1));}.civ-hd .civ-hd-card-effect{font-size:calc(10px * var(--text-scale,1));}.civ-hd .civ-hd-card-cost{font-size:calc(12px * var(--text-scale,1));}.civ-hd .civ-hd-selection,.civ-hd .civ-hd-notice{font-size:calc(10px * var(--text-scale,1));line-height:13px;}.civ-hd .civ-hd-context-group button{font-size:calc(12px * var(--text-scale,1));}.civ-hd .civ-hd-context-group .civ-hd-icon{width:27px;height:27px;}
+}
+@media(max-height:480px) and (orientation:landscape){
+ .civ-hd .civ-hd-header{top:calc(var(--safe-top) + 49px);padding:3px 9px;gap:10px;grid-template-columns:1fr 1fr 1fr;}.civ-hd .civ-hd-resource strong{font-size:calc(13px * var(--text-scale,1));}.civ-hd .civ-hd-resource small,.civ-hd .civ-hd-resources>small{font-size:calc(9px * var(--text-scale,1));}.civ-hd .civ-hd-base>span,.civ-hd .civ-hd-wave small{font-size:calc(9px * var(--text-scale,1));}.civ-hd .civ-hd-resource .civ-hd-icon{width:20px;height:20px;}.civ-hd .civ-hd-settlements{grid-column:auto;grid-row:auto;grid-template-columns:1fr;gap:2px;}
+ .civ-hd{--civ-crest-clear:32;--bio-crest-scale:.27;}
+ .civ-hd .civ-hd-header{height:44px;box-sizing:border-box;}.civ-hd .civ-hd-base>span{margin-bottom:0;}.civ-hd .civ-hd-base progress,.civ-hd .civ-hd-economy progress{height:5px;}.civ-hd .civ-hd-wave small{display:none;}.civ-hd .civ-hd-pressure{gap:2px;}.civ-hd .civ-hd-economy>span{font-size:calc(9px * var(--text-scale,1));margin-bottom:0;}
+ .civ-hd .civ-hd-dock,.civ-hd .civ-hd-dock.stage-modal{top:auto;left:calc(var(--safe-left) + 8px);right:calc(var(--safe-right) + 8px);bottom:calc(var(--safe-bottom) + 4px);margin:0 auto;width:72vw;height:calc(108px * var(--text-scale,1));max-height:42dvh;grid-template-rows:44px minmax(0,1fr) 12px;padding:0 8px 5px;gap:0;}
+ .civ-hd .civ-hd-roles{grid-template-columns:repeat(4,minmax(0,1fr));}.civ-hd .civ-hd-roles button{font-size:calc(14px * var(--text-scale,1));}.civ-hd .civ-hd-cards{flex-direction:row;}.civ-hd .civ-hd-card.civ-hd-button{flex:1 0 156px;min-height:48px;padding:3px 5px;grid-template-columns:30px 1fr;}.civ-hd .civ-hd-card>.civ-hd-icon{width:30px;height:30px;}.civ-hd .civ-hd-card>.civ-hd-button-label{font-size:calc(12px * var(--text-scale,1));}.civ-hd .civ-hd-card-effect{font-size:calc(9px * var(--text-scale,1));}.civ-hd .civ-hd-card-cost{font-size:calc(11px * var(--text-scale,1));}.civ-hd .civ-hd-context-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));}.civ-hd .civ-hd-context-group button{font-size:calc(12px * var(--text-scale,1));flex-direction:row;}.civ-hd .civ-hd-selection,.civ-hd .civ-hd-notice{font-size:calc(9px * var(--text-scale,1));line-height:12px;}
+ .civ-hd .civ-hd-card-effect{display:none;}.civ-hd .civ-hd-card.civ-hd-button{min-height:44px;grid-template-rows:auto auto;}.civ-hd .civ-hd-card>.civ-hd-icon{grid-row:1/3;}.civ-hd .civ-hd-cards{padding-top:1px;}
+}

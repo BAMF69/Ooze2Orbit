@@ -97,7 +97,8 @@ describe("Water inheritance and Gardener", () => {
     expect(loaded).toEqual(g); expect(resumeGarden(loaded, "herbivore", "aquatic A")).toEqual(g);
     expect(resumeGarden(loaded, "herbivore", "aquatic B").expedition).toBeUndefined();
     expect(resumeGarden(loaded, "carnivore", "aquatic A").generation).toBe(1);
-    for (const bad of [{ seed: -1 }, { visited: [99] }, { unlocked: ["wings"] }, { basinRaised: 1 }, { completed: ["ice"] }, { version: 2 }])
+    expect(readGarden({ ...g, traits: { ...g.traits, classSkills: ["laser"] } })).toBeNull();
+    for (const bad of [{ seed: -1 }, { version: 1, visited: [99] }, { visited: [-1] }, { unlocked: ["wings"] }, { basinRaised: 1 }, { completed: ["ice"] }, { version: 3 }])
       expect(readGarden({ ...g, expedition: { ...g.expedition, ...bad } })).toBeNull();
   });
 });

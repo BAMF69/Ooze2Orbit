@@ -2,6 +2,8 @@
 // Usage: generateWater(seed), worldProblems(world), roomSolid(room, basinRaised).
 // Notes: PROTOTYPE: stable v1 grammar; seed 0 is the authored fallback. No engine/global RNG.
 // Authored: Written with Codex (GPT-6).
+import type { RoomSpec } from "./levelgen/roomSpec";
+import { V1_GEOMETRY, type RoomGeometry } from "./levelgen/geometry";
 export const WATER = {
   version: 1, attempts: 4, tile: 16, width: 640, floor: 304, ceiling: 96,
   spawn: 48, exit: 600, interactReach: 38, swimSpeed: 85, finSpeed: 155,
@@ -10,23 +12,27 @@ export const WATER = {
 } as const;
 export const DIFFICULTIES = ["easy", "medium", "hard"] as const;
 export type Difficulty = typeof DIFFICULTIES[number];
-export type Adaptation = "gills" | "fins";
+/** What a room can teach a lineage: the two story keys, or a fun part from a bonus vault (levelgen/keys.ts). */
+export type Adaptation = "gills" | "fins" | "fullArmor" | "iceBreath";
+export const ADAPTATIONS: readonly Adaptation[] = ["gills", "fins", "fullArmor", "iceBreath"];
 export interface WaterRoom {
   id: number; tier: Difficulty; name: string; left: number; right: number; branch: number;
   gate: boolean; tunnel: boolean; current: boolean; goal: boolean; reward?: Adaptation;
   gateX: number; platforms: { x: number; y: number; width: number }[];
   food: number[]; foes: number[]; cover: number; variant: number;
+  /** Generated rooms carry their content; absent on v1 rooms, whose spec is projected (levelgen/roomSpec.ts). */
+  spec?: RoomSpec;
 }
 export interface WaterWorld { version: number; seed: number; rooms: WaterRoom[]; fallback: boolean; rejected: string[] }
 const COUNTS = { easy: 3, medium: 3, hard: 4 };
 const STARTS = { easy: 0, medium: 4, hard: 7 };
 export const levelStart = (tier: Difficulty): number => STARTS[tier];
 /** A nursery is a side branch, so returning through its arch must not teleport past the parent's sluice. */
-export const returnX = (room: WaterRoom): number => room.id === 3 ? 126 : 600;
+export const returnX = (room: WaterRoom): number => room.spec?.returnArrival?.x ?? (room.id === 3 ? 126 : 600);
 
 /** Actual tile collision: required corridors share the same 14x18 body and 16px lattice as physics.ts. */
-export function roomSolid(room: WaterRoom, raised: boolean, tx: number, ty: number): boolean {
-  if (ty >= 19 || ty < 6 || tx < 0 || tx >= 40) return true;
+export function roomSolid(room: WaterRoom, raised: boolean, tx: number, ty: number, g: RoomGeometry = V1_GEOMETRY): boolean {
+  if (ty >= g.floorRow || ty < g.openTop || tx < 0 || tx >= g.cols) return true;
   // A sealed log sluice cannot be jumped over. Raising the basin floats it open for every descendant.
   if (room.gate && !raised && tx === room.gateX / WATER.tile) return true;
   // Submerged tunnel leaves 48px clearance above the floor; gills are an entry requirement.

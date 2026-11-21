@@ -16,6 +16,50 @@ saved in touch_layout.json. Default small-screen stick 72→92px, default dead z
 Verified: check, 510 tests, boot/aquatic/creature smoke; headless phone/tablet emulation (812x375, 375x667,
 1024x768, plus creature 375x812/1280x800): d-pad actions, two-finger stick+d-pad, editor drag/resize/save/reload,
 no blue edge pixels. NOT verified on the tester's real older tablet or iPhone; frame-rate gain is unmeasured.
+## 2026-11-17 — Mandible hinge and remaining attachments
+
+Inspector v3 review setups are exported to `build/attachment-pass-v3/review-setups.json`. All entries use
+form 3 and the omnivore palette. Compare the three family captures at large and small scales.
+
+| Setup | Defect addressed and review |
+|---|---|
+| Aggressive, Jaws III, front chomp | The lower strip cut across the opening. Two rows now meet at the painted chin and rise toward the corners. Compare with neutral swim and the side chomp. |
+| Adaptable, Fins III, swim and dash | Root positions could drift and rear membranes could point inward. Shoulder and pelvic roots use form-specific positions, mirror at the attachment point, and fold during dash. |
+| Cautious, Plates III, side/back swim | Fixed scute spacing ran past short dorsal paths. Coverage compresses to the available path, side scutes sit closer to the body and shorter front chomp poses hide the chest plates behind the jaw. |
+| Aggressive, Gills, side swim | The shared capsule read as an external ornament. The near flank now shows recessed slits. |
+| Adaptable, Endurance, side swim | The capsule proxy sat too far from abdominal anatomy. A ribbed muscle patch follows the belly, with a rear trunk position. |
+| Adaptable, Toxic tendrils, side swim | The appendage swung as one hinge. Three overlapping sections flex progressively off fixed ventral roots. Reduced motion holds a steady pose. |
+| Cautious, Electric organ, side swim | The mount encroached on armor. The compact capsule pulses on the upper flank, with steady illumination in reduced motion. |
+
+Verification passed 602 unit tests, the type and shader checks, the production build, and 186 in-game
+browser cases. The inspector rendered 432 equipped views/poses and passed its mobile layout checks.
+
+Remaining provisional cases include small palette differences in lip contours, extreme bends on early forms,
+and tendril seams under heavy magnification. Physical phone performance remains unmeasured.
+
+## 2026-11-17 — Jaws and Torrent attachment trial
+
+The original lab rendered mature adaptable artwork for both form choices. Inspector v2 selects the actual
+temperament, form, diet, frame metadata and rig. It includes the current diagnostics in setup exports.
+
+- **Floating jaws.** Equip Jaws III on aggressive form 3, omnivore, and compare neutral swim with chomp
+  in front and side views. Small ivory teeth sit at the seam on swim and follow the upper and lower lips into
+  the chomp opening. Repeat on adaptable and cautious form 3. The rear view hides teeth.
+- **Torrent proxy fin.** Solo Torrent tail on adaptable form 3, omnivore, then view neutral swim in all
+  directions and step through the bends. The painted terminal fin is recolored and enlarged in place.
+  Aggressive form 3 retains the fork shape. Cautious form 4 hides the fin from the front behind its shell.
+- The inspection matrix covers 36 profiles in front, side and back for neutral swim and chomp. Extreme bends,
+  lip contact between palettes, and curled ribbon tips remain provisional. Gills and endurance still use proxy
+  artwork. Toxic tendrils still use hinge sway.
+
+Type and shader checks, 600 tests, the production build, and the offline browser fixture passed. The game
+fixture passed 186 cases, including daughter selection with both newer organs, plus portrait and landscape
+smokes. With Torrent equipped, the restart cache check reported 63,408,544 bytes in both passes. Physical
+phone performance remains unmeasured.
+
+Build with `node tools/build_avatar_inspector.mjs build/trial/inspector-v2`. Run the corresponding
+`avatar_inspector_review.mjs` against that directory. Captures are local build artifacts.
+
 
 ## 2026-11-16 — Aquatic wildlife art and predator swim/bite pass
 Replaced procedural jellyfish/eel avatars with detailed transparent single-pose illustrations. New

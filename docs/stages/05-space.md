@@ -79,14 +79,41 @@ travel, adaptation, victory or save rules changed. Actual device/touch-stick tes
 - `T0|▼|` hunts the way gulpers did in the cell stage: drawn to easier targets, pausing after it strikes, giving up long
   chases *(approved idea)*. A player who learned to lure gulpers can lure `T0|▼|`'s ships the same way.
 
-## Jumping and landing *(BAMF69 2026-11-09)*
+## Jumping and landing *(BAMF69 2026-11-09; landing hub added 2026-11-17)*
 - **The star map:** jump between connected star systems. Jumps cost fuel *(Claude's pick)*.
-- **Landing on planets** is where the captain collects parts and ships:
-  - **Allied worlds** (the three species): shipyards and outfitters selling that species' ships and parts.
-  - **Ruins of older gardens:** forgotten technology, found by exploring *(approved idea)*.
-  - **`T0|▼|` wrecks and outposts:** salvage. Powerful, but it is `T0|▼|`'s own design, so it already knows how to
-    counter it *(approved idea)*.
-  - **Trade and missions** to earn money between fights *(Claude's pick, from Endless Sky's structure)*.
+- **Allied worlds** (the species you have allied): shipyards and outfitters selling that species' ships and parts.
+- **Trade and missions** to earn money between fights *(Claude's pick, from Endless Sky's structure)*.
+- **`T0|▼|` wrecks:** salvage after battles. Powerful, but it is `T0|▼|`'s own design, so it already knows how to
+  counter it *(approved idea)*.
+
+### Landing: what happens on a planet *(BAMF69 2026-11-17)*
+Landing can lead to one of three activities. Each reuses an earlier stage, so the space stage revisits the whole game.
+The player does not pick freely: **the planet decides** *(Claude's pick for how: each kind of planet has its natural
+activity, so landings add up to a story instead of a menu)*.
+
+| Planet | Activity | Plays like | Reward |
+|---|---|---|---|
+| **Barren but habitable** | **Terraform and seed** a new species, then guide it to civilization | God mode, then a battlefield match as the Gardener (below) | A new **ally**, with its shipyards and technology |
+| **Dead world with ruins of older gardens** | **Explore the ruins** with an away team | The creature stage's dungeons (its procedural level generator) | **Ship technology, blueprints and relics** |
+| **Contested world** (T0&#124;▼&#124; outposts, a cult of the Maker, rival societies) | **Fight for it** | One of the civilization stage's battlefield modes | Ship technology, blueprints, relics, resources |
+
+- **Every reward is for the fleet** (BAMF69 2026-11-17): ship technology, blueprints and relics. Never creature body
+  parts, which keeps pillar 2's "bodies evolve, tools are built".
+- **Ruin runs** are played by an away team from your species or an ally species *(Claude's pick)*. Relics from ruins
+  are a good source of technology `T0|▼|` has not seen, since older gardens predate it.
+- **Which battlefield mode** a contested world uses is random or set by the campaign (BAMF69 2026-11-17: the player
+  does not pick), drawn from the civilization stage's modes (`docs/stages/04-civilization.md`, "Battlefield modes").
+- The Gardener rule applies: each activity offers both an aggressive and a cautious way through, and its rewards lean
+  toward the temperament the player showed *(Claude's pick)*.
+
+### Guiding a seeded species as the Gardener *(BAMF69 2026-11-17)*
+After seeding, the new species' growth catches up in the simulation until it reaches civilization. Then the player
+guides it through a battlefield match, **as the Gardener, not as its ruler**:
+- **Both kinds of control** (BAMF69 2026-11-17): indirect Gardener powers (blessings, the Gardener's levers, acts of
+  god such as meteors and terraforming) plus some direct control *(Claude's pick for which: the species' hero)*.
+- Winning makes the species an ally: it joins the alliance with its own shipyards and parts.
+- This is the space stage's real god mode, and on the machine path it is mirrored by `T0|▼|` doing the same to
+  organic species (`docs/LORE.md`, "The flip").
 
 ## `T0|▼|` adapts *(approved 2026-11-08)*
 - **After every battle, `T0|▼|` adapts to the ship technology it faced.** The design that won last time works less
@@ -111,7 +138,7 @@ travel, adaptation, victory or save rules changed. Actual device/touch-stick tes
 |---|---|
 | Victory type | The starting position. Redesigned civ (2026-11-10): enemy base destroyed (aggressive) gives a stronger war fleet; out-earned (cautious) gives more ships and stronger defenses. The built Toy still reads the old conquest / trade / faith types: update it when civilization Toy 2 is built |
 | Technology heritage | The species' first ship parts |
-| Took `T0|▼|` tech? | A faster start, but `T0|▼|` begins partly adapted |
+| Took T0&#124;▼&#124; tech? | A faster start, but T0&#124;▼&#124; begins partly adapted |
 | `gardener.harshness` | Whether the species welcomes or resents the Gardener when it learns the truth |
 
 ## Core loop (first draft, Claude's pick)
@@ -123,8 +150,8 @@ on a planet: buy, sell, refit ships, take a mission -> jump across the star map 
 | Scale | What the player does | Why they keep going |
 |---|---|---|
 | Every ~30 seconds | Maneuvers and fires in combat | Winning the fight |
-| Every ~10 minutes | Refits the fleet after `T0|▼|` adapts | A new build to try |
-| Whole stage | Gathers three species into one fleet and assaults `T0|▼|` | The end of the game |
+| Every ~10 minutes | Refits the fleet after T0&#124;▼&#124; adapts | A new build to try |
+| Whole stage | Gathers three species into one fleet and assaults T0&#124;▼&#124; | The end of the game |
 
 ## Look and camera
 - Top-down 2D ships, still lit and moody: dark space, ships lit by their own engines and the nearest star.
@@ -142,8 +169,8 @@ Review before building found these gaps in the design above; the Toy answers eac
 
 | Gap | The Toy's answer (numbers in `space/tuning.ts`) |
 |---|---|
-| How `T0|▼|` adapts | After every battle (won, lost or broken off) it learns each **weapon family** (spines, lances, spores) by its share of the damage you dealt, and each **defence family** (plating, membranes) by its share of your defences. A family you did not use fades. Never past 75 % |
-| What "learned" does | A learned weapon family does that much less damage to `T0|▼|`; a learned defence family adds that much less hull or shield |
+| How T0&#124;▼&#124; adapts | After every battle (won, lost or broken off) it learns each **weapon family** (spines, lances, spores) by its share of the damage you dealt, and each **defence family** (plating, membranes) by its share of your defences. A family you did not use fades. Never past 75 % |
+| What "learned" does | A learned weapon family does that much less damage to T0&#124;▼&#124;; a learned defence family adds that much less hull or shield |
 | Hybrid technology | A ship with weapons and defences from both makers is learned 40 % slower |
 | Economy | Destroyed ships drop salvage. Parts cost salvage and **refund in full**, so changing your build is never punished |
 | Stakes with one ship | Losing the flagship: the escape pod reaches Hearth without the battle's salvage and a fifth of what was banked. No game over |
@@ -221,11 +248,36 @@ BAMF69: "jumping between stars feels clumsy and unsatisfying"; "the space stage 
 - Autosaves on landing, arriving in a system, after every battle and every refit; Continue restores the whole campaign
   in that star system (a fight in progress starts over). Smoke: `&save` lets an autoplay run write it, `?continue`.
 
+
+## Illustrated flight slice (2026-11-17)
+
+The Seedpod, Tidewright Skiff and Shard use approved illustrated art at the existing flight sprite dimensions.
+The Seedpod is the interim Hearth appearance. Reserve its layered shell-ceramic design for cautious spacefaring
+civilizations once separate temperament hull families exist. Diet remains separate. The Driftfield background
+is scenic. Projectile trails and HUD surfaces are presentation only.
+
+When Auto detects touch or Settings selects Touch, the Helm pad turns with horizontal drag and applies forward
+thrust with upward drag. On Thrusters, swipe sideways and hold to strafe, or swipe down and hold for reverse.
+Release to stop thrust. Fire and Brake support independent fingers. Map, Commands, Details and rotation retain
+their pause paths. Gesture capture clears on release, cancellation, pause, focus loss, resize and mode changes.
+
+This slice keeps the existing outfitter, viewport framing, combat, equipment, save and lineage rules.
+The full refit layout and temperament-specific ship families are later work.
+
+## Remaining illustration pass
+
+Flight and the existing outfitter now share illustrated variants for all four hulls, all three T0 enemies,
+the two docking worlds, and all eleven equipment parts. Spineling retains the Seedpod hull it uses in combat.
+The Lattice has its own distant geometric backdrop. Planet and ship art stays at the prototype's world-space
+dimensions. The visible dock structures are landmarks on the existing land points. The parts use their current
+slots and prices, and no hangar interaction, combat rule, or save format changes with the art.
+
 ## Open questions
 | Question | Why it matters |
 |---|---|
-| How does the final assault on `T0|▼|` work: one big battle, or a campaign of systems? | The game's ending |
-| How much control does the player get over the outer gardens? | Too little feels random; too much is three full games |
+| How does the final assault on T0&#124;▼&#124; work: one big battle, or a campaign of systems? | The game's ending |
+| How much control does the player get over the outer gardens? (2026-11-17: seeding, then a battlefield match as the Gardener with both indirect powers and some direct control) | Too little feels random; too much is three full games |
+| How often do landings lead to each activity, and can a planet be revisited? | Pacing between fights and the hub activities |
 | Does temperament still move in this stage, and what does it change if it does? | The 50 % cap applies; the space stage is the last |
-| Ending variants: how does the species react to learning the Gardener built `T0|▼|`? | The optional twist in `docs/LORE.md` |
+| Ending variants: how does the species react to learning the Gardener built T0&#124;▼&#124;? | The optional twist in `docs/LORE.md` |
 | Connected mode (other players' species) | Needs online play: out of scope until solo works |
