@@ -598,7 +598,7 @@ export class CreatureScene extends Phaser.Scene {
     const g = this.gfx; g.clear();
     // Full-screen view: dark canopy above the room for tall (portrait) views, earth below it under the footer buttons.
     g.fillStyle(0x101f25).fillRect(-200, -900, this.roomWidth + 400, 900);
-    g.fillStyle(0x2c3d2e).fillRect(-200, 368, this.roomWidth + 400, 600);
+    g.fillStyle(0x2c3d2e).fillRect(-200, 360, this.roomWidth + 400, 600); // from the room's lower edge, so floor hatches show earth below
     if (this.room < 0) { this.roomArt.syncHub(this.room === -2); drawHub(g, this.room === -2, this.garden.traits, this.garden.expedition!); }
     else this.roomArt.sync(this.currentRoom, this.roomWater(), this.objective);
     if (this.room >= 0) drawWaterRoom(g, this.currentRoom, this.roomWater(), this.food, this.trap, this.clock, this.foodCache, this.objective, true);
