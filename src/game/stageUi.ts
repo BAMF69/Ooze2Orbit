@@ -30,7 +30,7 @@ export class StageUi {
     scene.events.once("shutdown", () => this.root.remove());
   }
   setStatus(summary: string, details = summary): void { if (this.statusText.textContent !== summary) this.statusText.textContent = summary; if (this.details.textContent !== details) this.details.textContent = details; }
-  setMessage(s: string): void { this.message.hidden = !s; if (this.message.textContent !== s) this.message.textContent = s; }
+  setMessage(s: string): void { if (this.message.hidden !== !s) this.message.hidden = !s; if (this.message.textContent !== s) this.message.textContent = s; }
   actions(actions: readonly StageAction[]): void { this.buttons(this.footer, actions); }
   show(text: string, actions: readonly StageAction[] = []): void {
     this.modal.hidden = false; this.footer.inert = true; if (this.modalText.textContent !== text) this.modalText.textContent = text; this.buttons(this.modalActions, actions);
@@ -51,8 +51,8 @@ export class StageUi {
       }
       if (a.icon) { const span = b.lastElementChild!; if (span.textContent !== a.label) span.textContent = a.label; }
       else if (b.textContent !== a.label) b.textContent = a.label;
-      b.disabled = a.disabled ?? false;
-      b.dataset.action = a.id;
+      if (b.disabled !== (a.disabled ?? false)) b.disabled = a.disabled ?? false;
+      if (b.dataset.action !== a.id) b.dataset.action = a.id;
       b.onclick = e => { if (e.detail > 0) b.blur(); if (shell.topId === "play") a.run(); };
     });
   }

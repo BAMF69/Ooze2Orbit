@@ -1,4 +1,22 @@
 # Playtest Log
+## 2026-11-21 — Tester notes: older tablet, small phone, iPhone to TV, creature border, aquatic touch
+Observations: (1) older tablet choppy with sluggish controls, even on Performance; (2) small phone: left stick
+too small and too sensitive, asks for movable/resizable controls; (3) iPhone: wants to cast to a TV; (4) creature
+window not full size, blue border; (5) aquatic right-hand touch controls not intuitive, asks for a d-pad.
+Changes: (1) HUD rewrote ~33 DOM attributes/text nodes per frame even when unchanged (incl. one on <body>);
+write-if-changed guards (game/domPatch.ts) bring aquatic to <1 and cell to 0 mutations/frame. Hidden Phaser HUD
+texts no longer re-rasterize. Performance quality now draws at most ~960x540; Auto on low-end touch devices
+(<=4 cores or <=3 GB) uses a reduced budget; both enable a lite HUD (no shadows/glow, plain occlusion fade).
+(2) Settings → Controls → Touch layout: drag stick/buttons, stick and button size 60-220%, stick sensitivity;
+saved in touch_layout.json. Default small-screen stick 72→92px, default dead zone 0.18→0.26.
+(3) No code path: Safari cannot AirPlay a live canvas. Info panel now explains Screen Mirroring / Cast.
+(4) Creature fills the screen; view covers the 640x360 room, ground continues under the footer buttons.
+(5) Aquatic d-pad: up/down depth (up held at the surface breaches once per hold), left dash, right sprint toggle
+(lit when on), centre Shock when owned. Separate Breach button removed on touch.
+Verified: check, 510 tests, boot/aquatic/creature smoke; headless phone/tablet emulation (812x375, 375x667,
+1024x768, plus creature 375x812/1280x800): d-pad actions, two-finger stick+d-pad, editor drag/resize/save/reload,
+no blue edge pixels. NOT verified on the tester's real older tablet or iPhone; frame-rate gain is unmeasured.
+
 ## 2026-11-16 — Aquatic wildlife art and predator swim/bite pass
 Replaced procedural jellyfish/eel avatars with detailed transparent single-pose illustrations. New
 deepmaw/blue-shark/hammerhead sheets supply three swim key poses and open-jaw bite in front/side/back

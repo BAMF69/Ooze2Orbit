@@ -1,3 +1,4 @@
+import { setAttr, setData, setText } from "../domPatch";
 import { UpgradeTray } from '../upgradeTray';
 import { TouchMenuPause } from '../touchMenuPause';
 import { paintUpgradeCard } from '../upgradeCard';
@@ -32,16 +33,16 @@ export class AqUpgradePanel {
   render(c: AqCreature): void {
     if (!this.isOpen) return;
     this.pause.set(this.touchPaused);
-    this.root.dataset.paused = String(this.touchPaused);
-    this.tray.balance.textContent = this.i18n.t("cell.hud_plant", { n: Math.floor(c.points.algae) }) + "\n" + this.i18n.t("cell.hud_meat", { n: Math.floor(c.points.meat) });
+    setData(this.root, "paused", String(this.touchPaused));
+    setText(this.tray.balance, this.i18n.t("cell.hud_plant", { n: Math.floor(c.points.algae) }) + "\n" + this.i18n.t("cell.hud_meat", { n: Math.floor(c.points.meat) }));
     this.root.classList.toggle("touch-upgrades", this.touchPaused);
-    this.tray.notice.textContent = this.i18n.t(this.touchPaused ? "up.tray_paused" : "up.tray_live");
+    setText(this.tray.notice, this.i18n.t(this.touchPaused ? "up.tray_paused" : "up.tray_live"));
     AQ_STATS.forEach((s, n) => {
       const cost = upgradeCost(c, s);
-      this.rows[n].dataset.upgradeDiet = AQ_PAID_WITH[s] === "algae" ? "herbivore" : AQ_PAID_WITH[s] === "meat" ? "carnivore" : "omnivore";
+      setData(this.rows[n], "upgradeDiet", AQ_PAID_WITH[s] === "algae" ? "herbivore" : AQ_PAID_WITH[s] === "meat" ? "carnivore" : "omnivore");
       paintUpgradeCard(this.rows[n], s, this.i18n.t(`up.${s}`), c.ups[s], maxLevel(),
         cost === null ? this.i18n.t("up.max") : this.i18n.t(`up.cost_${AQ_PAID_WITH[s]}`, { n: cost }), upgradeEffect(c, s, this.i18n), cost !== null && pointsFor(c, s) >= cost, this.i18n.t("effect.bonus", { cap: maxLevel(), bonus: Math.max(0,c.ups[s]-maxLevel()) }), cost !== null && AQ_PAID_WITH[s] === "either" ? this.i18n.t("up.cost_either_short", { n: cost }) : undefined);
-      this.rows[n].setAttribute("aria-pressed", String(n === this.index));
+      setAttr(this.rows[n], "aria-pressed", String(n === this.index));
       decorateIllustratedUpgrade(this.scene,this.rows[n],s);
     });
   }

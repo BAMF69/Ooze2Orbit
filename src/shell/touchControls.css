@@ -1,0 +1,64 @@
+/* ---------------------------------------------------------------------------
+   touchControls.css
+   Purpose : The aquatic right-hand d-pad and the touch layout editor (playtest 2026-11-21).
+   Notes   : Selectors repeat class names on purpose. Older stage sheets (hudDock.css, illustratedHud.css, remaster.css) style .touch-actions as a
+             2-column grid with !important. The d-pad lives inside .touch-actions, so the container rules
+             below repeat class names to outrank them without touching those sheets.
+             Sizes come from --dpad-button; the player's touch layout scales the whole group on top of this.
+   --------------------------------------------------------------------------- */
+.touch-controls { --dpad-button: 58px; --dpad-gap: 4px; }
+@media (max-height: 450px), (max-width: 420px) { .touch-controls { --dpad-button: 50px; } }
+
+/* container: undo the old grid, keep the corner position from the stage sheet */
+.touch-controls.aquatic-touch.aquatic-touch > .touch-actions.touch-actions {
+  display: block !important; width: auto !important; grid-template-columns: none !important; grid-template-rows: none !important; gap: 0 !important;
+}
+.touch-controls.aquatic-touch.aquatic-touch > .touch-depth.touch-depth:empty { display: none !important; }
+
+.touch-dpad {
+  display: grid; grid-template-columns: repeat(3, var(--dpad-button)); grid-template-rows: repeat(3, var(--dpad-button));
+  gap: var(--dpad-gap); padding: 6px; border-radius: 50%; pointer-events: auto; touch-action: none;
+  background: radial-gradient(circle, #0c242e99 55%, #0c242e00 72%);
+}
+.touch-controls.touch-controls .touch-dpad.touch-dpad > button {
+  width: var(--dpad-button) !important; height: var(--dpad-button) !important; min-width: 0 !important; min-height: 0 !important;
+  padding: 2px !important; margin: 0; display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+  font: 600 10px/1.05 system-ui, sans-serif !important; letter-spacing: 0; text-align: center; overflow: hidden;
+  border: 1px solid #c9e2cf99 !important; color: #f2f4de !important; background: linear-gradient(160deg, #24505acc, #0f2733dd) !important;
+  box-shadow: none !important; touch-action: none; pointer-events: auto; user-select: none; -webkit-user-select: none;
+}
+/* arrow-shaped arms: each arm is rounded on its outer side, flat towards the centre */
+.touch-controls.touch-controls .touch-dpad.touch-dpad > [data-slot=up]     { grid-area: 1 / 2; border-radius: 14px 14px 6px 6px !important; }
+.touch-controls.touch-controls .touch-dpad.touch-dpad > [data-slot=down]   { grid-area: 3 / 2; border-radius: 6px 6px 14px 14px !important; }
+.touch-controls.touch-controls .touch-dpad.touch-dpad > [data-slot=left]   { grid-area: 2 / 1; border-radius: 14px 6px 6px 14px !important; }
+.touch-controls.touch-controls .touch-dpad.touch-dpad > [data-slot=right]  { grid-area: 2 / 3; border-radius: 6px 14px 14px 6px !important; }
+.touch-controls.touch-controls .touch-dpad.touch-dpad > [data-slot=center] { grid-area: 2 / 2; border-radius: 50% !important; transform: scale(.86); }
+.touch-controls.touch-controls .touch-dpad.touch-dpad > button[hidden] { display: none !important; }
+.touch-controls.touch-controls .touch-dpad.touch-dpad > button::before { display: block; font-size: 15px; line-height: 1; opacity: .9; }
+.touch-controls.touch-controls .touch-dpad.touch-dpad > [data-slot=up]::before { content: "\25B2"; }
+.touch-controls.touch-controls .touch-dpad.touch-dpad > [data-slot=down]::before { content: "\25BC"; }
+.touch-controls.touch-controls .touch-dpad.touch-dpad > button .proof-icon { width: 20px !important; height: 20px !important; }
+.touch-controls.touch-controls .touch-dpad.touch-dpad > button:has(.proof-icon)::before { content: none; }
+.touch-controls.touch-controls .touch-dpad.touch-dpad > button.touch-down { filter: brightness(1.35); }
+.touch-controls.touch-controls .touch-dpad.touch-dpad > [aria-pressed=true] { border-color: #ffe27a !important; box-shadow: 0 0 0 2px #ffe27a66, inset 0 0 12px #ffe27a55 !important; color: #fff6c8 !important; }
+body[data-overlay-diet] .touch-controls.touch-controls .touch-dpad.touch-dpad > button { background: linear-gradient(160deg, var(--diet-top, #24505a), var(--diet-bottom, #0f2733)) !important; border-color: var(--diet-accent, #c9e2cf) !important; color: var(--diet-ink, #f2f4de) !important; }
+
+/* ---- Touch layout editor ---------------------------------------------------------------------------------- */
+body.touch-layout-editing .touch-controls { display: block !important; visibility: visible !important; z-index: 30 !important; } /* above the editor panel (#shell) */
+.touch-controls.touch-editing .touch-stick, .touch-controls.touch-editing .touch-actions {
+  pointer-events: auto !important; cursor: move; outline: 2px dashed #ffe27acc; outline-offset: 6px; border-radius: 18px;
+}
+.touch-controls.touch-editing .touch-dragging { outline-style: solid; }
+.touch-controls.touch-editing button { pointer-events: none !important; } /* the whole group drags, not one button */
+.touch-controls.touch-preview .touch-actions { right: calc(var(--safe-right, 0px) + 14px); bottom: calc(var(--safe-bottom, 0px) + 16px); }
+.screen.touch-layout-screen { align-items: flex-start; background: none; pointer-events: none; }
+.touch-layout-panel { pointer-events: auto; max-width: min(460px, 92vw); max-height: 70dvh; overflow: auto; background: #0b1f29ee; }
+.touch-layout-panel .muted { font-size: .85em; opacity: .8; margin-bottom: 6px; }
+.touch-layout-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.touch-layout-actions > * { flex: 1 1 auto; }
+@media (orientation: landscape) and (max-height: 500px) {
+  .touch-layout-panel { max-width: min(380px, 50vw); font-size: 13px; padding: 8px 12px !important; }
+  .touch-layout-panel .heading { font-size: 16px; margin: 0 0 2px; }
+  .touch-layout-panel .muted { display: none; }
+  .touch-layout-panel .item { min-height: 32px; padding-top: 2px; padding-bottom: 2px; }
+}

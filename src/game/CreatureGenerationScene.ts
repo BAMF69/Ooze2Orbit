@@ -61,7 +61,12 @@ export class CreatureScene extends Phaser.Scene {
     this.hud = text(12, 25, 11); this.hint = text(12, 325, 10);
     this.overlay = text(32, 70, 13).setWordWrapWidth(570).setDepth(30);
     this.screenUi = new StageUi(this);
-    this.cameras.main.setBounds(0, 0, 640, 360).startFollow(this.player, true, 0.15, 0.15);
+    this.cameras.main.startFollow(this.player, true, 0.15, 0.15);
+    this.frameCamera();
+    // The canvas fills the screen now (core/viewport.ts creatureViewport); refit when it or the native footer changes.
+    const refit = () => this.frameCamera();
+    this.scale.on("resize", refit); this.events.once("shutdown", () => this.scale.off("resize", refit));
+    this.time.delayedCall(50, refit); // after StageUi has laid out its buttons
     const prev = shell.saves.load("lineage").envelope?.data;
     const reveal = revealFrom(prev, 3, "creature");
     const home = refreshLineage(prev)?.species[0];
@@ -80,6 +85,20 @@ export class CreatureScene extends Phaser.Scene {
       shell.input.clearHeld();
     }
     Log.info("creature", `Generation ${this.garden.generation}: ${JSON.stringify(this.garden.traits)}`);
+  }
+  /**
+   * Camera bounds for the full-screen view. Below the room the ground continues under the native footer
+   * buttons, so the walkable floor sits above them; above, the dark canopy continues when the view is taller
+   * than the room (portrait). Sideways the view never exceeds 640, so the room's walls stay the edges.
+   */
+  private frameCamera(): void {
+    const cam = this.cameras.main, viewH = this.scale.height, viewW = this.scale.width;
+    const cssH = this.game.canvas.getBoundingClientRect().height || viewH;
+    const footer = this.screenUi?.footer.getBoundingClientRect();
+    const coverCss = footer && footer.height > 0 ? Math.max(0, cssH - footer.top + 6) : 0;
+    const padBottom = Math.min(viewH * 0.35, coverCss * viewH / cssH);
+    const bottom = 360 + padBottom, top = Math.min(0, bottom - viewH);
+    cam.setBounds(Math.min(0, (640 - viewW) / 2), top, Math.max(640, viewW), bottom - top);
   }
   private remember(): void {
     this.rooms.set(this.room, { food: this.food, foes: this.enemies.map(e => ({ x: e.x, hp: e.hp, passed: e.passed })), trap: this.trap });
@@ -210,7 +229,8 @@ export class CreatureScene extends Phaser.Scene {
   }
   private draw(): void {
     const g = this.gfx; g.clear(); g.fillStyle(ROOMS[this.room].color).fillRect(0, 0, 640, 360);
-    g.fillStyle(0x101f25).fillRect(0, 0, 640, 95);
+    g.fillStyle(0x101f25).fillRect(-200, -900, 1040, 995); // canopy, continued upward for tall (portrait) views
+    g.fillStyle(0x374a35).fillRect(-200, 352, 1040, 600); // ground, continued under the footer buttons
     for (let x = 0; x < 640; x += 48) { g.fillStyle(0x142b29).fillRect(x + 12, 110 + x % 57, 9, 195); g.fillCircle(x + 16, 130 + x % 57, 32); }
     for (let y = 6; y < 22; y++) for (let x = 0; x < 40; x++) if (this.solid(x, y)) {
       g.fillStyle(y >= 19 ? 0x374a35 : 0x676250).fillRect(x * 16, y * 16, 16, 16); g.fillStyle(0x91a064, 0.4).fillRect(x * 16, y * 16, 15, 2);

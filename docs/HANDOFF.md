@@ -1,8 +1,20 @@
 # Handoff
 
-**Last updated:** 2026-11-17
+**Last updated:** 2026-11-21
 **Branch:** `feat/cell-division`. Previous baseline committed and pushed as fd0f29d. This snapshot includes the subsequent aquatic remaster, map rewards and organic HUD/input polish. Push only when asked.
 **Active:** Cell/aquatic upgrade and growth HUD polish, expanded effects in Details, and aquatic illustrated remaster. Creature/civilization may be developed in independent chats/worktrees; preserve their scope.
+
+## Playtest fixes: perf, touch layout, d-pad, creature full screen (2026-11-21)
+- Details and verification in PLAYTEST_LOG 2026-11-21. New: game/domPatch.ts (write-if-changed DOM helpers;
+  use them in any per-frame HUD code), core/touchLayout.ts + shell/touchLayoutEditor.ts (Settings → Controls →
+  Touch layout, file touch_layout.json), shell/touchControls.css (d-pad, editor), aquatic/surfaceBreach.ts.
+- Aquatic touch: d-pad (up/down depth, up at surface = breach, left dash, right sprint, centre Shock). The scene
+  reads a virtual "surface" action held only by d-pad up. Keyboard/controller bindings unchanged.
+- Creature uses creatureViewport (full screen, cover framing) + frameCamera(); civ/space keep reserved bands.
+- Performance budget 960x540; Auto drops for low-end touch devices; body[data-perf-lite] lite HUD CSS.
+- Outstanding: real older-tablet and iPhone retest; casting is Screen Mirroring only (Info panel tip).
+- QA script: ../work/touch-dpad-layout-qa.cjs (captures in ../outputs/dpad-*, touch-layout-*, creature-fullscreen-*).
+  Not committed.
 
 ## Approved illustrated HUD family (2026-11-17)
 - Cell and aquatic use complete painted surfaces for all three diets, native weighted Vollkorn text,

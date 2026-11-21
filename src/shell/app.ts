@@ -20,6 +20,8 @@
 //   every screen shown: telemetry "screen" event (if allowed), pseudo-locale check (if locale is pseudo)
 // Authored: Written with Claude (Opus 5.5, claude-opus-5-5)
 // ---------------------------------------------------------------------------
+import { TOUCH_LAYOUT_FILE } from "../core/touchLayout";
+import { setTouchLayout } from "./touchControls";
 import type * as PhaserNS from "phaser";
 import { atomicWrite } from "../core/atomicFile";
 import { I18n, PSEUDO_LOCALE, type Tables } from "../core/i18n";
@@ -166,6 +168,7 @@ export class Shell {
     this.drive = drive.scenario;
     if (drive.refused) Log.warn("drive", `DRIVE_IGNORED ${this.params.get(DRIVE_PARAM)}: ${drive.refused}`);
 
+    setTouchLayout(this.store.read(TOUCH_LAYOUT_FILE)); // damaged or missing -> defaults (core/touchLayout.ts)
     const text = this.store.read(SETTINGS_FILE);
     const { settings, problems } = settingsLoad(text);
     this.settings = settings;
@@ -232,7 +235,8 @@ export class Shell {
     const dt = this.lastT ? Math.min((t - this.lastT) / 1000, MAX_DT) : 0;
     this.lastT = t;
     this.input.poll();
-    document.body.dataset.controls = this.input.scheme;
+    // Only on change: a <body> attribute write can restyle the whole page (older tablets dropped frames).
+    if (document.body.dataset.controls !== this.input.scheme) document.body.dataset.controls = this.input.scheme;
     this.subtitles.update(dt);
     this.top?.tick?.(dt);
     if (t - this.lastFlush > LOG_FLUSH_MS) {

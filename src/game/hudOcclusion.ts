@@ -1,5 +1,9 @@
 // Fade native menus only where the rendered player overlaps them; input remains available.
+// Perf (2026-11-21, older-tablet playtest): the mask position used to be rewritten on every frame for every menu,
+// even with the player nowhere near it. Custom properties inherit, so each write restyled the whole HUD subtree.
+// Now the position is written only while the player overlaps a menu, rounded to whole pixels, and only on change.
 import type * as Phaser from 'phaser';
+import { setVar } from './domPatch';
 export function trackHudOcclusion(scene: Phaser.Scene, subject: () => Phaser.GameObjects.Sprite): void {
   const update = () => {
     const sprite = subject(); if (!sprite?.active) return;
@@ -9,13 +13,16 @@ export function trackHudOcclusion(scene: Phaser.Scene, subject: () => Phaser.Gam
     const top = canvas.top + (camera.y + (b.y-camera.worldView.y)*camera.zoom)*sy;
     const right = left + b.width*camera.zoom*sx, bottom = top + b.height*camera.zoom*sy;
     document.querySelectorAll<HTMLElement>('.hud-dock,.upgrade-quarter,.dock-control-tray').forEach(menu => {
-      if(!menu.classList.contains('hud-dock')&&menu.closest('.hud-dock')){menu.classList.remove('hud-occluded');return;}
+      if(!menu.classList.contains('hud-dock')&&menu.closest('.hud-dock')){ if (menu.classList.contains('hud-occluded')) menu.classList.remove('hud-occluded');return;}
       const r = menu.getBoundingClientRect();
-      menu.style.setProperty('--occlusion-x',`${(left+right)/2-r.left}px`);
-      menu.style.setProperty('--occlusion-y',`${(top+bottom)/2-r.top}px`);
-      menu.style.setProperty('--occlusion-rx',`${Math.max(35,(right-left)*.75)}px`);
-      menu.style.setProperty('--occlusion-ry',`${Math.max(35,(bottom-top)*.75)}px`);
-      menu.classList.toggle('hud-occluded', !menu.hidden && r.width>0 && r.height>0 && left<r.right && right>r.left && top<r.bottom && bottom>r.top);
+      const hit = !menu.hidden && r.width>0 && r.height>0 && left<r.right && right>r.left && top<r.bottom && bottom>r.top;
+      if (hit) {
+        setVar(menu,'--occlusion-x',`${Math.round((left+right)/2-r.left)}px`);
+        setVar(menu,'--occlusion-y',`${Math.round((top+bottom)/2-r.top)}px`);
+        setVar(menu,'--occlusion-rx',`${Math.round(Math.max(35,(right-left)*.75))}px`);
+        setVar(menu,'--occlusion-ry',`${Math.round(Math.max(35,(bottom-top)*.75))}px`);
+      }
+      if (menu.classList.contains('hud-occluded') !== hit) menu.classList.toggle('hud-occluded', hit);
     });
   };
   scene.events.on('postupdate', update);

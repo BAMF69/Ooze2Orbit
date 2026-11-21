@@ -21,6 +21,7 @@ import { COLORBLIND, CONSENT, DIFFICULTIES, DISPLAY_MODES, FRAME_CAPS, SUB_SIZES
 import type { Screen, Shell } from "./app";
 import { Menu, buttonItem, el, glyph, tl, valueRow, type Item } from "./ui";
 import { CONTROL_SCHEMES } from "../core/controlScheme";
+import { touchLayoutEditor } from "./touchLayoutEditor";
 
 // ---- Tunables ----------------------------------------------------------------
 export const TABS = ["display", "audio", "controls", "access", "language"] as const;
@@ -125,6 +126,8 @@ function controls(c: Ctx): void {
     };
     c.list.append(c.menu.add(item).el);
   }
+  // Playtest 2026-11-21: small-phone players resize/move the stick and buttons (touch_layout.json).
+  c.list.append(c.menu.add(buttonItem(shell.i18n, "controls.touch_layout", () => shell.push(touchLayoutEditor(shell)))).el);
   c.list.append(c.menu.add(buttonItem(shell.i18n, "controls.reset", () => {
     shell.settings.input.bindings = structuredClone(DEFAULT_BINDINGS) as Settings["input"]["bindings"];
     c.status.replaceChildren();

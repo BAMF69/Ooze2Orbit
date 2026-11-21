@@ -20,8 +20,9 @@ export class ControlIntent {
   }
   disconnected(): void { if (this.detected === "controller") this.detected = this.coarse ? "touch" : "keyboard"; }
 }
-export function stickDirections(x: number, y: number): string[] {
-  const a: string[] = [], dz = CONTROL.stickDeadzone;
+/** Digital directions from a stick position (-1..1). dz is the dead zone: the player's touch layout sets it. */
+export function stickDirections(x: number, y: number, dz = CONTROL.stickDeadzone): string[] {
+  const a: string[] = [];
   if (x < -dz) a.push("move_left"); if (x > dz) a.push("move_right");
   if (y < -dz) a.push("move_up"); if (y > dz) a.push("move_down");
   return a;

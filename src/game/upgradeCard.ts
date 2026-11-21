@@ -11,8 +11,8 @@ export function paintUpgradeCard(button: HTMLButtonElement, stat: string, title:
   }
   const set = (selector: string, text: string) => { const n = button.querySelector(selector)!; if (n.textContent !== text) n.textContent = text; };
   set('.upgrade-title', title); set('.upgrade-level', level > cap ? `${cap}+${level-cap}` : `${level}/${cap}`);
-  button.title = [title, level > cap ? bonusLabel : `${level}/${cap}`, cost, effect].join(' · ');
-  button.setAttribute('aria-label',button.title);
+  const label = [title, level > cap ? bonusLabel : `${level}/${cap}`, cost, effect].join(' · ');
+  if (button.title !== label) { button.title = label; button.setAttribute('aria-label', label); }
   set('.upgrade-effect', effect); set('.upgrade-cost', displayCost);
   (button.querySelector('.upgrade-track') as HTMLElement).style.setProperty('--level-fill', `${Math.min(1, level / cap) * 100}%`);
   button.classList.toggle('unaffordable', !affordable); button.classList.toggle('bonus-level', level > cap);
