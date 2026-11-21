@@ -1,5 +1,12 @@
 # Handoff
 
+## Creature level generator, step 2 (feat/creature-stitcher, 2026-11-21, uncommitted)
+Segment stitcher, cross-biome difficulty ladder and seed refresh are built (details: `docs/CREATURE_LEVELGEN.md`
+"Step 2"; plan for steps 2.5-4 in §7a; baseline-stat amendment in §2.3a). Medium/Hard now fill to the ladder with
+stitched galleries 2-4 screens wide; stitched underchannels; S+E at a cleared entrance gives a fresh map. Every
+segment link is search-proved; stitched rooms are search-proved in the sweep. Next: BAMF69 playtests; then step 2.5
+(traversal vocabulary). Commit/push only on request.
+
 ## Civilization campaign spec (2026-11-18, docs only, branch `docs/civ-campaign`)
 BAMF69: finish the civilization stage by beating tower wars, tug-of-war (Castle Fight) and hero lane wars at easy,
 medium and hard; Footmen Frenzy optional; tower wars difficulty = bigger field with random obstacles. Spec:

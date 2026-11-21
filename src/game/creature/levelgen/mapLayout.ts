@@ -85,7 +85,7 @@ export function mapProblems(m: MapLayout): string[] {
     const seen = new Set([key(cells[0])]), stack = [cells[0]];
     while (stack.length) { const c = stack.pop()!; for (const d of Object.values(STEP)) { const n = add(c, d); if (cells.some(x => key(x) === key(n)) && !seen.has(key(n))) { seen.add(key(n)); stack.push(n); } } }
     if (seen.size !== new Set(cells.map(key)).size) bad.add("map footprint");
-    if (cells.length > 6) bad.add("map footprint"); // a channel spans at most five cells (drain to finale)
+    if (cells.length > 16) bad.add("map footprint"); // the longest room is a Hard channel (drain to finale, up to about ten cells)
   }
   for (const d of m.doors) {
     const step = STEP[d.side];

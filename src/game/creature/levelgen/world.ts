@@ -8,13 +8,14 @@
 // Authored: Written with Claude (Fable 5.1).
 // ---------------------------------------------------------------------------
 import { WATER, type WaterRoom, type WaterWorld, type Difficulty } from "../waterWorld";
-import { generateWaterGraph, findNode, TIERS, type BiomeGraph, type LevelGraph, type RoomNode } from "./graph";
+import { generateWaterGraph, findNode, TIERS, type BiomeGraph, type LevelGraph, type RoomNode, type Rerolls } from "./graph";
 import { makeRng } from "./rng";
 import { buildRoom, climbScript, bonusThreshold, type Built, type Step } from "./templates";
 import { specSolid, type Opening, type StateCondition } from "./roomSpec";
 import { ENEMIES } from "../waterEncounters";
 import type { RoomObjective } from "../waterObjectives";
 import { LEVELGEN } from "./tuning";
+import { ladderTier } from "./ladder";
 import { layoutLevel, mapProblems } from "./mapLayout";
 import { V1_GEOMETRY, arrivalMinX, arrivalMaxX, topEdgeY, floorY } from "./geometry";
 import type { ClassSkill } from "./keys";
@@ -38,13 +39,14 @@ function numberRooms(g: BiomeGraph): Map<string, number> {
   for (const level of g.levels) for (const n of level.nodes.filter(n => n.role === "channel")) ids.set(n.id, next++);
   return ids;
 }
+/** A stable per-room salt from its graph node id ("hard:2"), so a room's own randomness never depends on numbering. */
+const nodeSalt = (id: string): number => { let h = 2166136261; for (const c of id) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0) % 0x7fffffff + 1; };
 /** The class a class door is built for. Class skills are only ever appended to a lineage, so its first class never
  *  changes: a door chosen from it stays the same when a second class is added (review finding 4). */
 export const doorClass = (classes: readonly ClassSkill[]): ClassSkill => classes[0] ?? "roar";
 export function buildWorld(g: BiomeGraph, classes: ClassSkill[] = ["roar"]): WorldV2 {
   const ids = numberRooms(g), rooms: WaterRoom[] = [], built = new Map<string, Built>(), solutions: Record<number, Step[]> = {};
   const starts = {} as Record<Difficulty, number>;
-  const rng = makeRng(g.seed ^ 0x5eed);
   for (const level of g.levels) {
     const chain = level.nodes.filter(n => n.onCritical).sort((a, b) => a.depth - b.depth);
     starts[level.tier] = ids.get(chain[0].id)!;
@@ -52,7 +54,8 @@ export function buildWorld(g: BiomeGraph, classes: ClassSkill[] = ["roar"]): Wor
       const roomId = ids.get(node.id)!, index = node.onCritical ? node.depth : chain.length + 1;
       const shaped = node.role === "classTrial" ? { ...node, classVariant: doorClass(classes) } : node;
       if (node.role === "classTrial") node.classVariant = shaped.classVariant;
-      const b = buildRoom({ tier: level.tier, node: shaped, rng: rng.fork(roomId + 1), authored: g.seed === 0 && !g.fallback || g.fallback, index, roomId });
+      // Keyed by the graph node, not the room number: refreshing one level shifts the numbers of the next ones.
+      const b = buildRoom({ tier: level.tier, node: shaped, rng: makeRng((g.seed ^ 0x5eed ^ Math.imul(nodeSalt(node.id), 0x9e3779b9) ^ Math.imul(level.reroll ?? 0, 0x85ebca6b)) >>> 0), authored: g.seed === 0 && !g.fallback || g.fallback, index, roomId });
       built.set(node.id, b);
       rooms.push({ id: roomId, tier: level.tier, left: -1, right: -1, branch: -1, ...b.room, spec: b.spec });
       solutions[roomId] = [...b.solution];
@@ -98,10 +101,10 @@ function linkLevel(level: LevelGraph, ids: Map<string, number>, rooms: WaterRoom
     }
   }
 }
-export function generateWaterV2(seed: number, classes: ClassSkill[] = ["roar"]): WorldV2 {
+export function generateWaterV2(seed: number, classes: ClassSkill[] = ["roar"], rerolls: Rerolls = {}): WorldV2 {
   const rejected: string[] = [];
   for (let attempt = 0; attempt < LEVELGEN.attempts; attempt++) {
-    const g = generateWaterGraph(attempt === 0 ? seed : (seed + attempt * 0x9e3779b9) >>> 0);
+    const g = generateWaterGraph(attempt === 0 ? seed : (seed + attempt * 0x9e3779b9) >>> 0, rerolls);
     rejected.push(...g.rejected.map(r => `graph ${r}`));
     const w = buildWorld(g, classes), bad = worldProblemsV2(w);
     if (!bad.length) return { ...w, seed: seed >>> 0, rejected };
@@ -128,6 +131,15 @@ export function arrivalFair(enemies: readonly { kind: keyof typeof ENEMIES; x: n
     return d > t.detect || t.tell + d / t.speed >= LEVELGEN.arrivalReaction;
   });
 }
+/** After a level's map is refreshed, room ids shift: keep the visited rooms of the other levels (matched by their
+ *  graph node, which does not change) and forget the refreshed level's, whose rooms are new. */
+export function remapVisited(before: WorldV2, after: WorldV2, visited: readonly number[], tier: Difficulty): number[] {
+  const ids = numberRooms(after.graph), out: number[] = [];
+  for (const id of visited) { const n = roomNode(before, id); if (!n) continue;
+    const level = before.graph.levels.find(l => l.nodes.includes(n))!;
+    if (level.tier === tier) continue; const next = ids.get(n.id); if (next !== undefined) out.push(next); }
+  return out;
+}
 /** Static invariants on the built world (the physical ones run in solver.ts and the tests). */
 export function worldProblemsV2(w: WorldV2): string[] {
   const bad = new Set<string>(), rooms = w.rooms, byId = new Map(rooms.map(r => [r.id, r]));
@@ -144,19 +156,26 @@ export function worldProblemsV2(w: WorldV2): string[] {
     if (goals.length !== 1 || !seen.has(goals[0].id) || rooms.some(r => r.tier === tier && !seen.has(r.id))) bad.add("connected paths");
   }
   for (const r of rooms) if (r.spec!.variant && !w.classes.includes(r.spec!.variant as ClassSkill)) bad.add("class triad");
+  // A gallery the stitcher could not fill fell back to a one-screen room: reject the attempt (the map expects its width).
+  for (const level of w.graph.levels) for (const n of level.nodes) if (n.role === "gallery") {
+    const r = rooms.find(q => q.id === numberRooms(w.graph).get(n.id));
+    if (!r?.spec?.stitched || r.spec.stitched.length !== n.cells) bad.add("stitch");
+  }
   for (const r of rooms) {
     const s = r.spec!, g = s.geometry ?? V1_GEOMETRY, exitX = g.width - (WATER.width - WATER.exit);
     if (r.right !== -1 && byId.get(r.right)?.left !== r.id) bad.add("return routes");
     if (r.left !== -1 && !byId.has(r.left)) bad.add("return routes");
     if (r.gateX % 16 || r.gateX < 256 || r.gateX > 400 || r.platforms.some(p => p.x % 16 || p.y % 16 || p.width % 16)) bad.add("lattice geometry");
     // The real collision (specSolid, review finding 7), in the solved state: the walk along the floor must be clear.
-    // A switchback (the shaft) blocks its floor on purpose; the search solver proves its dive route instead.
-    if (!s.switchback) for (let x = WATER.spawn; x <= exitX; x += 4) for (const tx of [Math.floor((x - 7) / 16), Math.floor((x + 6.999) / 16)])
+    // A switchback (the shaft) blocks its floor on purpose, and a stitched room's segments may stand rock on it;
+    // the search solver proves those routes instead.
+    if (!s.switchback && !s.stitched) for (let x = WATER.spawn; x <= exitX; x += 4) for (const tx of [Math.floor((x - 7) / 16), Math.floor((x + 6.999) / 16)])
       if (specSolid(r, true, tx, g.floorRow - 2, SOLVED) || specSolid(r, true, tx, g.floorRow - 1, SOLVED)) bad.add("body clearance");
     if (r.food.length < 4 || r.food.some(x => x < 96 || x > g.width - 80 || x % 16) || new Set(r.food).size !== r.food.length) bad.add("food spacing");
     // No enemy at the entrance or past the exit; anywhere between is allowed (the old x >= 352 rule forced every
     // threat into the right third of the room: review finding 9).
-    if (s.enemies.some(e => e.x < 160 || e.x > g.width - 80) || s.enemies.length > (r.tier === "easy" ? 1 : r.tier === "medium" ? 2 : 3)) bad.add("encounter safety");
+    const enemyCap = s.stitched ? ladderTier("water", r.tier).enemiesPerScreen * s.stitched.length : r.tier === "easy" ? 1 : r.tier === "medium" ? 2 : 3;
+    if (s.enemies.some(e => e.x < 160 || e.x > g.width - 80) || s.enemies.length > enemyCap) bad.add("encounter safety");
     for (const op of s.openings) {
       const dest = byId.get(op.to.room); if (!dest || !dest.spec) { bad.add("arrival safety"); continue; }
       if (!dest.spec.openings.some(back => back.to.room === r.id && back.side !== op.side)) bad.add("return routes");

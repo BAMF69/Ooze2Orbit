@@ -92,6 +92,16 @@ Three families. The generator treats them differently.
 - **Shortcut walls** key on ultimates and fun parts. Sluices, sealed hatches, deep water and class doors are never
   on their material list, so berserk, ball form, phase dash and wings cannot bypass a story lock.
 
+### 2.3a Amendment: baseline stats from Jungle on (BAMF69 2026-11-18)
+From tier 4 (Jungle Easy) on, every tier declares a **baseline stat profile**, used both as its entry check and as
+a physical requirement (a jump agility makes, a cling strength holds). Its rooms are proved solvable at exactly
+that baseline, no longer at minimum traits, and critical routes may need it. This overrides "critical locks key on
+story keys and Gardener terrain only" and invariant 8's "no critical placement behind a stat gate" for tier 4 and
+up. Water (tiers 1-3) keeps the minimum-traits rule. Fairness: sphere search gains a grinding model and must prove
+each baseline is reachable by replaying earlier tiers within a capped number of runs.
+**Stat source:** a lineage breeds a new, stronger generation only after beating a level or collecting the
+aphrodisiac item (in-game name to be chosen). Seed refresh lets a player grind a cleared tier on fresh maps.
+
 ### 2.4 Damage and armor
 Enemy base damage scales per **tier** 1..12, derived from a level's depth in the key graph, not a fixed biome list:
 `damage = base × (1 + 0.11 × (tier − 1))`. Armor uses a diminishing-returns curve with an attacker-tier term:
@@ -296,6 +306,14 @@ never changes under the player. `visited` migrates from integers to room ids (`w
 future versions, as today. `Traits` gains `agility`, `intellect`, `armor`, `classSkills`, `parts`, `banked`
 with defaults; `readGarden` keeps accepting old checkpoints.
 
+### 7a. Plan after the review steps (BAMF69 2026-11-18)
+| Step | Work | Notes |
+|---|---|---|
+| 2 | Segment stitcher for Water Medium and Hard: hand-built one-screen segments with typed edges, mirrored copies, path-first stitching into 2-5 cell rooms, relation-rule placement, every stitched room search-proved. Easy stays one-screen. Showcase templates (drain, shaft, pressure) stay and are also cut into segments. Plus the cross-biome **difficulty ladder** (tiers 1-12: Water 1-3, Jungle 4-6, Mountains 7-9, Ice 10-12; each tier strictly bigger, more complex and harder than the last, across biomes) and **seed refresh** per biome and tier. | Segments carry biome tags and difficulty ratings from day one, so later biomes can include earlier biomes' rooms (Jungle descents into Water). |
+| 2.5 | Traversal vocabulary: tile surface kinds (one-way, drop-through, trap drop-through, climbable pillar without a standable top, swinging vine, breaking branch, crumbling ledge), controller moves, solver moves, art hooks. Rules: a broken piece is never the only way back; a trap never hides the only route on. | Ledges first, then pillars, then vines. |
+| 3 | Stat progression (§2.3a): stats change movement; baseline per tier; validation at the baseline; breeding after a level win or aphrodisiac item; grinding model in sphere search. | BAMF69 approved changing `generations.ts`, `GEN` and the controller for this. |
+| 4 | Jungle: segments and rules on the finished engine, climbing taught, Water keys still needed, opens after Water Hard, reuses Water enemies for now. | Do not begin until BAMF69 asks. |
+
 ## 8. Shared-interface dependencies to raise before changing
 These touch files or contracts the creature chat or other stages own. Raise each as a concrete proposal first.
 - `generations.ts` `Traits` shape and `readGarden` validation (creature chat).
@@ -323,6 +341,8 @@ Next step: migration step 0 (section 7), which changes no gameplay.
 | `legacyWater.ts` | The only place a v1 room ID is branched on: the frozen seed-v1 tables, projected into specs |
 | `keys.ts` | Key vocabulary, material table (critical materials open only with story keys or Gardener terrain), `keysOf` |
 | `graph.ts` | Progression graph: critical chain, an underchannel cycle in Medium and Hard, nursery, optional class trials and stat vaults; lays each level out with ManiaMap |
+| `ladder.ts` | The twelve-tier cross-biome difficulty ladder (sizes, stitched-room widths, segment ratings, loops, enemy density) |
+| `segments.ts`, `stitch.ts`, `stitchedRooms.ts` | Segment library with computed edges and mirrors; path-first stitcher; gallery and underchannel rooms |
 | `maniamap.ts` | ManiaMap port (BSD-3, ADR 0008): multi-cell room templates, door alignment, configuration spaces, layout with cycle insertion |
 | `graphProblems.ts` | Graph invariants with named problems (identity, reciprocity, critical materials, critical chain, bonus isolation, loop, pacing, class triad, Gardener circularity, keys before gates, easy open) |
 | `lineageSim.ts` | Sphere search: plays a lineage generation by generation, one expressed adaptation per daughter |
@@ -460,6 +480,34 @@ the four placement fixes are reverted (`creatureLevelWorld.test.ts`). Level: sea
 
 The chain itself still runs left to right because every template has its exits on the left and right; the model,
 the map and the validator no longer assume it. Mirrored templates and new shapes come with the stitcher (step 2).
+
+**Step 2 (built, uncommitted on `feat/creature-stitcher`).** The segment stitcher, the difficulty ladder and seed refresh.
+- **Ladder** (`levelgen/ladder.ts`): tiers 1-12, three per biome, each strictly bigger, more complex and harder than
+  the last, across biome boundaries (Jungle Easy is beyond Water Hard in screens, loops and segment difficulty).
+  Generated Water levels land inside their tier's screen range (Easy 3-4, Medium 5-7, Hard 8-11); the authored
+  seed-0 levels are exempt. Broken ladders are rejected by name (`creatureLadder.test.ts`).
+- **Segments** (`levelgen/segments.ts`): 18 hand-built one-screen pieces of a room's open band (rock rectangles,
+  water span, slots), each with a computed mirror. Edges and ports are computed from the rock, never declared.
+  Each segment declares which ports and slots connect; `creatureSegments.test.ts` proves every declaration, mirrors
+  included, with the search solver at Medium and Hard minimum traits in every Gardener state, and proves that every
+  "torrent" segment cannot be crossed with a wild current or without fins. Shapes from the drain (shelf) and the shaft
+  (pillar) are among them; the drain, shaft and pressure rooms also stay as whole showcase templates.
+- **Stitcher** (`levelgen/stitch.ts`, `stitchedRooms.ts`): path first, left to right with backtracking. Neighbouring
+  edges must have identical open rows; the declared links must connect entrance to lever, lever to exit, and back (a
+  channel: hatch to hatch). Current rooms need a torrent crossing; nothing a player must reach stands past the exit
+  wall; no guard post at the entrance. No search runs at generation (300 worlds build in about 1.5 s).
+- **Galleries:** Medium and Hard chains keep their template rooms and fill to the ladder with stitched galleries 2-4
+  screens wide (lever, optional guard post, Hard's last gallery a food cache) and the odd class trial. Easy stays
+  one screen per room. Underchannels in generated worlds are stitched too (pools, low roofs, pillars, kelp, air
+  pockets), spanning the real map distance from drain to finale: 5-10 screens.
+- **Seed refresh:** a cleared level's shoreline entrance offers a fresh map (S + E). Each level draws from its own
+  seed and refresh count, so the other levels keep exactly their maps (seed 0 keeps its authored ones); room
+  randomness is keyed by graph node, not room number; visited rooms are remapped. Saves gain optional `rerolls`.
+- Evidence: search sweep (`creatureSearch.test.ts`) solves every stitched room at minimum traits in each Gardener
+  state it declares, with the way back, fails without its requirement, keeps every relation rule; stitcher rules each
+  have a broken input (`creatureStitch.test.ts`); seed refresh (`creatureSeedRefresh.test.ts`); browser regression
+  walks a stitched gallery (lever, camera, exit) and refreshes a map in the real scene. Level: search, not human play.
+- Generated worlds since step 2 differ from earlier ones for the same seed (BAMF69: save compatibility not needed).
 
 Open for BAMF69: in 76 of 102 open rooms (no seal, no watched control) a player can avoid every threat zone. The
 original design keeps some rooms open to stealth and evasion, but the review cites "enemies that can always be
