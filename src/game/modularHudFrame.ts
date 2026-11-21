@@ -25,7 +25,7 @@ export class ModularHudFrame {
    path.setAttribute('d',outline);path.setAttribute('fill','var(--hud-cavity)');path.setAttribute('stroke','var(--hud-rim)');path.setAttribute('stroke-width','3');svg.append(path);
    const highlight=path.cloneNode() as SVGPathElement;highlight.setAttribute('fill','none');highlight.setAttribute('stroke','var(--hud-highlight)');highlight.setAttribute('stroke-width','.8');svg.append(highlight);
    const spec=components[`${stage}_${diet}` as keyof typeof components];
-   const url=new URL(`assets/art/hud_${stage}_${diet}_components_v2.png`,document.baseURI).href;
+   const url=new URL(`assets/art/hud_${stage}_${diet}_components_v2.webp`,document.baseURI).href;
    const piece=(bounds:number[],x:number,y:number,width:number,height:number,flip=false)=>{
     const tile=document.createElementNS(NS,'svg');tile.setAttribute('x',String(x));tile.setAttribute('y',String(y));tile.setAttribute('width',String(width));tile.setAttribute('height',String(height));tile.setAttribute('viewBox',bounds.join(' '));tile.setAttribute('preserveAspectRatio','xMidYMid meet');tile.setAttribute('overflow','hidden');
     const image=document.createElementNS(NS,'image');image.setAttribute('href',url);image.setAttribute('width',String(spec.width));image.setAttribute('height',String(spec.height));tile.append(image);
