@@ -1,4 +1,5 @@
 import { purchaseMeters } from '../purchaseMeters';
+import { setAttr, setHidden, setStyle, setText, setVar } from "../domPatch";
 import { HudDock } from '../hudDock';
 import { DietOverlay } from '../dietOverlay';
 import { partEffect, upgradeEffect } from './effectDescriptions';
@@ -51,19 +52,19 @@ export class CellHud {
     this.dietOverlay.update(c.diet);
     const purchases=purchaseMeters(c.points,UPGRADE_STATS.map(s=>({cost:upgradeCost(c,s),pay:UPGRADE_PAID_WITH[s]})));
     this.dock.meters(c.points,purchases.costs,purchases.affordable,jetCooldown,perkLevel(c,"jetBurst")>0?jetRecharge(c):0,purchases.ready);
-    this.toastLeft = Math.max(0, this.toastLeft - dt); this.toastText.hidden = !this.toastLeft;
+    this.toastLeft = Math.max(0, this.toastLeft - dt); setHidden(this.toastText, !this.toastLeft);
     const need = evolveNeed(c), full = !Number.isFinite(need);
-    this.dock.advance.hidden = !full;
-    this.main.textContent = `${this.i18n.t("cell.ui.form_label", { form: c.form })} · ${this.i18n.t(`diet.${c.diet}`)}`;
-    this.growthCaption.textContent = full ? this.i18n.t("cell.ui.fully_grown") : this.i18n.t("cell.hud_form", { form: c.form, food: Math.floor(c.food), need });
+    setHidden(this.dock.advance, !full);
+    setText(this.main, `${this.i18n.t("cell.ui.form_label", { form: c.form })} · ${this.i18n.t(`diet.${c.diet}`)}`);
+    setText(this.growthCaption, full ? this.i18n.t("cell.ui.fully_grown") : this.i18n.t("cell.hud_form", { form: c.form, food: Math.floor(c.food), need }));
     this.diets[c.form - 1] = c.diet;
-    this.growth.style.setProperty('--proof-form-columns',[1,2,3,4].map(form=>`minmax(0,${form===c.form?1.35:1}fr)`).join(' '));
+    setVar(this.growth,'--proof-form-columns',[1,2,3,4].map(form=>`minmax(0,${form===c.form?1.35:1}fr)`).join(' '));
     growthSections(c).forEach((value, i) => {
-      const { root, fill } = this.sections[i]; root.style.setProperty("--growth-color", DIET_COLORS[this.diets[i] ?? c.diet]);
+      const { root, fill } = this.sections[i]; setVar(root,"--growth-color", DIET_COLORS[this.diets[i] ?? c.diet]);
       if(root.dataset.formDiet!==(this.diets[i]??c.diet))root.dataset.formDiet=this.diets[i]??c.diet; root.classList.toggle("future", i >= c.form);
       root.classList.toggle("current", i === c.form - 1); root.classList.toggle("complete", value === 1);
-      root.querySelector(".growth-label")!.textContent = i===c.form-1?(full?'✓':`${Math.floor(c.food)}/${need}`):value===1?'✓':'';
-      fill.style.width = `${value * 100}%`; fill.parentElement!.setAttribute("aria-valuenow", String(Math.round(value * 100)));
+      setText(root.querySelector(".growth-label"), i===c.form-1?(full?'✓':`${Math.floor(c.food)}/${need}`):value===1?'✓':'');
+      setStyle(fill, "width", `${Math.round(value * 1000) / 10}%`); setAttr(fill.parentElement, "aria-valuenow", String(Math.round(value * 100)));
     });
     const detail = [
       `${this.i18n.t("cell.ui.equipment")} · ${c.parts.length}/${slots(c)}`,
@@ -100,7 +101,7 @@ export class CellHud {
       if (perkRow.children.length > 1) this.rack.append(perkRow);
     }
     const jet = this.rack.querySelector<HTMLButtonElement>('[data-icon="jetBurst"]');
-    if (jet) { jet.classList.toggle("cooling", cooldown > 0); jet.querySelector(".icon-rank")!.textContent = cooldown > 0 ? `${Math.ceil(cooldown)}s` : String(perkLevel(c, "jetBurst")); }
+    if (jet) { jet.classList.toggle("cooling", cooldown > 0); setText(jet.querySelector(".icon-rank"), cooldown > 0 ? `${Math.ceil(cooldown)}s` : String(perkLevel(c, "jetBurst"))); }
   }
   toast(key: string, args: Record<string, string | number> = {}): void { this.toastText.textContent = this.i18n.t(key, args); this.toastText.hidden = false; this.toastLeft = 2.2; }
 }

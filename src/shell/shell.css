@@ -334,3 +334,14 @@
 [data-controls=keyboard] .touch-controls, [data-controls=controller] .touch-controls { display: none; }
 @media (max-height: 480px) { .touch-stick { bottom: calc(var(--safe-bottom) + 12px); width: 100px; height: 100px; } .touch-knob { left: 26px; top: 26px; } .touch-actions { bottom: calc(var(--safe-bottom) + 14px); flex-direction: row; } }
 
+/* Creature fills the screen (playtest 2026-11-21): native status and buttons float over the canvas, so give the
+   text a shadow and the buttons a translucent fill instead of relying on the old page-colour border. */
+.creature-display { background: #101f25; }
+.creature-display .stage-status { top: calc(var(--safe-top) + 52px); text-shadow: 0 1px 3px #000, 0 0 6px #000; }
+.creature-display .stage-ui-layer :is(button, summary) { background: #173540cc; }
+/* Lite HUD (body[data-perf-lite], set by shell/renderResolution.ts for Performance quality or Auto on a low-end
+   touch device). Shadows, glow filters and the moving occlusion mask are the HTML HUD's costliest paint work on
+   older tablets (playtest 2026-11-21); the occluded HUD falls back to a plain fade. */
+body[data-perf-lite] :is(.stage-ui-layer, .cell-ui-layer, .touch-controls) :is(*, *::before, *::after) { box-shadow: none !important; text-shadow: none !important; }
+body[data-perf-lite] :is(.proof-icon, .aquatic-shell-detail) { filter: none !important; }
+body[data-perf-lite] .hud-occluded { -webkit-mask-image: none !important; mask-image: none !important; opacity: .35 !important; transition: none !important; }

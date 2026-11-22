@@ -1,5 +1,20 @@
 # Handoff
 
+**Last updated:** 2026-11-21
+**Branch:** `feat/cell-division`. Previous baseline committed and pushed as fd0f29d. This snapshot includes the subsequent aquatic remaster, map rewards and organic HUD/input polish. Push only when asked.
+**Active:** Cell/aquatic upgrade and growth HUD polish, expanded effects in Details, and aquatic illustrated remaster. Creature/civilization may be developed in independent chats/worktrees; preserve their scope.
+
+## Playtest fixes: perf, touch layout, d-pad, creature full screen (2026-11-21)
+- Details and verification in PLAYTEST_LOG 2026-11-21. New: game/domPatch.ts (write-if-changed DOM helpers;
+  use them in any per-frame HUD code), core/touchLayout.ts + shell/touchLayoutEditor.ts (Settings → Controls →
+  Touch layout, file touch_layout.json), shell/touchControls.css (d-pad, editor), aquatic/surfaceBreach.ts.
+- Aquatic touch: d-pad (up/down depth, up at surface = breach, left dash, right sprint, centre Shock). The scene
+  reads a virtual "surface" action held only by d-pad up. Keyboard/controller bindings unchanged.
+- Creature uses creatureViewport (full screen, cover framing) + frameCamera() sized to the current room/hub
+  width; civ is full screen from its own remaster; only space keeps reserved bands.
+- Performance budget 960x540; Auto drops for low-end touch devices; body[data-perf-lite] lite HUD CSS.
+- Outstanding: real older-tablet and iPhone retest; casting is Screen Mirroring only (Info panel tip).
+- QA script: ../work/touch-dpad-layout-qa.cjs (captures in ../outputs/dpad-*, touch-layout-*, creature-fullscreen-*).
 ## Creature level generator, step 2 (feat/creature-stitcher, 2026-11-21, uncommitted)
 Segment stitcher, cross-biome difficulty ladder and seed refresh are built (details: `docs/CREATURE_LEVELGEN.md`
 "Step 2"; plan for steps 2.5-4 in §7a; baseline-stat amendment in §2.3a). Medium/Hard now fill to the ladder with
@@ -69,6 +84,18 @@ Next: creature chat review of the Traits/health/damage changes in §8; new room 
   constructor is superseded. Use docs/art/HUD_ILLUSTRATED_FAMILY.md and its review captures as the contract.
 - Asset provenance A-0037/A-0038, A-0039 and A-0040 (font); exact generation prompts and bundled OFL license included.
 - User authorized commit/push on 2026-11-17. Physical phone/controller checks remain outstanding.
+
+## Approved cell/aquatic open HUD (2026-11-16)
+- New stable navigation/progression strip: centered75% usable width in landscape; compact88px portrait.
+- Tapered upper-left live resources/vitals; inventory/system buttons upper right. Upgrades/Info float
+  above the strip. Portrait depth/actions leave the center lane free; conditional abilities preserved.
+- A-0040 locally bundles OFL Vollkorn. A-0053 (numbered A-0041 before the 2026-11-21 merge with main, which had its own A-0041) supplies six quiet transparent component sheets: membrane
+  cell materials, kelp/cartilage/scute aquatic materials. Historical ornate art is not used in this HUD.
+- hudDock.css is the single active HUD cascade. Older dietOverlay/paintedHud/hudTabs CSS is not imported.
+- Localized player-occlusion mask keeps overlapping content readable. Gameplay/input/save rules retained.
+- Source bounds/prompts and validation: docs/art/HUD_OPEN_OVERLAY.md. Browser captures are in ../outputs/
+  hud-final-{main,aquatic}-{herbivore,carnivore,omnivore}-{1440,375,812,800}.png and upgrade variants.
+- No commit/push/publication authorized for this pass. Physical-device checks remain outstanding.
 
 ## Repository publication (2026-11-17)
 The user authorized committing and pushing the aquatic avatar work to its own branch. Other stage branches remain separate.
@@ -612,5 +639,11 @@ layout; then input/touch, offline/checkpoints, and individual stage adapters. Ar
 ## Next
 BAMF69 plays aquatic normally: are form choices worth anticipating and do they fit the swim/river pacing?
 Do not make further design changes until notes. Cell vertical slice waits; space Toy playtest still pending.
+
+2026-11-17: High-density WebGL rendering is now independent of logical gameplay dimensions. See
+HD_REMASTER.md for Graphics quality caps and architecture. Main entry no longer forces pixelArt or
+pixelated CSS scaling. New files: src/core/renderQuality.ts, src/shell/renderResolution.ts;
+DisplayViewport reapplies quality on viewport/DPR changes, Settings Display persists the choice.
+High targets native4K; Ultra allows3x phone density. Existing raster master sizes remain unchanged.
 
 Civilization playtest follow-up (2026-11-15): fixed four-tab command HUD implemented in the civilization worktree. Builder/Summons stay open after actions; Back returns to Hero; maze geometry stays fixed between pages. Temperament-tinted organic HUD, shortcut 4 for Workers / terrain. Preview is **5186** (5176 served old scene). See docs/HANDOFF_CIVILIZATION.md. No commit/push.

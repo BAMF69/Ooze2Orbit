@@ -4,7 +4,7 @@ import { stageViewport, type DisplayStage } from "../src/core/viewport";
 import { warsLayout } from "../src/game/civ/layout";
 const safe = { top: 44, right: 12, bottom: 34, left: 12 };
 describe("remaining stage display adapters", () => {
-  for (const stage of ["creature", "space"] as DisplayStage[]) it(`${stage} keeps portrait and landscape inside safe bounds`, () => {
+  for (const stage of ["space"] as DisplayStage[]) it(`${stage} keeps portrait and landscape inside safe bounds`, () => {
     for (const [w, h] of [[375, 812], [812, 375], [800, 1280], [1280, 720]]) {
       const box = stageViewport(stage, w, h, safe);
       expect(box.top).toBeGreaterThanOrEqual(safe.top); expect(box.left).toBe(safe.left);
@@ -33,6 +33,15 @@ describe("remaining stage display adapters", () => {
     expect(b.right.y + b.tile * 7).toBeLessThanOrEqual(180);
   });
   it("preserves a full-height side view in creature portrait instead of flattening its room", () => {
-    const b = stageViewport("creature", 375, 812, safe); expect(b.logicalHeight).toBe(360); expect(b.logicalWidth).toBeLessThan(360);
+    const b = stageViewport("creature", 375, 812, safe); expect(b.logicalHeight).toBeGreaterThanOrEqual(360); expect(b.logicalWidth).toBeLessThan(360);
+  });
+  it("fills the whole creature display with a view that never shows past the 640x360 room sideways", () => {
+    for (const [w, h] of [[375, 812], [812, 375], [800, 1280], [1280, 720], [1280, 800], [2400, 1000]]) {
+      const b = stageViewport("creature", w, h, safe);
+      expect([b.left, b.top, b.width, b.height]).toEqual([0, 0, w, h]); // edge to edge: no page border
+      expect(b.logicalWidth).toBeLessThanOrEqual(640);
+      expect(Math.abs(b.logicalWidth / b.logicalHeight - w / h)).toBeLessThan(0.02 * (w / h)); // no letterbox bars
+      if (w / h >= 16 / 9) expect(b.logicalHeight).toBeLessThanOrEqual(360); else expect(b.logicalHeight).toBeGreaterThanOrEqual(360);
+    }
   });
 });

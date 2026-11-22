@@ -1,4 +1,21 @@
 # Playtest Log
+## 2026-11-21 — Tester notes: older tablet, small phone, iPhone to TV, creature border, aquatic touch
+Observations: (1) older tablet choppy with sluggish controls, even on Performance; (2) small phone: left stick
+too small and too sensitive, asks for movable/resizable controls; (3) iPhone: wants to cast to a TV; (4) creature
+window not full size, blue border; (5) aquatic right-hand touch controls not intuitive, asks for a d-pad.
+Changes: (1) HUD rewrote ~33 DOM attributes/text nodes per frame even when unchanged (incl. one on <body>);
+write-if-changed guards (game/domPatch.ts) bring aquatic to <1 and cell to 0 mutations/frame. Hidden Phaser HUD
+texts no longer re-rasterize. Performance quality now draws at most ~960x540; Auto on low-end touch devices
+(<=4 cores or <=3 GB) uses a reduced budget; both enable a lite HUD (no shadows/glow, plain occlusion fade).
+(2) Settings → Controls → Touch layout: drag stick/buttons, stick and button size 60-220%, stick sensitivity;
+saved in touch_layout.json. Default small-screen stick 72→92px, default dead zone 0.18→0.26.
+(3) No code path: Safari cannot AirPlay a live canvas. Info panel now explains Screen Mirroring / Cast.
+(4) Creature fills the screen; view covers the 640x360 room, ground continues under the footer buttons.
+(5) Aquatic d-pad: up/down depth (up held at the surface breaches once per hold), left dash, right sprint toggle
+(lit when on), centre Shock when owned. Separate Breach button removed on touch.
+Verified: check, 510 tests, boot/aquatic/creature smoke; headless phone/tablet emulation (812x375, 375x667,
+1024x768, plus creature 375x812/1280x800): d-pad actions, two-finger stick+d-pad, editor drag/resize/save/reload,
+no blue edge pixels. NOT verified on the tester's real older tablet or iPhone; frame-rate gain is unmeasured.
 ## 2026-11-17 — Mandible hinge and remaining attachments
 
 Inspector v3 review setups are exported to `build/attachment-pass-v3/review-setups.json`. All entries use
@@ -510,6 +527,26 @@ real eating/chomp, surface breach/re-entry, paused body/equipment frames, reduce
 and health-stat bulk. Inspected equipped dash and breach screenshots; reduced plate coverage and added
 curved shading to keep the diet body readable. Coast and river production GPU smokes passed.
 Asset paths and built-in imagegen prompt set: docs/art/AQUATIC_PLAYER.md.
+
+2026-11-16 — Approved open HUD: 493 unit tests; typecheck and11 shader recipes pass. GPU browser
+matrix covers cell/aquatic × three diets ×1440×900,375×812,812×375,800×1024. Verified stable strip
+bounds across Growth/Upgrades/Info,75% usable landscape width, touch-upgrade pause, heldW continuity,
+purchases, arrow navigation, inspectable unaffordable cards and native fullscreen. Production cell and
+lake smoke runs reached DRIVE_DONE without errors. Fresh captures: ../outputs/hud-approved-review.md.
+Physical iPhone/Android tablet/PlayStation controller checks remain to be done. No publish/commit/push.
+Extra live-input checks: Q activated Jet/dash while Upgrades was open in both stages;125% text scale
+expanded the dock as intended. Safari mask prefixed fallback is included; physical Safari QA remains.
+
+2026-11-17 — High-density rendering: 496 unit tests, typecheck,11 shader recipe compiles and production
+build pass. GPU browser checks covered cell/aquatic at3840×2160,375×812 and812×375 (phone DPR3),
+switching all four quality presets without changing logical dimensions/camera framing. Inspected
+4K and portrait captures; corrected Phaser4 combined-matrix scaling after visual QA caught incomplete
+scene coverage. Live input checks pass for heldW, dash, purchase, menu arrows and fullscreen. Pixel
+readback plus pointer-hit checks pass in creature, civilization and space. Production aquatic boot
+smoke passed120 frames without errors. Captures: ../outputs/render-{main,aquatic}-*.
+Physical phone/4K hardware performance still needs playtesting; no publish/commit/push.
+Additional rendering checks passed: simulated DPR/viewport change and WebGL context loss/restoration;
+production Settings menu scenario reached DRIVE_DONE menus without errors.
 
 2026-11-16 — Aquatic avatar representative slice (A-0035), isolated feat/aquatic-avatar-development:
 497 tests, TypeScript and 11 shader checks pass; production aquatic autoplay reaches DRIVE_DONE without errors.

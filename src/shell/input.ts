@@ -129,8 +129,11 @@ export class ShellInput {
 
   isDown(action: string): boolean {
     const list = this.bindings()[action] ?? [];
-    return list.some((b) => b !== "" && this.down.has(b)) || [...this.virtual.values()].some(a => a.has(action)) ||
-      [...this.down].some(b => b.startsWith("pad_axis:left") && this.actionsFor(b).includes(action));
+    if (list.some((b) => b !== "" && this.down.has(b))) return true;
+    // Loops instead of [...spread].some(): isDown runs many times per frame (no per-call arrays on old tablets).
+    for (const a of this.virtual.values()) if (a.has(action)) return true;
+    for (const b of this.down) if (b.startsWith("pad_axis:left") && this.actionsFor(b).includes(action)) return true;
+    return false;
   }
 
   /** True once per press of action since the last take (for gameplay polling). */

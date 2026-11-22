@@ -1,4 +1,5 @@
 import { purchaseMeters } from '../purchaseMeters';
+import { setAttr, setHidden, setMeter, setStyle, setText, setVar } from '../domPatch';
 import { HudDock } from '../hudDock';
 import { DietOverlay } from '../dietOverlay';
 import './remaster.css';
@@ -38,7 +39,7 @@ export class AquaticHud {
   private dietOverlay: DietOverlay;
   private dock!: HudDock;
   get controlsOpen(): boolean { return this.dock.infoOpen; }
-  advanceAvailable(value: boolean): void { this.dock.advance.hidden = !value; }
+  advanceAvailable(value: boolean): void { setHidden(this.dock.advance, !value); }
   readonly screenUi: StageUi;
   private statusLines: readonly string[] = [];
   private overview = "";
@@ -53,7 +54,7 @@ export class AquaticHud {
   private growthDiets: (AqCreature["diet"] | undefined)[] = [];
   private goalText=node("small","","dock-map-reward");
   private electricText = node('span','','dock-electric');
-  electric(owned:boolean,cooldown:number):void { this.electricText.hidden=!owned;this.electricText.textContent=cooldown>0?this.i18n.t('aq.shock_recharge',{seconds:cooldown.toFixed(1)}):this.i18n.t('aq.shock_ready');const center=this.screenUi.root.querySelector('.dock-center');if(center&&!this.electricText.isConnected)center.append(this.electricText); }
+  electric(owned:boolean,cooldown:number):void { setHidden(this.electricText,!owned);setText(this.electricText,cooldown>0?this.i18n.t('aq.shock_recharge',{seconds:cooldown.toFixed(1)}):this.i18n.t('aq.shock_ready'));const center=this.screenUi.root.querySelector('.dock-center');if(center&&!this.electricText.isConnected)center.append(this.electricText); }
   private bannerValue = "";
   private healthBar = document.createElement("progress");
   private staminaBar = document.createElement("progress");
@@ -72,6 +73,7 @@ export class AquaticHud {
   private fadeS = 1;
   private noticeLeft = 0;
   private readonly toastText: Phaser.GameObjects.Text;
+  private toastValue = "";
   private readonly warnGfx: Phaser.GameObjects.Graphics;
   private readonly panelGfx: Phaser.GameObjects.Graphics;
   private panelTexts: Phaser.GameObjects.Text[] = [];
@@ -201,7 +203,7 @@ export class AquaticHud {
 
   /** The stamina gauge, bottom right: the bar, a mark at the share dash and breach need, and your pace. */
   stamina(cur: number, max: number, paceLabel: string, needShare: number, redBelow: number): void {
-    this.staminaBar.max = max; this.staminaBar.value = cur;this.staminaBar.parentElement!.querySelector('.vital-value')!.textContent=`${Math.ceil(cur)}/${Math.ceil(max)}`;
+    setMeter(this.staminaBar, cur, max); setText(this.staminaBar.parentElement!.querySelector('.vital-value'), `${Math.ceil(cur)}/${Math.ceil(max)}`);
     this.staminaBar.parentElement?.classList.toggle("low", cur < redBelow);
     const g = this.gaugeGfx.clear();
     const w = 120, x = this.w - 8 - w, y = this.h - 14;
@@ -209,7 +211,7 @@ export class AquaticHud {
     const col = cur < redBelow ? 0xff6b6b : 0x7ee07a; // red below the minimum for full speed
     g.fillStyle(0x000000, 0.55).fillRect(x - 2, y - 2, w + 4, 10).fillStyle(col, 1).fillRect(x, y, w * f, 6)
       .fillStyle(0xffffff, 0.8).fillRect(x + w * needShare - 1, y - 2, 2, 10);
-    this.staminaLine = `${paceLabel} ${Math.round(cur)}/${Math.round(max)}`; this.gaugeText.setVisible(false).setText(this.staminaLine); this.publish();
+    this.staminaLine = `${paceLabel} ${Math.round(cur)}/${Math.round(max)}`; this.gaugeText.setVisible(false); this.publish();
   }
 
   clearToast(): void {
@@ -218,24 +220,20 @@ export class AquaticHud {
   }
 
   toast(s: string, seconds = TOAST_S): void {
-    this.toastText.setText(s).setVisible(false);
+    this.toastValue = s; this.toastText.setVisible(false); // the native stage message shows toasts; skip re-rasterizing a hidden text
     this.toastLeft = seconds;
   }
 
   /** A message pinned to the top of the screen while it applies (null hides it): red for danger, green for good news. */
   banner(s: string | null, tone: "danger" | "good" = "danger"): void {
     this.bannerValue = s ?? ""; this.screenUi.message.classList.toggle("danger", tone === "danger" && !!s);
-    if (s === null) { this.bannerText.setVisible(false); return; }
-    const danger = tone === "danger";
-    const pulse = danger ? 0.75 + 0.25 * Math.sin(this.scene.time.now / 220) : 1;
-    this.bannerText.setVisible(true).setText(s).setAlpha(pulse)
-      .setBackgroundColor(danger ? "#5a0c0ccc" : "#0c4a26cc").setColor(danger ? "#ffe0d8" : "#e0ffe8");
+    // The native stage message shows banners; the legacy Phaser banner stays hidden and is no longer re-rasterized.
     this.bannerText.setVisible(false);
   }
 
   /** The health bar, right under the numbers in the status block (2026-11-08): green, then yellow, then red. */
   health(cur: number, max: number): void {
-    this.healthBar.max = max; this.healthBar.value = cur;this.healthBar.parentElement!.querySelector('.vital-value')!.textContent=`${Math.ceil(cur)}/${Math.ceil(max)}`;
+    setMeter(this.healthBar, cur, max); setText(this.healthBar.parentElement!.querySelector('.vital-value'), `${Math.ceil(cur)}/${Math.ceil(max)}`);
     this.healthBar.parentElement?.classList.toggle("low", cur / max <= .25);
     const g = this.healthGfx.clear();
     if (!this.statusText.visible) return;
@@ -263,7 +261,7 @@ export class AquaticHud {
       this.toastText.setAlpha(Math.min(1, this.toastLeft / 0.5));
       if (this.toastLeft <= 0) this.toastText.setVisible(false);
     }
-    this.screenUi.setMessage(this.blackedOut ? this.blackText.text : this.bannerValue || (this.toastLeft > 0 ? this.toastText.text : this.noticeLeft > 0 ? this.noticeText.text : ""));
+    this.screenUi.setMessage(this.blackedOut ? this.blackText.text : this.bannerValue || (this.toastLeft > 0 ? this.toastValue : this.noticeLeft > 0 ? this.noticeText.text : ""));
   }
 
   /** The red cue on the screen edge a hidden predator comes from; stronger as it nears. Steady under reduce motion. */
@@ -428,7 +426,7 @@ export class AquaticHud {
   }
   build(c: AqCreature, _map: string, mapId="pond"): void {
     this.dietOverlay.update(c.diet);
-    this.goalText.textContent=this.i18n.t(`aq.goal_${mapId==="ocean"?"coast":mapId}`);
+    setText(this.goalText,this.i18n.t(`aq.goal_${mapId==="ocean"?"coast":mapId}`));
     this.overview = `${this.i18n.t("cell.ui.form_label", { form: c.form })} · ${this.i18n.t(`diet.${c.diet}`)}`;
     this.publish();
   }
@@ -437,18 +435,18 @@ export class AquaticHud {
     const purchases=purchaseMeters(c.points,AQ_STATS.map(s=>({cost:upgradeCost(c,s),pay:AQ_PAID_WITH[s]})));
     this.dock.meters(c.points,purchases.costs,purchases.affordable,dashCd,movement(c).dashCdS,purchases.ready);
     const need = foodToEvolve(c);
-    this.growthCaption.textContent = Number.isFinite(need) ? this.i18n.t("effect.growth", { food: Math.floor(c.food), need }) : this.i18n.t("effect.aq.grown");
+    setText(this.growthCaption, Number.isFinite(need) ? this.i18n.t("effect.growth", { food: Math.floor(c.food), need }) : this.i18n.t("effect.aq.grown"));
     c.formDiets?.forEach((diet, n) => { this.growthDiets[n] = diet; });
     c.selections?.forEach(p => { this.growthDiets[p.form - 1] = p.diet; });
     this.growthDiets[c.form - 1] = c.diet;
-    this.growthRoot.style.setProperty('--proof-form-columns',[1,2,3,4].map(form=>`minmax(0,${form===c.form?1.35:1}fr)`).join(' '));
+    setVar(this.growthRoot,'--proof-form-columns',[1,2,3,4].map(form=>`minmax(0,${form===c.form?1.35:1}fr)`).join(' '));
     this.growthFills.forEach((fill, n) => {
       const value = n < c.form - 1 ? 1 : n === c.form - 1 ? (c.form === AQ.forms.size.length ? 1 : Math.max(0, Math.min(1,c.food / need))) : 0;
-      fill.style.width = `${value * 100}%`; fill.parentElement!.setAttribute("aria-valuenow", String(Math.round(value * 100)));
+      setStyle(fill, "width", `${Math.round(value * 1000) / 10}%`); setAttr(fill.parentElement, "aria-valuenow", String(Math.round(value * 100)));
       const section = fill.parentElement!.parentElement!;
       if(section.dataset.formDiet!==(this.growthDiets[n]??c.diet))section.dataset.formDiet=this.growthDiets[n]??c.diet; section.classList.toggle("future", n >= c.form);
-      section.style.setProperty("--growth-color",DIET_COLORS[this.growthDiets[n] ?? c.diet]);section.classList.toggle("current",n === c.form-1);section.classList.toggle("complete",value===1);
-      section.querySelector(".growth-label")!.textContent = n===c.form-1?(Number.isFinite(need)?`${Math.floor(c.food)}/${need}`:'✓'):value===1?'✓':'';
+      setVar(section,"--growth-color",DIET_COLORS[this.growthDiets[n] ?? c.diet]);section.classList.toggle("current",n === c.form-1);section.classList.toggle("complete",value===1);
+      setText(section.querySelector(".growth-label"), n===c.form-1?(Number.isFinite(need)?`${Math.floor(c.food)}/${need}`:'✓'):value===1?'✓':'');
     });
   }
   private publish(): void {

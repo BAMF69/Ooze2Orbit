@@ -1,6 +1,6 @@
 // Phaser4.2 adapter: logical scale/culling/input remain unchanged; only draw transforms and targets grow.
 import * as Phaser from 'phaser';
-import {renderTarget,type RenderQuality} from '../core/renderQuality';
+import {isLowEndDevice,renderTarget,type RenderQuality} from '../core/renderQuality';
 export class RenderResolution {
  private width=0;private height=0;private active=false;
  private quality:RenderQuality='auto';
@@ -39,7 +39,11 @@ export class RenderResolution {
   if(r.gl.isContextLost())return;
   const bounds=g.canvas.getBoundingClientRect();if(bounds.width<1||bounds.height<1)return;
   const maxEdge=Math.min(r.gl.getParameter(r.gl.MAX_RENDERBUFFER_SIZE),...r.gl.getParameter(r.gl.MAX_VIEWPORT_DIMS));
-  const next=renderTarget(bounds.width,bounds.height,g.scale.width,g.scale.height,window.devicePixelRatio,quality,matchMedia('(pointer:coarse)').matches,maxEdge);
+  const touch=matchMedia('(pointer:coarse)').matches,lowEnd=isLowEndDevice(navigator.hardwareConcurrency,(navigator as Navigator&{deviceMemory?:number}).deviceMemory);
+  const next=renderTarget(bounds.width,bounds.height,g.scale.width,g.scale.height,window.devicePixelRatio,quality,touch,maxEdge,lowEnd);
+  // Lite HUD (no drop shadows or glow filters, see shell.css) whenever the GPU budget is reduced.
+  const lite=quality==='performance'||(quality==='auto'&&touch&&lowEnd);
+  if((document.body.dataset.perfLite==='1')!==lite){if(lite)document.body.dataset.perfLite='1';else delete document.body.dataset.perfLite;}
   if(g.canvas.width!==next.width||g.canvas.height!==next.height){g.canvas.width=next.width;g.canvas.height=next.height;}
   if(r.width!==next.width||r.height!==next.height)r.resize(next.width,next.height);
   this.width=next.width;this.height=next.height;

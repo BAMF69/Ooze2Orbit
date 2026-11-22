@@ -98,8 +98,8 @@ body:is(.cell-display,.aquatic-display)[data-overlay-diet] .illustrated-organic-
  body:is(.cell-display,.aquatic-display)[data-overlay-diet] .illustrated-organic-hud .upgrade-cost{grid-column:3;grid-row:1 / 3;font-size:calc(15px * var(--text-scale,1));font-weight:700;}
  body:is(.cell-display,.aquatic-display)[data-overlay-diet] .illustrated-organic-hud .upgrade-effect{display:none;}
  body:is(.cell-display,.aquatic-display)[data-overlay-diet] .illustrated-organic-hud .upgrade-track{display:none;}
- body:is(.cell-display,.aquatic-display)[data-overlay-diet] .touch-stick{width:72px!important;height:72px!important;left:calc(var(--safe-left) + 18px)!important;bottom:calc(var(--safe-bottom) + var(--hud-height) + 24px)!important;}
- body:is(.cell-display,.aquatic-display)[data-overlay-diet] .touch-knob{width:29px!important;height:29px!important;left:21px!important;top:21px!important;}
+ body:is(.cell-display,.aquatic-display)[data-overlay-diet] .touch-stick{width:92px!important;height:92px!important;left:calc(var(--safe-left) + 18px)!important;bottom:calc(var(--safe-bottom) + var(--hud-height) + 24px)!important;}
+ body:is(.cell-display,.aquatic-display)[data-overlay-diet] .touch-knob{width:36px!important;height:36px!important;left:28px!important;top:28px!important;} /* 72px was too small on phones (playtest 2026-11-21) */
  body:is(.cell-display,.aquatic-display)[data-overlay-diet] .touch-actions{grid-template-columns:54px!important;bottom:calc(var(--safe-bottom) + var(--hud-height) + 28px)!important;right:calc(var(--safe-right) + 18px)!important;}
  body:is(.cell-display,.aquatic-display)[data-overlay-diet] .touch-actions button{width:54px!important;height:54px!important;}
 }
@@ -183,8 +183,8 @@ body.aquatic-display[data-overlay-diet] .touch-controls .proof-icon{filter:drop-
  body.aquatic-display[data-overlay-diet] .illustrated-organic-hud .dock-gardener .proof-icon{width:24px;height:24px;}
  body.aquatic-display[data-overlay-diet] .illustrated-organic-hud .dock-status-group:has(.dock-electric:not([hidden])){height:calc(234px * var(--text-scale,1));}
  body.aquatic-display[data-overlay-diet] .illustrated-organic-hud .dock-electric{font-size:11px;}
- body:is(.cell-display,.aquatic-display)[data-overlay-diet] .touch-stick{width:72px!important;height:72px!important;left:calc(var(--safe-left) + 12px)!important;bottom:calc(var(--safe-bottom) + 8px)!important;}
- body:is(.cell-display,.aquatic-display)[data-overlay-diet] .touch-knob{width:29px!important;height:29px!important;left:21px!important;top:21px!important;}
+ body:is(.cell-display,.aquatic-display)[data-overlay-diet] .touch-stick{width:92px!important;height:92px!important;left:calc(var(--safe-left) + 12px)!important;bottom:calc(var(--safe-bottom) + 8px)!important;}
+ body:is(.cell-display,.aquatic-display)[data-overlay-diet] .touch-knob{width:36px!important;height:36px!important;left:28px!important;top:28px!important;} /* 72px was too small on phones (playtest 2026-11-21) */
  body.aquatic-display[data-overlay-diet] .touch-actions{width:94px!important;grid-template-columns:repeat(2,44px)!important;grid-template-rows:repeat(3,44px)!important;gap:5px 6px!important;right:calc(var(--safe-right) + 12px)!important;bottom:calc(var(--safe-bottom) + var(--hud-height) + 16px)!important;}
  body.aquatic-display[data-overlay-diet] .touch-actions button{width:44px!important;height:44px!important;min-height:44px!important;font-size:9px!important;}
  body.aquatic-display[data-overlay-diet] .touch-actions [data-touch-action=jump]{grid-column:2;grid-row:1;}

@@ -3,6 +3,7 @@ import { tickCombatStatus, toxicRetaliation, shock, type CombatStatus } from './
 import { trackHudOcclusion } from './hudOcclusion';
 import { organicPlayBottom } from './hudDock';
 import { TouchControls } from '../shell/touchControls';
+import { SurfaceBreach } from './aquatic/surfaceBreach';
 import { preloadAquaticArt, prepareAquaticArt, AquaticIllustrations, dietColumn } from './aquatic/illustrated';
 import { upgradeEffect } from './aquatic/effectDescriptions';
 // ---------------------------------------------------------------------------
@@ -189,6 +190,7 @@ export class AquaticScene extends Phaser.Scene {
   private hud!: AquaticHud;
   private panel!: AqUpgradePanel;
   private touch!: TouchControls;
+  private readonly surfaceBreach = new SurfaceBreach(); // touch d-pad: up at the surface = breach
   private division!: AqDivisionPicker;
   private daughterOffers: AqDaughter[] = [];
   private sisters: SisterColony = newSisterColony();
@@ -328,13 +330,14 @@ export class AquaticScene extends Phaser.Scene {
     const resize = () => { if (this.palette) this.setPalette(this.palette); this.drawSky(); this.cutTitle.setPosition(this.scale.width / 2, this.scale.height * 0.2).setWordWrapWidth(this.scale.width - 24); };
     this.scale.on("resize", resize); this.events.once("shutdown", () => this.scale.off("resize", resize));
     this.panel = new AqUpgradePanel(this, shell.i18n, (stat) => this.tryBuy(stat), () => shell.input.scheme === "touch", () => shell.input.clearMenuInput());
+    // Right-hand d-pad (playtest 2026-11-21): up/down = depth (holding up at the surface breaches, see
+    // SurfaceBreach), left = dash, right = sprint toggle, centre = Shock once the electric organ is owned.
     this.touch = new TouchControls(shell.input, [
-      { label: shell.i18n.t("display.dash"), action: "dash" },
-      { label: "Shock", action: "electric" },
-      { label: shell.i18n.t("touch.breach"), description:shell.i18n.t("display.jump"), action: "jump" },
-      { label: shell.i18n.t("touch.pace_short"), description:shell.i18n.t("touch.pace"), action: "pace" },
-      { label: shell.i18n.t("touch.rise"), action: "rise", group: "depth" },
-      { label: shell.i18n.t("touch.sink"), action: "sink", group: "depth" },
+      { label: shell.i18n.t("touch.dpad_up"), description: shell.i18n.t("touch.rise_breach"), action: "rise", also: ["surface"], slot: "up" },
+      { label: shell.i18n.t("touch.dpad_down"), description: shell.i18n.t("touch.sink"), action: "sink", slot: "down" },
+      { label: shell.i18n.t("display.dash"), action: "dash", slot: "left" },
+      { label: shell.i18n.t("touch.sprint"), description: shell.i18n.t("touch.pace"), action: "pace", slot: "right" },
+      { label: "Shock", action: "electric", slot: "center" },
     ]);
     this.touch.root.classList.add("aquatic-touch");
     this.events.on("pause", this.touch.suspend, this.touch);
@@ -742,7 +745,7 @@ export class AquaticScene extends Phaser.Scene {
   update(_time: number, deltaMs: number): void {
     this.hud.screenUi.root.classList.toggle("aquatic-can-evolve", this.evolveReady());
     this.hud.advanceAvailable(this.evolveReady());
-    this.touch.setAvailable("electric",has(this.me,"electricOrgan"));
+    this.touch.setAvailable("electric",has(this.me,"electricOrgan")); this.touch.setPressed("pace", this.wantFast);
     this.touch.update(shell.topId === "play" && (this.mode === "swim" || this.mode === "river") && !this.rockslidePending() && !this.entry.isPlaying && !this.division.isActive && !this.admin.isOpen && !this.panel.isOpen && !this.hud.blackedOut && !this.hud.screenUi.detailsOpen && !this.hud.controlsOpen);
     this.hud.screenUi.actions([action("upgrades", "interact", shell.i18n.t("cell.ui.upgrades")), ...(this.mode !== "river" ? [action("lens", "lens", shell.i18n.t("display.gardener"))] : []), ...(this.evolveReady() ? [action("advance", "ui_accept", shell.i18n.t("display.advance_creature"))] : [])]);
     const dt = Math.min(deltaMs / 1000, MAX_DT) * shell.settings.access.game_speed;
@@ -923,9 +926,15 @@ export class AquaticScene extends Phaser.Scene {
         push: down("up") ? 1 : down("down") ? -1 : 0,
         rise: (inp.isDown("rise") ? 1 : 0) - (inp.isDown("sink") ? 1 : 0),
       },
-      doJump: inp.takePress("jump"),
+      doJump: inp.takePress("jump") || this.surfaceBreach.update(inp.isDown("surface"), ...this.surfaceState()),
       doDash: inp.takePress("dash"),
     };
+  }
+
+  /** [at the surface, airborne] for the d-pad breach: rivers keep their own body and depth. */
+  private surfaceState(): [boolean, boolean] {
+    if (this.mode === "river" && this.rb && this.run) return [this.rb.z >= this.run.spec.depth - 16, this.rb.airborne];
+    return [this.av.z >= this.water.surface - this.water.breachBand, this.av.airborne];
   }
 
   /** Shift: cruise <-> full speed. Full speed needs at least AQ.stamina.minFast stamina to start. */

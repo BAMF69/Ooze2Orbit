@@ -61,6 +61,7 @@ export class CreatureScene extends Phaser.Scene {
   private ready = false;
   private debugEncounters = new URLSearchParams(location.search).has("debug");
   private screenUi!: StageUi;
+  private roomWidth: number = WATER.width; // the current room or hub; frameCamera() bounds the camera to it
   private creatureHud!: CreatureHud;
   private lineage!: LineagePanel;
   private mode: Mode = "play";
@@ -124,6 +125,10 @@ export class CreatureScene extends Phaser.Scene {
     this.minimapPanel.setAttribute("role", "img");
     this.minimap = document.createElement("canvas"); this.minimap.style.display = "block"; this.minimapPanel.append(this.minimap);
     column.append(this.rack, this.minimapPanel, this.rackNote); this.screenUi.root.append(column); this.hudColumn = column;
+    // The canvas fills the screen (core/viewport.ts creatureViewport); refit when it or the native footer changes.
+    const refit = () => this.frameCamera();
+    this.scale.on("resize", refit); this.events.once("shutdown", () => this.scale.off("resize", refit));
+    this.time.delayedCall(50, refit); // after StageUi has laid out its buttons
     if (avatarAssetsReady(this, this.incoming)) this.beginCreature();
     else {
       Log.warn("creature", `Creature textures not ready: ${AVATAR_ASSETS.map(a => `${a.key}:${this.textures.exists(a.key) ? this.textures.get(a.key).getFrameNames().length : "absent"}`).join(", ")}`);
@@ -148,7 +153,7 @@ export class CreatureScene extends Phaser.Scene {
     this.avatar = new AvatarView(this, { ...this.incoming, worn: [] }, 64, WATER.floor - 16);
     this.player = this.avatar.anchor;
     this.roomArt = new RoomArt(this);
-    this.cameras.main.setBounds(0, 0, 640, 360).startFollow(this.player, true, 0.15, 0.15);
+    this.cameras.main.startFollow(this.player, true, 0.15, 0.15); // bounds: frameCamera() on each room entry
     const prev = shell.saves.load("lineage").envelope?.data, reveal = revealFrom(prev, 3, "creature");
     const home = refreshLineage(prev)?.species[0];
     const source = creatureSource(prev, reveal.diet);
@@ -167,6 +172,22 @@ export class CreatureScene extends Phaser.Scene {
       this.lineage.show(reveal, "Begin exploring"); this.screenUi.root.inert = true; shell.input.clearHeld();
     }
     this.ready = true; this.draw();
+  }
+  /**
+   * Camera bounds for the full-screen view. Below the room the ground continues under the native footer
+   * buttons, so the walkable floor sits above them; above, the dark canopy continues when the view is taller
+   * than the room (portrait). Sideways the view never exceeds 640 (the narrowest room), so the room's walls stay the edges; wide rooms
+   * (stitched galleries, underchannels) scroll across their geometry width (roomWidth, set on entry).
+   */
+  private frameCamera(): void {
+    const cam = this.cameras.main, viewH = this.scale.height, viewW = this.scale.width;
+    const cssH = this.game.canvas.getBoundingClientRect().height || viewH;
+    const footer = this.screenUi?.footer.getBoundingClientRect();
+    const coverCss = footer && footer.height > 0 ? Math.max(0, cssH - footer.top + 6) : 0;
+    const padBottom = Math.min(viewH * 0.35, coverCss * viewH / cssH);
+    const bottom = 360 + padBottom, top = Math.min(0, bottom - viewH);
+    const w = this.roomWidth;
+    cam.setBounds(Math.min(0, (w - viewW) / 2), top, Math.max(w, viewW), bottom - top);
   }
   /**
    * The HD body to load before play: family from the incoming temperament reveal, diet from the lineage, exactly
@@ -218,9 +239,8 @@ export class CreatureScene extends Phaser.Scene {
     this.operation = null;
     this.landmarks.forEach(label => label.destroy()); this.landmarks = [];
     // Hubs scroll across their own width; a Water room across its geometry (one screen for v1 rooms).
-    const g = id >= 0 ? roomGeometry(this.roomById(id)) : null;
-    const width = id === -1 ? OVERWORLD.width : id === -2 ? OVERWORLD.waterWidth : g!.width;
-    this.cameras.main.setBounds(0, 0, width, g?.height ?? 360);
+    this.roomWidth = id === -1 ? OVERWORLD.width : id === -2 ? OVERWORLD.waterWidth : roomGeometry(this.roomById(id)).width;
+    this.frameCamera();
     if (id < 0) this.landmarks = hubLabels(id === -2).map(p => this.add.text(p.x, p.y, p.text,
       { fontFamily: "monospace", fontSize: "10px", color: "#ecedd4", align: "center", backgroundColor: "#132b2bcc", padding: { x: 5, y: 4 } }).setOrigin(0.5, 0).setResolution(2).setDepth(6));
     this.room = id; this.enemies.forEach(e => { e.sprite.destroy(); e.label.destroy(); }); this.enemies = [];
@@ -589,6 +609,9 @@ export class CreatureScene extends Phaser.Scene {
   private draw(): void {
     this.drawRack(); this.drawMinimap();
     const g = this.gfx; g.clear();
+    // Full-screen view: dark canopy above the room for tall (portrait) views, earth below it under the footer buttons.
+    g.fillStyle(0x101f25).fillRect(-200, -900, this.roomWidth + 400, 900);
+    g.fillStyle(0x2c3d2e).fillRect(-200, 360, this.roomWidth + 400, 600); // from the room's lower edge, so floor hatches show earth below
     if (this.room < 0) { this.roomArt.syncHub(this.room === -2); drawHub(g, this.room === -2, this.garden.traits, this.garden.expedition!); }
     else this.roomArt.sync(this.currentRoom, this.roomWater(), this.objective);
     if (this.room >= 0) drawWaterRoom(g, this.currentRoom, this.roomWater(), this.food, this.trap, this.clock, this.foodCache, this.objective, true);

@@ -1,5 +1,6 @@
 // Stable organic HUD tabs; scene adapters retain all gameplay and purchase ownership.
 import './hudDock.css';
+import { setAttr, setMeter, setText, setTitle } from './domPatch';
 import type * as Phaser from 'phaser';
 import type { I18n } from '../core/i18n';
 import { node } from './cell/responsiveUi';
@@ -59,7 +60,11 @@ export class HudDock {
     pause.onclick=()=>document.querySelector<HTMLButtonElement>('.cell-toolbar [data-tr="action.pause"]')?.click();
     const full=node('button'),help=node('p',i.t('hud.safari_help'),'dock-install-help');help.hidden=true;
     full.onclick=()=>{if(document.fullscreenEnabled)document.querySelector<HTMLButtonElement>('.cell-toolbar [data-tr^="display."]')?.click();else {leaveUpgrades();select('info');help.hidden=false;}};
-    browser.append(pause,full);guide.append(browser,help);infoPanel.append(guide,effects);
+    browser.append(pause,full);
+    // Playtest 2026-11-21 (iPhone to TV): Safari cannot cast a live game canvas from code (AirPlay from a page only
+    // takes URL-based <video>), so the honest answer is the system's own screen mirroring, explained here.
+    const tv=node('p',i.t('hud.tv_help'),'dock-tv-help');
+    guide.append(browser,help,tv);infoPanel.append(guide,effects);
     content.classList.add('dock-floating');content.append(infoPanel);
     const statusGroup=node('aside','','dock-status-group'),vitals=root.querySelector<HTMLElement>('.aquatic-vitals');
     if(vitals)statusGroup.append(vitals);statusGroup.append(center,status);
@@ -85,12 +90,12 @@ export class HudDock {
     this.advance.classList.toggle('evolution-ready',!this.advance.hidden);
     for(const kind of ['algae','meat'] as const) { const cost=costs[kind], value=points[kind], ready=readiness?.[kind] ?? (cost!==null&&value>=cost);
       const fullLabel=`${this.i.t(kind==='algae'?'cell.hud_plant':'cell.hud_meat',{n:Math.floor(value)})}${cost===null?'':` / ${cost}`}`;
-      this.resourceLabels[kind].textContent=this.illustratedHud?`${Math.floor(value)}${cost===null?'':`/${cost}`}`:fullLabel;
-      this.resourceMeters[kind].parentElement!.setAttribute('aria-label',fullLabel);
-      this.resourceMeters[kind].value=cost===null?0:Math.min(1,value/cost); this.resourceMeters[kind].parentElement!.classList.toggle('purchase-ready',ready);
+      setText(this.resourceLabels[kind],this.illustratedHud?`${Math.floor(value)}${cost===null?'':`/${cost}`}`:fullLabel);
+      setAttr(this.resourceMeters[kind].parentElement,'aria-label',fullLabel);
+      setMeter(this.resourceMeters[kind],cost===null?0:Math.min(1,value/cost),1); this.resourceMeters[kind].parentElement!.classList.toggle('purchase-ready',ready);
     }
-    this.dashMeter.parentElement!.title=this.dashMeter.title;
-    this.dashMeter.value=duration>0?Math.max(0,1-cooldown/duration):0; this.dashMeter.title=duration<=0?this.i.t('hud.dash_locked'):cooldown>0?this.i.t('hud.recharge',{seconds:cooldown.toFixed(1)}):this.i.t('hud.ready');
+    const dashTitle=duration<=0?this.i.t('hud.dash_locked'):cooldown>0?this.i.t('hud.recharge',{seconds:cooldown.toFixed(1)}):this.i.t('hud.ready');
+    setMeter(this.dashMeter,duration>0?Math.max(0,1-cooldown/duration):0,1); setTitle(this.dashMeter,dashTitle); setTitle(this.dashMeter.parentElement,dashTitle);
     this.illustratedHud?.dash(duration<=0?'—':cooldown>0?`${cooldown.toFixed(1)}s`:this.i.t('hud.ready'),duration>0);
   }
 }

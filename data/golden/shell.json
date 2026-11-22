@@ -35,7 +35,8 @@
       1080
      ],
      "ui_scale": 1.0,
-     "vsync": true
+     "vsync": true,
+     "render_quality": "auto"
     },
     "input": {
      "bindings": {
@@ -170,7 +171,8 @@
       1080
      ],
      "ui_scale": 1.0,
-     "vsync": true
+     "vsync": true,
+     "render_quality": "auto"
     },
     "input": {
      "bindings": {
@@ -308,7 +310,8 @@
       1080
      ],
      "ui_scale": 1.0,
-     "vsync": true
+     "vsync": true,
+     "render_quality": "auto"
     },
     "input": {
      "bindings": {
@@ -446,7 +449,8 @@
       1080
      ],
      "ui_scale": 1.0,
-     "vsync": true
+     "vsync": true,
+     "render_quality": "auto"
     },
     "input": {
      "bindings": {
@@ -584,7 +588,8 @@
       1080
      ],
      "ui_scale": 1.0,
-     "vsync": true
+     "vsync": true,
+     "render_quality": "auto"
     },
     "input": {
      "bindings": {
@@ -1412,7 +1417,8 @@
       720
      ],
      "ui_scale": 1.0,
-     "vsync": true
+     "vsync": true,
+     "render_quality": "auto"
     },
     "input": {
      "bindings": {
@@ -1551,7 +1557,8 @@
       1080
      ],
      "ui_scale": 1.0,
-     "vsync": true
+     "vsync": true,
+     "render_quality": "auto"
     },
     "future_section": {
      "x": 1
@@ -1692,7 +1699,8 @@
       1080
      ],
      "ui_scale": 1.0,
-     "vsync": true
+     "vsync": true,
+     "render_quality": "auto"
     },
     "input": {
      "bindings": {
@@ -1829,7 +1837,8 @@
       1080
      ],
      "ui_scale": 1.0,
-     "vsync": true
+     "vsync": true,
+     "render_quality": "auto"
     },
     "input": {
      "bindings": {
@@ -1967,7 +1976,8 @@
       1080
      ],
      "ui_scale": 1.0,
-     "vsync": true
+     "vsync": true,
+     "render_quality": "auto"
     },
     "input": {
      "bindings": {
@@ -2105,7 +2115,8 @@
       1080
      ],
      "ui_scale": 1.0,
-     "vsync": true
+     "vsync": true,
+     "render_quality": "auto"
     },
     "input": {
      "bindings": {
@@ -2243,7 +2254,8 @@
       1080
      ],
      "ui_scale": 1.0,
-     "vsync": true
+     "vsync": true,
+     "render_quality": "auto"
     },
     "input": {
      "bindings": {
@@ -2381,7 +2393,8 @@
       1080
      ],
      "ui_scale": 1.0,
-     "vsync": true
+     "vsync": true,
+     "render_quality": "auto"
     },
     "input": {
      "bindings": {
