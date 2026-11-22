@@ -12,7 +12,7 @@ const browser = await chromium.launch({ headless: true });
 const errors = [];
 async function open(viewport) {
   const page = await browser.newPage({ viewport }); page.on('pageerror', e => errors.push(e.message));
-  await page.goto(`http://localhost:5186/?data-dir=levelgen-${viewport.width}&creatureSeed=7`);
+  await page.goto(`http://localhost:5186/?data-dir=levelgen-${viewport.width}&creatureSeed=14`);
   await page.getByRole('button', { name: 'No thanks', exact: true }).click();
   await page.getByRole('button', { name: 'Enter the garden', exact: true }).click();
   await page.getByRole('button', { name: 'Creature', exact: true }).click();
@@ -50,9 +50,16 @@ const state = page => page.evaluate(() => { const c = window.levelTest.scene; re
 const shot = async (page, name) => { await page.evaluate(() => window.levelTest.game.loop.wake()); await page.waitForTimeout(150); await page.screenshot({ path: `${out}/${name}.png` }); await page.evaluate(() => window.levelTest.game.loop.sleep()); };
 try {
   const page = await open({ width: 1440, height: 900 });
-  const s0 = await state(page); assert.equal(s0.version, 2, 'fresh garden plays a graph-generated world'); assert.equal(s0.rooms, 15); // 13 rooms plus the Medium and Hard underchannels
+  const s0 = await state(page); assert.equal(s0.version, 2, 'fresh garden plays a graph-generated world');
+  // Seed 14 (step 2): rooms are found by what they are, not by number; stitched galleries shift the numbering.
+  const ids = await page.evaluate(() => { const w = window.levelTest.scene.world, find = f => w.rooms.find(f);
+    const host = find(r => r.spec.keyed?.opens === 'bonusOpen' && r.tier === 'easy');
+    return { door: find(r => r.spec.keyed?.opens === 'keyOpen').id, host: host.id, vault: host.spec.openings.find(o => o.when === 'bonusOpen').to.room,
+      current: find(r => r.current && !r.spec.stitched && r.spec.puzzle === 'lever').id, easy: w.rooms.filter(r => r.tier === 'easy').map(r => r.id),
+      medium: w.rooms.filter(r => r.tier === 'medium').map(r => r.id), gallery: find(r => r.tier === 'medium' && r.spec.stitched && r.spec.puzzle === 'lever').id }; });
+  assert.ok(s0.rooms > 15, `stitched world has more rooms: ${s0.rooms}`);
   // Class door (room 11, built for this lineage's class). The wrong class is refused; the right one opens it.
-  await fixture(page, 11, { classSkills: [] });
+  await fixture(page, ids.door, { classSkills: [] });
   const door = (await state(page)).keyed; assert.equal(door.opens, 'keyOpen');
   await drive(page, door.x, door.y); assert.match(await use(page), /Only a lineage/); assert.equal((await state(page)).objective.keyOpen, undefined);
   const variant = await page.evaluate(() => window.levelTest.scene.currentRoom.spec.variant);
@@ -60,7 +67,7 @@ try {
   await use(page); assert.equal((await state(page)).objective.keyOpen, true, `${variant} opens the class door`);
   await shot(page, '01-class-door-open');
   // Grotto shaft (room 0, vitality 8). Weak lineage refused; vitality 8 opens it; climbing out the top reaches the vault.
-  await fixture(page, 0, { vitality: 0 });
+  await fixture(page, ids.host, { vitality: 0 });
   const shaft = (await state(page)).keyed; assert.equal(shaft.opens, 'bonusOpen');
   await drive(page, shaft.x, shaft.y); assert.match(await use(page), /vitality 8/);
   await page.evaluate(() => { window.levelTest.scene.garden.traits.vitality = 8; }); await use(page);
@@ -76,15 +83,15 @@ try {
     }
   }
   console.log(`grotto climb attempts: ${attempts}`);
-  assert.equal(arrived, 4, 'the top shaft arrives in the vault room'); const v = await state(page);
+  assert.equal(arrived, ids.vault, 'the top shaft arrives in the vault room'); const v = await state(page);
   assert.equal(v.name, 'Hidden grotto'); assert.ok(v.y > 280, 'arrives on the vault floor');
   for (let n = 0; n < 30; n++) await page.evaluate(() => window.levelTest.scene.update(0, 1000 / 60));
   assert.ok((await state(page)).y < 338, 'the arrival is stable ground');
   await shot(page, '03-hidden-grotto');
-  await page.evaluate(() => { const c = window.levelTest.scene; c.garden.expedition.visited.push(0, 1, 2, 3, 4); c.enter(1, 48); c.draw(); });
+  await page.evaluate(easy => { const c = window.levelTest.scene; c.garden.expedition.visited.push(...easy); c.enter(1, 48); c.draw(); }, ids.easy);
   await shot(page, '09-minimap-explored-easy');
   // Guidance (playtest 2026-11-17): a Reedheart lineage without fins in a diverted current room is told why.
-  await fixture(page, 9, { fins: false, gills: true });
+  await fixture(page, ids.current, { fins: false, gills: true });
   await page.evaluate(() => { const c = window.levelTest.scene; c.garden.expedition.unlocked = ['gills']; });
   // Without fins the current holds the creature at the water's edge, so step in and read the message.
   await page.evaluate(() => { const { scene: c, shell } = window.levelTest; shell.input.hold('levelgen', ['move_right']); for (let n = 0; n < 240; n++) c.update(0, 1000 / 60); shell.input.clearHeld(); });
@@ -143,6 +150,8 @@ try {
   assert.equal(loop.room, loop.channel, `the claimed finale's hatch drops into the underchannel: ${JSON.stringify(loop)}`);
   assert.ok(loop.farOpen && loop.verticalOpen, 'both channel hatches open (finale claimed, drain solved)');
   await shot(page, '11-underchannel-arrival');
+  // The stitched channel is several screens of pillars and kelp: carry the creature to the near end, then climb.
+  await page.evaluate(() => { const c = window.levelTest.scene; c.body.x = 430; c.body.y = 300; c.body.vx = 0; c.body.vy = 0; for (let n = 0; n < 30; n++) c.update(0, 1000 / 60); });
   let risen = loop.channel, tries = 0;
   while (risen === loop.channel && tries++ < 4) {
     for (const [x, y, leap] of [[404, 304, false], [368, 240, true], [320, 176, true], [320, 60, true]]) {
@@ -152,10 +161,37 @@ try {
   }
   console.log(`underchannel climb attempts: ${tries}`);
   assert.equal(risen, loop.drain, 'the near climb rises into the drain chamber');
-  await page.evaluate(() => { const c = window.levelTest.scene; c.garden.expedition.visited.push(4, 5, 6, 13); c.draw(); });
+  await page.evaluate(medium => { const c = window.levelTest.scene; c.garden.expedition.visited.push(...medium); c.draw(); }, ids.medium);
   await shot(page, '12-drain-after-shortcut-minimap');
-  const phone = await open({ width: 390, height: 844 }); await fixture(phone, 11); await shot(phone, '04-phone-class-door');
-  await fixture(phone, 9, { fins: true, gills: true }); await shot(phone, '08-phone-rack');
+  // Step 2: a stitched gallery several screens wide. Its lever opens the far exit wall; the camera follows across it.
+  const gal = await page.evaluate(id => { const c = window.levelTest.scene, r = c.world.rooms.find(q => q.id === id), v = r.spec.controls[0];
+    c.close(); c.rooms.clear(); c.enter(id, 48); c.enemies.forEach(e => { e.incapacitated = true; });
+    const shut = c.objective.open; c.body.x = v.x; c.body.y = v.y - 2; c.body.vx = c.body.vy = 0; for (let n = 0; n < 20; n++) c.update(0, 1000 / 60);
+    return { id, width: r.spec.geometry.width, segments: r.spec.stitched, shut, lever: v, right: r.right }; }, ids.gallery);
+  assert.equal(gal.shut, false, 'the gallery starts closed');
+  const pulled = await use(page); assert.equal((await state(page)).objective.open, true, `the stitched lever opens the gallery: ${pulled}`);
+  await page.evaluate(() => window.levelTest.game.loop.wake()); await page.waitForTimeout(600);
+  const galCam = await page.evaluate(() => { const cam = window.levelTest.scene.cameras.main; return { scroll: cam.scrollX, bounds: cam.getBounds().width }; });
+  assert.equal(galCam.bounds, gal.width, 'camera bounds span the stitched gallery');
+  await page.evaluate(() => window.levelTest.game.loop.sleep()); await shot(page, '13-stitched-gallery-lever');
+  const leftGallery = await page.evaluate(w => { const { scene: c, shell } = window.levelTest; c.body.x = w - 70; c.body.y = 300; c.body.vx = c.body.vy = 0;
+    shell.input.hold('levelgen', ['move_right']); for (let n = 0; n < 240 && c.room !== null; n++) { c.update(0, 1000 / 60); if (c.body.x < 100) break; } shell.input.clearHeld(); return c.room; }, gal.width);
+  assert.equal(leftGallery, gal.right, `the open exit leads on: ${JSON.stringify(gal)}`);
+  console.log(`stitched gallery ${gal.id}: ${gal.segments.join(' + ')}, ${gal.width}px`);
+  // Seed refresh: a cleared level's entrance offers a fresh map (S + E); the level's rooms change, the others do not.
+  const refresh = await page.evaluate(() => { const { scene: c, shell } = window.levelTest, w0 = c.world;
+    const sig = (w, t) => JSON.stringify(w.rooms.filter(r => r.tier === t).map(r => [r.spec.stitched ?? r.spec.puzzle, r.food]));
+    c.close(); c.rooms.clear(); c.mode = 'play'; Object.assign(c.garden.traits, { gills: true, fins: true }); c.garden.expedition.completed = ['easy', 'medium']; c.enter(-2, 64);
+    return { before: { medium: sig(w0, 'medium'), hard: sig(w0, 'hard') } }; });
+  const entrance = await page.evaluate(() => { const c = window.levelTest.scene; for (let x = 64; x < 3000; x += 8) { c.body.x = x; c.body.y = 304; c.update(0, 1000 / 60); if (/medium · completed/.test(c.message)) return { x, message: c.message }; } return null; });
+  assert.ok(entrance && /S\+E: fresh map/.test(entrance.message), `cleared entrance offers a fresh map: ${JSON.stringify(entrance)}`);
+  const after = await page.evaluate(() => { const { scene: c, shell } = window.levelTest; shell.input.hold('levelgen', ['move_down']); shell.input.inject('interact'); c.update(0, 1000 / 60); shell.input.clearHeld();
+    const sig = (w, t) => JSON.stringify(w.rooms.filter(r => r.tier === t).map(r => [r.spec.stitched ?? r.spec.puzzle, r.food]));
+    return { medium: sig(c.world, 'medium'), hard: sig(c.world, 'hard'), rerolls: c.garden.expedition.rerolls, message: c.message }; });
+  assert.deepEqual(after.rerolls, { medium: 1 }); assert.notEqual(after.medium, refresh.before.medium, 'medium has a fresh map'); assert.equal(after.hard, refresh.before.hard, 'hard is unchanged');
+  assert.match(after.message, /fresh path/); await shot(page, '14-seed-refresh');
+  const phone = await open({ width: 390, height: 844 }); await fixture(phone, ids.door); await shot(phone, '04-phone-class-door');
+  await fixture(phone, ids.current, { fins: true, gills: true }); await shot(phone, '08-phone-rack');
   assert.deepEqual(errors, []);
-  console.log('Levelgen browser regression: v2 world, class door refuse/open, grotto shaft refuse/open/climb, underchannel shortcut, desktop + phone captures, no page errors');
+  console.log('Levelgen browser regression: v2 world, class door refuse/open, grotto shaft refuse/open/climb, underchannel shortcut, stitched gallery, seed refresh, desktop + phone captures, no page errors');
 } finally { await browser.close(); }

@@ -15,6 +15,7 @@ import type { RoomSpec, CollisionRule, Control, EnemySpawn, Point, KeyedControl 
 import type { ClassSkill, Key, Stat } from "./keys";
 import { LEVELGEN } from "./tuning";
 import { sizedGeometry, TILE } from "./geometry";
+import { stitchedGallery, stitchedChannel } from "./stitchedRooms";
 
 export interface Entry { x: number; y: number; facing: number; vy?: number }
 /** One move of a solution script: swim/walk to a point, optionally jumping, then act there. */
@@ -184,7 +185,9 @@ export function buildRoom(ctx: TemplateContext): Built {
     case "drain": return drain(ctx);
     case "shaft": return shaft(ctx);
     case "pressure": return pressure(ctx);
-    case "channel": return channel(ctx);
+    case "channel": return ctx.authored ? channel(ctx) : stitchedChannel(ctx) ?? channel(ctx);
+    // A gallery that cannot be stitched falls back to a one-screen lever room; the world check names it ("stitch").
+    case "gallery": return stitchedGallery(ctx) ?? lever(ctx);
   }
 }
 export const climbScript = (): Step[] => climbToTop;

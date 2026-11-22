@@ -12,12 +12,12 @@ import { revealFrom } from "./aquatic/reveal";
 import { newBody, stepBody, boxHits, type Body } from "./creature/physics";
 import { GEN, evidence, edible, inherit, offspring, resumeGarden, newGarden, creatureSource, type Garden, type Heir, type Climate } from "./creature/generations";
 import { WATER, generateWater, type Difficulty, type WaterWorld, type WaterRoom } from "./creature/waterWorld";
-import { generateWaterV2, levelEntry } from "./creature/levelgen/world";
+import { generateWaterV2, levelEntry, isWorldV2, remapVisited } from "./creature/levelgen/world";
 import { keysOf } from "./creature/levelgen/keys";
 import { currentAdvice, levelAdvice, heirNote, generationPlan } from "./creature/guidance";
 import { creatureIcon, equipmentRows } from "./creature/creatureIcons";
 import { minimapModel, drawMinimap } from "./creature/minimap";
-import { attachExpedition, classFromTemperament, intervene, interventionLock, levelLock, weatherEvent, stepWeather, effectiveClimate, type Weather, type Intervention } from "./creature/expedition";
+import { attachExpedition, classFromTemperament, intervene, interventionLock, levelLock, weatherEvent, stepWeather, effectiveClimate, canRefreshLevel, refreshLevel, type Weather, type Intervention } from "./creature/expedition";
 import { stepWaterBody, inWater, isSubmerged, waterlineAt } from "./creature/waterPhysics";
 import { drawWaterRoom, type WaterFood } from "./creature/waterView";
 import { OVERWORLD, BIOME_PATHS, WATER_PATHS, hubSolid, nearLandmark } from "./creature/overworld";
@@ -184,10 +184,19 @@ export class CreatureScene extends Phaser.Scene {
     const raw = new URLSearchParams(location.search).get("creatureSeed");
     return raw !== null && /^\d+$/.test(raw) && Number(raw) <= 0xffffffff ? Number(raw) : crypto.getRandomValues(new Uint32Array(1))[0];
   }
+  /** Seed refresh (CREATURE_LEVELGEN.md §7a): a cleared level gets a fresh map to grind on. The other levels keep
+   *  their maps; room ids shift, so visited rooms are remapped by graph node and this life's room states reset. */
+  private refreshMap(tier: Difficulty): void {
+    const before = this.world;
+    this.garden = refreshLevel(this.garden, tier); this.buildWorld();
+    if (isWorldV2(before) && isWorldV2(this.world)) this.garden.expedition!.visited = remapVisited(before, this.world, this.garden.expedition!.visited, tier);
+    this.rooms.clear(); this.save();
+    this.message = `A fresh path opens through Water ${tier}. Its rooms are new; the other levels are unchanged.`;
+  }
   /** A version 1 save replays its frozen skeleton unchanged; every new world comes from the graph generator. */
   private buildWorld(): void {
     const e = this.garden.expedition!;
-    this.world = e.version === 1 ? generateWater(e.seed) : generateWaterV2(e.seed, this.garden.traits.classSkills ?? [this.classSkill]);
+    this.world = e.version === 1 ? generateWater(e.seed) : generateWaterV2(e.seed, this.garden.traits.classSkills ?? [this.classSkill], e.rerolls);
     if (this.world.fallback) Log.warn("creature", `Generator fallback: ${this.world.rejected.join("; ")}`);
     Log.info("creature", `Water world seed ${this.world.seed}, generator v${this.world.version}, G${this.garden.generation}`);
   }
@@ -356,8 +365,12 @@ export class CreatureScene extends Phaser.Scene {
         }
       } else {
         const path = WATER_PATHS.find(p => nearLandmark(this.body.x, p.x));
-        this.message = path ? levelLock(path.tier, this.garden.traits) && (levelAdvice(path.tier, this.garden.traits, this.garden.expedition!) ?? levelLock(path.tier, this.garden.traits)) || `E: enter ${path.name} · ${path.tier}${this.garden.expedition!.completed.includes(path.tier) ? " · completed" : ""}.` : "Explore the Water shoreline. Three cave trails lead to Easy, Medium and Hard. Walk left to return to the nest.";
-        if (i.takePress("interact")) { if (path) this.startLevel(path.tier); else if (this.body.x < 100) this.travel(-1, BIOME_PATHS[0].x, WATER.floor, -1); }
+        const refreshable = !!path && canRefreshLevel(this.garden.expedition!, path.tier);
+        this.message = path ? levelLock(path.tier, this.garden.traits) && (levelAdvice(path.tier, this.garden.traits, this.garden.expedition!) ?? levelLock(path.tier, this.garden.traits)) || `E: enter ${path.name} · ${path.tier}${this.garden.expedition!.completed.includes(path.tier) ? " · completed" : ""}${refreshable ? " · S+E: fresh map" : ""}.` : "Explore the Water shoreline. Three cave trails lead to Easy, Medium and Hard. Walk left to return to the nest.";
+        if (i.takePress("interact")) {
+          if (path && refreshable && i.isDown("move_down")) this.refreshMap(path.tier);
+          else if (path) this.startLevel(path.tier); else if (this.body.x < 100) this.travel(-1, BIOME_PATHS[0].x, WATER.floor, -1);
+        }
         if (this.room === -2 && this.body.x < 20) this.travel(-1, BIOME_PATHS[0].x, WATER.floor, -1);
       }
     } else {

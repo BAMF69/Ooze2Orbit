@@ -151,7 +151,7 @@ export function searchRoom(r: WaterRoom, e: Expedition, t: Traits, keys: Readonl
         if (res.opening !== undefined) {
           if (!reached.openings.includes(res.opening)) reached.openings.push(res.opening);
           if (s.returnArrival) layerLeft = true;
-          if (target === "openings" && s.openings.every(op => reached.openings.includes(op.to.room))) layerExit = layerLeft = true;
+          if (target === "openings" && !opt.exhaustive && s.openings.every(op => reached.openings.includes(op.to.room))) layerExit = layerLeft = true;
           continue;
         }
         if (res.pit) { pitFalls++; push({ x: s.pits[0].recoverX, y: WATER.floor, frames: n.frames + m.frames + 30 }); continue; }

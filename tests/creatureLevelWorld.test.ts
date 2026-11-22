@@ -93,6 +93,7 @@ describe("Generated rooms through the real controller", () => {
     for (const seed of SEEDS) {
       const { w, e } = world(seed);
       for (const r of w.rooms) {
+        if (r.spec!.stitched && !w.solutions[r.id].length) continue; // stitched: proved by the search sweep (creatureSearch/creatureStitch)
         const start = r.spec!.start ?? (r.spec!.returnArrival ? { x: 152, y: 298 } : { x: WATER.spawn, y: WATER.floor }); // branches from their shaft, channels from the drain
         const run = runScript(r, e, w.solutions[r.id], traits, allKeys(), start);
         expect(run.ok, `seed ${seed} room ${r.id} ${r.name} (${r.spec!.puzzle}): step ${run.step} ${run.reason}`).toBe(true);
@@ -107,8 +108,8 @@ describe("Generated rooms through the real controller", () => {
     const max = { ...traits, strength: 30, vitality: 30 };
     for (const seed of SEEDS) { const { w, e } = world(seed); for (const r of w.rooms) {
       if (r.spec!.puzzle === "channel") continue; // a passage, not a gate: it demands nothing to cross
-      const run = sprintThrough(r, e, max);
-      expect(run.x, `D+Shift escaped seed ${seed}, room ${r.id}`).toBeLessThan(560); expect(run.open).toBe(false); blocked++;
+      const run = sprintThrough(r, e, max), wall = (r.spec!.geometry?.cols ?? 40) - 5; // the room's exit wall tile
+      expect(run.x, `D+Shift escaped seed ${seed}, room ${r.id}`).toBeLessThan(wall * 16); expect(run.open).toBe(false); blocked++;
     } }
     console.log(`D+Shift blocked in ${blocked}/${blocked} generated rooms`);
   });
