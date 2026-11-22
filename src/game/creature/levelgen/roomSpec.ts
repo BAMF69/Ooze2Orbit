@@ -46,6 +46,8 @@ export interface RoomSpec {
   openings: Opening[]; verticalOpenFrom: number | null;
   /** Room whose solved state opens this room's "farOpen" openings (a channel's hatch under the finale). */
   farOpenFrom?: number | null;
+  /** The segment ids a stitched room was built from (levelgen/stitch.ts), left to right; absent for templates. */
+  stitched?: string[];
   /** Where a search or script starts when the room is not entered from its left edge (a channel: its drain drop). */
   start?: Point;
   returnArrival: { x: number; y: number; facing: number } | null; arriveFromRight: { x: number; y: number; facing: number };

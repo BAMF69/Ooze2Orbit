@@ -13,6 +13,8 @@ export interface Expedition {
   /** 1: the frozen seed-v1 skeleton (replayed unchanged for old saves); 2: the graph-generated world (levelgen/world.ts). */
   version: 1 | 2; seed: number; unlocked: Adaptation[]; completed: Difficulty[]; visited: number[];
   basinRaised: boolean; torrentDiverted: boolean; interventions: string[];
+  /** Map refreshes per Water level (seed refresh): a cleared level can be replayed on a fresh map. Absent = none. */
+  rerolls?: Partial<Record<Difficulty, number>>;
 }
 export const freshExpedition = (seed: number, version: 1 | 2 = 2): Expedition => ({ version, seed: seed >>> 0,
   unlocked: [], completed: [], visited: [], basinRaised: false, torrentDiverted: false, interventions: [] });
@@ -25,7 +27,18 @@ export function validExpedition(v: unknown): v is Expedition {
     Array.isArray(e.unlocked) && e.unlocked.every(a => ADAPTATIONS.includes(a)) &&
     Array.isArray(e.completed) && e.completed.every(a => DIFFICULTIES.includes(a)) &&
     Array.isArray(e.visited) && e.visited.every(id => Number.isInteger(id) && id >= 0 && (e.version === 2 || id < 11)) &&
-    Array.isArray(e.interventions) && e.interventions.every(s => typeof s === "string");
+    Array.isArray(e.interventions) && e.interventions.every(s => typeof s === "string") &&
+    (e.rerolls === undefined || typeof e.rerolls === "object" && e.rerolls !== null &&
+      Object.entries(e.rerolls).every(([k, n]) => DIFFICULTIES.includes(k as Difficulty) && Number.isInteger(n) && (n as number) >= 0));
+}
+/** A level can be refreshed once it is cleared, in a graph-generated world (v1 worlds stay frozen). */
+export const canRefreshLevel = (e: Expedition, tier: Difficulty): boolean => e.version === 2 && e.completed.includes(tier);
+/** A fresh map for a cleared level, to grind it again: completion, unlocks and banked progress stay. */
+export function refreshLevel(g: Garden, tier: Difficulty): Garden {
+  const e = g.expedition!;
+  if (!canRefreshLevel(e, tier)) return g;
+  const n = (e.rerolls?.[tier] ?? 0) + 1;
+  return { ...g, expedition: { ...e, rerolls: { ...e.rerolls, [tier]: n } }, history: [...g.history, `G${g.generation}: found a fresh path through Water ${tier} (map ${n + 1}).`] };
 }
 
 /** A migrated Toy 2 garden retains stats/history. Only a genuinely new world takes aquatic starting parts. */

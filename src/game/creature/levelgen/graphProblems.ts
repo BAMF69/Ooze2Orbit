@@ -7,7 +7,8 @@
 // Notes   : Each name has a deliberately-broken test in tests/creatureLevelGraph.test.ts (SOP-17 §1).
 // Authored: Written with Claude (Fable 5.1).
 // ---------------------------------------------------------------------------
-import { cycleCount, type BiomeGraph, type LevelGraph, type Edge, type GardenerControl } from "./graph";
+import { ladderTier } from "./ladder";
+import { cycleCount, chainScreens, type BiomeGraph, type LevelGraph, type Edge, type GardenerControl } from "./graph";
 import { MATERIALS, isStoryOrTerrain, isCritical, CLASS_SKILLS, type Key } from "./keys";
 import { LEVELGEN } from "./tuning";
 import { sphereSearch, minimalKeys, maximalKeys, reachable } from "./lineageSim";
@@ -39,7 +40,9 @@ export function graphProblems(g: BiomeGraph, classes?: readonly ClassSkill[]): s
       if (chain.slice(n - LEVELGEN.pacing.maxSpikesInRow, n + 1).every(x => x.sealed)) bad.add("pacing");
     // Recovery (§5 invariant 10): every Hard spike (a sealed room) has a food cache room within three rooms of it.
     if (level.tier === "hard") for (const spike of chain.filter(n => n.sealed))
-      if (!chain.some(n => RECOVERY.has(n.role) && Math.abs(n.depth - spike.depth) <= LEVELGEN.pacing.recoveryWithin)) bad.add("pacing");
+      if (!chain.some(n => (RECOVERY.has(n.role) || n.cache) && Math.abs(n.depth - spike.depth) <= LEVELGEN.pacing.recoveryWithin)) bad.add("pacing");
+    // The ladder (levelgen/ladder.ts): a generated level's critical path lands inside its tier's screen range.
+    if (!g.authored && !level.authored) { const t = ladderTier("water", level.tier), w = chainScreens(level); if (w < t.screens[0] || w > t.screens[1]) bad.add("ladder size"); }
     for (const n of level.nodes) if (n.role === "classTrial") {
       if (!level.edges.some(e => e.from === n.id && e.materials.includes("classDoor"))) bad.add("class triad");
       // The variant must be a class this lineage has (review finding 4); unset means "not built for a lineage yet".
